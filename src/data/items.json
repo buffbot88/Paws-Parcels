@@ -1,0 +1,24 @@
+{
+  "items": [
+    { "id": "item-strawberry", "name": "Strawberry", "description": "A sweet red berry from the Bramble Patch.", "category": "resource", "maxStack": 10, "icon": "berry-strawberry" },
+    { "id": "item-blueberry", "name": "Blueberry", "description": "A tiny blue berry, perfect for baking.", "category": "resource", "maxStack": 10, "icon": "berry-blueberry" },
+    { "id": "item-wild-herb", "name": "Wild Herb", "description": "A fragrant herb growing in sunny patches.", "category": "resource", "maxStack": 10, "icon": "herb-wild" },
+    { "id": "item-river-shell", "name": "River Shell", "description": "A smooth shell from the pond's edge.", "category": "resource", "maxStack": 10, "icon": "shell-river" },
+    { "id": "item-moonflower", "name": "Moonflower", "description": "A rare flower that only opens by moonlight.", "category": "resource", "maxStack": 5, "icon": "flower-moon", "favoriteBy": ["npc-lumi"] },
+    { "id": "item-polished-pebble", "name": "Polished Pebble", "description": "A shiny pebble, smooth as glass.", "category": "gift", "maxStack": 5, "icon": "gift-pebble", "favoriteBy": ["npc-moss"] },
+    { "id": "item-honey-jar", "name": "Honey Jar", "description": "A small jar of golden forest honey.", "category": "gift", "maxStack": 5, "icon": "gift-honey", "favoriteBy": ["npc-biscuit"] },
+    { "id": "item-wildflower-bouquet", "name": "Wildflower Bouquet", "description": "A cheerful bundle of wildflowers.", "category": "gift", "maxStack": 1, "icon": "gift-bouquet", "favoriteBy": ["npc-maple"] },
+    { "id": "item-sealed-letter", "name": "Sealed Letter", "description": "A letter sealed with a wax paw print. Deliver it carefully.", "category": "delivery", "maxStack": 1, "icon": "delivery-letter" },
+    { "id": "item-tiny-parcel", "name": "Tiny Parcel", "description": "A small package wrapped in brown paper and string.", "category": "delivery", "maxStack": 1, "icon": "delivery-parcel" },
+    { "id": "item-picnic-basket", "name": "Picnic Basket", "description": "A wicker basket packed with treats.", "category": "delivery", "maxStack": 1, "icon": "delivery-basket" },
+    { "id": "item-golden-acorn", "name": "Golden Acorn", "description": "A legendary acorn that glimmers in the light.", "category": "quest", "maxStack": 1, "icon": "quest-acorn" },
+    { "id": "item-moonlit-seed", "name": "Moonlit Seed", "description": "A seed that glows faintly silver. Lumi says a story sleeps inside it.", "category": "quest", "maxStack": 1, "icon": "quest-seed" },
+    { "id": "item-lumi-notebook", "name": "Lumi's Notebook", "description": "A worn notebook full of moonlight notes.", "category": "quest", "maxStack": 1, "icon": "quest-notebook" },
+    { "id": "item-letter-opener", "name": "Pip's Letter Opener", "description": "A brass letter opener with a paw-print handle. Pip never goes anywhere without it.", "category": "quest", "maxStack": 1, "icon": "quest-letter-opener" },
+    { "id": "item-garden-key", "name": "Garden Key", "description": "An old iron key to a hidden garden plot behind the rabbit burrows.", "category": "quest", "maxStack": 1, "icon": "quest-garden-key" },
+    { "id": "item-cozy-scarf", "name": "Cozy Scarf", "description": "A soft scarf in warm autumn colors.", "category": "cosmetic", "maxStack": 1, "icon": "cosmetic-scarf" },
+    { "id": "item-flower-crown", "name": "Flower Crown", "description": "A crown of woven wildflowers.", "category": "cosmetic", "maxStack": 1, "icon": "cosmetic-crown" },
+    { "id": "item-courier-cap", "name": "Courier Cap", "description": "A smart cap with a little paw badge. Only the forest's best couriers wear one.", "category": "cosmetic", "maxStack": 1, "icon": "cosmetic-cap" },
+    { "id": "item-golden-honey", "name": "Golden Honey", "description": "Biscuit's secret honey, so rare he only shares it with his dearest friends.", "category": "gift", "maxStack": 1, "icon": "gift-golden-honey" }
+  ]
+}

@@ -1,0 +1,65 @@
+{
+  "dialogue": [
+    {
+      "id": "dialogue-npc-pip-greet",
+      "npcId": "npc-pip",
+      "minFriendship": 0,
+      "maxFriendship": 1,
+      "lines": [
+        "Welcome to the Clover Post Office! I'm Pip, your post assistant!",
+        "We've got letters and parcels waiting for brave little couriers like you.",
+        "Want to take a delivery? The quest board has all the latest!"
+      ]
+    },
+    {
+      "id": "dialogue-npc-maple-greet",
+      "npcId": "npc-maple",
+      "minFriendship": 0,
+      "lines": [
+        "Oh! Hello... I didn't see you there.",
+        "These flowers are my pride and joy. Do you like them?",
+        "If you ever find a moonflower, I'd love to see it."
+      ]
+    },
+    {
+      "id": "dialogue-npc-biscuit-greet",
+      "npcId": "npc-biscuit",
+      "minFriendship": 0,
+      "lines": [
+        "Well hello there, friend! Welcome to my little corner of the forest.",
+        "The kettle's always on. Stay for a story?",
+        "I'm saving up for a proper café one day. A cozy one!"
+      ]
+    },
+    {
+      "id": "dialogue-npc-lumi-greet",
+      "npcId": "npc-lumi",
+      "minFriendship": 0,
+      "lines": [
+        "The light falls differently here at dusk...",
+        "I study how the forest remembers the moon.",
+        "A rare flower blooms only at night. I've been looking for it."
+      ]
+    },
+    {
+      "id": "dialogue-npc-moss-greet",
+      "npcId": "npc-moss",
+      "minFriendship": 0,
+      "lines": [
+        "Mm... hello? Oh, you're real. Nice to meet you.",
+        "I tend the burrows here. The rabbits are very opinionated.",
+        "If you find any shiny pebbles, I'd be most grateful."
+      ]
+    },
+    {
+      "id": "dialogue-npc-pip-greet-friend",
+      "npcId": "npc-pip",
+      "minFriendship": 2,
+      "maxFriendship": 4,
+      "lines": [
+        "There's my favorite courier! The parcels miss you when you're gone.",
+        "We make a great team, you and me."
+      ]
+    }
+  ]
+}

@@ -1,0 +1,18 @@
+{
+  "name": "paws-and-parcels",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "A cozy browser-based 2D RPG where players become a tiny animal courier in a magical forest.",
+  "scripts": {
+    "typecheck": "node node_modules/typescript/bin/tsc --noEmit",
+    "test": "node node_modules/vitest/vitest.mjs run",
+    "test:watch": "node node_modules/vitest/vitest.mjs",
+    "validate": "node scripts/validate-content.ts"
+  },
+  "devDependencies": {
+    "@types/node": "^26.1.2",
+    "typescript": "^7.0.2",
+    "vitest": "^4.1.10"
+  }
+}

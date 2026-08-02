@@ -1,0 +1,264 @@
+import { describe, expect, it } from "vitest";
+import type { ContentData } from "../../src/types/ContentData.ts";
+import { validateContent } from "../../src/systems/ContentValidator.ts";
+import type { NPC } from "../../src/types/NPCtypes.ts";
+import type { ItemDefinition } from "../../src/types/ItemTypes.ts";
+import type { QuestDefinition } from "../../src/types/QuestTypes.ts";
+import type { UpgradeDefinition } from "../../src/types/UpgradeTypes.ts";
+import type { DialogueSet } from "../../src/types/DialogueTypes.ts";
+
+// ---- Compile-time schema conformance (the JSON must satisfy the interfaces) ----
+import npcsJson from "../../src/data/npcs.json";
+import itemsJson from "../../src/data/items.json";
+import questsJson from "../../src/data/quests.json";
+import upgradesJson from "../../src/data/upgrades.json";
+import dialogueJson from "../../src/data/dialogue.json";
+
+const npcs = npcsJson as { npcs: NPC[] };
+const items = itemsJson as { items: ItemDefinition[] };
+const quests = questsJson as { quests: QuestDefinition[] };
+const upgrades = upgradesJson as { upgrades: UpgradeDefinition[] };
+const dialogue = dialogueJson as { dialogue: DialogueSet[] };
+
+function realContent(): ContentData {
+  return { npcs: npcs.npcs, items: items.items, quests: quests.quests, upgrades: upgrades.upgrades, dialogue: dialogue.dialogue };
+}
+
+/** Minimal valid dataset used as the base for rule-level tests. */
+function baseContent(): ContentData {
+  return {
+    npcs: [{ id: "npc-a", name: "A", species: "Fox", personality: "cheerful", role: "Tester", homeZone: "zone-post-office", homeTile: { x: 5, y: 5 } }],
+    items: [{ id: "item-x", name: "X", description: "d", category: "resource", maxStack: 10, icon: "i" }],
+    quests: [{ id: "quest-1", title: "T", description: "d", type: "delivery", giverId: "npc-a", targetId: "npc-a", requiredItemId: "item-x", requiredQuantity: 1, stampReward: 10, daily: true }],
+    upgrades: [{ id: "upgrade-1", name: "U", description: "d", cost: 50, effect: { type: "inventorySlots", value: 6 } }],
+    dialogue: [{ id: "dialogue-1", npcId: "npc-a", minFriendship: 0, lines: ["hi"] }],
+  };
+}
+
+describe("shipped content", () => {
+  it("validates the real JSON content with zero errors", () => {
+    const result = validateContent(realContent());
+    expect(result.ok).toBe(true);
+    expect(result.errors).toEqual([]);
+  });
+
+  it("has the expected MVP content counts", () => {
+    const data = realContent();
+    expect(data.npcs).toHaveLength(5);
+    expect(data.items).toHaveLength(20);
+    expect(data.quests).toHaveLength(19);
+    expect(data.upgrades).toHaveLength(3);
+    expect(data.dialogue).toHaveLength(6);
+  });
+});
+
+describe("unique IDs", () => {
+  it("rejects duplicate ids within a file", () => {
+    const data = baseContent();
+    data.npcs.push({ ...data.npcs[0] });
+    const result = validateContent(data);
+    expect(result.ok).toBe(false);
+    expect(result.errors.some((e) => e.includes("duplicate id"))).toBe(true);
+  });
+
+  it("rejects a record with a missing id", () => {
+    const data = baseContent();
+    data.npcs[0] = { ...data.npcs[0], id: "" };
+    expect(validateContent(data).ok).toBe(false);
+  });
+
+  it("rejects cross-file id collisions", () => {
+    const data = baseContent();
+    data.items[0] = { ...data.items[0], id: "npc-a" };
+    expect(validateContent(data).errors.some((e) => e.includes("cross-file id collision"))).toBe(true);
+  });
+});
+
+describe("NPC rules", () => {
+  it("rejects an unknown homeZone", () => {
+    const data = baseContent();
+    data.npcs[0] = { ...data.npcs[0], homeZone: "zone-nowhere" as never };
+    expect(validateContent(data).ok).toBe(false);
+  });
+
+  it("rejects a homeTile outside the zone bounds", () => {
+    const data = baseContent();
+    data.npcs[0] = { ...data.npcs[0], homeTile: { x: 31, y: 5 } }; // post office is 30x20
+    expect(validateContent(data).errors.some((e) => e.includes("outside"))).toBe(true);
+  });
+
+  it("rejects a non-numeric homeTile", () => {
+    const data = baseContent();
+    data.npcs[0] = { ...data.npcs[0], homeTile: { x: 1, y: "two" as never } };
+    expect(validateContent(data).ok).toBe(false);
+  });
+});
+
+describe("item rules", () => {
+  it("rejects an unknown category", () => {
+    const data = baseContent();
+    data.items[0] = { ...data.items[0], category: "tool" as never };
+    expect(validateContent(data).ok).toBe(false);
+  });
+
+  it("rejects maxStack below 1", () => {
+    const data = baseContent();
+    data.items[0] = { ...data.items[0], maxStack: 0 };
+    expect(validateContent(data).ok).toBe(false);
+  });
+
+  it("rejects favoriteBy referencing an unknown npc", () => {
+    const data = baseContent();
+    data.items[0] = { ...data.items[0], favoriteBy: ["npc-missing"] };
+    expect(validateContent(data).errors.some((e) => e.includes("favoriteBy"))).toBe(true);
+  });
+});
+
+describe("quest rules", () => {
+  it("rejects a giverId that is not a known npc", () => {
+    const data = baseContent();
+    data.quests[0] = { ...data.quests[0], giverId: "npc-missing" };
+    expect(validateContent(data).ok).toBe(false);
+  });
+
+  it("rejects a requiredItemId that is not a known item", () => {
+    const data = baseContent();
+    data.quests[0] = { ...data.quests[0], requiredItemId: "item-missing" };
+    expect(validateContent(data).ok).toBe(false);
+  });
+
+  it("warns (not fails) when requiredItemId lacks requiredQuantity", () => {
+    const data = baseContent();
+    const quest = { ...data.quests[0] };
+    delete (quest as Partial<QuestDefinition>).requiredQuantity;
+    data.quests[0] = quest;
+    const result = validateContent(data);
+    expect(result.ok).toBe(true);
+    expect(result.warnings.some((w) => w.includes("no requiredQuantity"))).toBe(true);
+  });
+
+  it("requires findAt for errands with a requiredItemId", () => {
+    const data = baseContent();
+    data.quests[0] = { ...data.quests[0], type: "errand" };
+    expect(validateContent(data).errors.some((e) => e.includes("findAt"))).toBe(true);
+  });
+
+  it("rejects daily quests gated on friendship (impossible dailies)", () => {
+    const data = baseContent();
+    data.quests[0] = {
+      ...data.quests[0],
+      type: "errand",
+      findAt: "the woods",
+      requiresFriendship: { npcId: "npc-a", level: 2 },
+      daily: true,
+    };
+    expect(validateContent(data).errors.some((e) => e.includes("daily quest cannot"))).toBe(true);
+  });
+
+  it("rejects rewardItemId that is not a known item", () => {
+    const data = baseContent();
+    data.quests[0] = {
+      ...data.quests[0],
+      requiredItemId: undefined,
+      requiredQuantity: undefined,
+      type: "errand",
+      rewardItemId: "item-missing",
+      requiresFriendship: { npcId: "npc-a", level: 4 },
+      daily: false,
+    };
+    expect(validateContent(data).errors.some((e) => e.includes("rewardItemId"))).toBe(true);
+  });
+
+  it("rejects a resource/delivery item as a friendship reward", () => {
+    const data = baseContent();
+    data.quests[0] = {
+      ...data.quests[0],
+      requiredItemId: undefined,
+      requiredQuantity: undefined,
+      type: "errand",
+      rewardItemId: "item-x",
+      requiresFriendship: { npcId: "npc-a", level: 4 },
+      daily: false,
+    };
+    expect(validateContent(data).errors.some((e) => e.includes("must be gift/cosmetic/quest"))).toBe(true);
+  });
+
+  it("rejects rewardItemId coexisting with requiredItemId/findAt", () => {
+    const data = baseContent();
+    data.quests[0] = { ...data.quests[0], rewardItemId: "item-x" };
+    expect(validateContent(data).errors.some((e) => e.includes("cannot coexist"))).toBe(true);
+  });
+
+  it("warns when rewardItemId lacks a friendship gate", () => {
+    const data = baseContent();
+    data.quests[0] = {
+      ...data.quests[0],
+      requiredItemId: undefined,
+      requiredQuantity: undefined,
+      type: "errand",
+      rewardItemId: "item-x",
+      requiresFriendship: undefined,
+      daily: false,
+    };
+    const result = validateContent(data);
+    expect(result.warnings.some((w) => w.includes("no requiresFriendship gate"))).toBe(true);
+  });
+
+  it("rejects non-positive stamp rewards", () => {
+    const data = baseContent();
+    data.quests[0] = { ...data.quests[0], stampReward: 0 };
+    expect(validateContent(data).ok).toBe(false);
+  });
+
+  it("rejects a friendship gate with an out-of-range level", () => {
+    const data = baseContent();
+    data.quests[0] = { ...data.quests[0], requiresFriendship: { npcId: "npc-a", level: 9 } };
+    expect(validateContent(data).ok).toBe(false);
+  });
+
+  it("rejects additionalStops referencing an unknown npc", () => {
+    const data = baseContent();
+    data.quests[0] = { ...data.quests[0], additionalStops: ["npc-missing"] };
+    expect(validateContent(data).ok).toBe(false);
+  });
+});
+
+describe("upgrade rules", () => {
+  it("rejects a non-positive cost", () => {
+    const data = baseContent();
+    data.upgrades[0] = { ...data.upgrades[0], cost: 0 };
+    expect(validateContent(data).ok).toBe(false);
+  });
+
+  it("rejects an effect without a numeric value", () => {
+    const data = baseContent();
+    data.upgrades[0] = { ...data.upgrades[0], effect: { type: "speedMultiplier", value: "fast" as never } };
+    expect(validateContent(data).ok).toBe(false);
+  });
+});
+
+describe("dialogue rules", () => {
+  it("rejects dialogue for an unknown npc", () => {
+    const data = baseContent();
+    data.dialogue[0] = { ...data.dialogue[0], npcId: "npc-missing" };
+    expect(validateContent(data).ok).toBe(false);
+  });
+
+  it("rejects a minFriendship outside 0-4", () => {
+    const data = baseContent();
+    data.dialogue[0] = { ...data.dialogue[0], minFriendship: 5 };
+    expect(validateContent(data).ok).toBe(false);
+  });
+
+  it("rejects maxFriendship below minFriendship", () => {
+    const data = baseContent();
+    data.dialogue[0] = { ...data.dialogue[0], minFriendship: 3, maxFriendship: 1 };
+    expect(validateContent(data).ok).toBe(false);
+  });
+
+  it("rejects empty dialogue line sets", () => {
+    const data = baseContent();
+    data.dialogue[0] = { ...data.dialogue[0], lines: [] };
+    expect(validateContent(data).ok).toBe(false);
+  });
+});

@@ -1,0 +1,25 @@
+{
+  "upgrades": [
+    {
+      "id": "upgrade-bigger-satchel",
+      "name": "Bigger Satchel",
+      "description": "Increases inventory capacity by 6 slots.",
+      "cost": 50,
+      "effect": { "type": "inventorySlots", "value": 6 }
+    },
+    {
+      "id": "upgrade-comfy-boots",
+      "name": "Comfy Boots",
+      "description": "Increases movement speed.",
+      "cost": 75,
+      "effect": { "type": "speedMultiplier", "value": 1.2 }
+    },
+    {
+      "id": "upgrade-express-badge",
+      "name": "Express Badge",
+      "description": "Unlocks additional daily delivery quests.",
+      "cost": 100,
+      "effect": { "type": "unlockQuests", "value": 2 }
+    }
+  ]
+}

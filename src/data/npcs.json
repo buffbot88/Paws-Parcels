@@ -1,0 +1,49 @@
+{
+  "npcs": [
+    {
+      "id": "npc-pip",
+      "name": "Pip",
+      "species": "Hedgehog",
+      "personality": "energetic",
+      "role": "Post office assistant",
+      "homeZone": "zone-post-office",
+      "homeTile": { "x": 5, "y": 5 }
+    },
+    {
+      "id": "npc-maple",
+      "name": "Maple",
+      "species": "Deer",
+      "personality": "shy",
+      "role": "Florist",
+      "homeZone": "zone-bramble-patch",
+      "homeTile": { "x": 6, "y": 16 }
+    },
+    {
+      "id": "npc-biscuit",
+      "name": "Biscuit",
+      "species": "Bear",
+      "personality": "cheerful",
+      "role": "Café owner",
+      "homeZone": "zone-bramble-patch",
+      "homeTile": { "x": 32, "y": 7 }
+    },
+    {
+      "id": "npc-lumi",
+      "name": "Lumi",
+      "species": "Moth",
+      "personality": "mysterious",
+      "role": "Forest researcher",
+      "homeZone": "zone-bramble-patch",
+      "homeTile": { "x": 20, "y": 18 }
+    },
+    {
+      "id": "npc-moss",
+      "name": "Moss",
+      "species": "Frog",
+      "personality": "sleepy",
+      "role": "Gardener",
+      "homeZone": "zone-bramble-patch",
+      "homeTile": { "x": 4, "y": 8 }
+    }
+  ]
+}
