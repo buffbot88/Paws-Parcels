@@ -19,7 +19,12 @@ function load<K extends keyof ContentData>(name: string, key: K): ContentData[K]
     console.error(`Missing data file: ${name}`);
     process.exit(1);
   }
-  return JSON.parse(readFileSync(path, "utf8"))[key];
+  try {
+    return JSON.parse(readFileSync(path, "utf8"))[key];
+  } catch (e) {
+    console.error(`Invalid JSON in ${name}: ${e instanceof Error ? e.message : String(e)}`);
+    process.exit(1);
+  }
 }
 
 const data: ContentData = {

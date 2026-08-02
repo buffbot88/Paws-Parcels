@@ -10,7 +10,7 @@ export interface ValidationResult {
   ok: boolean;
 }
 
-export const ZONE_DIMS: Record<ZoneId, { w: number; h: number }> = {
+const ZONE_DIMS: Record<ZoneId, { w: number; h: number }> = {
   "zone-post-office": { w: 30, h: 20 },
   "zone-bramble-patch": { w: 40, h: 26 },
 };

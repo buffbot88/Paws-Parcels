@@ -3,8 +3,14 @@
   "version": "0.1.0",
   "private": true,
   "type": "module",
+  "engines": {
+    "node": ">=23.6"
+  },
   "description": "A cozy browser-based 2D RPG where players become a tiny animal courier in a magical forest.",
   "scripts": {
+    "dev": "node node_modules/vite/bin/vite.js",
+    "build": "node node_modules/vite/bin/vite.js build",
+    "preview": "node node_modules/vite/bin/vite.js preview",
     "typecheck": "node node_modules/typescript/bin/tsc --noEmit",
     "test": "node node_modules/vitest/vitest.mjs run",
     "test:watch": "node node_modules/vitest/vitest.mjs",
@@ -13,6 +19,10 @@
   "devDependencies": {
     "@types/node": "^26.1.2",
     "typescript": "^7.0.2",
+    "vite": "^8.2.0",
     "vitest": "^4.1.10"
+  },
+  "dependencies": {
+    "phaser": "^4.2.1"
   }
 }

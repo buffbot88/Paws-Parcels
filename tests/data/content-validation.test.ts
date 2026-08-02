@@ -8,27 +8,52 @@ import type { UpgradeDefinition } from "../../src/types/UpgradeTypes.ts";
 import type { DialogueSet } from "../../src/types/DialogueTypes.ts";
 
 // ---- Compile-time schema conformance (the JSON must satisfy the interfaces) ----
+// TS widens string literals when importing JSON, so we widen the interface unions
+// and `satisfies` still fails typecheck on any missing/renamed/retyped field.
+type Widen<T> = T extends string ? string
+  : T extends number ? number
+  : T extends boolean ? boolean
+  : T extends readonly (infer U)[] ? Widen<U>[]
+  : T extends object ? { [K in keyof T]: Widen<T[K]> }
+  : T;
+
 import npcsJson from "../../src/data/npcs.json";
 import itemsJson from "../../src/data/items.json";
 import questsJson from "../../src/data/quests.json";
 import upgradesJson from "../../src/data/upgrades.json";
 import dialogueJson from "../../src/data/dialogue.json";
 
-const npcs = npcsJson as { npcs: NPC[] };
-const items = itemsJson as { items: ItemDefinition[] };
-const quests = questsJson as { quests: QuestDefinition[] };
-const upgrades = upgradesJson as { upgrades: UpgradeDefinition[] };
-const dialogue = dialogueJson as { dialogue: DialogueSet[] };
+npcsJson satisfies { npcs: Widen<NPC>[] };
+itemsJson satisfies { items: Widen<ItemDefinition>[] };
+questsJson satisfies { quests: Widen<QuestDefinition>[] };
+upgradesJson satisfies { upgrades: Widen<UpgradeDefinition>[] };
+dialogueJson satisfies { dialogue: Widen<DialogueSet>[] };
+
+const npcs = npcsJson as { npcs: Widen<NPC>[] };
+const items = itemsJson as { items: Widen<ItemDefinition>[] };
+const quests = questsJson as { quests: Widen<QuestDefinition>[] };
+const upgrades = upgradesJson as { upgrades: Widen<UpgradeDefinition>[] };
+const dialogue = dialogueJson as { dialogue: Widen<DialogueSet>[] };
 
 function realContent(): ContentData {
-  return { npcs: npcs.npcs, items: items.items, quests: quests.quests, upgrades: upgrades.upgrades, dialogue: dialogue.dialogue };
+  // Conformance to the strict interfaces is guaranteed by the `satisfies` checks above.
+  return {
+    npcs: npcs.npcs as unknown as NPC[],
+    items: items.items as unknown as ItemDefinition[],
+    quests: quests.quests as unknown as QuestDefinition[],
+    upgrades: upgrades.upgrades as unknown as UpgradeDefinition[],
+    dialogue: dialogue.dialogue as unknown as DialogueSet[],
+  };
 }
 
 /** Minimal valid dataset used as the base for rule-level tests. */
 function baseContent(): ContentData {
   return {
     npcs: [{ id: "npc-a", name: "A", species: "Fox", personality: "cheerful", role: "Tester", homeZone: "zone-post-office", homeTile: { x: 5, y: 5 } }],
-    items: [{ id: "item-x", name: "X", description: "d", category: "resource", maxStack: 10, icon: "i" }],
+    items: [
+      { id: "item-x", name: "X", description: "d", category: "resource", maxStack: 10, icon: "i" },
+      { id: "item-gift", name: "Gift", description: "g", category: "gift", maxStack: 1, icon: "i" },
+    ],
     quests: [{ id: "quest-1", title: "T", description: "d", type: "delivery", giverId: "npc-a", targetId: "npc-a", requiredItemId: "item-x", requiredQuantity: 1, stampReward: 10, daily: true }],
     upgrades: [{ id: "upgrade-1", name: "U", description: "d", cost: 50, effect: { type: "inventorySlots", value: 6 } }],
     dialogue: [{ id: "dialogue-1", npcId: "npc-a", minFriendship: 0, lines: ["hi"] }],
@@ -91,6 +116,12 @@ describe("NPC rules", () => {
     const data = baseContent();
     data.npcs[0] = { ...data.npcs[0], homeTile: { x: 1, y: "two" as never } };
     expect(validateContent(data).ok).toBe(false);
+  });
+
+  it("rejects a missing name", () => {
+    const data = baseContent();
+    data.npcs[0] = { ...data.npcs[0], name: "" };
+    expect(validateContent(data).errors.some((e) => e.includes("missing name"))).toBe(true);
   });
 });
 
@@ -185,8 +216,11 @@ describe("quest rules", () => {
 
   it("rejects rewardItemId coexisting with requiredItemId/findAt", () => {
     const data = baseContent();
-    data.quests[0] = { ...data.quests[0], rewardItemId: "item-x" };
-    expect(validateContent(data).errors.some((e) => e.includes("cannot coexist"))).toBe(true);
+    data.quests[0] = { ...data.quests[0], rewardItemId: "item-gift" };
+    const result = validateContent(data);
+    expect(result.errors.some((e) => e.includes("cannot coexist"))).toBe(true);
+    // No unrelated category error — isolation.
+    expect(result.errors.some((e) => e.includes("must be gift/cosmetic/quest"))).toBe(false);
   });
 
   it("warns when rewardItemId lacks a friendship gate", () => {
@@ -196,7 +230,7 @@ describe("quest rules", () => {
       requiredItemId: undefined,
       requiredQuantity: undefined,
       type: "errand",
-      rewardItemId: "item-x",
+      rewardItemId: "item-gift",
       requiresFriendship: undefined,
       daily: false,
     };
@@ -220,6 +254,12 @@ describe("quest rules", () => {
     const data = baseContent();
     data.quests[0] = { ...data.quests[0], additionalStops: ["npc-missing"] };
     expect(validateContent(data).ok).toBe(false);
+  });
+
+  it("rejects a non-string findAt", () => {
+    const data = baseContent();
+    data.quests[0] = { ...data.quests[0], type: "errand", findAt: 42 as never };
+    expect(validateContent(data).errors.some((e) => e.includes("findAt must be a string"))).toBe(true);
   });
 });
 
