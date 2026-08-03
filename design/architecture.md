@@ -9,7 +9,7 @@
 ```text
 ┌────────────────────────────┐        ┌────────────────────────────────────┐        ┌──────────┐
 │  Browser client (Phaser 4) │  HTTPS  │   API Server (auth, character,     │        │          │
-│  - renders server state    │ ──────► │   content, health, static content) │  SQL   │  MySQL   │
+│  - renders server state    │ ──────► │   content, health, static content) │  SQL   │  SQLite   │
 │  - sends intents (WS)      │  WSS    │────────────────────────────────────│ ─────► │  (single │
 │  - local non-auth settings │ ──────► │  Game Server (authoritative)       │        │  writer) │
 └────────────────────────────┘        │  - zone sync, movement validation  │        └──────────┘
@@ -18,7 +18,7 @@
                                       └────────────────────────────────────┘
 ```
 
-- The **browser never connects to MySQL** — all persistence flows through the server.
+- The **browser never connects to SQLite** — all persistence flows through the server.
 - API + game logic may be one process at MVP (vertical slice), split into services later.
 
 ## 2. Responsibilities
@@ -38,10 +38,10 @@
   range, quest prerequisites, item ownership, delivery targets.
 - Compute combat outcomes and broadcast `combat_event`.
 - Maintain per-zone player presence and broadcast `player_snapshot` at the tick rate.
-- Persist progression to MySQL (via migrations, transactions, and audit events).
+- Persist progression to SQLite (via migrations, transactions, and audit events).
 - Run the server tick/update loop (see §7).
 
-### MySQL
+### SQLite
 - Persists accounts, sessions, characters, stats, inventory, quests, friendships,
   zones, dungeon runs, monster state (where persistent), and audit/economy events.
 - Serves as the **single writer** for player state; no other process writes.
@@ -82,7 +82,7 @@ HTTP is for auth, character management, and content. All real-time gameplay is W
 ## 5. Authentication flow
 
 ```text
-client ── POST /api/auth/login ──► server ──► MySQL (verify hash)
+client ── POST /api/auth/login ──► server ──► SQLite (verify hash)
 server ── { accessToken (JWT, 15m), refreshToken (random, 7d) } ──► client
 client stores tokens (localStorage/sessionStorage; gameplay state stays server-side)
 client ── GET /api/ws-token ──► server ──► { wsToken (30s) }
@@ -91,7 +91,7 @@ server validates wsToken → binds socket to account+character → sends "authen
 ```
 
 - **Passwords:** hashed with **argon2id** (or bcrypt) — never plain text, never logged.
-- **Refresh tokens:** random, stored hashed in MySQL (`refresh_tokens`), rotated on each
+- **Refresh tokens:** random, stored hashed in SQLite (`refresh_tokens`), rotated on each
   refresh, revocable on logout/compromise.
 - **Access tokens:** short-lived JWTs signed with a server secret from env.
 - **Secrets:** `JWT_SECRET`, DB credentials, token-pepper — env/secrets store only;
@@ -120,8 +120,8 @@ server validates wsToken → binds socket to account+character → sends "authen
 - **Combat:** cooldowns and damage resolved on the tick when the `attack` intent is
   processed; `combat_event` broadcast immediately.
 - **Persistence:** important transitions (quest complete, loot, level-up, purchase) are
-  written to MySQL immediately; position is persisted periodically (e.g. every 5 s) and
-  on zone leave/logout.
+  written to SQLite immediately; position is persisted periodically (10 s, only when the
+  player has moved since the last write) and on zone leave/logout.
 
 ## 8. Validation & anti-cheat boundaries
 

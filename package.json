@@ -6,7 +6,7 @@
   "engines": {
     "node": ">=23.6"
   },
-  "description": "Paws & Parcels — cozy browser-based 2.5D online RPG (server-authoritative, MySQL-backed, multiplayer).",
+  "description": "Paws & Parcels — cozy browser-based 2.5D online RPG (server-authoritative, SQLite-backed, multiplayer).",
   "scripts": {
     "dev": "node node_modules/vite/bin/vite.js",
     "build": "node node_modules/vite/bin/vite.js build",
@@ -32,7 +32,6 @@
   "dependencies": {
     "bcryptjs": "^2.4.3",
     "jose": "^5.9.0",
-    "mysql2": "^3.14.0",
     "phaser": "^4.2.1",
     "uuid": "^11.1.0",
     "ws": "^8.21.1"

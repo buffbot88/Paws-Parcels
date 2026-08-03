@@ -1,0 +1,72 @@
+{
+  "id": "zone-clover-village",
+  "name": "Clover Village",
+  "width": 30,
+  "height": 20,
+  "rows": [
+    "TTTTTTTTTTTTTTTTTTTTTTTTTTTTTT",
+    "TGGGGGGGGGGGGGGGGGGGGGGGGGGGGT",
+    "TGGGWWWWWWWWWWWWGGGGGGGGGGGGGT",
+    "TGGGWFFFFFFFFFFWGGGGGGGGGGGGGT",
+    "TGGGWFFFFFFFFFFWGGGGGGGGGGGGGT",
+    "TGGGWFFFFFFFFFFWGGGGGGGGGGGGGT",
+    "TGGGWWWWWWWWWWWWGGGGGGGGGGGGGT",
+    "TGGGGGGGGGGGGGGGGGGGGGGGGGGGGT",
+    "TGGGG~~~~~GGGGGGGGGGGGGXXXXXGT",
+    "TGGGG~~~~~GGGGGGGGGGGGGXXXXXGT",
+    "TGGGG~~~~~GGGGGGGGGGGGGXXXXXGT",
+    "TGGGGGGGGGGGGGGGGGGGGGGGGGGGGT",
+    "TGGGGGGGGGGGPPPPPPPGGGGGGGGGGT",
+    "TGGGGGGGGGGGGPGGGGGGGGGGGGGGGT",
+    "TGGGGGGGGGGGGPGGGGGGGGGGGGGGGT",
+    "TGGGGBBGGGGGGPGGGGGGGBBGGGGGGT",
+    "TGGGGBBGGGGGGGGGGGGGGBBGGGGGGT",
+    "TGGGGBBGGGGGGGGGGGGGGBBGGGGGGT",
+    "TGGGGGGGGGGGGGGGGGGGGGGGGGGGGT",
+    "TTTTTTTTTTTTTTTTTTTTTTTTTTTTTT"
+  ],
+  "spawn": { "x": 15, "y": 13 },
+  "transitions": [],
+  "interactables": [
+    {
+      "id": "object-counter",
+      "kind": "counter",
+      "label": "Post Office Counter",
+      "x": 6,
+      "y": 4,
+      "lines": ["The counter is polished and tidy. Deliveries begin here when the postmaster is ready."]
+    },
+    {
+      "id": "object-quest-board",
+      "kind": "quest-board",
+      "label": "Quest Board",
+      "x": 12,
+      "y": 4,
+      "lines": ["A corkboard of quest cards. The newest ones aren't posted yet — check back soon."]
+    },
+    {
+      "id": "object-mailbox",
+      "kind": "mailbox",
+      "label": "Mailbox",
+      "x": 18,
+      "y": 14,
+      "lines": ["Your little green mailbox. It's empty right now — nothing to claim yet."]
+    },
+    {
+      "id": "object-shop",
+      "kind": "shop",
+      "label": "Shop Shelf",
+      "x": 24,
+      "y": 14,
+      "lines": ["The shop shelves are stocked with shiny things… for now."]
+    },
+    {
+      "id": "object-welcome-sign",
+      "kind": "sign",
+      "label": "Welcome Sign",
+      "x": 13,
+      "y": 17,
+      "lines": ["Welcome to Clover Village! Letters, parcels, and very organized hedgehogs."]
+    }
+  ]
+}

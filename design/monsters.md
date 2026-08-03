@@ -8,9 +8,10 @@
 
 ## 1. Spawn zone rules
 
-- **Monsters cannot spawn inside the protected Main Village** (`zone-post-office` is
-  `is_safe: true`).
-- Outdoor maps (Bramble Patch) contain monsters by zone + level range.
+- **Monsters cannot spawn inside the protected Main Village** (`zone-clover-village`
+  is `is_safe: true`).
+- Outdoor maps (Bramble Patch — a fresh map + zone key in Phase 3) contain monsters
+  by zone + level range.
 - Monsters are placed on the map by the server from spawn points defined in the zone data
   (or a global monster-spawn configuration).
 - Spawn points are fixed per zone; each spawn point has a monster type, respawn timer,

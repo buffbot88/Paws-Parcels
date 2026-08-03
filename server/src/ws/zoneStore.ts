@@ -13,6 +13,12 @@ export interface ZonePlayer {
   /** Current server-authoritative tile position. */
   pos: { x: number; y: number };
   connected: boolean;
+  /** Time of the last accepted move (ms epoch) — speed-cap bookkeeping. */
+  lastMoveAt: number;
+  /** True after an accepted move — marks the position for DB persistence. */
+  dirty: boolean;
+  /** Time of the last periodic DB write (ms epoch) — persistence throttle. */
+  lastPersistAt: number;
 }
 
 export interface ZoneSnapshotPlayer {

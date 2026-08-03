@@ -1,5 +1,7 @@
-import type { RowDataPacket } from "mysql2";
-import { getPool } from "../db/connection.ts";
+import { getDb } from "../db/connection.ts";
+
+/** A row object as returned by node:sqlite (null | number | bigint | string). */
+type SqlRow = Record<string, unknown>;
 
 /** Zone row as stored in the `zones` table (seeded content). */
 export interface ZoneRow {
@@ -17,26 +19,26 @@ export interface ZoneRow {
 }
 
 /**
- * Look up a zone by its stable key (e.g. "zone-post-office"). The zones
+ * Look up a zone by its stable key (e.g. "zone-clover-village"). The zones
  * table is the authoritative source for a zone's default spawn — character
  * creation and future zone-metadata endpoints read from here rather than
  * duplicating coordinates.
  */
 export async function getZoneByKey(key: string): Promise<ZoneRow | null> {
-  const pool = getPool();
-  const [rows] = await pool.query<RowDataPacket[]>(
-    `SELECT id, \`key\`, display_name, kind, map_data_id,
-            width_tiles, height_tiles, default_spawn_x, default_spawn_y,
-            max_players, is_safe
-       FROM zones
-      WHERE \`key\` = ?
-      LIMIT 1`,
-    [key],
-  );
-  return rows.length === 0 ? null : rowToZone(rows[0]);
+  const row = getDb()
+    .prepare(
+      `SELECT id, \`key\`, display_name, kind, map_data_id,
+              width_tiles, height_tiles, default_spawn_x, default_spawn_y,
+              max_players, is_safe
+         FROM zones
+        WHERE \`key\` = ?
+        LIMIT 1`,
+    )
+    .get(key) as SqlRow | undefined;
+  return row === undefined ? null : rowToZone(row);
 }
 
-function rowToZone(row: RowDataPacket): ZoneRow {
+function rowToZone(row: SqlRow): ZoneRow {
   return {
     id: Number(row.id),
     key: String(row.key ?? ""),

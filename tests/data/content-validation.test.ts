@@ -49,7 +49,7 @@ function realContent(): ContentData {
 /** Minimal valid dataset used as the base for rule-level tests. */
 function baseContent(): ContentData {
   return {
-    npcs: [{ id: "npc-a", name: "A", species: "Fox", personality: "cheerful", role: "Tester", homeZone: "zone-post-office", homeTile: { x: 5, y: 5 } }],
+    npcs: [{ id: "npc-a", name: "A", species: "Fox", personality: "cheerful", role: "Tester", homeZone: "zone-clover-village", homeTile: { x: 5, y: 5 } }],
     items: [
       { id: "item-x", name: "X", description: "d", category: "resource", maxStack: 10, icon: "i" },
       { id: "item-gift", name: "Gift", description: "g", category: "gift", maxStack: 1, icon: "i" },
@@ -108,7 +108,7 @@ describe("NPC rules", () => {
 
   it("rejects a homeTile outside the zone bounds", () => {
     const data = baseContent();
-    data.npcs[0] = { ...data.npcs[0], homeTile: { x: 31, y: 5 } }; // post office is 30x20
+    data.npcs[0] = { ...data.npcs[0], homeTile: { x: 31, y: 5 } }; // clover village is 30x20
     expect(validateContent(data).errors.some((e) => e.includes("outside"))).toBe(true);
   });
 
@@ -334,7 +334,7 @@ describe("dialogue rules", () => {
       species: "Owl",
       personality: "quiet",
       role: "Tester",
-      homeZone: "zone-post-office",
+      homeZone: "zone-clover-village",
       homeTile: { x: 5, y: 5 },
     });
     const result = validateContent(data);

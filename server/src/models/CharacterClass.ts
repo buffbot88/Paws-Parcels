@@ -1,5 +1,7 @@
-import type { RowDataPacket } from "mysql2";
-import { getPool } from "../db/connection.ts";
+import { getDb } from "../db/connection.ts";
+
+/** A row object as returned by node:sqlite (null | number | bigint | string). */
+type SqlRow = Record<string, unknown>;
 
 /** Class template row from the `character_classes` table (seeded content). */
 export interface CharacterClassRow {
@@ -21,13 +23,14 @@ export interface CharacterClassRow {
  * Used by the character-creation screen and by createCharacter validation.
  */
 export async function getCharacterClasses(): Promise<CharacterClassRow[]> {
-  const pool = getPool();
-  const [rows] = await pool.query<RowDataPacket[]>(
-    `SELECT id, \`key\`, display_name, animal, \`role\`, primary_resource,
-            resource_max, resource_regen_per_sec, base_stats, description
-       FROM character_classes
-      ORDER BY id ASC`,
-  );
+  const rows = getDb()
+    .prepare(
+      `SELECT id, \`key\`, display_name, animal, \`role\`, primary_resource,
+              resource_max, resource_regen_per_sec, base_stats, description
+         FROM character_classes
+        ORDER BY id ASC`,
+    )
+    .all() as SqlRow[];
   return rows.map(rowToClass);
 }
 
@@ -35,16 +38,16 @@ export async function getCharacterClasses(): Promise<CharacterClassRow[]> {
 export async function getCharacterClassById(
   classId: number,
 ): Promise<CharacterClassRow | null> {
-  const pool = getPool();
-  const [rows] = await pool.query<RowDataPacket[]>(
-    `SELECT id, \`key\`, display_name, animal, \`role\`, primary_resource,
-            resource_max, resource_regen_per_sec, base_stats, description
-       FROM character_classes
-      WHERE id = ?
-      LIMIT 1`,
-    [classId],
-  );
-  return rows.length === 0 ? null : rowToClass(rows[0]);
+  const row = getDb()
+    .prepare(
+      `SELECT id, \`key\`, display_name, animal, \`role\`, primary_resource,
+              resource_max, resource_regen_per_sec, base_stats, description
+         FROM character_classes
+        WHERE id = ?
+        LIMIT 1`,
+    )
+    .get(classId) as SqlRow | undefined;
+  return row === undefined ? null : rowToClass(row);
 }
 
 /** Shape the client sees in GET /api/classes (no internal columns). */
@@ -63,7 +66,7 @@ export function toPublicClass(c: CharacterClassRow): Record<string, unknown> {
   };
 }
 
-function rowToClass(row: RowDataPacket): CharacterClassRow {
+function rowToClass(row: SqlRow): CharacterClassRow {
   return {
     id: Number(row.id),
     key: String(row.key ?? ""),

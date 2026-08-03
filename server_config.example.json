@@ -10,11 +10,8 @@
     ]
   },
   "db": {
-    "host": "localhost",
-    "port": 3306,
-    "user": "paws_user",
-    "password": "REPLACE_ME_DB_PASSWORD",
-    "database": "paws_and_parcels"
+    "_comment_file": "Path to the SQLite database file (relative to the project root). The file is created + migrated on first server boot and is committed to the repo.",
+    "file": "server/data/paws-and-parcels.sqlite"
   },
   "auth": {
     "jwtSecret": "REPLACE_ME_JWT_SECRET_AT_LEAST_32_CHARS_LONG",

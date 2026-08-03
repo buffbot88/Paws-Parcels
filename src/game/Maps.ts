@@ -1,6 +1,5 @@
 import { ZoneKeys } from "./GameConstants.ts";
-import postOffice from "../data/maps/post-office.json" with { type: "json" };
-import bramblePatch from "../data/maps/bramble-patch.json" with { type: "json" };
+import cloverVillage from "../data/maps/clover-village.json" with { type: "json" };
 
 /** A tile-coordinate point on a map. */
 export interface MapPoint {
@@ -55,11 +54,9 @@ export interface MapData {
 
 /** Expected dimensions from design/world-map.md (enforced by the map validator). */
 export const MAP_DIMENSIONS: Readonly<Record<string, { width: number; height: number }>> = {
-  [ZoneKeys.PostOffice]: { width: 30, height: 20 },
-  [ZoneKeys.Bramble]: { width: 40, height: 26 },
+  [ZoneKeys.CloverVillage]: { width: 30, height: 20 },
 };
 
 export const MAPS: Readonly<Record<string, MapData>> = {
-  [ZoneKeys.PostOffice]: postOffice as MapData,
-  [ZoneKeys.Bramble]: bramblePatch as MapData,
+  [ZoneKeys.CloverVillage]: cloverVillage as MapData,
 };

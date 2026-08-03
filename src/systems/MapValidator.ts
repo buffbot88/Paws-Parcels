@@ -110,6 +110,20 @@ function tileCollides(map: MapData, x: number, y: number): boolean {
   return tile?.collides ?? true;
 }
 
+/** True when the tile at (x, y) is in bounds and walkable. */
+export function isWalkableTile(map: MapData, x: number, y: number): boolean {
+  return !tileCollides(map, x, y);
+}
+
+/**
+ * A spawn point guaranteed to be in bounds and walkable — falls back to the
+ * map's default spawn when the given point is colliding or out of bounds
+ * (used by OverworldScene so stale saved positions never wedge the courier).
+ */
+export function sanitizeSpawn(map: MapData, spawn: MapPoint): MapPoint {
+  return isWalkableTile(map, spawn.x, spawn.y) ? spawn : map.spawn;
+}
+
 /**
  * Validates that every NPC stands on a non-colliding tile of their home zone
  * (Phase 3: NPCs are placed at homeTile and must be reachable on foot).

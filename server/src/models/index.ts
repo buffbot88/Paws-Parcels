@@ -7,10 +7,14 @@ export {
 } from "./Account.ts";
 export {
   type CharacterRow,
+  type CharacterSessionRow,
   type CreateCharacterResult,
   createCharacter,
+  getCharacterById,
+  getCharacterWithClass,
   getCharactersByAccountId,
   toPublicCharacter,
+  updateCharacterPosition,
 } from "./Character.ts";
 export {
   type CharacterClassRow,

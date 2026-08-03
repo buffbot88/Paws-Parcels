@@ -10,6 +10,8 @@ import { logger } from "../middleware/logger.ts";
 const DEFAULT_TICK_MS = 50; // 20 Hz
 const DEFAULT_GRACE_MS = 60_000;
 const DEFAULT_TILES_PER_SEC = 180 / 48;
+/** How often a moving player's position is flushed to the DB (design/architecture.md §9). */
+const DEFAULT_PERSIST_INTERVAL_MS = 10_000;
 
 /** A character as loaded for a WS session (name/class/position). */
 export interface CharacterSession {
@@ -39,6 +41,10 @@ export interface GameServerDeps {
   tickMs?: number;
   graceMs?: number;
   tilesPerSecond?: number;
+  /** Override the derived move interval (tests only). */
+  minMoveIntervalMs?: number;
+  /** Min ms between periodic position writes per player (tests only). */
+  persistIntervalMs?: number;
 }
 
 interface Session {
@@ -64,13 +70,15 @@ export class GameServer {
   private tickMs: number;
   private graceMs: number;
   private minMoveIntervalMs: number;
+  private persistIntervalMs: number;
 
   constructor(private deps: GameServerDeps) {
     this.tickMs = deps.tickMs ?? DEFAULT_TICK_MS;
     this.graceMs = deps.graceMs ?? DEFAULT_GRACE_MS;
-    this.minMoveIntervalMs = moveIntervalMsForSpeed(
-      deps.tilesPerSecond ?? DEFAULT_TILES_PER_SEC,
-    );
+    this.minMoveIntervalMs =
+      deps.minMoveIntervalMs ??
+      moveIntervalMsForSpeed(deps.tilesPerSecond ?? DEFAULT_TILES_PER_SEC);
+    this.persistIntervalMs = deps.persistIntervalMs ?? DEFAULT_PERSIST_INTERVAL_MS;
   }
 
   /** Attach to an HTTP server and start the snapshot tick. */
@@ -103,6 +111,15 @@ export class GameServer {
       },
       close: () => ws.close(),
     };
+    this.registerSocket(socket);
+    ws.on("message", (raw: RawData) => {
+      void this.onMessage(socket, raw);
+    });
+    ws.on("close", () => this.onClose(socket));
+  }
+
+  /** Public for tests: register a fake socket as a new session. */
+  registerSocket(socket: SocketLike): void {
     this.sessions.set(socket, {
       socket,
       accountId: null,
@@ -111,21 +128,29 @@ export class GameServer {
       authenticated: false,
       lastMoveAt: 0,
     });
-    ws.on("message", (raw: RawData) => this.onMessage(socket, raw));
-    ws.on("close", () => this.onClose(socket));
   }
 
   /** Public for tests: run one snapshot tick. */
   runTick(): void {
+    const now = Date.now();
     for (const zoneId of this.zones.zoneIds()) {
       const players = this.zones.snapshot(zoneId);
       if (players.length === 0) continue;
       this.broadcast(zoneId, { type: "player_snapshot", players });
+      // Best-effort periodic persistence: a moving player's position is
+      // flushed at most once per interval (and immediately on leave/grace).
+      for (const player of this.zones.players(zoneId)) {
+        if (!player.connected || !player.dirty) continue;
+        if (now - player.lastPersistAt < this.persistIntervalMs) continue;
+        this.persist(player.characterId, zoneId, player.pos);
+        player.dirty = false;
+        player.lastPersistAt = now;
+      }
     }
   }
 
-  /** Public for tests: feed a raw message from a socket. */
-  onMessage(socket: SocketLike, raw: RawData | string): void {
+  /** Public for tests: feed a raw message from a socket (awaitable). */
+  async onMessage(socket: SocketLike, raw: RawData | string): Promise<void> {
     const session = this.sessions.get(socket);
     if (session === undefined) return;
     let msg: unknown;
@@ -144,7 +169,12 @@ export class GameServer {
       this.sendError(session, "INVALID_MESSAGE", "Message is missing a type");
       return;
     }
-    void this.route(session, type, msg as Record<string, unknown>);
+    try {
+      await this.route(session, type, msg as Record<string, unknown>);
+    } catch (err) {
+      logger.error("WS message handling failed", { error: String(err) });
+      this.sendError(session, "INTERNAL_ERROR", "Internal server error", type);
+    }
   }
 
   /** Public for tests: simulate a socket closing. */
@@ -241,11 +271,16 @@ export class GameServer {
     }
     const existing = this.zones.get(zoneId, characterId);
     if (existing !== null) {
-      // Grace restore: reuse the server-authoritative position.
+      // Grace restore: reuse the server-authoritative position. The position
+      // was already persisted during the disconnect window, so restart the
+      // periodic-write clock from scratch.
       existing.connected = true;
       existing.name = character.name;
       existing.classKey = character.classKey;
+      existing.dirty = false;
+      existing.lastPersistAt = Date.now();
     } else {
+      const now = Date.now();
       const player: ZonePlayer = {
         characterId,
         accountId: session.accountId as number,
@@ -253,6 +288,9 @@ export class GameServer {
         classKey: character.classKey,
         pos: { ...character.pos },
         connected: true,
+        lastMoveAt: 0,
+        dirty: false,
+        lastPersistAt: now,
       };
       this.zones.join(zoneId, player);
       this.broadcast(zoneId, {
@@ -302,7 +340,7 @@ export class GameServer {
       width: zone.width,
       height: zone.height,
       isWalkable: zone.isWalkable,
-      lastMoveAt: player.lastMoveAt ?? session.lastMoveAt,
+      lastMoveAt: player.lastMoveAt,
       now: Date.now(),
       minMoveIntervalMs: this.minMoveIntervalMs,
     });
@@ -312,6 +350,7 @@ export class GameServer {
     }
     player.pos = verdict.to;
     player.lastMoveAt = Date.now();
+    player.dirty = true; // mark for the periodic DB flush
     session.lastMoveAt = Date.now();
     // No direct reply — the tick broadcasts the authoritative snapshot.
   }

@@ -1,27 +1,25 @@
 import { readFileSync, readdirSync } from "node:fs";
 import { resolve, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
-import { getPool, closePool } from "./connection.ts";
+import { getDb, closeDb } from "./connection.ts";
 import { splitStatements } from "./sql.ts";
 import { logger } from "../middleware/logger.ts";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 // migrate.ts lives in server/src/db; the SQL files live one level up in
-// server/src/migrations. Resolving the raw __dirname here would point at
-// the db folder and silently apply zero migrations.
+// server/src/migrations.
 const MIGRATIONS_DIR = resolve(__dirname, "../migrations");
 
 export async function runMigrations(): Promise<void> {
-  const pool = getPool();
+  const db = getDb();
 
   // Ensure schema_version table exists
-  await pool.execute(`
+  db.exec(`
     CREATE TABLE IF NOT EXISTS schema_version (
-      id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-      version VARCHAR(255) NOT NULL UNIQUE,
-      applied_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-      checksum VARCHAR(64) NOT NULL
-    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
+      version VARCHAR(255) PRIMARY KEY,
+      checksum VARCHAR(64) NOT NULL,
+      applied_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+    )
   `);
 
   // Read all migration files (sorted by name)
@@ -33,11 +31,10 @@ export async function runMigrations(): Promise<void> {
     const version = file.replace(/\.sql$/, "");
 
     // Check if already applied
-    const [rows] = await pool.execute<any>(
-      "SELECT 1 FROM schema_version WHERE version = ?",
-      [version],
-    );
-    if ((rows as any[]).length > 0) {
+    const applied = db
+      .prepare("SELECT 1 FROM schema_version WHERE version = ?")
+      .get(version);
+    if (applied !== undefined) {
       logger.debug(`Migration already applied: ${version}`);
       continue;
     }
@@ -45,29 +42,29 @@ export async function runMigrations(): Promise<void> {
     const content = readFileSync(resolve(MIGRATIONS_DIR, file), "utf-8");
     const statements = splitStatements(content);
 
-    const conn = await pool.getConnection();
     try {
-      await conn.beginTransaction();
-
+      db.exec("BEGIN");
       for (const stmt of statements) {
-        await conn.execute(stmt);
+        db.exec(stmt);
       }
 
-      // Compute a simple checksum for the file content
-      const checksum = content.length.toString(); // simple checksum
-      await conn.execute(
-        "INSERT INTO schema_version (version, checksum) VALUES (?, ?)",
-        [version, checksum],
+      // Simple checksum: the file content length.
+      db.prepare("INSERT INTO schema_version (version, checksum) VALUES (?, ?)").run(
+        version,
+        String(content.length),
       );
-
-      await conn.commit();
+      db.exec("COMMIT");
       logger.info(`Migration applied: ${version}`);
     } catch (err) {
-      await conn.rollback();
+      try {
+        db.exec("ROLLBACK");
+      } catch (rollbackErr) {
+        logger.error(`Migration rollback failed: ${version}`, {
+          error: String(rollbackErr),
+        });
+      }
       logger.error(`Migration failed: ${version}`, { error: String(err) });
       throw err;
-    } finally {
-      conn.release();
     }
   }
 
@@ -75,10 +72,10 @@ export async function runMigrations(): Promise<void> {
 }
 
 // Allow running directly: node --import tsx src/db/migrate.ts
-const isMain = process.argv[1] && (process.argv[1].includes("migrate"));
+const isMain = process.argv[1] !== undefined && process.argv[1].includes("migrate");
 if (isMain) {
   runMigrations()
-    .then(() => closePool())
+    .then(() => closeDb())
     .then(() => {
       console.log("Migration complete");
       process.exit(0);

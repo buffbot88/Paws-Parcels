@@ -42,7 +42,7 @@ coordinates). See the 2.5D decision in [`design/decisions.md`](design/decisions.
 | Dungeon | An **instanced** zone created per party/run; isolated from the outdoor map. |
 | Player snapshot | Periodic server → client position/state broadcast for other players. |
 | Intent | Client sends *intent* messages (move, attack, interact); the server validates and decides. |
-| Class | Bear Warrior / Cat Mage / Fox Archer — chosen at character creation, persisted in MySQL. |
+| Class | Bear Warrior / Cat Mage / Fox Archer — chosen at character creation, persisted in SQLite. |
 | Quest chain | An ordered sequence of quests with prerequisites and locked next-step rewards. |
 | Instance | A private copy of a zone (dungeons); only its party/owner sees and mutates it. |
 
@@ -57,14 +57,14 @@ inventory + equipment · crafting station + small recipe set · WebSocket sync f
 ```text
 ┌──────────────┐   HTTPS (REST: auth, content, character mgmt)   ┌──────────────────┐
 │   Browser    │ ──────────────────────────────────────────────► │                  │
-│   Phaser 4   │   WebSocket (WS: gameplay, zone sync, combat)   │  Game/API Server │ ──► MySQL
+│   Phaser 4   │   WebSocket (WS: gameplay, zone sync, combat)   │  Game/API Server │ ──► SQLite
 │   client     │ ──────────────────────────────────────────────► │  (authoritative) │
 └──────────────┘                                                 └──────────────────┘
         ▲                                                                   │
         └──────────────── client renders server state ─────────────────────┘
 ```
 
-- The browser **never** connects to MySQL directly (see [`design/architecture.md`](design/architecture.md)).
+- The browser **never** connects to SQLite directly (see [`design/architecture.md`](design/architecture.md)).
 - HTTP for login/register, character list/create, static content, health checks.
 - WebSocket for all gameplay: zone join/leave, movement, interaction, combat, quests,
   inventory, dungeon sessions.
@@ -82,7 +82,7 @@ The server is the single source of truth. Client input is **untrusted**.
 | Quest state & completion | Server (validates prerequisites & delivery) | Chain integrity |
 | Inventory & item ownership | Server (validate quantity, stack, slots) | Economy integrity |
 | Currency (Stamps) | Server (audited via economy events) | Economy integrity |
-| Character stats / progression | Server (MySQL) | Persistence |
+| Character stats / progression | Server (SQLite) | Persistence |
 | Client settings (audio, UI) | Client (localStorage) | Non-authoritative |
 
 **Client rights:** render state, send intents, show predicted movement (reconciled with
@@ -97,11 +97,11 @@ server), local settings.
 - Disconnect/reconnect: session token survives reconnect; player rejoins the zone they
   were in (grace period), else returns to Main Village.
 - Zone capacity: cap concurrent players per zone (e.g. 32) with graceful queueing.
-- Scalability: server processes are zone-sharded (Phase 8+), MySQL shared.
+- Scalability: server processes are zone-sharded (Phase 8+), sharing the SQLite file.
 
 ## 6. Class System
 
-Chosen at character creation; stored in MySQL (`character_classes`). Three classes —
+Chosen at character creation; stored in SQLite (`character_classes`). Three classes —
 see [`design/classes.md`](design/classes.md) for full cards.
 
 | Class | Animal | Role | Primary resource | Basic attack | Starter ability |
@@ -110,7 +110,7 @@ see [`design/classes.md`](design/classes.md) for full cards.
 | Mage | Cat | Ranged magic burst | Mana | Spark (ranged bolt) | Moonbeam (AoE) |
 | Archer | Fox | Ranged sustain | Focus | Arrow shot | Quick Volley (3 arrows) |
 
-All stats derive from the class template + level in MySQL (`character_stats`).
+All stats derive from the class template + level in SQLite (`character_stats`).
 
 ## 7. Combat System
 
@@ -178,13 +178,13 @@ See [`design/crafting.md`](design/crafting.md). Summary:
 
 - **Gear materials** (dungeon drops) → craft equipment.
 - **Upgrade materials** (monster drops + dungeon) → upgrade existing gear levels.
-- Recipes live in MySQL (`item_definitions` + recipe fields) and are validated server-side:
+- Recipes live in SQLite (`item_definitions` + recipe fields) and are validated server-side:
   materials present, station used, level cap respected.
 - One crafting station in the MVP (in Main Village).
 
-## 14. MySQL Persistence
+## 14. SQLite Persistence
 
-- MySQL is the only persistence layer for **player state** (accounts, characters,
+- SQLite is the only persistence layer for **player state** (accounts, characters,
   stats, inventory, quests, friendships, dungeon runs, economy audit).
 - **localStorage is limited to non-authoritative client settings** (audio, UI,
   controls) — never gameplay state.
@@ -207,7 +207,7 @@ See [`design/crafting.md`](design/crafting.md). Summary:
 
 - **Unit** (server): stat math, combat validation, quest-chain state machine, inventory
   rules, token handling.
-- **Integration** (server + MySQL in CI): persistence, auth flow, economy events.
+- **Integration** (server + SQLite in CI): persistence, auth flow, economy events.
 - **Multiplayer integration** (Phase 8): two+ clients, movement sync, combat events,
   reconnect, dungeon lifecycle.
 - **Load tests**: N concurrent connections per zone; snapshot rate under load.
@@ -218,7 +218,7 @@ See [`design/crafting.md`](design/crafting.md). Summary:
 ## 17. Deployment Requirements
 
 - **Client:** static hosting (Vercel/Netlify) as today; WS-capable (wss).
-- **Server:** containerized Node/TS service(s) on a host with TLS termination; MySQL
+- **Server:** containerized Node/TS service(s) on a host with TLS termination; SQLite
   managed or containerized; both deployed together.
 - **Env/secrets:** all credentials via environment variables / secret store — never in
   the repo.
@@ -252,7 +252,7 @@ See [`design/crafting.md`](design/crafting.md). Summary:
 ### Phase 1 — Online Foundation — ⏭ next
 - Create server application (Node/TS, same monorepo or sibling package)
 - Configuration + environment handling
-- MySQL connection + versioned migrations
+- SQLite connection + versioned migrations
 - Health check endpoint + structured server logging
 - Account & character data models
 - Authentication foundation (register/login, tokens)
@@ -266,7 +266,7 @@ See [`design/crafting.md`](design/crafting.md). Summary:
 - Handle disconnects and reconnects (grace window, zone resume)
 
 ### Phase 3 — Classes and Combat
-- Add Bear Warrior, Cat Mage, Fox Archer (stats from MySQL)
+- Add Bear Warrior, Cat Mage, Fox Archer (stats from SQLite)
 - Add health and defeat states
 - Add one monster map (Bramble Patch outdoor) + one monster family
 - Add basic attacks (cooldown-gated, server-computed)
@@ -308,7 +308,7 @@ See [`design/crafting.md`](design/crafting.md). Summary:
 | Phase | Gate |
 |---|---|
 | Every phase | `npm run typecheck` · `npm test` · `npm run validate` · `npm run build` pass (client); server: `tsc` + its own test suite |
-| Phase 1 | Server boots, connects to MySQL, migrations run, health check 200, register/login works |
+| Phase 1 | Server boots, connects to SQLite, migrations run, health check 200, register/login works |
 | Phase 2 | Two browsers see each other move; movement validation rejects teleports/speed hacks |
 | Phase 3 | Combat math server-side; monster + player respawn work; damage validated |
 | Phase 4 | Quest chain gating works end-to-end; delivery validated server-side |
@@ -329,7 +329,7 @@ See [`design/crafting.md`](design/crafting.md). Summary:
 - One quest chain with a **gated delivery** completes end-to-end (server-validated).
 - Inventory + equipment + crafting at the village station produce a craftable item.
 - One dungeon run can be entered (solo or party), fought through, and looted.
-- Progression (XP, Stamps, reputation, items) persists across logout/login in MySQL.
+- Progression (XP, Stamps, reputation, items) persists across logout/login in SQLite.
 - Reconnect works within the grace window; no permanent progress loss.
 - Server-validated: no client can grant itself items, HP, or quest completion.
 - Runs at 60 FPS desktop / 30–60 FPS mobile for the client; snapshot sync smooth at
@@ -341,7 +341,7 @@ See [`design/crafting.md`](design/crafting.md). Summary:
 |---|---|
 | [`design/decisions.md`](design/decisions.md) | Locked decisions (incl. 2.5D, authority, classes) |
 | [`design/architecture.md`](design/architecture.md) | Client/server/DB responsibilities, lifecycle, errors |
-| [`design/database-schema.md`](design/database-schema.md) | MySQL entities, ownership, auth/secrets |
+| [`design/database-schema.md`](design/database-schema.md) | SQLite entities, ownership, auth/secrets |
 | [`design/network-protocol.md`](design/network-protocol.md) | WS/HTTP messages, validation, failure cases |
 | [`design/classes.md`](design/classes.md) | Warrior / Mage / Archer cards |
 | [`design/combat.md`](design/combat.md) | Damage, health, defeat, respawn, validation |

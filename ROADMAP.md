@@ -19,12 +19,12 @@ world is now **persistent, server-authoritative, and multiplayer**:
 - **Monsters + combat** (no gore, no perma-death).
 - **Quest chains** with gated parcel/letter deliveries.
 - **Instanced dungeons** with gear-crafting materials.
-- **MySQL persistence** (accounts, characters, progression).
+- **SQLite persistence** (accounts, characters, progression).
 - **No PvP, no grinding, no real-money transactions.**
 
 **Current standing:** Phases 0–3 of the **original single-player plan** are built and
 remain the client foundation. Phase 0 (pivot docs) and Phase 1 (**Online Foundation** —
-server app, MySQL migrations, health check, ASHAT Hub OIDC auth, account + character
+server app, SQLite migrations, health check, ASHAT Hub OIDC auth, account + character
 data models, character list/create/classes endpoints) are complete. Next up:
 **Phase 2 — Multiplayer Village** (WebSocket presence + movement sync).
 
@@ -59,7 +59,7 @@ data models, character list/create/classes endpoints) are complete. Next up:
 - Gates: `npm run dev` / `build` / `typecheck` all pass
 
 ### Phase 2 — World & Player Movement ✅
-- Custom JSON maps (`post-office`, `bramble-patch`) with collision, camera, zone transitions
+- Custom JSON maps (`clover-village` hub) with collision, camera; placeholder maps until Phase 3 adds outdoor zones
 - Player entity (Arcade sprite, 180 px/s, 28×20 body, facing)
 - WASD/arrows + pointer-drag joystick input
 - Client-only movement (no server validation yet)
@@ -69,9 +69,9 @@ data models, character list/create/classes endpoints) are complete. Next up:
 ## 2. Next ⏭ (online plan phases)
 
 ### Phase 1 — Online Foundation ✅
-Goal: server application, MySQL, auth, health check.
+Goal: server application, SQLite, auth, health check.
 - Server (Node/TS, `server/src`) + config loader with fail-fast validation
-- MySQL connection + versioned migrations (runner in `server/src/db/migrate.ts`,
+- SQLite connection + versioned migrations (runner in `server/src/db/migrate.ts`,
   schema 001–004 incl. OIDC account columns)
 - Health check + structured logging (`/api/health`)
 - Account & character data models (`Account.ts`, `Character.ts`, `CharacterClass.ts`)
@@ -79,12 +79,21 @@ Goal: server application, MySQL, auth, health check.
 - Character endpoints: `GET/POST /api/characters`, `GET /api/classes`
 - Gate: server `tsc` + Vitest suite green
 
-### Phase 2 — Multiplayer Village *(next phase)*
+### Phase 2 — Multiplayer Village ✅ complete
 Goal: players see each other in the Main Village.
-- Connect client to server (HTTP + WS)
-- Authenticate, join zone, sync presence
-- Movement validation + snapshots
-- Disconnect/reconnect handling
+- **Server-side WebSocket layer built** (`server/src/ws/`): 30s single-use handshake
+  tokens (`GET /api/ws-token`), `authenticate` / `join_zone` / `move_intent` /
+  `leave_zone`, 20 Hz `player_snapshot` broadcasts, 60s reconnect grace window
+- **Authoritative movement validation** (`movement.ts`): 4-direction intents,
+  speed cap, collision from the same map JSON the client renders, teleport sanity
+- **Zone presence store** (`zoneStore.ts`) + per-zone `player_joined`/`player_left`
+- **Client hookup** (`GameSocket` / `NetworkSystem` / `RemotePlayer`): browser WS
+  client, connection status chip, lerp-interpolated courier avatars, move intents
+- **Courier desk** (`CharacterDesk`): character creation (name + `GET /api/classes`
+  picker, `POST /api/characters`) and a select screen for multi-character
+  accounts; the chosen courier persists across reloads
+- Best-effort position persistence to SQLite on zone leave/grace expiry **and
+  periodically every 10s while moving** (`GameServer` dirty-flag flush)
 
 ### Phase 3 — Classes and Combat
 Goal: first monster map, basic combat, class system.
@@ -115,9 +124,9 @@ Goal: security review, load tests, browser matrix, alpha.
 See [`BuildPlan.md §19`](BuildPlan.md#19-phased-milestones) for the complete phased plan.
 Summary of phases:
 - **Phase 0:** Pivot documentation — ✅ built
-- **Phase 1:** Online Foundation — ✅ built (server, MySQL, OIDC auth, characters)
-- **Phase 2:** Multiplayer Village — ⏭ next
-- **Phase 3:** Classes and Combat
+- **Phase 1:** Online Foundation — ✅ built (server, SQLite, OIDC auth, characters)
+- **Phase 2:** Multiplayer Village — ✅ complete (WS presence + movement sync, character create/select, periodic position persistence)
+- **Phase 3:** Classes and Combat — ⏭ next
 - **Phase 4:** Quest Chains and Deliveries
 - **Phase 5:** Inventory and Equipment
 - **Phase 6:** First Dungeon and Crafting

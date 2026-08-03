@@ -48,11 +48,8 @@ export interface ServerConfig {
 }
 
 export interface DbConfig {
-  host: string;
-  port: number;
-  user: string;
-  password: string;
-  database: string;
+  /** Path to the SQLite database file (relative to the project root). */
+  file: string;
 }
 
 export interface AuthConfig {
@@ -108,16 +105,7 @@ function validateAndNormalize(raw: unknown): {
   const debug = bool(serverRaw.debug, isDev, errors, "server.debug");
 
   // db
-  const dbHost = str(dbRaw.host, "localhost", errors, "db.host");
-  const dbPort = num(dbRaw.port, 3306, errors, "db.port");
-  const dbUser = str(dbRaw.user, "paws_user", errors, "db.user");
-  const dbPassword = reqStr(
-    dbRaw.password,
-    "db.password",
-    "REPLACE_ME_DB_PASSWORD",
-    errors,
-  );
-  const dbName = str(dbRaw.database, "paws_and_parcels", errors, "db.database");
+  const dbFile = reqStr(dbRaw.file, "db.file", "", errors);
 
   // auth
   const jwtSecret = reqStr(
@@ -200,11 +188,7 @@ function validateAndNormalize(raw: unknown): {
   return {
     server: { port, host, nodeEnv, isDev, corsAllowedOrigins, debug },
     db: {
-      host: dbHost,
-      port: dbPort,
-      user: dbUser,
-      password: dbPassword,
-      database: dbName,
+      file: dbFile,
     },
     auth: {
       jwtSecret,

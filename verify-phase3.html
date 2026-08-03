@@ -77,10 +77,10 @@
   const targets = scene.interactionSystem.targets;
   const npcCount = targets.filter((t) => t.kind === "npc").length;
   const objectCount = targets.filter((t) => t.kind !== "npc").length;
-  log(`post office targets: ${npcCount} npc(s), ${objectCount} object(s) — expect 1 and 5`);
+  log(`clover village targets: ${npcCount} npc(s), ${objectCount} object(s) — expect 5 and 5`);
 
   // ---------- Pip dialogue ----------
-  teleport(scene, 6, 4); // floor behind the counter, adjacent to Pip at (5,4)
+  teleport(scene, 7, 4); // floor beside Pip at (8,4) inside the post office
   await sleep(400);
   log(`prompt visible near Pip: ${scene.prompt.visible}`);
 
@@ -109,7 +109,7 @@
   log(`dialogue closed after last line: ${!panelOpen()}`);
 
   // ---------- Mailbox ----------
-  teleport(scene, 5, 12); // adjacent above mailbox at (5,13)
+  teleport(scene, 18, 13); // adjacent above mailbox at (18,14)
   await sleep(400);
   pressE();
   await sleep(300);
@@ -119,7 +119,7 @@
   log(`mailbox closed: ${!panelOpen()}`);
 
   // ---------- Welcome sign ----------
-  teleport(scene, 13, 18);
+  teleport(scene, 13, 18); // adjacent below sign at (13,17)
   await sleep(400);
   pressE();
   await sleep(300);
@@ -127,22 +127,10 @@
   pressE(); await sleep(300);
   log(`sign closed: ${!panelOpen()}`);
 
-  // ---------- Zone transition to Bramble Patch ----------
-  teleport(scene, 15, 19);
-  await waitFor("transitioned to bramble (zone label change)", () => {
-    const s = overworld();
-    return s && s.mapData && s.mapData.id === "zone-bramble-patch";
-  });
-  await sleep(600);
-
-  const scene2 = overworld();
-  const t2 = scene2.interactionSystem.targets;
-  log(`bramble targets: ${t2.filter((x) => x.kind === "npc").length} npc(s), ${t2.filter((x) => x.kind !== "npc").length} object(s) — expect 4 and 1`);
-
-  // ---------- Talk to Biscuit ----------
-  teleport(scene2, 34, 7); // grass beside Biscuit at (33,7)
+  // ---------- Talk to Biscuit (hub picnic corner) ----------
+  teleport(scene, 24, 15); // grass beside Biscuit at (24,16)
   await sleep(400);
-  log(`prompt visible near Biscuit: ${scene2.prompt.visible}`);
+  log(`prompt visible near Biscuit: ${scene.prompt.visible}`);
   pressE();
   await sleep(300);
   log(`biscuit speaker: ${panelText()} (expect Biscuit)`);
@@ -151,12 +139,16 @@
   pressE(); await sleep(300);
   log(`biscuit dialogue closed: ${!panelOpen()}`);
 
-  // ---------- Walk north back to the post office (transition reverse) ----------
-  teleport(scene2, 19, 1);
-  await waitFor("transitioned back to post office", () => {
-    const s = overworld();
-    return s && s.mapData && s.mapData.id === "zone-post-office";
-  });
+  // ---------- Talk to Maple (flower field) ----------
+  teleport(scene, 25, 8); // adjacent to Maple at (25,9)
+  await sleep(400);
+  pressE();
+  await sleep(300);
+  log(`maple speaker: ${panelText()} (expect Maple)`);
+  pressE(); await sleep(250);
+  pressE(); await sleep(250);
+  pressE(); await sleep(300);
+  log(`maple dialogue closed: ${!panelOpen()}`);
 
   document.title = "VERIFICATION COMPLETE";
   log("VERIFICATION COMPLETE");

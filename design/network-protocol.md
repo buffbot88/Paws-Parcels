@@ -40,11 +40,11 @@ processes each message independently.
 ```json
 {
   "type": "join_zone",
-  "zoneId": "zone-post-office"
+  "zoneId": "zone-clover-village"
 }
 ```
 - **Validation:** Zone must exist; character must have access (no level gate for the
-  village; Bramble Patch accessible by default).
+  village hub).
 - **Expected response:** `zone_state` (full zone snapshot for the character's new zone).
 - **Failure cases:** unknown zone, zone full, character already in zone (idempotent).
 
@@ -142,7 +142,7 @@ processes each message independently.
   "type": "authenticated",
   "accountId": 1,
   "characterId": 5,
-  "zoneId": "zone-post-office"
+  "zoneId": "zone-clover-village"
 }
 ```
 - **Payload:** server-approved session confirms the character and sends the current zone.
@@ -152,7 +152,7 @@ processes each message independently.
 ```json
 {
   "type": "zone_state",
-  "zoneId": "zone-post-office",
+  "zoneId": "zone-clover-village",
   "players": [
     { "characterId": 5, "name": "Mochi", "classKey": "fox-archer", "pos": { "x": 15, "y": 14 } },
     { "characterId": 8, "name": "Birch", "classKey": "bear-warrior", "pos": { "x": 3, "y": 7 } }

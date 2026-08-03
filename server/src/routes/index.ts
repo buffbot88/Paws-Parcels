@@ -11,6 +11,7 @@ import {
   createCharacterHandler,
   listCharactersHandler,
 } from "./characters.ts";
+import { wsTokenHandler } from "./ws-token.ts";
 
 /** Route handler signature. */
 export type RouteHandler = (
@@ -90,6 +91,9 @@ export function createRouter(): Router {
   router.get("/api/characters", listCharactersHandler);
   router.get("/api/classes", classesHandler);
   router.post("/api/characters", createCharacterHandler);
+
+  // Phase 2 — WebSocket handshake token (30s, single-use).
+  router.get("/api/ws-token", wsTokenHandler);
 
   return router;
 }

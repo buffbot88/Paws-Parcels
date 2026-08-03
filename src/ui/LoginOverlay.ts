@@ -5,6 +5,7 @@
  * stored JWT. PKCE verifier + state live in sessionStorage so they survive
  * the redirect but die with the tab.
  */
+import { SELECTED_CHARACTER_KEY } from "../net/bootTarget.ts";
 
 const TOKEN_KEY = "paws.auth.token";
 const ACCOUNT_KEY = "paws.auth.account";
@@ -20,7 +21,7 @@ interface AccountPublic {
   ashat_user_id: string;
 }
 
-interface CharacterListItem {
+export interface CharacterListItem {
   id: number;
   name: string;
   class_id: number;
@@ -59,11 +60,13 @@ function writeToken(
   }
 }
 
-function clearToken(): void {
+/** Drop the stored auth (used by the overlay and the courier desk's sign-out). */
+export function clearAuthStorage(): void {
   try {
     window.localStorage.removeItem(TOKEN_KEY);
     window.localStorage.removeItem(ACCOUNT_KEY);
     window.localStorage.removeItem(CHARACTERS_KEY);
+    window.localStorage.removeItem(SELECTED_CHARACTER_KEY);
   } catch {
     // best effort
   }
@@ -244,7 +247,7 @@ export class LoginOverlay {
       }
       if (res.status === 401) {
         // JWT invalid/expired — clear so the next visit starts clean.
-        clearToken();
+        clearAuthStorage();
       }
       return null;
     } catch {

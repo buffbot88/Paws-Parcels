@@ -1,90 +1,68 @@
 > ## 🗃 LEGACY REFERENCE (single-player context)
 >
-> This map sketch was created during the original single-player plan (Phase 0). The
-> tile layouts and object positions are still valid for the **client rendering** of the
-> two MVP zones (post office hub + Bramble Patch), but they describe **no monsters**,
-> **no combat**, and **no server-authoritative zone transitions**.
+> This map sketch was created during the original single-player plan (Phase 0).
+> The tile layouts and object positions are still valid for the **client
+> rendering** of the hub, but they describe **no monsters**, **no combat**, and
+> **no server-authoritative zone transitions**.
 >
-> For the online game, see [`BuildPlan.md`](../BuildPlan.md) §8 (monster maps) and
-> [`design/monsters.md`](monsters.md) for spawn rules. The zones themselves are retained;
-> their content is expanding.
+> **Current hub:** `zone-clover-village` (see `src/data/maps/clover-village.json`).
+> The old Post Office + Bramble Patch maps were removed; Bramble Patch is
+> deferred to Phase 3 (monsters). For the online game, see
+> [`BuildPlan.md`](../BuildPlan.md) §8 (monster maps) and
+> [`design/monsters.md`](monsters.md) for spawn rules.
 
 # Paws & Parcels — MVP World Map Sketch (LEGACY — single-player)
 
 Tile size **48×48**. Viewport ≈ 20×11.25 tiles at 960×540. All coordinates are in **tile units** (x, y), origin top-left. Exact maps will be built in Tiled during Phase 2.
 
-## Zone: Clover Post Office (hub) — `zone-post-office`
-Dimensions: 30×20 tiles. Safe, flat interior/exterior hybrid.
+## Zone: Clover Village (hub) — `zone-clover-village`
+Dimensions: 30×20 tiles. Safe, flat interior/exterior hybrid. All five cozy NPCs live here (see `design/npcs.md`).
 
 ```
 ┌──────────────────────────────────────────────┐
 │  0 1 2 3 4 5 6 7 8 9 . . . . . . . . . . .29│
 │  ┌───────────────┐      ┌──────────────────┐ │  y0
-│  │  (counter)    │      │   quest board    │ │  y3
-│  │  pip@(5,5)    │      │   (interact)     │ │
-│  └───────────────┘      └──────────────────┘ │
+│  │  post office  │      │  quest board     │ │  y3
+│  │  pip@(8,4)    │      │  counter@(6,4)   │ │  y4
+│  └───────────────┘      └──────────────────┘ │  y6
 │                                               │
-│   ┌─────────┐    ┌───────────────────────┐    │
-│   │ mailbox │    │   shop corner         │    │
-│   │ (save)  │    │   upgrades/shop UI    │    │
-│   └─────────┘    └───────────────────────┘    │
+│        pond (west)   flower field (east)     │
+│        lumi@(12,10)  maple@(25,9)            │
 │                                               │
-│              player spawn @(15,14)            │
+│            player spawn @(15,13)             │
 │                                               │
-│   ════════════ transition south → bramble ═══ │  y19
+│   mailbox@(18,14)   shop@(24,14)             │
+│   moss@(8,16)  garden   biscuit@(24,16)      │
+│        welcome sign @(13,17)                 │
 └──────────────────────────────────────────────┘
 ```
 
 Key objects (all `interactable`):
-- `object-counter` @ (5,5) — Pip stands behind it; interaction opens quest list + deliveries
-- `object-quest-board` @ (22,4) — view active/daily quests
-- `object-mailbox` @ (5,13) — manual save trigger
-- `object-shop` @ (22,13) — Stamps → upgrades/cosmetics
-- `object-transition-bramble` @ south edge (~15,19) — zone change to Bramble Patch
+- `object-counter` @ (6,4) — Pip stands behind it; interaction opens quest list + deliveries
+- `object-quest-board` @ (12,4) — view active/daily quests
+- `object-mailbox` @ (18,14) — manual save trigger
+- `object-shop` @ (24,14) — Stamps → upgrades/cosmetics
+- `object-welcome-sign` @ (13,17) — village greeting
 
-Collision: building walls, counter front face, decorative posts.
+Collision: post office building walls, pond water, garden bushes (decorative), border trees.
 
-## Zone: Bramble Patch — `zone-bramble-patch`
-Dimensions: 40×26 tiles. Meadow with berry bushes, flower fields, a pond, rabbit burrows.
+## Zones: Bramble Patch — deferred (Phase 3)
 
-```
-┌──────────────────────────────────────────────────────────────┐
-│ 0 1 2 3 4 5 6 7 8 9 . . . . . . . . . . . . . . . . . . . .39│
-│ ────────────────── transition north → post office ────────── │  y0
-│   🌳🌳🌳   [rabbit burrows]    🌳🌳🌳                        │  y3
-│   🌳  moss@(4,8)    [berry bushes]     biscuit@(32,7)        │  y6
-│   [flower field]     🫐🫐🫐          [pond edge]             │
-│   maple@(6,16)       [herb patches]    [picnic corner]       │
-│   [pond]             lumi@(20,18)                            │
-│   🐸 frog pond        [mushroom cluster]                     │
-└──────────────────────────────────────────────────────────────┘
-```
-
-Key objects:
-- `object-spawn-north` @ (~19,1) — arrival from post office
-- Gathering nodes: `node-berry-bush` ×4, `node-flower-field` ×2, `node-herb-patch` ×3, `node-pond` ×1 (shells), `node-mushroom-cluster` ×2 (decor/resource later)
-- NPCs: `npc-maple` @ (6,16) flower field · `npc-biscuit` @ (32,7) picnic corner · `npc-lumi` @ (20,18) near pond · `npc-moss` @ (4,8) rabbit burrows
-- `object-transition-post-office` @ north edge
-
-Collision: tree trunks, pond banks, burrow openings (can't enter, can inspect).
-
-## Spawn/transition summary
-| From | To | Tile |
-|---|---|---|
-| Post office south | Bramble north | (15,19) → (19,1) |
-| Bramble north | Post office south | (19,1) → (15,14) |
+The old `zone-bramble-patch` map was removed. Outdoor monster content returns
+in Phase 3 with a fresh map + zone key (see `design/monsters.md`).
 
 ## Content placement rules
 - Gathering nodes regrow daily (respawn on new in-game day) — set in Phase 4.
 - NPCs never move between zones in MVP; dialogue changes with friendship level.
 
-## Lost-item spawn locations (errand quests)
+## Lost-item spawn locations (errand quests, deferred with Bramble Patch)
 | Quest | Item | findAt | Spawn tile |
 |---|---|---|---|
-| `quest-pip-letter-opener` | `item-letter-opener` | behind the counter | post office ~(4,6) |
-| `quest-lost-pebble-moss` | `item-polished-pebble` | rabbit burrows | bramble ~(6,9) near burrow opening |
-| `quest-lumis-lost-notebook` | `item-lumi-notebook` | pond edge | bramble ~(21,19) pond bank |
-| `quest-golden-acorn-moss` | `item-golden-acorn` | hollow oak | bramble ~(26,11) tree west of picnic corner |
+| `quest-pip-letter-opener` | `item-letter-opener` | behind the counter | hub ~(4,6) |
+| `quest-lost-pebble-moss` | `item-polished-pebble` | garden | hub ~(6,9) near bushes |
+| `quest-lumis-lost-notebook` | `item-lumi-notebook` | pond edge | hub ~(21,19) pond bank |
+| `quest-golden-acorn-moss` | `item-golden-acorn` | hollow oak | hub ~(26,11) tree west of picnic corner |
+
 Lost items only spawn while their quest is active, despawn on completion (set in Phase 5).
 
 ## Friendship quest rewards (L4 Best Friend)

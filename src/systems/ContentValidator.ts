@@ -11,8 +11,7 @@ export interface ValidationResult {
 }
 
 const ZONE_DIMS: Record<ZoneId, { w: number; h: number }> = {
-  "zone-post-office": { w: 30, h: 20 },
-  "zone-bramble-patch": { w: 40, h: 26 },
+  "zone-clover-village": { w: 30, h: 20 },
 };
 
 const CATEGORIES: readonly ItemCategory[] = ["resource", "gift", "delivery", "quest", "cosmetic"];

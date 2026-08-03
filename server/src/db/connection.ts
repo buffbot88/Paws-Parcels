@@ -1,37 +1,34 @@
-import { createPool, type Pool, type PoolOptions } from "mysql2/promise";
-import { db as dbConfig, server } from "../config/index.ts";
+import { DatabaseSync } from "node:sqlite";
+import { mkdirSync } from "node:fs";
+import { dirname, resolve } from "node:path";
+import { db as dbConfig } from "../config/index.ts";
 import { logger } from "../middleware/logger.ts";
 
-let pool: Pool | null = null;
+let database: DatabaseSync | null = null;
 
-export function getPool(): Pool {
-  if (!pool) {
-    const opts: PoolOptions = {
-      host: dbConfig.host,
-      port: dbConfig.port,
-      user: dbConfig.user,
-      password: dbConfig.password,
-      database: dbConfig.database,
-      waitForConnections: true,
-      connectionLimit: 10,
-      queueLimit: 0,
-      charset: "utf8mb4",
-      timezone: "+00:00",
-    };
-    pool = createPool(opts);
-    logger.info("MySQL pool created", {
-      host: dbConfig.host,
-      database: dbConfig.database,
-    });
+/**
+ * The single SQLite connection (node:sqlite is synchronous — one process,
+ * one DatabaseSync; HTTP + WS share it, so access is serialized naturally).
+ */
+export function getDb(): DatabaseSync {
+  if (database === null) {
+    const raw = dbConfig.file;
+    const path = raw === ":memory:" ? raw : resolve(process.cwd(), raw);
+    if (raw !== ":memory:") {
+      // The repo's DB lives under server/data/ — create it on first boot.
+      mkdirSync(dirname(path), { recursive: true });
+    }
+    database = new DatabaseSync(path);
+    database.exec("PRAGMA foreign_keys = ON");
+    database.exec("PRAGMA busy_timeout = 5000");
+    logger.info("SQLite database opened", { path });
   }
-  return pool;
+  return database;
 }
 
 export async function pingDb(): Promise<boolean> {
   try {
-    const conn = await getPool().getConnection();
-    await conn.ping();
-    conn.release();
+    getDb().prepare("SELECT 1").get();
     return true;
   } catch (err) {
     logger.error("Database ping failed", { error: String(err) });
@@ -39,10 +36,10 @@ export async function pingDb(): Promise<boolean> {
   }
 }
 
-export async function closePool(): Promise<void> {
-  if (pool) {
-    await pool.end();
-    pool = null;
-    logger.info("MySQL pool closed");
+export async function closeDb(): Promise<void> {
+  if (database !== null) {
+    database.close();
+    database = null;
+    logger.info("SQLite database closed");
   }
 }

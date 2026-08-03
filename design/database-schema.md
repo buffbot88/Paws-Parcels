@@ -1,10 +1,10 @@
-# Paws & Parcels — MySQL Database Schema (Design)
+# Paws & Parcels — SQLite Database Schema (Design)
 
 > Companion docs: [`BuildPlan.md`](../BuildPlan.md), [`decisions.md`](decisions.md),
 > [`architecture.md`](architecture.md).
-> Conventions: snake_case names, `BIGINT UNSIGNED` auto-increment PKs, `created_at` /
-> `updated_at` on player-state tables, `InnoDB`/`utf8mb4`. **MySQL is only ever accessed
-> by the server.** This is a design — exact DDL lands with Phase 1 migrations.
+> Conventions: snake_case names, `INTEGER PRIMARY KEY AUTOINCREMENT` PKs, `created_at` /
+> `updated_at` on player-state tables, `TEXT` for JSON/enum columns. **SQLite is only ever
+> accessed by the server.** This is a design — exact DDL lands with Phase 1 migrations.
 
 ## Conventions per entity
 
@@ -259,5 +259,6 @@ characters 1─N audit_economy_events
 - **WS handshake tokens:** short-lived (30 s), single-use, issued via `/api/ws-token`.
 - **Secret management:** `JWT_SECRET`, DB credentials, argon2 pepper in environment /
   secrets store (never committed). `.env.example` documents names only, no values.
-- **Backups:** MySQL nightly backups; restore tested; `audit_economy_events` retained
+- **Backups:** the SQLite file is committed to the repo (git is the backup); restore is
+  copy-in-place; `audit_economy_events` retained
   per retention policy.

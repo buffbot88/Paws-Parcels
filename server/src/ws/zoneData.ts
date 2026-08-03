@@ -1,15 +1,23 @@
 import { readFileSync } from "node:fs";
-import { resolve } from "node:path";
+import { dirname, resolve } from "node:path";
+import { fileURLToPath } from "node:url";
+import { TILES } from "../../../src/game/Tiles.ts";
 
 /**
  * Server-side zone geometry for movement validation. Reads the same custom
  * map JSON the client uses (src/data/maps/<zone>.json) so collision rules
  * match the rendered world. Zone ids are `zone-<mapId>` (e.g.
- * `zone-post-office` → `post-office.json`).
+ * `zone-clover-village` → `clover-village.json`).
  */
 
-/** Tile codes that block movement — mirrors src/game/Tiles.ts collides flags. */
-const COLLIDING_CODES = new Set(["W", "~", "T"]);
+/**
+ * Tile codes that block movement — derived from the SAME catalog the client
+ * renders and collides with (src/game/Tiles.ts), so a new colliding tile in a
+ * city map can never silently desync server validation from client rendering.
+ */
+const COLLIDING_CODES = new Set(
+  TILES.filter((t) => t.collides).map((t) => t.code),
+);
 
 export interface ZoneData {
   zoneId: string;
@@ -25,7 +33,12 @@ interface MapFile {
   rows: string[];
 }
 
-const MAPS_DIR = resolve(process.cwd(), "src/data/maps");
+// Resolve relative to this module, never process.cwd() — the server must find
+// the maps no matter where it is launched from.
+const MAPS_DIR = resolve(
+  dirname(fileURLToPath(import.meta.url)),
+  "../../../src/data/maps",
+);
 
 /** Load zone geometry for a zone id, or null when the map is unknown. */
 export function loadZoneData(zoneId: string): ZoneData | null {

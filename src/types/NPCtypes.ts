@@ -1,4 +1,4 @@
-export type ZoneId = "zone-post-office" | "zone-bramble-patch";
+export type ZoneId = "zone-clover-village";
 
 export interface TilePosition {
   x: number;

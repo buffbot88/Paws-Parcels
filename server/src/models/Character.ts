@@ -1,8 +1,10 @@
-import type { RowDataPacket, ResultSetHeader } from "mysql2";
-import { getPool } from "../db/connection.ts";
+import { getDb } from "../db/connection.ts";
 import type { CharacterClassRow } from "./CharacterClass.ts";
 import { getZoneByKey } from "./Zone.ts";
 import { logger } from "../middleware/logger.ts";
+
+/** A row object as returned by node:sqlite (null | number | bigint | string). */
+type SqlRow = Record<string, unknown>;
 
 /** Character row as stored in the Paws `characters` table. */
 export interface CharacterRow {
@@ -36,9 +38,9 @@ export type CreateCharacterResult =
 /**
  * Create a character and its 1:1 player-state rows (character_stats derived
  * from the class template, plus a starter inventory) in one transaction.
- * Initial spawn is the Post Office default (matches zones seed + map JSON).
+ * Initial spawn is the Clover Village default (matches zones seed + map JSON).
  * Returns NAME_TAKEN when the account already has a character with that name
- * (the (account_id, name) unique index is the source of truth).
+ * (the UNIQUE(account_id, name) index is the source of truth).
  */
 export async function createCharacter(params: {
   accountId: number;
@@ -47,8 +49,6 @@ export async function createCharacter(params: {
   appearance: Record<string, unknown>;
   cls: CharacterClassRow;
 }): Promise<CreateCharacterResult> {
-  const pool = getPool();
-  const conn = await pool.getConnection();
   const base = params.cls.base_stats;
   const maxHp = base.hp ?? 100;
   const resourceMax = params.cls.resource_max;
@@ -56,7 +56,7 @@ export async function createCharacter(params: {
   // New couriers start at the zone's authoritative default spawn (zones
   // seed), falling back to the schema defaults only if the zone row is
   // missing — never duplicate coordinates in two places.
-  const startZone = "zone-post-office";
+  const startZone = "zone-clover-village";
   const startZoneRow = await getZoneByKey(startZone);
   if (startZoneRow === null) {
     logger.warn("createCharacter: start zone missing from zones table", {
@@ -64,17 +64,20 @@ export async function createCharacter(params: {
     });
   }
   const startX = startZoneRow?.default_spawn_x ?? 15;
-  const startY = startZoneRow?.default_spawn_y ?? 14;
+  const startY = startZoneRow?.default_spawn_y ?? 13;
 
+  const db = getDb();
   try {
-    await conn.beginTransaction();
+    db.exec("BEGIN");
 
-    const [result] = await conn.execute<ResultSetHeader>(
-      `INSERT INTO characters
-         (account_id, class_id, name, appearance, zone_id, pos_x, pos_y,
-          level, experience, stamps, hp, max_hp, resource_current)
-       VALUES (?, ?, ?, ?, ?, ?, ?, 1, 0, 0, ?, ?, ?)`,
-      [
+    const info = db
+      .prepare(
+        `INSERT INTO characters
+           (account_id, class_id, name, appearance, zone_id, pos_x, pos_y,
+            level, experience, stamps, hp, max_hp, resource_current)
+         VALUES (?, ?, ?, ?, ?, ?, ?, 1, 0, 0, ?, ?, ?)`,
+      )
+      .run(
         params.accountId,
         params.classId,
         params.name,
@@ -85,9 +88,8 @@ export async function createCharacter(params: {
         maxHp,
         maxHp,
         resourceMax,
-      ],
-    );
-    const characterId = Number(result.insertId);
+      );
+    const characterId = Number(info.lastInsertRowid);
 
     // character_stats — the resource family is chosen by the class template.
     // maxCol/regenCol come from a closed whitelist (stamina/mana/focus) —
@@ -99,30 +101,28 @@ export async function createCharacter(params: {
         : params.cls.primary_resource === "focus"
           ? { maxCol: "focus_max", regenCol: "focus_regen" }
           : { maxCol: "stamina_max", regenCol: "stamina_regen" };
-    await conn.execute(
+    db.prepare(
       `INSERT INTO character_stats
          (character_id, attack, defense, speed, crit_chance, crit_multiplier,
           ${res.maxCol}, ${res.regenCol})
        VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
-      [
-        characterId,
-        base.attack ?? 10,
-        base.defense ?? 5,
-        base.speed ?? 180,
-        base.crit_chance ?? 5,
-        base.crit_multiplier ?? 1.5,
-        resourceMax,
-        params.cls.resource_regen_per_sec,
-      ],
+    ).run(
+      characterId,
+      base.attack ?? 10,
+      base.defense ?? 5,
+      base.speed ?? 180,
+      base.crit_chance ?? 5,
+      base.crit_multiplier ?? 1.5,
+      resourceMax,
+      params.cls.resource_regen_per_sec,
     );
 
     // Starter inventory (12 slots, schema default).
-    await conn.execute(
+    db.prepare(
       "INSERT INTO inventories (character_id, slot_count) VALUES (?, 12)",
-      [characterId],
-    );
+    ).run(characterId);
 
-    await conn.commit();
+    db.exec("COMMIT");
     return {
       ok: true,
       character: {
@@ -138,16 +138,14 @@ export async function createCharacter(params: {
     };
   } catch (err) {
     try {
-      await conn.rollback();
+      db.exec("ROLLBACK");
     } catch (rollbackErr) {
       logger.error("createCharacter: rollback failed", {
         error: String(rollbackErr),
       });
     }
-    if (isDuplicateEntry(err)) return { ok: false, reason: "NAME_TAKEN" };
+    if (isUniqueConstraintError(err)) return { ok: false, reason: "NAME_TAKEN" };
     throw err;
-  } finally {
-    conn.release();
   }
 }
 
@@ -164,27 +162,27 @@ export function toPublicCharacter(c: CharacterRow): Record<string, unknown> {
   };
 }
 
-function isDuplicateEntry(err: unknown): boolean {
-  const e = err as { code?: string };
-  return e?.code === "ER_DUP_ENTRY";
+/** node:sqlite reports unique violations as "UNIQUE constraint failed: …". */
+function isUniqueConstraintError(err: unknown): boolean {
+  return String(err).includes("UNIQUE constraint failed");
 }
 
 /**
  * Look up all characters that belong to the given Paws account id.
  * Returns an empty array when the account has no characters yet — the
- * client prompts the player to create one (Phase 2.5 UI).
+ * client prompts the player to create one (courier desk).
  */
 export async function getCharactersByAccountId(
   accountId: number,
 ): Promise<CharacterRow[]> {
-  const pool = getPool();
-  const [rows] = await pool.query<RowDataPacket[]>(
-    `SELECT id, account_id, class_id, name, zone_id, pos_x, pos_y, level
-       FROM characters
-       WHERE account_id = ?
-       ORDER BY id ASC`,
-    [accountId],
-  );
+  const rows = getDb()
+    .prepare(
+      `SELECT id, account_id, class_id, name, zone_id, pos_x, pos_y, level
+         FROM characters
+        WHERE account_id = ?
+        ORDER BY id ASC`,
+    )
+    .all(accountId) as SqlRow[];
   return rows.map(rowToCharacter);
 }
 
@@ -192,15 +190,15 @@ export async function getCharactersByAccountId(
 export async function getCharacterById(
   characterId: number,
 ): Promise<CharacterRow | null> {
-  const pool = getPool();
-  const [rows] = await pool.query<RowDataPacket[]>(
-    `SELECT id, account_id, class_id, name, zone_id, pos_x, pos_y, level
-       FROM characters
-       WHERE id = ?
-       LIMIT 1`,
-    [characterId],
-  );
-  return rows.length === 0 ? null : rowToCharacter(rows[0]);
+  const row = getDb()
+    .prepare(
+      `SELECT id, account_id, class_id, name, zone_id, pos_x, pos_y, level
+         FROM characters
+        WHERE id = ?
+        LIMIT 1`,
+    )
+    .get(characterId) as SqlRow | undefined;
+  return row === undefined ? null : rowToCharacter(row);
 }
 
 /**
@@ -210,24 +208,23 @@ export async function getCharacterById(
 export async function getCharacterWithClass(
   characterId: number,
 ): Promise<CharacterSessionRow | null> {
-  const pool = getPool();
-  const [rows] = await pool.query<RowDataPacket[]>(
-    `SELECT c.id, c.account_id, c.name, cc.\`key\` AS class_key,
-            c.zone_id, c.pos_x, c.pos_y, c.level
-       FROM characters c
-       JOIN character_classes cc ON cc.id = c.class_id
-      WHERE c.id = ?
-      LIMIT 1`,
-    [characterId],
-  );
-  if (rows.length === 0) return null;
-  const row = rows[0];
+  const row = getDb()
+    .prepare(
+      `SELECT c.id, c.account_id, c.name, cc.\`key\` AS class_key,
+              c.zone_id, c.pos_x, c.pos_y, c.level
+         FROM characters c
+         JOIN character_classes cc ON cc.id = c.class_id
+        WHERE c.id = ?
+        LIMIT 1`,
+    )
+    .get(characterId) as SqlRow | undefined;
+  if (row === undefined) return null;
   return {
     id: Number(row.id),
     account_id: Number(row.account_id),
     name: String(row.name ?? ""),
     class_key: String(row.class_key ?? ""),
-    zone_id: String(row.zone_id ?? "zone-post-office"),
+    zone_id: String(row.zone_id ?? "zone-clover-village"),
     pos_x: Number(row.pos_x ?? 0),
     pos_y: Number(row.pos_y ?? 0),
     level: Number(row.level ?? 1),
@@ -244,14 +241,14 @@ export async function updateCharacterPosition(
   posX: number,
   posY: number,
 ): Promise<void> {
-  const pool = getPool();
-  await pool.execute(
-    "UPDATE characters SET zone_id = ?, pos_x = ?, pos_y = ?, updated_at = NOW() WHERE id = ?",
-    [zoneId, posX, posY, characterId],
-  );
+  getDb()
+    .prepare(
+      "UPDATE characters SET zone_id = ?, pos_x = ?, pos_y = ?, updated_at = ? WHERE id = ?",
+    )
+    .run(zoneId, posX, posY, new Date().toISOString(), characterId);
 }
 
-function rowToCharacter(row: RowDataPacket): CharacterRow {
+function rowToCharacter(row: SqlRow): CharacterRow {
   return {
     id: Number(row.id),
     account_id: Number(row.account_id),

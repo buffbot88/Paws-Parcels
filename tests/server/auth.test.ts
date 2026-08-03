@@ -21,11 +21,7 @@ vi.mock("../../server/src/config/index.ts", () => ({
     debug: false,
   },
   db: {
-    host: "localhost",
-    port: 3306,
-    user: "test_user",
-    password: "test_password",
-    database: "test_db",
+    file: ":memory:",
   },
   auth: {
     jwtSecret: "test-jwt-secret-of-sufficient-length-32-chars-x",
@@ -646,7 +642,7 @@ describe("meHandler", () => {
         account_id: 7,
         class_id: 1,
         name: "Maple",
-        zone_id: "zone-post-office",
+        zone_id: "zone-clover-village",
         pos_x: 5,
         pos_y: 4,
         level: 1,

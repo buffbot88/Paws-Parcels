@@ -14,6 +14,11 @@ export default defineConfig({
         target: "http://localhost:3001",
         changeOrigin: true,
       },
+      // Phase 2 — WebSocket game server (ws://host/ws → game server).
+      "/ws": {
+        target: "ws://localhost:3001",
+        ws: true,
+      },
     },
   },
   build: {
@@ -25,8 +30,6 @@ export default defineConfig({
       input: "index.html",
       external: [
         /^node:.*/,
-        "mysql2",
-        "mysql2/promise",
         "bcryptjs",
         "jose",
         "uuid",

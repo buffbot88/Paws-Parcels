@@ -77,6 +77,9 @@ and having the quest in `active` state. The server validates:
 
 **Chain: "Pip's First Delivery"** (introduces delivery gating)
 
+> Note: the Bramble Patch map is deferred to Phase 3 (monsters) — its quests
+> below land once the outdoor zone returns.
+
 | Position | Quest | Type | Prerequisite | Reward |
 |---|---|---|---|---|
 | 1 | `quest-pip-intro` | Gather 3 berries from Bramble Patch | none | 10 Stamps, 50 XP |

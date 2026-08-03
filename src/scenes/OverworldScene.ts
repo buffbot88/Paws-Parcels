@@ -4,9 +4,15 @@ import { SceneKeys, TextureKeys, ZoneKeys } from "../game/GameConstants.ts";
 import { MAPS, type MapData, type MapInteractable, type MapPoint } from "../game/Maps.ts";
 import { COLLIDING_TILE_INDICES, TILE_INDEX } from "../game/Tiles.ts";
 import { InputSystem } from "../systems/InputSystem.ts";
+import { NetworkSystem } from "../systems/NetworkSystem.ts";
+import {
+  readBootCharacters,
+  resolveBootTarget,
+} from "../net/bootTarget.ts";
 import { Player } from "../entities/Player.ts";
 import { NPC } from "../entities/NPC.ts";
 import { InteractionSystem, type InteractionTarget } from "../systems/InteractionSystem.ts";
+import { sanitizeSpawn } from "../systems/MapValidator.ts";
 import { selectDialogueSet } from "../systems/DialogueService.ts";
 import { DialoguePanel } from "../ui/DialoguePanel.ts";
 import npcsJson from "../data/npcs.json" with { type: "json" };
@@ -22,7 +28,7 @@ export interface OverworldSceneData {
 const NPCS = npcsJson.npcs as NPCDefinition[];
 const DIALOGUE = dialogueJson.dialogue as DialogueSet[];
 /** One DOM panel for the whole app — scenes come and go, the overlay persists. */
-const dialoguePanel = new DialoguePanel();
+export const dialoguePanel = new DialoguePanel();
 
 /**
  * The zone-capable world scene (Phase 2-3): builds a tilemap from the custom
@@ -41,6 +47,7 @@ export class OverworldScene extends Phaser.Scene {
   private lastTileX = -1;
   private lastTileY = -1;
   private isTransitioning = false;
+  private network = NetworkSystem.get();
 
   constructor() {
     super(SceneKeys.Overworld);
@@ -49,20 +56,40 @@ export class OverworldScene extends Phaser.Scene {
   create(data?: OverworldSceneData): void {
     this.isTransitioning = false;
 
-    const zoneId = data?.zoneId ?? ZoneKeys.PostOffice;
-    const map = MAPS[zoneId];
+    // Boot where the courier actually is (their server-saved zone + position)
+    // unless a scene restart already decided the zone. Unknown saved zones
+    // fall back to the hub — never leave the scene half-built.
+    const boot = resolveBootTarget(readBootCharacters());
+    const requestedZone = data?.zoneId ?? boot.zoneId;
+    const map = MAPS[requestedZone];
     if (!map) {
-      console.error(`OverworldScene: unknown zone "${zoneId}"`);
-      return;
+      console.warn(
+        `OverworldScene: unknown zone "${requestedZone}" — booting at the hub`,
+      );
     }
-    this.mapData = map;
+    const zoneId = map ? requestedZone : ZoneKeys.CloverVillage;
+    const resolved = map ?? MAPS[ZoneKeys.CloverVillage];
+    this.mapData = resolved;
 
-    this.buildTilemap(map);
+    this.buildTilemap(resolved);
 
     // Physics world matches the whole map so the camera + colliders behave.
-    this.physics.world.setBounds(0, 0, map.width * TILE_SIZE, map.height * TILE_SIZE);
+    this.physics.world.setBounds(
+      0,
+      0,
+      resolved.width * TILE_SIZE,
+      resolved.height * TILE_SIZE,
+    );
 
-    const spawn = data?.spawn ?? map.spawn;
+    // Explicit transition spawn wins. For a true fresh boot (no scene data)
+    // use the courier's saved position; for a restart that omitted a spawn,
+    // use the map's default spawn — never the courier's old position from
+    // another zone. sanitizeSpawn then guards against stale/corrupt data
+    // landing the courier out of bounds or inside a wall.
+    const spawn = sanitizeSpawn(
+      resolved,
+      data?.spawn ?? (data ? resolved.spawn : boot.pos),
+    );
     this.player = new Player(
       this,
       spawn.x * TILE_SIZE + TILE_SIZE / 2,
@@ -79,15 +106,15 @@ export class OverworldScene extends Phaser.Scene {
       this.physics.add.collider(this.player, this.groundLayer);
     }
 
-    this.buildNpcs(map);
-    this.buildObjectMarkers(map);
-    this.buildInteractionSystem(map);
+    this.buildNpcs(resolved);
+    this.buildObjectMarkers(resolved);
+    this.buildInteractionSystem(resolved);
 
     const camera = this.cameras.main;
-    camera.setBounds(0, 0, map.width * TILE_SIZE, map.height * TILE_SIZE);
+    camera.setBounds(0, 0, resolved.width * TILE_SIZE, resolved.height * TILE_SIZE);
     camera.startFollow(this.player, true, 0.12, 0.12);
 
-    this.addUi(map);
+    this.addUi(resolved);
     this.buildPrompt();
 
     // Remember the arrival tile so spawning on a transition never re-triggers.
@@ -95,7 +122,15 @@ export class OverworldScene extends Phaser.Scene {
     this.lastTileY = spawn.y;
 
     this.inputSystem = new InputSystem(this);
-    this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => this.inputSystem.destroy());
+
+    // Phase 2 — multiplayer: bind the network layer and join this zone.
+    this.network.attach(this);
+    this.network.start(zoneId);
+
+    this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
+      this.inputSystem.destroy();
+      this.network.detach();
+    });
   }
 
   update(): void {
@@ -110,6 +145,15 @@ export class OverworldScene extends Phaser.Scene {
     const vector = this.inputSystem.getMoveVector();
     this.player.move(vector);
     this.shadow.setPosition(this.player.x, this.player.y + 12);
+
+    // Phase 2 — send a throttled move intent (dominant axis only; the server
+    // rejects diagonals) and interpolate other couriers' snapshots.
+    if (Math.abs(vector.x) >= Math.abs(vector.y)) {
+      this.network.moveIntent(Math.sign(vector.x), 0);
+    } else {
+      this.network.moveIntent(0, Math.sign(vector.y));
+    }
+    this.network.update();
 
     const focused = this.interactionSystem.getFocused(
       this.player.x,
@@ -286,6 +330,7 @@ export class OverworldScene extends Phaser.Scene {
     if (!transition) return;
 
     this.isTransitioning = true;
+    this.network.joinZone(transition.toZone);
     this.scene.restart({
       zoneId: transition.toZone,
       spawn: transition.spawn,

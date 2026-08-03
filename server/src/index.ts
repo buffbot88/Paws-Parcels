@@ -2,11 +2,17 @@ import { createServer, type IncomingMessage, type ServerResponse } from "node:ht
 // Side-effect: config is validated and loaded at module import — any bad
 // server_config.json fails fast before main() runs.
 import { server as serverConfig } from "./config/index.ts";
-import { getPool, closePool, pingDb } from "./db/connection.ts";
+import { getDb, closeDb, pingDb } from "./db/connection.ts";
 import { runMigrations } from "./db/migrate.ts";
 import { middleware, parseBody, jsonResponse, errorResponse } from "./middleware/index.ts";
 import { logger } from "./middleware/logger.ts";
 import { createRouter } from "./routes/index.ts";
+import { GameServer } from "./ws/gameServer.ts";
+import { loadZoneData } from "./ws/zoneData.ts";
+import {
+  getCharacterWithClass,
+  updateCharacterPosition,
+} from "./models/Character.ts";
 
 async function main(): Promise<void> {
 
@@ -15,23 +21,44 @@ async function main(): Promise<void> {
     environment: serverConfig.nodeEnv,
   });
 
-  // Connect to MySQL and run migrations
+  // Open the SQLite database and run migrations (the file is created on
+  // first boot and committed with the repo).
   try {
-    const pool = getPool();
-    const conn = await pool.getConnection();
-    await conn.ping();
-    conn.release();
-    logger.info("MySQL connected");
-
+    getDb();
+    if (!(await pingDb())) {
+      throw new Error("SQLite ping failed");
+    }
+    logger.info("SQLite database ready");
     await runMigrations();
   } catch (err) {
-    logger.error("Failed to connect to MySQL or run migrations", {
+    logger.error("Failed to open SQLite or run migrations", {
       error: String(err),
     });
     process.exit(1);
   }
 
   const router = createRouter();
+
+  // Phase 2 — WebSocket game server (authoritative presence + movement).
+  // Position persistence is best-effort: gameplay continues in memory if the
+  // DB write fails (design/architecture.md §9 fail-soft).
+  const gameServer = new GameServer({
+    loadCharacter: async (characterId) => {
+      const row = await getCharacterWithClass(characterId);
+      if (row === null) return null;
+      return {
+        characterId: row.id,
+        accountId: row.account_id,
+        name: row.name,
+        classKey: row.class_key,
+        zoneId: row.zone_id,
+        pos: { x: row.pos_x, y: row.pos_y },
+      };
+    },
+    getZoneData: loadZoneData,
+    persistPosition: (characterId, zoneId, pos) =>
+      updateCharacterPosition(characterId, zoneId, pos.x, pos.y),
+  });
 
   const server = createServer(async (req: IncomingMessage, res: ServerResponse) => {
     // Apply CORS and other universal middleware
@@ -61,16 +88,21 @@ async function main(): Promise<void> {
     }
   });
 
+  // Attach the WebSocket server to the same HTTP server before listening.
+  gameServer.attach(server);
+
   server.listen(serverConfig.port, serverConfig.host, () => {
     logger.info(`Server listening on http://${serverConfig.host}:${serverConfig.port}`);
     logger.info(`Health check: http://localhost:${serverConfig.port}/api/health`);
+    logger.info(`WebSocket: ws://localhost:${serverConfig.port}/ws`);
   });
 
   // Graceful shutdown
   const shutdown = async (signal: string) => {
     logger.info(`Received ${signal}, shutting down gracefully`);
+    gameServer.close();
     server.close(async () => {
-      await closePool();
+      await closeDb();
       logger.info("Server shut down");
       process.exit(0);
     });

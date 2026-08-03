@@ -1,11 +1,16 @@
 import { describe, expect, it } from "vitest";
 import { MAPS, MAP_DIMENSIONS, type MapData, type MapPoint } from "../../src/game/Maps.ts";
-import { validateAllMaps, validateMapData, validateNpcPlacement } from "../../src/systems/MapValidator.ts";
+import {
+  isWalkableTile,
+  sanitizeSpawn,
+  validateAllMaps,
+  validateMapData,
+  validateNpcPlacement,
+} from "../../src/systems/MapValidator.ts";
 import { ZoneKeys } from "../../src/game/GameConstants.ts";
 import npcsJson from "../../src/data/npcs.json";
 import type { NPC } from "../../src/types/NPCtypes.ts";
-import postOfficeJson from "../../src/data/maps/post-office.json";
-import brambleJson from "../../src/data/maps/bramble-patch.json";
+import cloverVillageJson from "../../src/data/maps/clover-village.json";
 
 // Compile-time schema conformance: renaming/removing/retyping any field of the
 // shipped map JSON breaks typecheck (same pattern as the content tests). JSON
@@ -17,8 +22,7 @@ type Widen<T> = T extends string ? string
   : T extends object ? { [K in keyof T]: Widen<T[K]> }
   : T;
 
-postOfficeJson satisfies { interactables: Widen<MapData["interactables"]> } & Widen<Omit<MapData, "interactables">>;
-brambleJson satisfies { interactables: Widen<MapData["interactables"]> } & Widen<Omit<MapData, "interactables">>;
+cloverVillageJson satisfies { interactables: Widen<MapData["interactables"]> } & Widen<Omit<MapData, "interactables">>;
 
 function mapFixture(overrides: Partial<MapData>): MapData {
   return {
@@ -47,9 +51,8 @@ function interactableFixture(overrides: Partial<MapData["interactables"][number]
 }
 
 describe("map validation — shipped maps", () => {
-  it("both zones match the dimensions locked in design/world-map.md", () => {
-    expect(MAP_DIMENSIONS[ZoneKeys.PostOffice]).toEqual({ width: 30, height: 20 });
-    expect(MAP_DIMENSIONS[ZoneKeys.Bramble]).toEqual({ width: 40, height: 26 });
+  it("the hub zone matches the dimensions locked in design/world-map.md", () => {
+    expect(MAP_DIMENSIONS[ZoneKeys.CloverVillage]).toEqual({ width: 30, height: 20 });
   });
 
   it("validates cleanly and matches the expected dimensions", () => {
@@ -61,7 +64,7 @@ describe("map validation — shipped maps", () => {
     }
   });
 
-  it("every transition targets the other shipped zone", () => {
+  it("every transition targets a registered zone other than its own", () => {
     for (const map of Object.values(MAPS)) {
       for (const t of map.transitions) {
         expect(MAPS[t.toZone]).toBeDefined();
@@ -146,7 +149,7 @@ describe("map validation — rule coverage", () => {
           label: "?",
           x: 1,
           y: 0,
-          toZone: ZoneKeys.PostOffice,
+          toZone: ZoneKeys.CloverVillage,
           spawn: { x: 99, y: 99 },
         },
       ],
@@ -165,8 +168,8 @@ describe("map validation — rule coverage", () => {
           label: "?",
           x: 1,
           y: 0,
-          toZone: ZoneKeys.PostOffice,
-          spawn: { x: 15, y: 14 },
+          toZone: ZoneKeys.CloverVillage,
+          spawn: { x: 15, y: 13 },
         },
       ],
     });
@@ -178,8 +181,8 @@ describe("map validation — rule coverage", () => {
   it("rejects duplicate transition ids", () => {
     const map = mapFixture({
       transitions: [
-        { id: "t1", label: "?", x: 1, y: 0, toZone: ZoneKeys.PostOffice, spawn: { x: 15, y: 14 } },
-        { id: "t1", label: "?", x: 2, y: 0, toZone: ZoneKeys.PostOffice, spawn: { x: 15, y: 14 } },
+        { id: "t1", label: "?", x: 1, y: 0, toZone: ZoneKeys.CloverVillage, spawn: { x: 15, y: 13 } },
+        { id: "t1", label: "?", x: 2, y: 0, toZone: ZoneKeys.CloverVillage, spawn: { x: 15, y: 13 } },
       ],
     });
     const result = validateMapData(map);
@@ -251,6 +254,25 @@ describe("map validation — interactables", () => {
   });
 });
 
+describe("sanitizeSpawn / isWalkableTile", () => {
+  it("keeps a walkable spawn unchanged", () => {
+    const map = mapFixture({ rows: ["GGG", "GPG", "GGG"], spawn: { x: 1, y: 1 } });
+    expect(sanitizeSpawn(map, { x: 2, y: 1 })).toEqual({ x: 2, y: 1 });
+  });
+
+  it("falls back to the map spawn for a colliding point", () => {
+    const map = mapFixture({ rows: ["GGG", "GTT", "GGG"], spawn: { x: 1, y: 1 } });
+    expect(sanitizeSpawn(map, { x: 2, y: 1 })).toEqual({ x: 1, y: 1 });
+    expect(isWalkableTile(map, 2, 1)).toBe(false);
+  });
+
+  it("falls back to the map spawn for an out-of-bounds point", () => {
+    const map = mapFixture({ spawn: { x: 1, y: 1 } });
+    expect(sanitizeSpawn(map, { x: 9, y: 9 })).toEqual({ x: 1, y: 1 });
+    expect(isWalkableTile(map, 9, 9)).toBe(false);
+  });
+});
+
 describe("npc placement", () => {
   it("every shipped NPC stands on a non-colliding tile", () => {
     const npcs = npcsJson.npcs as NPC[];
@@ -263,8 +285,8 @@ describe("npc placement", () => {
       {
         ...npcs[0],
         id: "npc-bad",
-        homeZone: "zone-post-office",
-        homeTile: { x: 3, y: 2 }, // building wall column (W)
+        homeZone: "zone-clover-village",
+        homeTile: { x: 4, y: 3 }, // post office wall column (W)
       },
     ] as NPC[];
     const errors = validateNpcPlacement(bad);

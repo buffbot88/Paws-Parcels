@@ -1,5 +1,7 @@
-import type { RowDataPacket, ResultSetHeader } from "mysql2";
-import { getPool } from "../db/connection.ts";
+import { getDb } from "../db/connection.ts";
+
+/** A row object as returned by node:sqlite (null | number | bigint | string). */
+type SqlRow = Record<string, unknown>;
 
 /** Account row as stored in the Paws `accounts` table. */
 export interface AccountRow {
@@ -29,13 +31,13 @@ export interface AshatLinkPayload {
 export async function getAccountByAshatId(
   ashatUserId: string,
 ): Promise<AccountRow | null> {
-  const pool = getPool();
-  const [rows] = await pool.query<RowDataPacket[]>(
-    "SELECT id, username, email, display_name, role, ashat_user_id FROM accounts WHERE ashat_user_id = ? LIMIT 1",
-    [ashatUserId],
-  );
-  if (rows.length === 0) return null;
-  return rowToAccount(rows[0]);
+  const row = getDb()
+    .prepare(
+      "SELECT id, username, email, display_name, role, ashat_user_id FROM accounts WHERE ashat_user_id = ? LIMIT 1",
+    )
+    .get(ashatUserId) as SqlRow | undefined;
+  if (row === undefined) return null;
+  return rowToAccount(row);
 }
 
 /**
@@ -55,11 +57,11 @@ export async function findOrCreateAccountByAshatId(
       existing.username !== payload.username ||
       existing.role !== payload.role
     ) {
-      const pool = getPool();
-      await pool.query<ResultSetHeader>(
-        "UPDATE accounts SET username = ?, display_name = ?, role = ? WHERE id = ?",
-        [payload.username, payload.displayName, payload.role, existing.id],
-      );
+      getDb()
+        .prepare(
+          "UPDATE accounts SET username = ?, display_name = ?, role = ? WHERE id = ?",
+        )
+        .run(payload.username, payload.displayName, payload.role, existing.id);
       existing.username = payload.username;
       existing.display_name = payload.displayName;
       existing.role = payload.role;
@@ -67,22 +69,16 @@ export async function findOrCreateAccountByAshatId(
     return existing;
   }
 
-  const pool = getPool();
   const email = `${payload.username}@ashat.local`;
-  const [result] = await pool.query<ResultSetHeader>(
-    `INSERT INTO accounts (username, email, display_name, role, ashat_user_id, created_at, updated_at)
-     VALUES (?, ?, ?, ?, ?, NOW(), NOW())`,
-    [
-      payload.username,
-      email,
-      payload.displayName,
-      payload.role,
-      payload.ashatUserId,
-    ],
-  );
+  const info = getDb()
+    .prepare(
+      `INSERT INTO accounts (username, email, display_name, role, ashat_user_id)
+       VALUES (?, ?, ?, ?, ?)`,
+    )
+    .run(payload.username, email, payload.displayName, payload.role, payload.ashatUserId);
 
   return {
-    id: result.insertId,
+    id: Number(info.lastInsertRowid),
     username: payload.username,
     email,
     display_name: payload.displayName,
@@ -91,7 +87,7 @@ export async function findOrCreateAccountByAshatId(
   };
 }
 
-function rowToAccount(row: RowDataPacket): AccountRow {
+function rowToAccount(row: SqlRow): AccountRow {
   return {
     id: Number(row.id),
     username: String(row.username ?? ""),

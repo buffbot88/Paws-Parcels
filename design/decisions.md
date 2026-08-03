@@ -27,7 +27,7 @@
 
 ### Coordinate systems (explicitly distinct)
 - **Decision:** Three coordinate concepts are kept separate everywhere:
-  - **Logical/server coordinates:** tile-based `(x, y)` per zone, authoritative in MySQL.
+  - **Logical/server coordinates:** tile-based `(x, y)` per zone, authoritative in SQLite.
   - **Client screen coordinates:** pixels for rendering; derived from logical + camera.
   - **Render depth/order:** draw order within a tile (e.g. `y`-sorted + sprite layer).
 - **Reason:** Server-authoritative movement requires the server to reason in the same
@@ -59,9 +59,9 @@
   a browser; the client becomes a renderer + intent sender.
 - **Status:** ✅ decided.
 
-### MySQL is accessed only by the server
-- **Decision:** MySQL is reachable **only** from the server process(es). The browser never
-  connects to MySQL directly.
+### SQLite is accessed only by the server
+- **Decision:** SQLite is reachable **only** from the server process(es). The browser never
+  connects to SQLite directly.
 - **Reason:** Direct browser→DB access would expose credentials and let clients bypass all
   validation; the server is the trust boundary.
 - **Consequences:** All persistence goes through HTTP/WS APIs; DB credentials live in
@@ -104,9 +104,9 @@
   inventory locally beyond display.
 - **Status:** ✅ decided.
 
-### Player progression is persisted in MySQL
+### Player progression is persisted in SQLite
 - **Decision:** All player progression (XP/level, stats, currency, inventory, quests,
-  friendships, dungeon runs) persists in **MySQL** keyed by account/character.
+  friendships, dungeon runs) persists in **SQLite** keyed by account/character.
 - **Reason:** Persistent accounts + cross-session progression require server-side storage;
   localStorage cannot provide multi-device or authoritative persistence.
 - **Consequences:** Save system moves entirely server-side; migration scripts versioned.
@@ -178,26 +178,30 @@
 
 ## 3. Zones, IDs & Retained Content
 
-### Zones (carried over, now multiplayer)
-- **Decision:** Existing zones remain: `zone-post-office` (Main Village hub — safe) and
-  `zone-bramble-patch` (outdoor map — first monster map). Whispering Pines / Sunlit
-  Clearing IDs stay reserved. The first dungeon is a new instanced zone.
-- **Reason:** Phases 0–3 shipped these maps; reusing them keeps client work and content.
-- **Consequences:** Bramble Patch gains monster spawns (excluded from the village);
-  zone transitions become server-validated join/leave.
-- **Status:** ✅ built (maps) / ⬜ planned (monster content).
+### Zones (now multiplayer; hub renamed to Clover Village)
+- **Decision:** The main hub is now `zone-clover-village` (safe village), replacing
+  the old `zone-post-office` map. The old `zone-bramble-patch` map was removed;
+  outdoor monster content returns in Phase 3 with a fresh map + zone key.
+  Whispering Pines / Sunlit Clearing IDs stay reserved. The first dungeon is a
+  new instanced zone.
+- **Reason:** The village was rebuilt around the new Clover Village art pack
+  (`src/data/maps/CloverVillage/`); the old placeholder maps no longer matched.
+- **Consequences:** All five cozy NPCs live in the hub for now (placeholders until
+  Phase 7 art); zone transitions become server-validated join/leave as more zones
+  land.
+- **Status:** ✅ built (hub map) / ⬜ planned (monster content, Phase 3).
 
 ### ID conventions (retained)
 - **Decision:** Stable kebab-case prefixed IDs (`zone-`, `npc-`, `item-`, `quest-`,
   `upgrade-`, `dialogue-`) — never renamed once data exists.
-- **Reason:** Already the backbone of content validation; MySQL keys reuse them.
+- **Reason:** Already the backbone of content validation; SQLite keys reuse them.
 - **Consequences:** New entities (classes, monsters, dungeons, recipes) adopt the same
   convention (`class-`, `monster-`, `dungeon-`, `recipe-`).
 - **Status:** ✅ built.
 
 ### Economy (retained, now audited)
 - **Decision:** Currency is **Stamps**, server-issued, with **audit/economy events** logged
-  to MySQL for every grant/spend. Cozy tuning (no required grinding) is preserved.
+  to SQLite for every grant/spend. Cozy tuning (no required grinding) is preserved.
 - **Reason:** Stamps are already established; server-side audit adds anti-cheat.
 - **Consequences:** Every economy mutation goes through one validated server path.
 - **Status:** ✅ decided.
@@ -208,7 +212,7 @@
   quest-chain gates.
 - **Reason:** The cozy relationship loop is core to the identity; it becomes part of
   progression + quest prerequisites.
-- **Consequences:** `friendships` table in MySQL; reputation changes are server-validated;
+- **Consequences:** `friendships` table in SQLite; reputation changes are server-validated;
   the no-two-level-jump invariant still applies to rewards.
 - **Status:** ✅ decided (content) / ⬜ planned (server persistence).
 
@@ -226,9 +230,9 @@
 ## 5. Open questions (⚠)
 
 - Server language/framework within the TS ecosystem (Node + ws/µWebSockets vs. Deno) —
-  decision deferred to Phase 1 implementation, **not** blocked.
+  decided: Node + `ws` (see `server/src/ws/`), remaining questions deferred.
 - Zone capacity exact number and snapshot rate (16–32 players, 10–20 Hz) — tunable at
   load test (Phase 8).
 - Account identity: email-only vs. username+email — Phase 1 detail.
 - Whether existing `src/data` JSON remains the content source of truth or migrates to
-  MySQL seed data — lean: JSON stays, MySQL mirrors it (content ≠ player state).
+  SQLite seed data — lean: JSON stays, SQLite mirrors it (content ≠ player state).

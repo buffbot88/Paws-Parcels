@@ -6,8 +6,8 @@
       "species": "Hedgehog",
       "personality": "energetic",
       "role": "Post office assistant",
-      "homeZone": "zone-post-office",
-      "homeTile": { "x": 5, "y": 4 }
+      "homeZone": "zone-clover-village",
+      "homeTile": { "x": 8, "y": 4 }
     },
     {
       "id": "npc-maple",
@@ -15,8 +15,8 @@
       "species": "Deer",
       "personality": "shy",
       "role": "Florist",
-      "homeZone": "zone-bramble-patch",
-      "homeTile": { "x": 6, "y": 16 }
+      "homeZone": "zone-clover-village",
+      "homeTile": { "x": 25, "y": 9 }
     },
     {
       "id": "npc-biscuit",
@@ -24,8 +24,8 @@
       "species": "Bear",
       "personality": "cheerful",
       "role": "Café owner",
-      "homeZone": "zone-bramble-patch",
-      "homeTile": { "x": 33, "y": 7 }
+      "homeZone": "zone-clover-village",
+      "homeTile": { "x": 24, "y": 16 }
     },
     {
       "id": "npc-lumi",
@@ -33,8 +33,8 @@
       "species": "Moth",
       "personality": "mysterious",
       "role": "Forest researcher",
-      "homeZone": "zone-bramble-patch",
-      "homeTile": { "x": 20, "y": 18 }
+      "homeZone": "zone-clover-village",
+      "homeTile": { "x": 12, "y": 10 }
     },
     {
       "id": "npc-moss",
@@ -42,8 +42,8 @@
       "species": "Frog",
       "personality": "sleepy",
       "role": "Gardener",
-      "homeZone": "zone-bramble-patch",
-      "homeTile": { "x": 6, "y": 8 }
+      "homeZone": "zone-clover-village",
+      "homeTile": { "x": 8, "y": 16 }
     }
   ]
 }
