@@ -6,6 +6,11 @@ import {
   meHandler,
   oidcCallbackHandler,
 } from "./auth.ts";
+import {
+  classesHandler,
+  createCharacterHandler,
+  listCharactersHandler,
+} from "./characters.ts";
 
 /** Route handler signature. */
 export type RouteHandler = (
@@ -81,7 +86,10 @@ export function createRouter(): Router {
   router.get("/api/auth/me", meHandler);
   router.post("/api/auth/logout", logoutHandler);
 
-  // Phase 2.5 — character endpoints will land here (list, create, current zone).
+  // Character management (list, class catalog, create).
+  router.get("/api/characters", listCharactersHandler);
+  router.get("/api/classes", classesHandler);
+  router.post("/api/characters", createCharacterHandler);
 
   return router;
 }

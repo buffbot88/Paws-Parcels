@@ -2,19 +2,16 @@ import { jwtVerify } from "jose";
 import type { IncomingMessage, ServerResponse } from "node:http";
 import { auth as authConfig, oidc as oidcConfig } from "../config/index.ts";
 import {
-  extractBearerToken,
-  verifyAccessToken,
-} from "../auth/index.ts";
-import {
   exchangeAuthCode,
   getAuthorizationEndpoint,
   verifyOidcIdToken,
 } from "../auth/oidc.ts";
 import {
   findOrCreateAccountByAshatId,
-  getAccountByAshatId,
+  toPublicAccount,
 } from "../models/Account.ts";
-import { getCharactersByAccountId } from "../models/Character.ts";
+import { getCharactersByAccountId, toPublicCharacter } from "../models/Character.ts";
+import { requireAccount } from "../middleware/auth.ts";
 import { errorResponse, jsonResponse } from "../middleware/index.ts";
 import { logger } from "../middleware/logger.ts";
 
@@ -170,22 +167,8 @@ export async function oidcCallbackHandler(
   const characters = await getCharactersByAccountId(account.id);
   jsonResponse(res, 200, {
     token,
-    account: {
-      id: account.id,
-      username: account.username,
-      display_name: account.display_name,
-      role: account.role,
-      ashat_user_id: account.ashat_user_id,
-    },
-    characters: characters.map((c) => ({
-      id: c.id,
-      name: c.name,
-      class_id: c.class_id,
-      zone_id: c.zone_id,
-      pos_x: c.pos_x,
-      pos_y: c.pos_y,
-      level: c.level,
-    })),
+    account: toPublicAccount(account),
+    characters: characters.map(toPublicCharacter),
   });
 }
 
@@ -199,47 +182,12 @@ export async function meHandler(
   req: IncomingMessage,
   res: ServerResponse,
 ): Promise<void> {
-  const authHeader = req.headers["authorization"];
-  const token = extractBearerToken(
-    typeof authHeader === "string" ? authHeader : undefined,
-  );
-  if (token === null) {
-    errorResponse(res, 401, "UNAUTHORIZED", "Bearer token required");
-    return;
-  }
-  const payload = await verifyAccessToken(token);
-  if (payload === null) {
-    errorResponse(res, 401, "INVALID_TOKEN", "JWT verification failed");
-    return;
-  }
-  const account = await getAccountByAshatId(payload.ashatUserId);
-  if (account === null) {
-    errorResponse(
-      res,
-      401,
-      "ACCOUNT_GONE",
-      "Linked Ashat account no longer exists",
-    );
-    return;
-  }
+  const account = await requireAccount(req, res);
+  if (account === null) return;
   const characters = await getCharactersByAccountId(account.id);
   jsonResponse(res, 200, {
-    account: {
-      id: account.id,
-      username: account.username,
-      display_name: account.display_name,
-      role: account.role,
-      ashat_user_id: account.ashat_user_id,
-    },
-    characters: characters.map((c) => ({
-      id: c.id,
-      name: c.name,
-      class_id: c.class_id,
-      zone_id: c.zone_id,
-      pos_x: c.pos_x,
-      pos_y: c.pos_y,
-      level: c.level,
-    })),
+    account: toPublicAccount(account),
+    characters: characters.map(toPublicCharacter),
   });
 }
 

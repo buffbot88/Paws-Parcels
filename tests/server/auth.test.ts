@@ -46,10 +46,26 @@ vi.mock("../../server/src/config/index.ts", () => ({
 vi.mock("../../server/src/models/Account.ts", () => ({
   findOrCreateAccountByAshatId: vi.fn(),
   getAccountByAshatId: vi.fn(),
+  toPublicAccount: (a: Record<string, unknown>) => ({
+    id: a.id,
+    username: a.username,
+    display_name: a.display_name,
+    role: a.role,
+    ashat_user_id: a.ashat_user_id,
+  }),
 }));
 
 vi.mock("../../server/src/models/Character.ts", () => ({
   getCharactersByAccountId: vi.fn(),
+  toPublicCharacter: (c: Record<string, unknown>) => ({
+    id: c.id,
+    name: c.name,
+    class_id: c.class_id,
+    zone_id: c.zone_id,
+    pos_x: c.pos_x,
+    pos_y: c.pos_y,
+    level: c.level,
+  }),
 }));
 
 import type { IncomingMessage, ServerResponse } from "node:http";

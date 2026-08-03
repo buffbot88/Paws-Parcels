@@ -23,8 +23,10 @@ world is now **persistent, server-authoritative, and multiplayer**:
 - **No PvP, no grinding, no real-money transactions.**
 
 **Current standing:** Phases 0–3 of the **original single-player plan** are built and
-remain the client foundation. Phase 0 of the **online plan** (pivot documentation)
-is now complete. Next up: **Phase 1 — Online Foundation** (server + auth + MySQL).
+remain the client foundation. Phase 0 (pivot docs) and Phase 1 (**Online Foundation** —
+server app, MySQL migrations, health check, ASHAT Hub OIDC auth, account + character
+data models, character list/create/classes endpoints) are complete. Next up:
+**Phase 2 — Multiplayer Village** (WebSocket presence + movement sync).
 
 ---
 
@@ -66,15 +68,18 @@ is now complete. Next up: **Phase 1 — Online Foundation** (server + auth + MyS
 
 ## 2. Next ⏭ (online plan phases)
 
-### Phase 1 — Online Foundation *(next phase)*
+### Phase 1 — Online Foundation ✅
 Goal: server application, MySQL, auth, health check.
-- Create server (Node/TS)
-- MySQL connection + versioned migrations
-- Health check + structured logging
-- Account & character data models
-- Register/login with password hashing + JWT
+- Server (Node/TS, `server/src`) + config loader with fail-fast validation
+- MySQL connection + versioned migrations (runner in `server/src/db/migrate.ts`,
+  schema 001–004 incl. OIDC account columns)
+- Health check + structured logging (`/api/health`)
+- Account & character data models (`Account.ts`, `Character.ts`, `CharacterClass.ts`)
+- Auth via **ASHAT Hub OIDC** (authorization code + PKCE, JWKS-verified) + JWT sessions
+- Character endpoints: `GET/POST /api/characters`, `GET /api/classes`
+- Gate: server `tsc` + Vitest suite green
 
-### Phase 2 — Multiplayer Village
+### Phase 2 — Multiplayer Village *(next phase)*
 Goal: players see each other in the Main Village.
 - Connect client to server (HTTP + WS)
 - Authenticate, join zone, sync presence
@@ -110,8 +115,8 @@ Goal: security review, load tests, browser matrix, alpha.
 See [`BuildPlan.md §19`](BuildPlan.md#19-phased-milestones) for the complete phased plan.
 Summary of phases:
 - **Phase 0:** Pivot documentation — ✅ built
-- **Phase 1:** Online Foundation — ⏭ next
-- **Phase 2:** Multiplayer Village
+- **Phase 1:** Online Foundation — ✅ built (server, MySQL, OIDC auth, characters)
+- **Phase 2:** Multiplayer Village — ⏭ next
 - **Phase 3:** Classes and Combat
 - **Phase 4:** Quest Chains and Deliveries
 - **Phase 5:** Inventory and Equipment

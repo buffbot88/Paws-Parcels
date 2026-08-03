@@ -104,3 +104,14 @@ function rowToAccount(row: RowDataPacket): AccountRow {
         : String(row.ashat_user_id),
   };
 }
+
+/** The public account shape returned by /api/auth/me and auth flows. */
+export function toPublicAccount(a: AccountRow): Record<string, unknown> {
+  return {
+    id: a.id,
+    username: a.username,
+    display_name: a.display_name,
+    role: a.role,
+    ashat_user_id: a.ashat_user_id,
+  };
+}

@@ -2,10 +2,14 @@ import { readFileSync, readdirSync } from "node:fs";
 import { resolve, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
 import { getPool, closePool } from "./connection.ts";
+import { splitStatements } from "./sql.ts";
 import { logger } from "../middleware/logger.ts";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
-const MIGRATIONS_DIR = resolve(__dirname);
+// migrate.ts lives in server/src/db; the SQL files live one level up in
+// server/src/migrations. Resolving the raw __dirname here would point at
+// the db folder and silently apply zero migrations.
+const MIGRATIONS_DIR = resolve(__dirname, "../migrations");
 
 export async function runMigrations(): Promise<void> {
   const pool = getPool();
@@ -39,10 +43,7 @@ export async function runMigrations(): Promise<void> {
     }
 
     const content = readFileSync(resolve(MIGRATIONS_DIR, file), "utf-8");
-    const statements = content
-      .split(";")
-      .map((s) => s.trim())
-      .filter((s) => s.length > 0 && !s.startsWith("--"));
+    const statements = splitStatements(content);
 
     const conn = await pool.getConnection();
     try {

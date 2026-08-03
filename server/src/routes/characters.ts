@@ -1,0 +1,131 @@
+import type { IncomingMessage, ServerResponse } from "node:http";
+import { requireAccount } from "../middleware/auth.ts";
+import { errorResponse, jsonResponse } from "../middleware/index.ts";
+import {
+  createCharacter,
+  getCharactersByAccountId,
+  toPublicCharacter,
+} from "../models/Character.ts";
+import {
+  getCharacterClassById,
+  getCharacterClasses,
+  toPublicClass,
+} from "../models/CharacterClass.ts";
+import { logger } from "../middleware/logger.ts";
+
+/** Name rules for new characters (cozy, kebab-safe, ≤ 50 chars like the DB). */
+const NAME_RE = /^[a-zA-Z0-9 _'.-]+$/;
+const NAME_MAX = 50;
+
+/**
+ * GET /api/characters
+ * List the authenticated account's characters (empty array for a fresh
+ * account — the client then shows the creation screen).
+ */
+export async function listCharactersHandler(
+  req: IncomingMessage,
+  res: ServerResponse,
+): Promise<void> {
+  const account = await requireAccount(req, res);
+  if (account === null) return;
+
+  const characters = await getCharactersByAccountId(account.id);
+  jsonResponse(res, 200, {
+    characters: characters.map(toPublicCharacter),
+  });
+}
+
+/**
+ * GET /api/classes
+ * The playable class catalog for the creation screen (id, key, display name,
+ * base stats, resource family).
+ */
+export async function classesHandler(
+  req: IncomingMessage,
+  res: ServerResponse,
+): Promise<void> {
+  const account = await requireAccount(req, res);
+  if (account === null) return;
+
+  const classes = await getCharacterClasses();
+  jsonResponse(res, 200, { classes: classes.map(toPublicClass) });
+}
+
+/**
+ * POST /api/characters
+ * Body: { name: string, class_id: number, appearance?: object }
+ * Creates a character (+ derived character_stats + starter inventory) for the
+ * authenticated account. Validates name shape, class existence, and the
+ * per-account name unique index.
+ */
+export async function createCharacterHandler(
+  req: IncomingMessage,
+  res: ServerResponse,
+): Promise<void> {
+  const account = await requireAccount(req, res);
+  if (account === null) return;
+
+  const body = (req as unknown as { body?: Record<string, unknown> }).body;
+  const name = typeof body?.name === "string" ? body.name.trim() : "";
+  const classId = body?.class_id;
+  const appearanceRaw = body?.appearance;
+
+  if (name.length < 2 || name.length > NAME_MAX || !NAME_RE.test(name)) {
+    errorResponse(
+      res,
+      400,
+      "INVALID_NAME",
+      `name must be 2-${NAME_MAX} characters using letters, numbers, spaces, ' - . _`,
+    );
+    return;
+  }
+  if (typeof classId !== "number" || !Number.isInteger(classId) || classId < 1) {
+    errorResponse(res, 400, "INVALID_CLASS_ID", "class_id must be a positive integer");
+    return;
+  }
+
+  const cls = await getCharacterClassById(classId);
+  if (cls === null) {
+    errorResponse(res, 400, "CLASS_NOT_FOUND", "No class exists with that id");
+    return;
+  }
+
+  const appearance = normalizeAppearance(appearanceRaw);
+  const result = await createCharacter({
+    accountId: account.id,
+    name,
+    classId,
+    appearance,
+    cls,
+  });
+
+  if (!result.ok) {
+    errorResponse(
+      res,
+      409,
+      "NAME_TAKEN",
+      "You already have a courier with that name — try another",
+    );
+    return;
+  }
+
+  logger.info("Character created", {
+    accountId: account.id,
+    characterId: result.character.id,
+    name: result.character.name,
+    classId,
+  });
+  jsonResponse(res, 201, { character: toPublicCharacter(result.character) });
+}
+
+/**
+ * The appearance JSON is client-supplied flavor only (the server never
+ * depends on it). Store whatever shape the client sent — normalized to an
+ * object so the NOT NULL JSON column is always satisfied.
+ */
+function normalizeAppearance(raw: unknown): Record<string, unknown> {
+  if (typeof raw === "object" && raw !== null && !Array.isArray(raw)) {
+    return raw as Record<string, unknown>;
+  }
+  return {};
+}

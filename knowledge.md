@@ -5,7 +5,7 @@ This file gives Freebuff context about your project: goals, commands, convention
 ## What this is
 **Paws & Parcels** — a cozy, browser-based **2.5D online RPG (MMORPG-lite)** where the player is a tiny animal courier in a shared magical forest. The game is **server-authoritative**: the server owns all gameplay state; the client renders intents. No permanent failure states, no PvP, no gore.
 
-**Status: Online pivot documentation (Phase 3.5) complete.** The client still has the Phase 0–3 single-player foundation (Phaser 4, two walkable zones, 5 NPCs, DOM dialogue, 69 tests), but the **BuildPlan, design docs, and roadmap** now describe the **online game**. Next implementation phase: **Phase 1 — Online Foundation** (server + MySQL + auth).
+**Status: Online pivot documentation (Phase 3.5) complete; Phase 1 — Online Foundation built.** The client still has the Phase 0–3 single-player foundation (Phaser 4, two walkable zones, 5 NPCs, DOM dialogue), and the server now has MySQL migrations (001–004), health check, **ASHAT Hub OIDC auth** (authorization code + PKCE, JWKS-verified), JWT sessions, and character endpoints (`GET/POST /api/characters`, `GET /api/classes`). Next implementation phase: **Phase 2 — Multiplayer Village** (HTTP + WebSocket, presence, movement validation).
 
 ## Key online-plan documents
 - `BuildPlan.md` — **authoritative build plan**: architecture, phases, scope, ownership rules, quality gates
