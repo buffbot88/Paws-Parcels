@@ -9,6 +9,7 @@ This file gives Freebuff context about your project: goals, commands, convention
 
 - `Spec.md` — full product spec (gameplay, quests, NPCs, items, save schema, MVP acceptance checklist)
 - `BuildPlan.md` — MVP build plan: stack, folder structure, phased milestones, DoD, risks (Phase 0 marked complete)
+- `ROADMAP.md` — **status of every phase**: what's built (0–2), what's next (3), planned (4–9), post-MVP backlog; update at the end of each phase
 - `VOWS.md` — **binding development practices, read before writing any code** (see Conventions)
 - `design/decisions.md` — **locked decisions**: 960×540 @ 48×48 tiles, Scale.FIT; IDs, zones, economy
 - `design/world-map.md` — tile-unit sketches for the 2 MVP zones (post office hub + Bramble Patch); **Phase 2 shipped both** as custom JSON maps in `src/data/maps/*.json` (ASCII rows → tileset sheet; dimensions 30×20 / 40×26 enforced by MapValidator)

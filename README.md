@@ -46,11 +46,13 @@ design/            Locked decisions, world map, NPC cards (Phase 0)
 
 ## Phase status
 
+> Full picture of what's built vs. what's next: **[`ROADMAP.md`](ROADMAP.md)**
+
 - **Phase 0 — Pre-Production:** ✅ complete (design locked, content in `src/data`, validated)
 - **Phase 1 — Project Foundation:** ✅ complete (Vite + TS + Phaser boot, placeholder textures, responsive layout, dev README)
 - **Phase 2 — World & Player Movement:** ✅ complete (both zones from `design/world-map.md`, WASD/arrow + touch movement, wall collision, camera follow, zone transitions)
-- **Phase 3 — NPCs & Interaction:** next (NPC placement, dialogue, interaction)
-- Phases 3–9: see `BuildPlan.md` §6.
+- **Phase 3 — NPCs & Interaction:** ⏭ next (NPC placement, dialogue, interaction)
+- Phases 4–9: see [`ROADMAP.md`](ROADMAP.md) and `BuildPlan.md` §6.
 
 ## Design docs
 
