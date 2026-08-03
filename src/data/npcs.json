@@ -7,7 +7,7 @@
       "personality": "energetic",
       "role": "Post office assistant",
       "homeZone": "zone-post-office",
-      "homeTile": { "x": 5, "y": 5 }
+      "homeTile": { "x": 5, "y": 4 }
     },
     {
       "id": "npc-maple",
@@ -25,7 +25,7 @@
       "personality": "cheerful",
       "role": "Café owner",
       "homeZone": "zone-bramble-patch",
-      "homeTile": { "x": 32, "y": 7 }
+      "homeTile": { "x": 33, "y": 7 }
     },
     {
       "id": "npc-lumi",
@@ -43,7 +43,7 @@
       "personality": "sleepy",
       "role": "Gardener",
       "homeZone": "zone-bramble-patch",
-      "homeTile": { "x": 4, "y": 8 }
+      "homeTile": { "x": 6, "y": 8 }
     }
   ]
 }

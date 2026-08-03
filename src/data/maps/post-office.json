@@ -35,5 +35,47 @@
       "toZone": "zone-bramble-patch",
       "spawn": { "x": 19, "y": 1 }
     }
+  ],
+  "interactables": [
+    {
+      "id": "object-counter",
+      "kind": "counter",
+      "label": "Post Office Counter",
+      "x": 5,
+      "y": 5,
+      "lines": ["The counter is polished and tidy. Deliveries begin here when the postmaster is ready."]
+    },
+    {
+      "id": "object-quest-board",
+      "kind": "quest-board",
+      "label": "Quest Board",
+      "x": 22,
+      "y": 4,
+      "lines": ["A corkboard of quest cards. The newest ones aren't posted yet — check back soon."]
+    },
+    {
+      "id": "object-mailbox",
+      "kind": "mailbox",
+      "label": "Mailbox",
+      "x": 5,
+      "y": 13,
+      "lines": ["Your little green mailbox. It's empty right now — nothing to claim yet."]
+    },
+    {
+      "id": "object-shop",
+      "kind": "shop",
+      "label": "Shop Shelf",
+      "x": 22,
+      "y": 13,
+      "lines": ["The shop shelves are stocked with shiny things… for now."]
+    },
+    {
+      "id": "object-welcome-sign",
+      "kind": "sign",
+      "label": "Welcome Sign",
+      "x": 13,
+      "y": 18,
+      "lines": ["Welcome to Clover Post Office! Letters, parcels, and very organized hedgehogs."]
+    }
   ]
 }

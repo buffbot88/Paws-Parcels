@@ -9,7 +9,7 @@ import { resolve, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
 import { validateContent } from "../src/systems/ContentValidator.ts";
 import type { ContentData } from "../src/types/ContentData.ts";
-import { validateAllMaps } from "../src/systems/MapValidator.ts";
+import { validateAllMaps, validateNpcPlacement } from "../src/systems/MapValidator.ts";
 import { MAPS } from "../src/game/Maps.ts";
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), "..");
@@ -53,6 +53,17 @@ if (!maps.valid) {
   process.exit(1);
 }
 
+const npcPlacement = validateNpcPlacement(data.npcs);
+if (npcPlacement.length > 0) {
+  console.error(`NPC placement validation FAILED (${npcPlacement.length} error${npcPlacement.length > 1 ? "s" : ""}):`);
+  for (const e of npcPlacement) console.error(`  ✗ ${e}`);
+  process.exit(1);
+}
+
+const interactableCount = Object.values(MAPS).reduce(
+  (n, m) => n + m.interactables.length,
+  0,
+);
 console.log(
-  `Content validation PASSED — ${data.npcs.length} npcs, ${data.items.length} items, ${data.quests.length} quests, ${data.upgrades.length} upgrades, ${data.dialogue.length} dialogue sets; ${Object.keys(MAPS).length} zone(s) mapped.`
+  `Content validation PASSED — ${data.npcs.length} npcs, ${data.items.length} items, ${data.quests.length} quests, ${data.upgrades.length} upgrades, ${data.dialogue.length} dialogue sets; ${Object.keys(MAPS).length} zone(s) mapped, ${interactableCount} interactable(s).`
 );

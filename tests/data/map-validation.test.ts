@@ -1,14 +1,24 @@
 import { describe, expect, it } from "vitest";
 import { MAPS, MAP_DIMENSIONS, type MapData, type MapPoint } from "../../src/game/Maps.ts";
-import { validateAllMaps, validateMapData } from "../../src/systems/MapValidator.ts";
+import { validateAllMaps, validateMapData, validateNpcPlacement } from "../../src/systems/MapValidator.ts";
 import { ZoneKeys } from "../../src/game/GameConstants.ts";
+import npcsJson from "../../src/data/npcs.json";
+import type { NPC } from "../../src/types/NPCtypes.ts";
 import postOfficeJson from "../../src/data/maps/post-office.json";
 import brambleJson from "../../src/data/maps/bramble-patch.json";
 
 // Compile-time schema conformance: renaming/removing/retyping any field of the
-// shipped map JSON breaks typecheck (same pattern as the content tests).
-postOfficeJson satisfies MapData;
-brambleJson satisfies MapData;
+// shipped map JSON breaks typecheck (same pattern as the content tests). JSON
+// imports widen string literals, so widen the interface unions first.
+type Widen<T> = T extends string ? string
+  : T extends number ? number
+  : T extends boolean ? boolean
+  : T extends readonly (infer U)[] ? Widen<U>[]
+  : T extends object ? { [K in keyof T]: Widen<T[K]> }
+  : T;
+
+postOfficeJson satisfies { interactables: Widen<MapData["interactables"]> } & Widen<Omit<MapData, "interactables">>;
+brambleJson satisfies { interactables: Widen<MapData["interactables"]> } & Widen<Omit<MapData, "interactables">>;
 
 function mapFixture(overrides: Partial<MapData>): MapData {
   return {
@@ -19,6 +29,19 @@ function mapFixture(overrides: Partial<MapData>): MapData {
     rows: ["GGG", "GPG", "GGG"],
     spawn: { x: 1, y: 1 },
     transitions: [],
+    interactables: [],
+    ...overrides,
+  };
+}
+
+function interactableFixture(overrides: Partial<MapData["interactables"][number]> = {}) {
+  return {
+    id: "object-test",
+    kind: "sign" as const,
+    label: "Test Sign",
+    x: 1,
+    y: 1,
+    lines: ["Hello!"],
     ...overrides,
   };
 }
@@ -175,5 +198,88 @@ describe("map validation — rule coverage", () => {
     const result = validateMapData(map);
     expect(result.valid).toBe(false);
     expect(result.errors.some((e) => e.includes("row count 2"))).toBe(true);
+  });
+});
+
+describe("map validation — interactables", () => {
+  it("accepts a walkable interactable", () => {
+    const map = mapFixture({ interactables: [interactableFixture()] });
+    expect(validateMapData(map).valid).toBe(true);
+  });
+
+  it("accepts a wall-mounted object with a walkable neighbor", () => {
+    const map = mapFixture({
+      rows: ["GGG", "GPG", "GGG"],
+      interactables: [interactableFixture({ x: 1, y: 0, kind: "quest-board" })],
+    });
+    expect(validateMapData(map).valid).toBe(true);
+  });
+
+  it("rejects an interactable outside the map bounds", () => {
+    const map = mapFixture({ interactables: [interactableFixture({ x: 9, y: 9 })] });
+    const result = validateMapData(map);
+    expect(result.errors.some((e) => e.includes("outside"))).toBe(true);
+  });
+
+  it("rejects an interactable with an unknown kind", () => {
+    const map = mapFixture({ interactables: [interactableFixture({ kind: "cannon" as never })] });
+    const result = validateMapData(map);
+    expect(result.errors.some((e) => e.includes("unknown kind"))).toBe(true);
+  });
+
+  it("rejects an interactable with no flavor lines", () => {
+    const map = mapFixture({ interactables: [interactableFixture({ lines: [] })] });
+    const result = validateMapData(map);
+    expect(result.errors.some((e) => e.includes("flavor line"))).toBe(true);
+  });
+
+  it("rejects duplicate interactable ids", () => {
+    const map = mapFixture({
+      interactables: [interactableFixture(), interactableFixture({ x: 2, y: 2 })],
+    });
+    const result = validateMapData(map);
+    expect(result.errors.some((e) => e.includes("duplicate interactable id"))).toBe(true);
+  });
+
+  it("rejects an unreachable object walled off on all sides", () => {
+    const map = mapFixture({
+      rows: ["TTT", "TTT", "TTT"],
+      interactables: [interactableFixture({ x: 1, y: 1, kind: "mailbox" })],
+    });
+    const result = validateMapData(map);
+    expect(result.errors.some((e) => e.includes("unreachable"))).toBe(true);
+  });
+});
+
+describe("npc placement", () => {
+  it("every shipped NPC stands on a non-colliding tile", () => {
+    const npcs = npcsJson.npcs as NPC[];
+    expect(validateNpcPlacement(npcs)).toEqual([]);
+  });
+
+  it("reports an NPC placed on a colliding tile", () => {
+    const npcs = npcsJson.npcs as NPC[];
+    const bad = [
+      {
+        ...npcs[0],
+        id: "npc-bad",
+        homeZone: "zone-post-office",
+        homeTile: { x: 3, y: 2 }, // building wall column (W)
+      },
+    ] as NPC[];
+    const errors = validateNpcPlacement(bad);
+    expect(errors.some((e) => e.includes("colliding tile"))).toBe(true);
+  });
+
+  it("reports an NPC with an unknown homeZone", () => {
+    const npcs = npcsJson.npcs as NPC[];
+    const bad = [
+      {
+        ...npcs[0],
+        id: "npc-bad",
+        homeZone: "zone-nowhere" as never,
+      },
+    ] as NPC[];
+    expect(validateNpcPlacement(bad).some((e) => e.includes("unknown homeZone"))).toBe(true);
   });
 });

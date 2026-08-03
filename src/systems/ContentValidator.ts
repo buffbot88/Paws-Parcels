@@ -168,8 +168,10 @@ export function validateContent(data: ContentData): ValidationResult {
   }
 
   // ---- Dialogue checks ----
+  const dialogueNpcIds = new Set<string>();
   for (const d of data.dialogue) {
     if (!npcIds.has(d.npcId)) fail(`dialogue ${d.id}: npcId "${d.npcId}" is not a known npc`);
+    dialogueNpcIds.add(d.npcId);
     if (typeof d.minFriendship !== "number" || d.minFriendship < 0 || d.minFriendship > 4) {
       fail(`dialogue ${d.id}: minFriendship must be an integer 0-4`);
     }
@@ -178,6 +180,12 @@ export function validateContent(data: ContentData): ValidationResult {
       if (typeof d.maxFriendship !== "number" || d.maxFriendship < d.minFriendship || d.maxFriendship > 4) {
         fail(`dialogue ${d.id}: maxFriendship must be >= minFriendship and <= 4`);
       }
+    }
+  }
+  // Every NPC must be reachable by the dialogue system (Phase 3 interactability).
+  for (const npc of data.npcs) {
+    if (!dialogueNpcIds.has(npc.id)) {
+      fail(`npc ${npc.id}: has no dialogue set in dialogue.json (Phase 3 interaction requires one)`);
     }
   }
 

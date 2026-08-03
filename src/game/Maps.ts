@@ -19,6 +19,28 @@ export interface ZoneTransition {
   spawn: MapPoint;
 }
 
+/**
+ * The kind of a map object the player can interact with (Phase 3). NPCs are
+ * separate — they live in npcs.json keyed by homeZone/homeTile.
+ */
+export type InteractableKind =
+  | "counter"
+  | "quest-board"
+  | "mailbox"
+  | "shop"
+  | "sign";
+
+/** A static, interactable map object (design/world-map.md `object-*` entries). */
+export interface MapInteractable {
+  id: string;
+  kind: InteractableKind;
+  label: string;
+  x: number;
+  y: number;
+  /** Flavor lines shown in the dialogue panel until a real system lands (Phases 5-7). */
+  lines: string[];
+}
+
 /** Custom-JSON map format (design/decisions.md): ASCII `rows` + spawn/transitions. */
 export interface MapData {
   id: string;
@@ -28,6 +50,7 @@ export interface MapData {
   rows: string[];
   spawn: MapPoint;
   transitions: ZoneTransition[];
+  interactables: MapInteractable[];
 }
 
 /** Expected dimensions from design/world-map.md (enforced by the map validator). */

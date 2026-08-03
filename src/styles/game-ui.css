@@ -1,0 +1,79 @@
+/* DOM-over-Canvas UI layer (Phase 3+): sits above the Phaser canvas. */
+
+#ui-overlay {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 10;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  padding: 3% 4%;
+}
+
+.dialogue-panel {
+  pointer-events: auto;
+  position: relative;
+  width: min(720px, 100%);
+  background: #fff8ec;
+  border: 2px solid #b08a5f;
+  border-radius: 14px;
+  box-shadow: 0 6px 24px rgba(58, 58, 40, 0.35);
+  padding: 16px 20px 14px;
+  font-family: Georgia, "Times New Roman", serif;
+  color: #3a3a2a;
+  cursor: pointer;
+  transition: transform 0.12s ease;
+}
+
+.dialogue-panel:focus-visible {
+  outline: 3px solid #d08a3e;
+  outline-offset: 2px;
+}
+
+.dialogue-panel:hover {
+  transform: translateY(-1px);
+}
+
+.dialogue-panel.hidden {
+  display: none;
+}
+
+.dialogue-speaker {
+  font-weight: bold;
+  font-size: 1.05rem;
+  color: #8a5a2a;
+  margin-bottom: 6px;
+}
+
+.dialogue-text {
+  font-size: 1rem;
+  line-height: 1.45;
+  min-height: 1.45em;
+}
+
+.dialogue-hint {
+  margin-top: 10px;
+  font-size: 0.8rem;
+  color: #8a8a6a;
+  font-style: italic;
+}
+
+.dialogue-close {
+  position: absolute;
+  top: 8px;
+  right: 10px;
+  border: none;
+  background: transparent;
+  color: #8a8a6a;
+  font-size: 1rem;
+  line-height: 1;
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 6px;
+}
+
+.dialogue-close:hover {
+  color: #5a3a1a;
+  background: rgba(0, 0, 0, 0.06);
+}

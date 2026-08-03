@@ -33,14 +33,15 @@ A cozy, browser-based 2D RPG where players become a tiny animal courier in a mag
 public/            Static assets (favicon; art lands here in Phase 8)
 src/
   data/            Content JSON (npcs, items, quests, upgrades, dialogue) + maps/
-  entities/        Player (arcade sprite, movement)
+  entities/        Player, NPC (placeholder blobs + name tags)
   game/            GameConfig, ErrorLog, GameConstants, Maps registry, Tiles catalog
   scenes/          Boot → Preloader → Overworld (zone-capable world scene)
-  styles/          global.css (responsive DOM layout)
-  systems/         ContentValidator + MapValidator (shared rules), InputSystem
+  styles/          global.css + game-ui.css (responsive DOM layout, UI overlay)
+  systems/         ContentValidator + MapValidator + InputSystem + InteractionSystem + DialogueService
+  ui/              DialoguePanel (DOM overlay)
   types/           Typed data models matching src/data schemas
-tests/             Vitest suites (content + map validation)
-scripts/           validate-content.ts CLI (content + maps)
+tests/             Vitest suites (content, map, systems)
+scripts/           validate-content.ts CLI (content + maps + NPC placement)
 design/            Locked decisions, world map, NPC cards (Phase 0)
 ```
 
@@ -51,7 +52,8 @@ design/            Locked decisions, world map, NPC cards (Phase 0)
 - **Phase 0 — Pre-Production:** ✅ complete (design locked, content in `src/data`, validated)
 - **Phase 1 — Project Foundation:** ✅ complete (Vite + TS + Phaser boot, placeholder textures, responsive layout, dev README)
 - **Phase 2 — World & Player Movement:** ✅ complete (both zones from `design/world-map.md`, WASD/arrow + touch movement, wall collision, camera follow, zone transitions)
-- **Phase 3 — NPCs & Interaction:** ⏭ next (NPC placement, dialogue, interaction)
+- **Phase 3 — NPCs & Interaction:** ✅ complete (5 NPCs from `npcs.json`, DOM dialogue panel, tap/E-space interact, mailbox & signs, interaction prompt)
+- **Phase 4 — Inventory & Gathering:** ⏭ next
 - Phases 4–9: see [`ROADMAP.md`](ROADMAP.md) and `BuildPlan.md` §6.
 
 ## Design docs

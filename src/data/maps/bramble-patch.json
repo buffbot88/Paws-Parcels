@@ -41,5 +41,15 @@
       "toZone": "zone-post-office",
       "spawn": { "x": 15, "y": 14 }
     }
+  ],
+  "interactables": [
+    {
+      "id": "object-trail-sign",
+      "kind": "sign",
+      "label": "Trail Sign",
+      "x": 22,
+      "y": 1,
+      "lines": ["Bramble Patch — mind the berry bushes and the pond!"]
+    }
   ]
 }

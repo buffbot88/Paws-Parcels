@@ -325,4 +325,19 @@ describe("dialogue rules", () => {
     data.dialogue[0] = { ...data.dialogue[0], lines: [] };
     expect(validateContent(data).ok).toBe(false);
   });
+
+  it("rejects an NPC with no dialogue set (Phase 3 interactability)", () => {
+    const data = baseContent();
+    data.npcs.push({
+      id: "npc-silent",
+      name: "Silent",
+      species: "Owl",
+      personality: "quiet",
+      role: "Tester",
+      homeZone: "zone-post-office",
+      homeTile: { x: 5, y: 5 },
+    });
+    const result = validateContent(data);
+    expect(result.errors.some((e) => e.includes("has no dialogue set"))).toBe(true);
+  });
 });

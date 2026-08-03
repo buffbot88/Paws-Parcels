@@ -1,5 +1,6 @@
 import Phaser from "phaser";
 import "./styles/global.css";
+import "./styles/game-ui.css";
 import { gameConfig } from "./game/GameConfig.ts";
 import { initErrorLogging } from "./game/ErrorLog.ts";
 

@@ -54,6 +54,23 @@ export class PreloaderScene extends Phaser.Scene {
     s.fillEllipse(1, 6, 30, 12);
     s.generateTexture(TextureKeys.PlayerShadow, 32, 24);
     s.destroy();
+
+    // NPC placeholder: white blob (tinted per NPC at runtime in NPC.ts).
+    const n = this.make.graphics();
+    n.fillStyle(0xffffff, 1);
+    n.fillCircle(TILE_SIZE / 2, TILE_SIZE / 2, TILE_SIZE / 2 - 4);
+    n.fillStyle(0x2b2b2b, 1);
+    n.fillCircle(TILE_SIZE / 2 - 7, TILE_SIZE / 2 - 4, 3);
+    n.fillCircle(TILE_SIZE / 2 + 7, TILE_SIZE / 2 - 4, 3);
+    n.generateTexture(TextureKeys.NpcBlob, TILE_SIZE, TILE_SIZE);
+    n.destroy();
+
+    // Interactable-object marker: small rounded plaque.
+    const o = this.make.graphics();
+    o.fillStyle(0xffffff, 1);
+    o.fillRoundedRect(2, 2, 26, 26, 6);
+    o.generateTexture(TextureKeys.ObjectMarker, 30, 30);
+    o.destroy();
   }
 
   private showLoadingBar(): void {

@@ -1,4 +1,15 @@
-# Paws & Parcels — Development Roadmap
+> ## 🗃 ARCHIVED — HISTORICAL DOCUMENT (non-authoritative)
+>
+> This is the **original single-player development roadmap**, preserved for history.
+> It was superseded on **2026-08-03 (Phase 3.5 documentation pivot)** by the current
+> [`ROADMAP.md`](../../ROADMAP.md) and [`BuildPlan.md`](../../BuildPlan.md), which
+> track the **server-authoritative 2.5D multiplayer RPG/MMORPG** direction.
+>
+> Phases 0–3 listed here describe real, shipped single-player code that remains the
+> **client foundation** for the new plan; phases 4–9 are **cancelled/superseded**.
+> Status marker: 🗃 archived
+
+# Paws & Parcels — Development Roadmap (ARCHIVED — single-player)
 
 > Single source of truth for **what is built** and **what comes next**.
 > Authoritative build plan: [`BuildPlan.md`](BuildPlan.md) · Locked decisions: [`design/decisions.md`](design/decisions.md) · Status markers: ✅ built · ⏭ next · ⬜ planned

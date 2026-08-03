@@ -5,6 +5,12 @@ export interface MoveVector {
   y: number;
 }
 
+/** A pointer press released before turning into a drag (tap-to-interact). */
+export interface Tap {
+  worldX: number;
+  worldY: number;
+}
+
 interface KeyMap {
   W: Phaser.Input.Keyboard.Key;
   A: Phaser.Input.Keyboard.Key;
@@ -14,30 +20,46 @@ interface KeyMap {
   DOWN: Phaser.Input.Keyboard.Key;
   LEFT: Phaser.Input.Keyboard.Key;
   RIGHT: Phaser.Input.Keyboard.Key;
+  E: Phaser.Input.Keyboard.Key;
+  SPACE: Phaser.Input.Keyboard.Key;
 }
 
 /**
- * Unifies keyboard (WASD/arrows) and touch (drag joystick) into a single
- * normalized movement vector. Phaser 4 ships no virtual joystick, so the
- * touch pad is pointer-based (BuildPlan §6 Phase 2: 4-way + touch).
+ * Unifies keyboard (WASD/arrows), touch (drag joystick) and interaction input.
+ * A pointer press becomes a joystick only once it drags past DRAG_THRESHOLD;
+ * releasing before that queues a tap (Phase 3 tap-to-interact). E/Space queue
+ * a one-shot interact signal consumed by the scene. Phaser 4 ships no built-in
+ * virtual joystick, so the touch pad is pointer-based.
  */
 export class InputSystem {
   static readonly JOYSTICK_RADIUS = 48;
   static readonly DEADZONE = 0.2;
+  /** Travel (px) before a pointer press engages the joystick (below = tap). */
+  static readonly DRAG_THRESHOLD = 8;
 
   private readonly scene: Phaser.Scene;
   private readonly keys: KeyMap;
   private joystickActive = false;
+  private joystickEngaged = false;
   private readonly joystickOrigin = new Phaser.Math.Vector2();
   private readonly joystickDelta = new Phaser.Math.Vector2();
   private joystickBase: Phaser.GameObjects.Arc | null = null;
   private joystickKnob: Phaser.GameObjects.Arc | null = null;
 
+  /** The pointer currently tracked for joystick/tap; null when none is down. */
+  private pointerDownId: number | null = null;
+  private tapQueue: Tap | null = null;
+  private interactQueued = false;
+
   constructor(scene: Phaser.Scene) {
     this.scene = scene;
     this.keys = scene.input.keyboard!.addKeys(
-      "W,A,S,D,UP,DOWN,LEFT,RIGHT",
+      "W,A,S,D,UP,DOWN,LEFT,RIGHT,E,SPACE",
     ) as unknown as KeyMap;
+
+    const kb = scene.input.keyboard!;
+    kb.on("keydown-E", this.queueInteract, this);
+    kb.on("keydown-SPACE", this.queueInteract, this);
 
     scene.input.on("pointerdown", this.handlePointerDown, this);
     scene.input.on("pointermove", this.handlePointerMove, this);
@@ -47,6 +69,11 @@ export class InputSystem {
 
   /** Removes input listeners (call from the scene's shutdown to avoid leaks on restart). */
   destroy(): void {
+    const kb = this.scene.input.keyboard;
+    if (kb) {
+      kb.off("keydown-E", this.queueInteract, this);
+      kb.off("keydown-SPACE", this.queueInteract, this);
+    }
     this.scene.input.off("pointerdown", this.handlePointerDown, this);
     this.scene.input.off("pointermove", this.handlePointerMove, this);
     this.scene.input.off("pointerup", this.handlePointerUp, this);
@@ -78,34 +105,60 @@ export class InputSystem {
     return { x, y };
   }
 
+  /** True exactly once per E/Space press (edge-triggered). */
+  consumeInteract(): boolean {
+    const v = this.interactQueued;
+    this.interactQueued = false;
+    return v;
+  }
+
+  /** The tap (world coords) since the last call, or null. */
+  consumeTap(): Tap | null {
+    const t = this.tapQueue;
+    this.tapQueue = null;
+    return t;
+  }
+
+  private queueInteract(): void {
+    this.interactQueued = true;
+  }
+
   private handlePointerDown(pointer: Phaser.Input.Pointer): void {
-    // Ignore presses that start on DOM elements (future UI overlays).
+    // Ignore presses that start on DOM elements (UI overlays).
     const target = pointer.event.target as HTMLElement | null;
     if (target && target.tagName !== "CANVAS") return;
+    // Only track the first pointer (multi-touch safety).
+    if (this.pointerDownId !== null) return;
 
-    this.joystickActive = true;
+    this.pointerDownId = pointer.id;
+    this.joystickEngaged = false;
+    this.joystickActive = false;
     this.joystickOrigin.set(pointer.x, pointer.y);
     this.joystickDelta.set(0, 0);
-
-    if (!this.joystickBase) {
-      this.joystickBase = this.scene.add
-        .circle(pointer.x, pointer.y, InputSystem.JOYSTICK_RADIUS, 0xffffff, 0.15)
-        .setScrollFactor(0)
-        .setDepth(1000);
-      this.joystickKnob = this.scene.add
-        .circle(pointer.x, pointer.y, 18, 0xffffff, 0.35)
-        .setScrollFactor(0)
-        .setDepth(1001);
-    } else {
-      this.joystickBase.setPosition(pointer.x, pointer.y).setVisible(true);
-      this.joystickKnob?.setPosition(pointer.x, pointer.y).setVisible(true);
-    }
   }
 
   private handlePointerMove(pointer: Phaser.Input.Pointer): void {
-    if (!this.joystickActive) return;
+    if (pointer.id !== this.pointerDownId) return;
     const dx = pointer.x - this.joystickOrigin.x;
     const dy = pointer.y - this.joystickOrigin.y;
+    if (!this.joystickEngaged) {
+      if (Math.hypot(dx, dy) < InputSystem.DRAG_THRESHOLD) return;
+      this.joystickEngaged = true;
+      this.joystickActive = true;
+      if (!this.joystickBase) {
+        this.joystickBase = this.scene.add
+          .circle(this.joystickOrigin.x, this.joystickOrigin.y, InputSystem.JOYSTICK_RADIUS, 0xffffff, 0.15)
+          .setScrollFactor(0)
+          .setDepth(1000);
+        this.joystickKnob = this.scene.add
+          .circle(this.joystickOrigin.x, this.joystickOrigin.y, 18, 0xffffff, 0.35)
+          .setScrollFactor(0)
+          .setDepth(1001);
+      } else {
+        this.joystickBase.setPosition(this.joystickOrigin.x, this.joystickOrigin.y).setVisible(true);
+        this.joystickKnob?.setPosition(this.joystickOrigin.x, this.joystickOrigin.y).setVisible(true);
+      }
+    }
     const len = Math.hypot(dx, dy);
     const max = InputSystem.JOYSTICK_RADIUS;
     const clamp = len > max ? max / len : 1;
@@ -115,10 +168,17 @@ export class InputSystem {
     this.joystickKnob?.setPosition(this.joystickOrigin.x + cx, this.joystickOrigin.y + cy);
   }
 
-  private handlePointerUp(): void {
+  private handlePointerUp(pointer: Phaser.Input.Pointer): void {
+    if (pointer.id !== this.pointerDownId) return;
+    if (this.joystickActive) {
+      this.joystickBase?.setVisible(false);
+      this.joystickKnob?.setVisible(false);
+    } else {
+      // Released before dragging → tap-to-interact (world coords for hit tests).
+      this.tapQueue = { worldX: pointer.worldX, worldY: pointer.worldY };
+    }
     this.joystickActive = false;
     this.joystickDelta.set(0, 0);
-    this.joystickBase?.setVisible(false);
-    this.joystickKnob?.setVisible(false);
+    this.pointerDownId = null;
   }
 }

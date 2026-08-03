@@ -17,4 +17,8 @@ export const TextureKeys = {
   TilesetMain: "tileset-main",
   PlayerIdleDown: "player-idle-down",
   PlayerShadow: "player-shadow",
+  /** White blob tinted per NPC in the NPC entity (Phase 3). */
+  NpcBlob: "npc-blob",
+  /** Small marker placed on interactable objects (mailbox, board, signs). */
+  ObjectMarker: "object-marker",
 } as const;
