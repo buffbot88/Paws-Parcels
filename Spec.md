@@ -1,4 +1,16 @@
-Product Specification: Paws & Parcels
+> ## 🗃 ARCHIVED — HISTORICAL DOCUMENT (non-authoritative)
+>
+> This is the **original single-player product specification**, preserved for history.
+> It was superseded on **2026-08-03 (Phase 3.5 documentation pivot)** by the current
+> [`BuildPlan.md`](BuildPlan.md) and the design docs under [`design/`](design/).
+>
+> **Do not use this as a current spec.** The game is now an online 2.5D MMORPG-lite
+> with server-authoritative state, MySQL persistence, three classes, combat, monsters,
+> quest chains, gated deliveries, dungeons, and crafting. Items marked "Explicitly Out
+> of Scope" (multiplayer, combat, cloud accounts, online database) are now **in scope**.
+> Status marker: 🗃 archived
+
+Product Specification: Paws & Parcels (ARCHIVED — single-player)
 1. Game Overview
 Paws & Parcels is a cozy, cute, browser-based 2D RPG where players become a tiny animal courier in a magical forest.
 

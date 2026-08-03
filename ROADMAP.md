@@ -1,106 +1,139 @@
 # Paws & Parcels — Development Roadmap
 
-> Single source of truth for **what is built** and **what comes next**.
-> Authoritative build plan: [`BuildPlan.md`](BuildPlan.md) · Locked decisions: [`design/decisions.md`](design/decisions.md) · Status markers: ✅ built · ⏭ next · ⬜ planned
+> 🗃 **Legacy/archived single-player roadmap:** [`docs/archive/ROADMAP-single-player.md`](docs/archive/ROADMAP-single-player.md)
+> **Current authoritative plan:** [`BuildPlan.md`](BuildPlan.md) (online 2.5D MMORPG pivot)
+> Locked decisions: [`design/decisions.md`](design/decisions.md) · Architecture: [`design/architecture.md`](design/architecture.md)
+> Status markers: ✅ built · ⏭ next · ⬜ planned · ⚠ blocked or undecided · 🗃 archived
+
+---
 
 ## 0. Project vision (30-second version)
 
-A cozy browser-based 2D RPG where the player is a tiny animal courier: **accept deliveries → explore zones → gather resources → talk to NPCs → deliver → earn Stamps & friendship → buy upgrades → return next in-game day**. No combat, no timers, no failure states. MVP = 5 NPCs · 2 zones · ~19 quests · 20 items · 3 upgrades · local save.
+Paws & Parcels is now a **cozy, browser-based 2.5D online RPG (MMORPG-lite)** where
+players are tiny animal couriers in a shared magical forest. The cozy soul — warm
+visuals, friendly NPCs, deliveries, Stamps, no permanent failure — is retained. The
+world is now **persistent, server-authoritative, and multiplayer**:
 
-**Current standing:** Phases 0–3 complete. The game boots (Phaser 4), both MVP zones are walkable with collision, camera, and zone transitions, and all 5 NPCs plus the mailbox/signs are interactive with a DOM dialogue panel. Next up: **Phase 4 — Inventory & Gathering**.
+- **Shared zones** with other players visible.
+- **Three animal classes:** Bear Warrior, Cat Mage, Fox Archer.
+- **Monsters + combat** (no gore, no perma-death).
+- **Quest chains** with gated parcel/letter deliveries.
+- **Instanced dungeons** with gear-crafting materials.
+- **MySQL persistence** (accounts, characters, progression).
+- **No PvP, no grinding, no real-money transactions.**
+
+**Current standing:** Phases 0–3 of the **original single-player plan** are built and
+remain the client foundation. Phase 0 of the **online plan** (pivot documentation)
+is now complete. Next up: **Phase 1 — Online Foundation** (server + auth + MySQL).
 
 ---
 
-## 1. Built ✅
+## 1. Built ✅ (client foundation, phases 0–3 of the original plan)
+
+> These phases are the single-player client that will be **wired to the server** starting
+> in Phase 1 of the new plan. They are **not** authoritative for the online game; they
+> are the rendering and content foundation.
 
 ### Phase 3 — Interaction & Dialogue ✅
-Talk to the whole forest.
-- **NPC entities:** `src/entities/NPC.ts` — 5 placeholder blobs tinted per NPC, name tags, gentle bob; placed from `npcs.json` `homeZone`/`homeTile` (3 home tiles corrected to walkable spots in Phase 3)
-- **Interaction:** `src/systems/InteractionSystem.ts` + `findFocusedTarget` (nearest in-range, NPCs win ties); prompt shown above the player (E / Space / tap)
-- **Input:** `InputSystem` gained tap-vs-drag disambiguation (joystick only engages past 8px) + E/Space interact edge
-- **Dialogue:** `src/ui/DialoguePanel.ts` DOM overlay — multi-line, click/tap/Enter/E/Space advance, Esc closes, focus in/out; `DialogueService.selectDialogueSet` picks lines by friendship level (future-proof for Phase 6)
-- **Map objects:** `interactables` added to map JSONs — counter, quest board, mailbox, shop, welcome sign (post office) + trail sign (Bramble), each with cozy flavor lines until its real system lands
-- **Validation:** every NPC must have ≥1 dialogue set; interactables in-bounds/unique/reachable/wall-mounted OK; NPC home tiles must be walkable — all enforced by tests + CLI
-
-**Test suite today:** 69 passing (content + map + systems).
+- **NPC entities:** `src/entities/NPC.ts` — 5 placeholder blobs tinted per NPC, name tags, gentle bob; placed from `npcs.json`
+- **Interaction:** `src/systems/InteractionSystem.ts` + `findFocusedTarget`; prompt shown above the player
+- **Input:** `InputSystem` with tap-vs-drag disambiguation + E/Space interact
+- **Dialogue:** `src/ui/DialoguePanel.ts` DOM overlay — multi-line, Esc closes, focus in/out;
+`DialogueService` friendship-level-aware set selection
+- **Map objects:** interactables (counter, quest board, mailbox, shop, signs) with flavor lines
+- **Validation:** NPCs must have dialogue sets; home tiles walkable; interactables unique/reachable
+- **Test suite:** 69 passing (content + map + systems)
 
 ### Phase 0 — Pre-Production ✅
-Locked the smallest playable version before writing code.
-- **Design docs:** `design/decisions.md` (960×540 @ 48×48 tiles, Scale.FIT, ID conventions, economy, friendship thresholds 3/7/12/18), `design/world-map.md` (both zones sketched in tile units), `design/npcs.md` (5 NPC cards)
-- **Content data:** `src/data/{npcs,items,quests,upgrades,dialogue}.json` — 5 NPCs, 20 items, 19 quests, 3 upgrades, 6 dialogue sets; stable kebab-case IDs
-- **Data models:** `src/types/*.ts` — `PlayerState`, `SaveData`, `ItemDefinition`, `QuestDefinition`, `NPC`, `UpgradeDefinition`, `DialogueSet`, `ContentData`
-- **Validation:** `src/systems/ContentValidator.ts` + `scripts/validate-content.ts` CLI (duplicate IDs, broken refs, no-two-level friendship jump, etc.)
+- Locked decisions: 960×540 @ 48×48 tiles, Scale.FIT, ID conventions, economy, friendship thresholds
+- Content data: 5 NPCs, 20 items, 19 quests, 3 upgrades, 6 dialogue sets
+- Data models: `PlayerState`, `SaveData`, `ItemDefinition`, `QuestDefinition`, `NPC`, etc.
+- Validation: `ContentValidator` + `scripts/validate-content.ts`
 
 ### Phase 1 — Project Foundation ✅
-A running Phaser application with a reliable dev workflow.
-- Vite 8 + TypeScript + **Phaser 4** (user-confirmed deviation from BuildPlan's Phaser 3)
-- Boot → Preloader → Overworld scene flow; placeholder geometric textures generated at runtime (no binary assets until Phase 8)
-- Responsive DOM layout (`index.html` + `src/styles/global.css`), error logging (`src/game/ErrorLog.ts`), dev README
+- Vite 8 + TypeScript + Phaser 4
+- Boot → Preloader → Overworld scene flow; runtime placeholder textures
+- Responsive DOM layout; error logging
 - Gates: `npm run dev` / `build` / `typecheck` all pass
 
 ### Phase 2 — World & Player Movement ✅
-Both zones explorable.
-- **Maps:** `src/data/maps/{post-office,bramble-patch}.json` — custom JSON (ASCII rows → tileset sheet), 30×20 / 40×26, validated by `src/systems/MapValidator.ts`
-- **Player:** `src/entities/Player.ts` — Arcade sprite, 180 px/s, small 28×20 body, facing tracking
-- **Input:** `src/systems/InputSystem.ts` — WASD/arrows + pointer-drag virtual joystick (Phaser 4 has no built-in joystick)
-- **World:** `src/scenes/OverworldScene.ts` — tilemaps from JSON, `setCollision` on walls/water/trees, camera `setBounds` + `startFollow`, tile-based zone transitions (`scene.restart({ zoneId, spawn })`)
-- **Verified end-to-end in browser:** walls block, camera clamps, south walk → Bramble Patch at (19,1), north walk → post office at (15,14), zero console errors
-
-**Test suite today:** 50 passing (content-validation + map-validation incl. crash-regression).
+- Custom JSON maps (`post-office`, `bramble-patch`) with collision, camera, zone transitions
+- Player entity (Arcade sprite, 180 px/s, 28×20 body, facing)
+- WASD/arrows + pointer-drag joystick input
+- Client-only movement (no server validation yet)
 
 ---
 
-## 2. Next ⏭
+## 2. Next ⏭ (online plan phases)
 
-### Phase 4 — Inventory & Gathering *(next phase)*
-Goal: add exploration rewards and item collection (BuildPlan §6). Exit criteria: 5+ gatherable resources; 12-slot inventory; stack/capacity enforcement; gathering nodes respond after collection; inventory UI reflects state instantly.
-- Item definitions (`src/data/items.json` already has 20) + inventory state
-- Gathering nodes (berry bushes, flower fields, pond, herbs) tied to map tiles
-- Inventory panel as a **DOM component**
-- Pickup feedback, inventory-full handling, capacity rules (12 + 6/bag)
+### Phase 1 — Online Foundation *(next phase)*
+Goal: server application, MySQL, auth, health check.
+- Create server (Node/TS)
+- MySQL connection + versioned migrations
+- Health check + structured logging
+- Account & character data models
+- Register/login with password hashing + JWT
 
----
+### Phase 2 — Multiplayer Village
+Goal: players see each other in the Main Village.
+- Connect client to server (HTTP + WS)
+- Authenticate, join zone, sync presence
+- Movement validation + snapshots
+- Disconnect/reconnect handling
 
-## 3. Planned ⬜ (Phases 4–9, per BuildPlan §6)
+### Phase 3 — Classes and Combat
+Goal: first monster map, basic combat, class system.
+- Bear Warrior / Cat Mage / Fox Archer
+- Server-side stats, HP, defeat state
+- Bramble Patch monsters (Bramble Bug family)
+- Basic attacks + monster/player respawn
 
-### Phase 4 — Inventory & Gathering
-- Inventory state + capacity rules (12 slots, +6 per satchel upgrade)
-- Gathering nodes (berry bushes, flower fields, pond, logs)
-- Inventory panel (DOM) with quantities, stack limits, inventory-full feedback
+### Phase 4 — Quest Chains and Deliveries
+Goal: server-validated quest chains with gated deliveries.
 
-### Phase 5 — Delivery Quest Loop *(the core loop)*
-- Quest acceptance, active tracking, delivery validation
-- Stamp + friendship rewards, completion feedback
-- Daily quest generation (3 standard + 1 gathering + 1 friendship; impossible-combination guard)
-- **This phase proves the MVP's central gameplay loop.**
+### Phase 5 — Inventory and Equipment
+Goal: server-authoritative inventory + equipment with gear stats.
 
-### Phase 6 — Progression & Journal
-- Friendship levels (0–4) with progress bars and dialogue unlocks
-- Journal (active/completed quests, NPC relationships, discovered items)
-- Shop + 3 upgrades (Bigger Satchel, Comfy Boots, Express Badge), cosmetic support
+### Phase 6 — First Dungeon and Crafting
+Goal: instanced dungeon + crafting station with recipes.
 
-### Phase 7 — Save System & Settings
-- Versioned `SaveData` in localStorage (migration support), autosave on quest completion / purchase / friendship change / zone change
-- New Game / Continue / Delete flows, corrupt-save fallback
-- Settings: audio volumes, text speed, high-contrast, reduced-motion
+### Phase 7 — 2.5D Presentation and Content
+Goal: sprites, depth sorting, animations, audio.
 
-### Phase 8 — Art, Audio & Polish
-- Replace placeholder shapes: player/NPC sprites, portraits, final tilesets, item icons
-- Animations (walk/idle, mailbox, pickup, delivery handoff, rewards)
-- Music + SFX with independent mute; UI transitions, reward effects, tutorial prompts, empty states
-
-### Phase 9 — Testing & Release
-- Functional / responsive / accessibility / performance testing
-- Automated e2e (`tests/e2e/`: new-game, delivery-loop, save-load) + manual playtest (3 testers)
-- **MVP Definition of Done** (BuildPlan §11): deployed to a public URL, complete delivery loop, progress survives refresh, 30+ FPS desktop & mobile
+### Phase 8 — Testing and Online Release
+Goal: security review, load tests, browser matrix, alpha.
 
 ---
 
-## 4. Post-MVP backlog (reserved, not in MVP scope)
+## 3. Planned ⬜ (all details in new BuildPlan.md)
 
-- **Whispering Pines** & **Sunlit Clearing** zones — IDs already reserved (`zone-*`); Spec §17 discrepancy resolved: BuildPlan is authoritative, only Bramble Patch ships in MVP
-- **V1.1** More stories (NPCs, quest chains, friendship scenes) · **V1.2** Crafting · **V1.3** Home customization · **V1.4** Seasonal events · **V1.5** Cloud saves
-- Out of scope permanently: multiplayer, combat, accounts, procedural worlds, housing, real-money purchases
+See [`BuildPlan.md §19`](BuildPlan.md#19-phased-milestones) for the complete phased plan.
+Summary of phases:
+- **Phase 0:** Pivot documentation — ✅ built
+- **Phase 1:** Online Foundation — ⏭ next
+- **Phase 2:** Multiplayer Village
+- **Phase 3:** Classes and Combat
+- **Phase 4:** Quest Chains and Deliveries
+- **Phase 5:** Inventory and Equipment
+- **Phase 6:** First Dungeon and Crafting
+- **Phase 7:** 2.5D Presentation and Content
+- **Phase 8:** Testing and Online Release
+
+---
+
+## 4. Post-MVP backlog (reserved)
+
+- **More zones:** Whispering Pines, Sunlit Clearing
+- **More monsters:** Shades, Sprites, Fungal Golems
+- **More dungeon encounters**
+- **Abilities at levels 5, 10, 15**
+- **Status effects** (poison, slow, daze)
+- **Consumables** (potions, food buffs)
+- **Cosmetic equipment + dyes**
+- **PvP dueling** (opt-in only)
+- **Party system + group loot**
+- **Leaderboards / achievements** (non-authoritative but server-tracked)
+- **Out of scope permanently:** real-money purchases, housing, procedural worlds, voice acting
 
 ---
 
@@ -108,10 +141,9 @@ Goal: add exploration rewards and item collection (BuildPlan §6). Exit criteria
 
 | Gate | Check |
 |---|---|
-| Every phase | `npm run typecheck` · `npm test` · `npm run validate` · `npm run build` all pass |
-| Every phase | Browser-verified (movement/collision/transitions; then dialogue, gathering, delivery…) |
-| Code review | `code-reviewer-deepseek-flash` after each implementation pass |
+| Every phase | `npm run typecheck` · `npm test` · `npm run validate` · `npm run build` pass (client); server: `tsc` + test suite |
+| Every phase | Browser-verified on desktop + mobile |
 | Content integrity | `node scripts/validate-content.ts` (content + maps) |
-| Progress tracking | This file + `README.md` phase status table updated at the end of each phase |
+| Progress tracking | This file + `README.md` updated at the end of each phase |
 
-**One rule from VOWS:** content-first discipline — keep the delivery loop playable before adding art/scope; placeholders stay until Phase 8.
+**One rule from VOWS:** content-first discipline — placeholders stay until Phase 7.

@@ -1,15 +1,16 @@
 # Paws & Parcels
 
-A cozy, browser-based 2D RPG where players become a tiny animal courier in a magical forest — delivering letters, gathering resources, and building friendships. No combat, no timers, no stress.
+> **A cozy browser-based 2.5D online RPG (MMORPG-lite)** — tiny animal couriers explore
+a shared magical forest, deliver parcels, fight monsters, craft gear, and build
+friendships. Server-authoritative, multiplayer, and always cozy.
 
-## Stack
-
-- **Engine:** Phaser 4 (Canvas/WebGL)
+- **Engine:** Phaser 4 (Canvas/WebGL, depth-sorted isometric/pseudo-3D)
 - **Language/Tooling:** TypeScript, Vite 8
 - **UI:** DOM-over-Canvas (HTML/CSS layered above the game canvas)
-- **Persistence:** localStorage via a versioned `SaveData` schema (Phases 4+)
-- **Tests:** Vitest
-- **Hosting:** any static host (Vercel, Netlify)
+- **Persistence:** MySQL (server-side) — localStorage only for client settings
+- **Server:** Node/TS (separate process; in-development)
+- **Tests:** Vitest (client) + server test suite
+- **Hosting:** static hosting for client (Vercel/Netlify) + containerized server
 
 ## Commands
 
@@ -27,10 +28,10 @@ A cozy, browser-based 2D RPG where players become a tiny animal courier in a mag
 > `node_modules/.bin` PATH shims. Scripts call tools via explicit
 > `node node_modules/...` paths — keep them that way.
 
-## Project structure
+## Project structure (client)
 
 ```
-public/            Static assets (favicon; art lands here in Phase 8)
+public/            Static assets (favicon; art lands here in Phase 7)
 src/
   data/            Content JSON (npcs, items, quests, upgrades, dialogue) + maps/
   entities/        Player, NPC (placeholder blobs + name tags)
@@ -42,24 +43,41 @@ src/
   types/           Typed data models matching src/data schemas
 tests/             Vitest suites (content, map, systems)
 scripts/           validate-content.ts CLI (content + maps + NPC placement)
-design/            Locked decisions, world map, NPC cards (Phase 0)
+design/            Locked decisions, world map, NPC cards, architecture, DB schema, protocol, classes, etc.
+server/            (planned) — Node/TS game server
 ```
 
 ## Phase status
 
-> Full picture of what's built vs. what's next: **[`ROADMAP.md`](ROADMAP.md)**
+> Full picture: **[`ROADMAP.md`](ROADMAP.md)** · Authoritative plan: **[`BuildPlan.md`](BuildPlan.md)**
 
-- **Phase 0 — Pre-Production:** ✅ complete (design locked, content in `src/data`, validated)
-- **Phase 1 — Project Foundation:** ✅ complete (Vite + TS + Phaser boot, placeholder textures, responsive layout, dev README)
-- **Phase 2 — World & Player Movement:** ✅ complete (both zones from `design/world-map.md`, WASD/arrow + touch movement, wall collision, camera follow, zone transitions)
-- **Phase 3 — NPCs & Interaction:** ✅ complete (5 NPCs from `npcs.json`, DOM dialogue panel, tap/E-space interact, mailbox & signs, interaction prompt)
-- **Phase 4 — Inventory & Gathering:** ⏭ next
-- Phases 4–9: see [`ROADMAP.md`](ROADMAP.md) and `BuildPlan.md` §6.
+**Client foundation (old single-player plan, built ✅):**
+- **Phase 0 — Pre-Production:** ✅ complete
+- **Phase 1 — Project Foundation:** ✅ complete (Vite + TS + Phaser 4 boot, placeholders, responsive layout)
+- **Phase 2 — World & Player Movement:** ✅ complete (both zones, WASD/touch, collision, camera, transitions)
+- **Phase 3 — NPCs & Interaction:** ✅ complete (5 NPCs, DOM dialogue panel, mailbox & signs, interaction prompt)
+
+**Online plan (new):**
+- **Phase 0 — Pivot Documentation:** ✅ complete (this documentation migration)
+- **Phase 1 — Online Foundation:** ⏭ next (server + MySQL + auth)
+- **Phases 2–8:** see [`BuildPlan.md §19`](BuildPlan.md#19-phased-milestones)
 
 ## Design docs
 
-- `Spec.md` — full product spec
-- `BuildPlan.md` — MVP build plan and roadmap
-- `design/decisions.md` — locked decisions (resolution 960×540, 48×48 tiles, Scale.FIT; custom-JSON maps over Tiled)
-- `design/world-map.md`, `design/npcs.md` — world + character reference
+| Doc | What |
+|---|---|
+| [`BuildPlan.md`](BuildPlan.md) | **Authoritative build plan** — online RPG, phases, scope, architecture overview |
+| [`design/decisions.md`](design/decisions.md) | Locked decisions (2.5D, authority, classes, zones) |
+| [`design/architecture.md`](design/architecture.md) | Client/server/MySQL responsibilities, HTTP, WS, lifecycle |
+| [`design/database-schema.md`](design/database-schema.md) | MySQL entities, PK/FK, ownership, auth/secrets |
+| [`design/network-protocol.md`](design/network-protocol.md) | WS/HTTP messages, validation, failure cases |
+| [`design/classes.md`](design/classes.md) | Bear Warrior · Cat Mage · Fox Archer cards |
+| [`design/combat.md`](design/combat.md) | Damage, health, defeat, respawn, validation |
+| [`design/quests.md`](design/quests.md) | Quest chains, prerequisites, gated deliveries |
+| [`design/monsters.md`](design/monsters.md) | Bramble Bug family, spawn, loot, respawn |
+| [`design/dungeons.md`](design/dungeons.md) | Instance lifecycle, encounters, rewards |
+| [`design/crafting.md`](design/crafting.md) | Materials, recipes, station, validation |
+| [`docs/archive/`](docs/archive/) | 🗃 Historical single-player docs (non-authoritative) |
+
 - `VOWS.md` — development practices that bind all work here
+- `design/world-map.md`, `design/npcs.md` — legacy single-player references (retained for NPC/lore content)

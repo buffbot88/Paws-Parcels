@@ -1,4 +1,16 @@
-# Paws & Parcels — NPC Design Cards
+> ## 🗃 LEGACY REFERENCE (single-player context)
+>
+> These 5 NPC cards were designed for the original single-player cozy RPG. Their
+> personalities, species, home zones, and favorite items are **retained** for the
+> online game — they are the same characters. However:
+>
+> - **Friendship levels** are now part of the server-authoritative `friendships` table
+>   and used as quest-chain gates (see [`design/quests.md`](quests.md)).
+> - **Dialogue** is now served from the server, validated by quest state.
+> - Combat NPCs (monsters) are a separate system — see [`design/monsters.md`](monsters.md).
+> - The `homeTile` positions are still valid for client rendering.
+
+# Paws & Parcels — NPC Design Cards (LEGACY — single-player)
 
 Friendship levels (Spec §7): 0 Stranger · 1 Acquaintance · 2 Friend · 3 Close Friend · 4 Best Friend.
 

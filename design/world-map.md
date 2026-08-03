@@ -1,4 +1,15 @@
-# Paws & Parcels — MVP World Map Sketch
+> ## 🗃 LEGACY REFERENCE (single-player context)
+>
+> This map sketch was created during the original single-player plan (Phase 0). The
+> tile layouts and object positions are still valid for the **client rendering** of the
+> two MVP zones (post office hub + Bramble Patch), but they describe **no monsters**,
+> **no combat**, and **no server-authoritative zone transitions**.
+>
+> For the online game, see [`BuildPlan.md`](../BuildPlan.md) §8 (monster maps) and
+> [`design/monsters.md`](monsters.md) for spawn rules. The zones themselves are retained;
+> their content is expanding.
+
+# Paws & Parcels — MVP World Map Sketch (LEGACY — single-player)
 
 Tile size **48×48**. Viewport ≈ 20×11.25 tiles at 960×540. All coordinates are in **tile units** (x, y), origin top-left. Exact maps will be built in Tiled during Phase 2.
 
