@@ -1,42 +1,43 @@
 import { readFileSync, existsSync } from "node:fs";
-import { resolve, dirname } from "node:path";
-import { fileURLToPath } from "node:url";
+import { resolve } from "node:path";
 
-// Load .env from the server root (one dir up from src/config)
-const __dirname = dirname(fileURLToPath(import.meta.url));
-const envPath = resolve(__dirname, "../../.env");
+/**
+ * Unified server config loader. Never reads process.env — config comes
+ * exclusively from `server_config.json` at the project root. Missing file,
+ * malformed shape, or placeholder secrets cause the server to fail fast.
+ */
 
-if (existsSync(envPath)) {
-  const lines = readFileSync(envPath, "utf-8").split("\n");
-  for (const line of lines) {
-    const trimmed = line.trim();
-    if (!trimmed || trimmed.startsWith("#")) continue;
-    const eq = trimmed.indexOf("=");
-    if (eq === -1) continue;
-    const key = trimmed.slice(0, eq).trim();
-    const value = trimmed.slice(eq + 1).trim();
-    if (!process.env[key]) {
-      process.env[key] = value;
-    }
+const CONFIG_RELATIVE_PATH = "server_config.json";
+const JWS_PLACEHOLDER = "REPLACE_ME_JWT_SECRET_AT_LEAST_32_CHARS_LONG";
+const PAWS_SHARED_SECRET_PLACEHOLDER =
+  "REPLACE_ME_ASHAT_TO_PAWS_SHARED_SECRET_32_CHARS_MIN";
+
+function resolveConfigPath(): string {
+  return resolve(process.cwd(), CONFIG_RELATIVE_PATH);
+}
+
+class ConfigLoadError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = "ConfigLoadError";
   }
 }
 
-function req(key: string, fallback?: string): string {
-  const v = process.env[key] ?? fallback;
-  if (v === undefined || v === "") {
-    throw new Error(`Missing required environment variable: ${key}`);
+function loadConfigFromDisk(): unknown {
+  const cfgPath = resolveConfigPath();
+  if (!existsSync(cfgPath)) {
+    throw new ConfigLoadError(
+      `Missing ${CONFIG_RELATIVE_PATH} at project root. ` +
+        `Copy server_config.example.json -> ${CONFIG_RELATIVE_PATH} and fill in the secrets.`,
+    );
   }
-  return v;
-}
-
-function reqInt(key: string, fallback?: number): number {
-  const v = process.env[key];
-  if (v !== undefined) {
-    const n = parseInt(v, 10);
-    if (!isNaN(n)) return n;
+  try {
+    return JSON.parse(readFileSync(cfgPath, "utf-8"));
+  } catch (err) {
+    throw new ConfigLoadError(
+      `Could not parse ${CONFIG_RELATIVE_PATH}: ${err instanceof Error ? err.message : String(err)}`,
+    );
   }
-  if (fallback !== undefined) return fallback;
-  throw new Error(`Missing required environment variable (integer): ${key}`);
 }
 
 export interface ServerConfig {
@@ -44,6 +45,8 @@ export interface ServerConfig {
   host: string;
   nodeEnv: string;
   isDev: boolean;
+  corsAllowedOrigins: string[];
+  debug: boolean;
 }
 
 export interface DbConfig {
@@ -61,32 +64,247 @@ export interface AuthConfig {
   bcryptRounds: number;
 }
 
-export const server: ServerConfig = {
-  port: reqInt("SERVER_PORT", 3001),
-  host: req("SERVER_HOST", "0.0.0.0"),
-  nodeEnv: req("NODE_ENV", "development"),
-  isDev: (req("NODE_ENV", "development") === "development"),
-};
-
-export const db: DbConfig = {
-  host: req("DB_HOST", "localhost"),
-  port: reqInt("DB_PORT", 3306),
-  user: req("DB_USER", "paws_user"),
-  password: req("DB_PASSWORD"),
-  database: req("DB_NAME", "paws_and_parcels"),
-};
-
-export const auth: AuthConfig = {
-  jwtSecret: req("JWT_SECRET"),
-  accessTokenTtlSeconds: reqInt("JWT_ACCESS_TOKEN_TTL", 900),
-  refreshTokenTtlSeconds: reqInt("JWT_REFRESH_TOKEN_TTL", 604800),
-  bcryptRounds: reqInt("BCRYPT_ROUNDS", 12),
-};
-
-export function validateConfig(): string[] {
-  const errors: string[] = [];
-  try { server; } catch (e: any) { errors.push(e.message); }
-  try { db; } catch (e: any) { errors.push(e.message); }
-  try { auth; } catch (e: any) { errors.push(e.message); }
-  return errors;
+export interface AshatHubConfig {
+  baseUrl: string;
+  sharedSecret: string;
+  callbackUrl: string;
+  verifyPath: string;
+  loginPath: string;
+  verifyTimeoutMs: number;
 }
+
+const RAW = loadConfigFromDisk();
+const cfg = validateAndNormalize(RAW);
+
+function validateAndNormalize(raw: unknown): {
+  server: ServerConfig;
+  db: DbConfig;
+  auth: AuthConfig;
+  ashatHub: AshatHubConfig;
+} {
+  const errors: string[] = [];
+
+  if (typeof raw !== "object" || raw === null) {
+    throw new ConfigLoadError(
+      `${CONFIG_RELATIVE_PATH} must be a JSON object at the top level.`,
+    );
+  }
+
+  const obj = raw as Record<string, unknown>;
+  const serverRaw = (obj.server ?? {}) as Record<string, unknown>;
+  const dbRaw = (obj.db ?? {}) as Record<string, unknown>;
+  const authRaw = (obj.auth ?? {}) as Record<string, unknown>;
+  const ashatRaw = (obj.ashatHub ?? {}) as Record<string, unknown>;
+
+  // server
+  const port = num(serverRaw.port, 3001, errors, "server.port");
+  const host = str(serverRaw.host, "0.0.0.0", errors, "server.host");
+  const nodeEnv = str(serverRaw.nodeEnv, "development", errors, "server.nodeEnv");
+  const isDev = nodeEnv === "development";
+  const corsAllowedOrigins = list(
+    serverRaw.corsAllowedOrigins,
+    ["http://localhost:5173", "http://localhost:3001"],
+    errors,
+    "server.corsAllowedOrigins",
+  );
+  const debug = bool(serverRaw.debug, isDev, errors, "server.debug");
+
+  // db
+  const dbHost = str(dbRaw.host, "localhost", errors, "db.host");
+  const dbPort = num(dbRaw.port, 3306, errors, "db.port");
+  const dbUser = str(dbRaw.user, "paws_user", errors, "db.user");
+  const dbPassword = reqStr(
+    dbRaw.password,
+    "db.password",
+    "REPLACE_ME_DB_PASSWORD",
+    errors,
+  );
+  const dbName = str(dbRaw.database, "paws_and_parcels", errors, "db.database");
+
+  // auth
+  const jwtSecret = reqStr(
+    authRaw.jwtSecret,
+    "auth.jwtSecret",
+    JWS_PLACEHOLDER,
+    errors,
+  );
+  if (jwtSecret && jwtSecret.length < 32) {
+    errors.push(
+      `auth.jwtSecret must be at least 32 characters (got ${jwtSecret.length}).`,
+    );
+  }
+  const accessTokenTtl = num(
+    authRaw.accessTokenTtlSeconds,
+    900,
+    errors,
+    "auth.accessTokenTtlSeconds",
+  );
+  const refreshTokenTtl = num(
+    authRaw.refreshTokenTtlSeconds,
+    604800,
+    errors,
+    "auth.refreshTokenTtlSeconds",
+  );
+  const bcryptRounds = num(
+    authRaw.bcryptRounds,
+    12,
+    errors,
+    "auth.bcryptRounds",
+  );
+  if (bcryptRounds < 4 || bcryptRounds > 15) {
+    errors.push(`auth.bcryptRounds must be 4-15 (got ${bcryptRounds}).`);
+  }
+
+  // ashatHub (Phase 2 SSO bridge)
+  const baseUrl = reqStr(ashatRaw.baseUrl, "ashatHub.baseUrl", "", errors);
+  if (
+    baseUrl !== "" &&
+    !/^https?:\/\//.test(baseUrl)
+  ) {
+    errors.push(`ashatHub.baseUrl must start with http:// or https:// (got "${baseUrl}").`);
+  }
+  const sharedSecret = reqStr(
+    ashatRaw.sharedSecret,
+    "ashatHub.sharedSecret",
+    PAWS_SHARED_SECRET_PLACEHOLDER,
+    errors,
+  );
+  if (sharedSecret && sharedSecret.length < 32) {
+    errors.push(
+      `ashatHub.sharedSecret must be at least 32 characters (got ${sharedSecret.length}).`,
+    );
+  }
+  const callbackUrl = reqStr(
+    ashatRaw.callbackUrl,
+    "ashatHub.callbackUrl",
+    "",
+    errors,
+  );
+  if (callbackUrl !== "" && !/^https?:\/\//.test(callbackUrl)) {
+    errors.push(`ashatHub.callbackUrl must start with http:// or https:// (got "${callbackUrl}").`);
+  }
+  const verifyPath = str(ashatRaw.verifyPath, "/api/sso/verify-session", errors, "ashatHub.verifyPath");
+  const loginPath = str(ashatRaw.loginPath, "/auth/session/", errors, "ashatHub.loginPath");
+  const verifyTimeoutMs = num(
+    ashatRaw.verifyTimeoutMs,
+    5000,
+    errors,
+    "ashatHub.verifyTimeoutMs",
+  );
+  if (verifyTimeoutMs < 100 || verifyTimeoutMs > 30000) {
+    errors.push(
+      `ashatHub.verifyTimeoutMs must be 100-30000 ms (got ${verifyTimeoutMs}).`,
+    );
+  }
+
+  if (errors.length > 0) {
+    throw new ConfigLoadError(
+      `Invalid ${CONFIG_RELATIVE_PATH}:\n  - ${errors.join("\n  - ")}`,
+    );
+  }
+
+  return {
+    server: { port, host, nodeEnv, isDev, corsAllowedOrigins, debug },
+    db: {
+      host: dbHost,
+      port: dbPort,
+      user: dbUser,
+      password: dbPassword,
+      database: dbName,
+    },
+    auth: {
+      jwtSecret,
+      accessTokenTtlSeconds: accessTokenTtl,
+      refreshTokenTtlSeconds: refreshTokenTtl,
+      bcryptRounds,
+    },
+    ashatHub: {
+      baseUrl: baseUrl.replace(/\/$/, ""),
+      sharedSecret,
+      callbackUrl,
+      verifyPath: verifyPath.startsWith("/") ? verifyPath : "/" + verifyPath,
+      loginPath: loginPath.startsWith("/") ? loginPath : "/" + loginPath,
+      verifyTimeoutMs,
+    },
+  };
+}
+
+// --- validators ---
+
+function str(
+  value: unknown,
+  fallback: string,
+  errors: string[],
+  key: string,
+): string {
+  if (value === undefined || value === null) return fallback;
+  if (typeof value !== "string") {
+    errors.push(`${key} must be a string.`);
+    return fallback;
+  }
+  return value;
+}
+
+function num(
+  value: unknown,
+  fallback: number,
+  errors: string[],
+  key: string,
+): number {
+  if (value === undefined || value === null) return fallback;
+  if (typeof value !== "number" || !Number.isFinite(value)) {
+    errors.push(`${key} must be a finite number.`);
+    return fallback;
+  }
+  return value;
+}
+
+function bool(
+  value: unknown,
+  fallback: boolean,
+  errors: string[],
+  key: string,
+): boolean {
+  if (value === undefined || value === null) return fallback;
+  if (typeof value !== "boolean") {
+    errors.push(`${key} must be a boolean.`);
+    return fallback;
+  }
+  return value;
+}
+
+function list(
+  value: unknown,
+  fallback: string[],
+  errors: string[],
+  key: string,
+): string[] {
+  if (value === undefined || value === null) return fallback;
+  if (!Array.isArray(value) || value.some((v) => typeof v !== "string")) {
+    errors.push(`${key} must be an array of strings.`);
+    return fallback;
+  }
+  return value as string[];
+}
+
+function reqStr(
+  value: unknown,
+  key: string,
+  placeholder: string,
+  errors: string[],
+): string {
+  if (typeof value !== "string" || value.length === 0) {
+    errors.push(`${key} is required.`);
+    return "";
+  }
+  if (value === placeholder) {
+    errors.push(`${key} is still the placeholder value — replace it.`);
+    return value;
+  }
+  return value;
+}
+
+export const server: ServerConfig = cfg.server;
+export const db: DbConfig = cfg.db;
+export const auth: AuthConfig = cfg.auth;
+export const ashatHub: AshatHubConfig = cfg.ashatHub;

@@ -6,23 +6,33 @@
   "engines": {
     "node": ">=23.6"
   },
-  "description": "A cozy browser-based 2D RPG where players become a tiny animal courier in a magical forest.",
+  "description": "Paws & Parcels — cozy browser-based 2.5D online RPG (server-authoritative, MySQL-backed, multiplayer).",
   "scripts": {
     "dev": "node node_modules/vite/bin/vite.js",
     "build": "node node_modules/vite/bin/vite.js build",
     "preview": "node node_modules/vite/bin/vite.js preview",
+    "dev:server": "node --import tsx server/src/index.ts",
+    "start:server": "node --import tsx server/src/index.ts",
+    "migrate": "node --import tsx server/src/db/migrate.ts",
     "typecheck": "node node_modules/typescript/bin/tsc --noEmit",
     "test": "node node_modules/vitest/vitest.mjs run",
     "test:watch": "node node_modules/vitest/vitest.mjs",
     "validate": "node scripts/validate-content.ts"
   },
   "devDependencies": {
+    "@types/bcryptjs": "^2.4.6",
     "@types/node": "^26.1.2",
+    "@types/uuid": "^10.0.0",
+    "tsx": "^4.19.0",
     "typescript": "^7.0.2",
     "vite": "^8.2.0",
     "vitest": "^4.1.10"
   },
   "dependencies": {
-    "phaser": "^4.2.1"
+    "bcryptjs": "^2.4.3",
+    "jose": "^5.9.0",
+    "mysql2": "^3.14.0",
+    "phaser": "^4.2.1",
+    "uuid": "^11.1.0"
   }
 }

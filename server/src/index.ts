@@ -1,6 +1,7 @@
 import { createServer, type IncomingMessage, type ServerResponse } from "node:http";
+// Side-effect: config is validated and loaded at module import — any bad
+// server_config.json fails fast before main() runs.
 import { server as serverConfig } from "./config/index.ts";
-import { validateConfig } from "./config/index.ts";
 import { getPool, closePool, pingDb } from "./db/connection.ts";
 import { runMigrations } from "./db/migrate.ts";
 import { middleware, parseBody, jsonResponse, errorResponse } from "./middleware/index.ts";
@@ -8,15 +9,6 @@ import { logger } from "./middleware/logger.ts";
 import { createRouter } from "./routes/index.ts";
 
 async function main(): Promise<void> {
-  // Validate config
-  const configErrors = validateConfig();
-  if (configErrors.length > 0) {
-    console.error("Configuration errors:");
-    for (const err of configErrors) {
-      console.error(`  ✗ ${err}`);
-    }
-    process.exit(1);
-  }
 
   logger.info("Paws & Parcels server starting", {
     port: serverConfig.port,

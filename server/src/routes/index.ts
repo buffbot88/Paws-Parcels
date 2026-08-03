@@ -1,6 +1,11 @@
 import type { IncomingMessage, ServerResponse } from "node:http";
 import { healthHandler } from "./health.ts";
-import { jsonResponse } from "../middleware/index.ts";
+import {
+  loginUrlHandler,
+  logoutHandler,
+  meHandler,
+  ssoFinishHandler,
+} from "./auth.ts";
 
 /** Route handler signature. */
 export type RouteHandler = (
@@ -67,19 +72,16 @@ export class Router {
 export function createRouter(): Router {
   const router = new Router();
 
-  // Health check
+  // Liveness probe (no DB ping — start of server boot).
   router.get("/api/health", healthHandler);
 
-  // Placeholder for auth routes (Phase 1 — stubs)
-  router.post("/api/auth/register", async (_req, res) => {
-    jsonResponse(res, 501, { error: "NOT_IMPLEMENTED", message: "Registration not yet implemented" });
-  });
-  router.post("/api/auth/login", async (_req, res) => {
-    jsonResponse(res, 501, { error: "NOT_IMPLEMENTED", message: "Login not yet implemented" });
-  });
-  router.get("/api/characters", async (_req, res) => {
-    jsonResponse(res, 501, { error: "NOT_IMPLEMENTED", message: "Character list not yet implemented" });
-  });
+  // Phase 2 — Ashat Hub SSO bridge
+  router.get("/api/auth/login-url", loginUrlHandler);
+  router.post("/api/auth/sso/finish", ssoFinishHandler);
+  router.get("/api/auth/me", meHandler);
+  router.post("/api/auth/logout", logoutHandler);
+
+  // Phase 2.5 — character endpoints will land here (list, create, current zone).
 
   return router;
 }

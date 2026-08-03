@@ -14,5 +14,6 @@
     "allowImportingTsExtensions": true,
     "types": ["node", "vite/client"]
   },
-  "include": ["src", "tests", "scripts"]
+  "include": ["src", "tests", "scripts", "server/src"],
+  "exclude": ["node_modules", "server/dist", "dist"]
 }

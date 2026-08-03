@@ -1,4 +1,5 @@
 import { randomUUID } from "node:crypto";
+import { server as serverConfig } from "../config/index.ts";
 
 export interface LogEntry {
   timestamp: string;
@@ -9,7 +10,11 @@ export interface LogEntry {
 }
 
 class Logger {
-  private formatEntry(level: string, message: string, meta?: Record<string, unknown>): string {
+  private formatEntry(
+    level: string,
+    message: string,
+    meta?: Record<string, unknown>,
+  ): string {
     const entry: LogEntry = {
       timestamp: new Date().toISOString(),
       level,
@@ -33,7 +38,7 @@ class Logger {
   }
 
   debug(message: string, meta?: Record<string, unknown>): void {
-    if (process.env.NODE_ENV === "development" || process.env.DEBUG) {
+    if (serverConfig.debug) {
       console.debug(this.formatEntry("DEBUG", message, meta));
     }
   }

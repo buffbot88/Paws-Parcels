@@ -1,7 +1,6 @@
 import type { IncomingMessage, ServerResponse } from "node:http";
 import { randomUUID } from "node:crypto";
-
-const ALLOWED_ORIGINS = ["http://localhost:5173", "http://localhost:3001"];
+import { server as serverConfig } from "../config/index.ts";
 
 /** CORS + JSON body parser + request logging middleware. */
 export function middleware(
@@ -11,8 +10,12 @@ export function middleware(
   return new Promise((resolve) => {
     // CORS headers
     const origin = req.headers.origin || "";
-    if (ALLOWED_ORIGINS.includes(origin) || process.env.NODE_ENV === "development") {
-      res.setHeader("Access-Control-Allow-Origin", origin || "*");
+    const allowList = new Set(serverConfig.corsAllowedOrigins);
+    const allowOrigin =
+      serverConfig.isDev || allowList.has(origin) ? origin : "";
+    if (allowOrigin) {
+      res.setHeader("Access-Control-Allow-Origin", allowOrigin);
+      res.setHeader("Vary", "Origin");
     }
     res.setHeader("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS");
     res.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization");

@@ -1,0 +1,37 @@
+{
+  "_comment": "Unified server config for Paws & Parcels. Copy this file to `server_config.json`, fill in the secret values (db.password, auth.jwtSecret, ashatHub.sharedSecret), and edit anything else you need. `server_config.json` is gitignored — never commit it.",
+  "server": {
+    "port": 3001,
+    "host": "0.0.0.0",
+    "nodeEnv": "development",
+    "corsAllowedOrigins": [
+      "http://localhost:5173",
+      "http://localhost:3001"
+    ]
+  },
+  "db": {
+    "host": "localhost",
+    "port": 3306,
+    "user": "paws_user",
+    "password": "REPLACE_ME_DB_PASSWORD",
+    "database": "paws_and_parcels"
+  },
+  "auth": {
+    "jwtSecret": "REPLACE_ME_JWT_SECRET_AT_LEAST_32_CHARS_LONG",
+    "accessTokenTtlSeconds": 900,
+    "refreshTokenTtlSeconds": 604800,
+    "bcryptRounds": 12
+  },
+  "ashatHub": {
+    "_comment_baseUrl": "Base URL of the Ashat Hub install that authenticates Paws players. Examples: https://agpstudios.org, https://ashatos.byethost7.com.",
+    "baseUrl": "https://agpstudios.org",
+    "_comment_sharedSecret": "Server-to-server trust secret. Must match PAWS_SHARED_SECRET in Ashat Hub's config/server_config.json exactly. Generate 32+ chars random.",
+    "sharedSecret": "REPLACE_ME_ASHAT_TO_PAWS_SHARED_SECRET_32_CHARS_MIN",
+    "_comment_callbackUrl": "Public URL of THIS game's 'Sign in' callback handler — Ashat Hub redirects the popup here after successful login. In dev: http://localhost:5173/api/auth/sso/callback (served by Vite proxy or static client). In prod: https://game.example.com/api/auth/sso/callback.",
+    "callbackUrl": "http://localhost:5173/api/auth/sso/callback",
+    "verifyPath": "/api/sso/verify-session",
+    "loginPath": "/auth/session/",
+    "verifyTimeoutMs": 5000
+  }
+}
+
