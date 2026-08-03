@@ -38,7 +38,20 @@ IDs are registered once in `src/data/*.json` and **must never be renamed** after
 - 5 NPCs · 2 zones · 19 quests · 19 items · 3 upgrades · 1 dialogue set per NPC greeting
 - Quest mix: 12 core (delivery/gathering/errand + daily) + 2 friendship side quests (Pip L2, Biscuit L2) + 5 L4 Best Friend reward quests
 - Friendship rewards are granted via small L4 quests (`rewardItemId`), not auto-grant (user decision). L4 quests have no item to deliver — they complete on first interaction with the giver once friendship reaches level 4
-- Friendship point thresholds per level (0→1→2→3→4) are **not yet defined numerically** — decide before Phase 5 so `friendshipReward` values can't accidentally jump a player two levels
+
+## Friendship & Leveling
+- **Levels** (Spec §7): 0 Stranger · 1 Acquaintance · 2 Friend · 3 Close Friend · 4 Best Friend
+- **Cumulative point thresholds (locked, user-approved):**
+
+  | Level | Cumulative points needed | New points this level |
+  |---|---|---|
+  | 0 → 1 | 3 | 3 |
+  | 1 → 2 | 7 | 4 |
+  | 2 → 3 | 12 | 5 |
+  | 3 → 4 | 18 | 6 |
+
+- **Storage:** `SaveData.friendships` stores the **level** (0–4) per NPC, matching the Spec §15 example (`"pip": 2`). Points exist only at runtime; partial progress toward the next level is not persisted. (User decision over storing raw points.)
+- **No two-level jump invariant:** a single quest's `friendshipReward` must never move a player up two levels. Worst case is a +3 reward (Moss L3 story quest) from the top of level 2 (11 pts → 14, still level 3). Enforced by `ContentValidator` (see `src/systems/ContentValidator.ts`) so future quests can't silently violate it.
 - Daily quest generation (3 standard + 1 gathering + 1 friendship) pulls from quests tagged `daily: true` (Spec §6) — content pool must never produce impossible combinations (BuildPlan risk table). Daily quests must never carry a `requiresFriendship` gate (enforced by `scripts/validate-content.mjs`).
 
 ## Controls (Spec §10, locked for MVP)

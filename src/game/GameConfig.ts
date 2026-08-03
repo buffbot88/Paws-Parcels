@@ -20,6 +20,13 @@ export const gameConfig: Phaser.Types.Core.GameConfig = {
     autoCenter: Phaser.Scale.CENTER_BOTH,
   },
   scene: [BootScene, PreloaderScene, OverworldScene],
+  physics: {
+    default: "arcade",
+    arcade: {
+      gravity: { x: 0, y: 0 },
+      debug: false,
+    },
+  },
   render: {
     antialias: true,
     roundPixels: true,

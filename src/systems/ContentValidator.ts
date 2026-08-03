@@ -19,6 +19,12 @@ const CATEGORIES: readonly ItemCategory[] = ["resource", "gift", "delivery", "qu
 const QUEST_TYPES: readonly QuestType[] = ["delivery", "gathering", "errand"];
 
 /**
+ * Cumulative friendship points needed to reach each level (index = level, T[0] = 0).
+ * Locked in design/decisions.md — user-approved. Do not change silently.
+ */
+export const FRIENDSHIP_THRESHOLDS: readonly number[] = [0, 3, 7, 12, 18];
+
+/**
  * Validates content integrity: unique IDs, cross-references, and sane values.
  * Pure function — callers load data and pass it in.
  */
@@ -123,6 +129,20 @@ export function validateContent(data: ContentData): ValidationResult {
     }
     if (typeof q.stampReward !== "number" || q.stampReward <= 0) {
       fail(`quest ${q.id}: stampReward must be a positive number`);
+    }
+    // No two-level jump invariant: a single reward must never move a player up two levels.
+    // Worst case = player at the top of the start level + reward. For gated quests the start
+    // level is the gate; for ungated quests the tightest bound is the lowest level (0).
+    if (typeof q.friendshipReward === "number" && q.friendshipReward > 0) {
+      const startLevel = q.requiresFriendship ? q.requiresFriendship.level : 0;
+      const topOfStart = FRIENDSHIP_THRESHOLDS[startLevel + 1] - 1;
+      const twoUp = FRIENDSHIP_THRESHOLDS[startLevel + 2];
+      if (twoUp !== undefined && topOfStart + q.friendshipReward >= twoUp) {
+        fail(
+          `quest ${q.id}: friendshipReward ${q.friendshipReward} can jump two levels ` +
+          `(from level ${startLevel} top ${topOfStart} pts, level ${startLevel + 2} starts at ${twoUp})`
+        );
+      }
     }
     if (q.friendshipNpcId && !npcIds.has(q.friendshipNpcId)) {
       fail(`quest ${q.id}: friendshipNpcId "${q.friendshipNpcId}" is not a known npc`);

@@ -256,6 +256,30 @@ describe("quest rules", () => {
     expect(validateContent(data).ok).toBe(false);
   });
 
+  it("rejects a friendshipReward that can jump two levels from an ungated start", () => {
+    const data = baseContent();
+    data.quests[0] = { ...data.quests[0], friendshipReward: 5, friendshipNpcId: "npc-a" }; // T[1]-1+5 = 7 >= T[2]
+    expect(validateContent(data).errors.some((e) => e.includes("jump two levels"))).toBe(true);
+  });
+
+  it("rejects a friendshipReward that can jump two levels from a gated start", () => {
+    const data = baseContent();
+    data.quests[0] = {
+      ...data.quests[0],
+      friendshipReward: 7,
+      friendshipNpcId: "npc-a",
+      requiresFriendship: { npcId: "npc-a", level: 2 }, // T[3]-1+7 = 18 >= T[4]
+      daily: false,
+    };
+    expect(validateContent(data).errors.some((e) => e.includes("jump two levels"))).toBe(true);
+  });
+
+  it("allows the max reward (+3) without jumping two levels", () => {
+    const data = baseContent();
+    data.quests[0] = { ...data.quests[0], friendshipReward: 3, friendshipNpcId: "npc-a" };
+    expect(validateContent(data).ok).toBe(true);
+  });
+
   it("rejects a non-string findAt", () => {
     const data = baseContent();
     data.quests[0] = { ...data.quests[0], type: "errand", findAt: 42 as never };

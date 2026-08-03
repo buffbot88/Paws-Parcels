@@ -9,6 +9,8 @@ import { resolve, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
 import { validateContent } from "../src/systems/ContentValidator.ts";
 import type { ContentData } from "../src/types/ContentData.ts";
+import { validateAllMaps } from "../src/systems/MapValidator.ts";
+import { MAPS } from "../src/game/Maps.ts";
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const dataDir = resolve(root, "src", "data");
@@ -44,6 +46,13 @@ if (!result.ok) {
   process.exit(1);
 }
 
+const maps = validateAllMaps();
+if (!maps.valid) {
+  console.error(`Map validation FAILED (${maps.errors.length} error${maps.errors.length > 1 ? "s" : ""}):`);
+  for (const e of maps.errors) console.error(`  ✗ ${e}`);
+  process.exit(1);
+}
+
 console.log(
-  `Content validation PASSED — ${data.npcs.length} npcs, ${data.items.length} items, ${data.quests.length} quests, ${data.upgrades.length} upgrades, ${data.dialogue.length} dialogue sets.`
+  `Content validation PASSED — ${data.npcs.length} npcs, ${data.items.length} items, ${data.quests.length} quests, ${data.upgrades.length} upgrades, ${data.dialogue.length} dialogue sets; ${Object.keys(MAPS).length} zone(s) mapped.`
 );

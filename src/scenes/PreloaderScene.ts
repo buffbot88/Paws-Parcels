@@ -1,6 +1,7 @@
 import Phaser from "phaser";
 import { TILE_SIZE } from "../game/GameConfig.ts";
 import { SceneKeys, TextureKeys } from "../game/GameConstants.ts";
+import { TILES, TILESET_COLUMNS } from "../game/Tiles.ts";
 
 /**
  * Preloader generates placeholder geometric textures at runtime (no binary
@@ -19,18 +20,23 @@ export class PreloaderScene extends Phaser.Scene {
   }
 
   private generatePlaceholderTextures(): void {
-    const makeTile = (key: string, base: number, edge: number): void => {
-      const g = this.make.graphics();
-      g.fillStyle(base, 1);
-      g.fillRect(0, 0, TILE_SIZE, TILE_SIZE);
-      g.fillStyle(edge, 1);
-      g.fillRect(0, 0, TILE_SIZE, 4);
-      g.fillRect(0, TILE_SIZE - 4, TILE_SIZE, 4);
-      g.generateTexture(key, TILE_SIZE, TILE_SIZE);
-      g.destroy();
-    };
-    makeTile(TextureKeys.TileGrass, 0x8fc98a, 0x77b573);
-    makeTile(TextureKeys.TilePath, 0xd9b07c, 0xc29660);
+    // Single tileset sheet: every tile type in src/game/Tiles.ts gets a frame
+    // at its `index` — maps reference tiles by frame index (custom JSON maps).
+    const cols = TILESET_COLUMNS;
+    const sheetWidth = cols * TILE_SIZE;
+    const sheetHeight = Math.ceil(TILES.length / cols) * TILE_SIZE;
+    const g = this.make.graphics();
+    for (const tile of TILES) {
+      const fx = (tile.index % cols) * TILE_SIZE;
+      const fy = Math.floor(tile.index / cols) * TILE_SIZE;
+      g.fillStyle(tile.base, 1);
+      g.fillRect(fx, fy, TILE_SIZE, TILE_SIZE);
+      g.fillStyle(tile.edge, 1);
+      g.fillRect(fx, fy, TILE_SIZE, 4);
+      g.fillRect(fx, fy + TILE_SIZE - 4, TILE_SIZE, 4);
+    }
+    g.generateTexture(TextureKeys.TilesetMain, sheetWidth, sheetHeight);
+    g.destroy();
 
     // Player placeholder: a simple rounded blob with eyes.
     const p = this.make.graphics();
@@ -41,6 +47,13 @@ export class PreloaderScene extends Phaser.Scene {
     p.fillCircle(TILE_SIZE / 2 + 7, TILE_SIZE / 2 - 4, 3);
     p.generateTexture(TextureKeys.PlayerIdleDown, TILE_SIZE, TILE_SIZE);
     p.destroy();
+
+    // Soft shadow ellipse that sits under the player.
+    const s = this.make.graphics();
+    s.fillStyle(0x000000, 0.25);
+    s.fillEllipse(1, 6, 30, 12);
+    s.generateTexture(TextureKeys.PlayerShadow, 32, 24);
+    s.destroy();
   }
 
   private showLoadingBar(): void {

@@ -32,14 +32,15 @@ A cozy, browser-based 2D RPG where players become a tiny animal courier in a mag
 ```
 public/            Static assets (favicon; art lands here in Phase 8)
 src/
-  data/            Content JSON (npcs, items, quests, upgrades, dialogue)
-  game/            GameConfig, ErrorLog (GameManager/GameEvents come later)
-  scenes/          Boot → Preloader → Overworld (Phase 1)
+  data/            Content JSON (npcs, items, quests, upgrades, dialogue) + maps/
+  entities/        Player (arcade sprite, movement)
+  game/            GameConfig, ErrorLog, GameConstants, Maps registry, Tiles catalog
+  scenes/          Boot → Preloader → Overworld (zone-capable world scene)
   styles/          global.css (responsive DOM layout)
-  systems/         ContentValidator (shared content rules)
+  systems/         ContentValidator + MapValidator (shared rules), InputSystem
   types/           Typed data models matching src/data schemas
-scripts/           validate-content.ts CLI
-tests/             Vitest suites
+tests/             Vitest suites (content + map validation)
+scripts/           validate-content.ts CLI (content + maps)
 design/            Locked decisions, world map, NPC cards (Phase 0)
 ```
 
@@ -47,13 +48,14 @@ design/            Locked decisions, world map, NPC cards (Phase 0)
 
 - **Phase 0 — Pre-Production:** ✅ complete (design locked, content in `src/data`, validated)
 - **Phase 1 — Project Foundation:** ✅ complete (Vite + TS + Phaser boot, placeholder textures, responsive layout, dev README)
-- **Phase 2 — World & Movement:** next (real maps, player movement, camera)
-- Phases 2–9: see `BuildPlan.md` §6.
+- **Phase 2 — World & Player Movement:** ✅ complete (both zones from `design/world-map.md`, WASD/arrow + touch movement, wall collision, camera follow, zone transitions)
+- **Phase 3 — NPCs & Interaction:** next (NPC placement, dialogue, interaction)
+- Phases 3–9: see `BuildPlan.md` §6.
 
 ## Design docs
 
 - `Spec.md` — full product spec
 - `BuildPlan.md` — MVP build plan and roadmap
-- `design/decisions.md` — locked decisions (resolution 960×540, 48×48 tiles, Scale.FIT)
+- `design/decisions.md` — locked decisions (resolution 960×540, 48×48 tiles, Scale.FIT; custom-JSON maps over Tiled)
 - `design/world-map.md`, `design/npcs.md` — world + character reference
 - `VOWS.md` — development practices that bind all work here
