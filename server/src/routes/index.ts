@@ -4,7 +4,7 @@ import {
   loginUrlHandler,
   logoutHandler,
   meHandler,
-  ssoFinishHandler,
+  oidcCallbackHandler,
 } from "./auth.ts";
 
 /** Route handler signature. */
@@ -75,9 +75,9 @@ export function createRouter(): Router {
   // Liveness probe (no DB ping — start of server boot).
   router.get("/api/health", healthHandler);
 
-  // Phase 2 — Ashat Hub SSO bridge
+  // Phase 3 — ASHAT Hub OIDC (authorization code + PKCE)
   router.get("/api/auth/login-url", loginUrlHandler);
-  router.post("/api/auth/sso/finish", ssoFinishHandler);
+  router.post("/api/auth/oidc/callback", oidcCallbackHandler);
   router.get("/api/auth/me", meHandler);
   router.post("/api/auth/logout", logoutHandler);
 

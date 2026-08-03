@@ -1,11 +1,15 @@
 import { jwtVerify } from "jose";
 import type { IncomingMessage, ServerResponse } from "node:http";
-import { auth as authConfig, ashatHub as ashatConfig } from "../config/index.ts";
+import { auth as authConfig, oidc as oidcConfig } from "../config/index.ts";
 import {
   extractBearerToken,
   verifyAccessToken,
-  verifyAshatSession,
 } from "../auth/index.ts";
+import {
+  exchangeAuthCode,
+  getAuthorizationEndpoint,
+  verifyOidcIdToken,
+} from "../auth/oidc.ts";
 import {
   findOrCreateAccountByAshatId,
   getAccountByAshatId,
@@ -15,94 +19,151 @@ import { errorResponse, jsonResponse } from "../middleware/index.ts";
 import { logger } from "../middleware/logger.ts";
 
 /**
- * GET /api/auth/login-url
- * Returns the Ashat Hub URL the client should open in a popup. The client
- * uses postMessage from the popup back to the parent (window.opener) on
- * completion — see public/sso-callback.html (added in the client phase).
+ * GET /api/auth/login-url?state=...&code_challenge=...
+ * Returns the ASHAT Hub authorize URL the client redirects the whole page
+ * to. state + PKCE code_challenge come from the client (LoginOverlay holds
+ * them in sessionStorage); the server only fills in its OIDC registration.
  */
 export async function loginUrlHandler(
-  _req: IncomingMessage,
+  req: IncomingMessage,
   res: ServerResponse,
 ): Promise<void> {
-  if (
-    ashatConfig.sharedSecret === "" ||
-    ashatConfig.sharedSecret.length < 32 ||
-    ashatConfig.callbackUrl === ""
-  ) {
+  const url = new URL(req.url ?? "/", `http://${req.headers.host ?? "localhost"}`);
+  const state = url.searchParams.get("state") ?? "";
+  const codeChallenge = url.searchParams.get("code_challenge") ?? "";
+
+  if (state.length < 8) {
     errorResponse(
       res,
-      503,
-      "SSO_NOT_CONFIGURED",
-      "Server-to-server trust secret or callback URL is missing from server_config.json",
+      400,
+      "MISSING_STATE",
+      "state query param is required (min 8 chars) — refresh and sign in again",
     );
     return;
   }
-  // Ashat Hub reads `?callback=...` and redirects there with session_id +
-  // username + role + display_name after a successful login. URL-encode
-  // it so multi-character values survive transit.
-  const url =
-    `${ashatConfig.baseUrl}${ashatConfig.loginPath}` +
-    `?callback=${encodeURIComponent(ashatConfig.callbackUrl)}`;
+  if (codeChallenge.length < 43) {
+    errorResponse(
+      res,
+      400,
+      "MISSING_CODE_CHALLENGE",
+      "code_challenge query param is required (S256 challenge is 43 chars)",
+    );
+    return;
+  }
+
+  const authorizationEndpoint = await getAuthorizationEndpoint();
+  if (authorizationEndpoint === null) {
+    errorResponse(
+      res,
+      502,
+      "OIDC_DISCOVERY_FAILED",
+      "Could not reach ASHAT Hub's OIDC discovery endpoint",
+    );
+    return;
+  }
+
+  const params = new URLSearchParams({
+    response_type: "code",
+    client_id: oidcConfig.clientId,
+    redirect_uri: oidcConfig.redirectUri,
+    scope: oidcConfig.scopes,
+    state,
+    code_challenge: codeChallenge,
+    code_challenge_method: "S256",
+  });
+  const separator = authorizationEndpoint.includes("?") ? "&" : "?";
   jsonResponse(res, 200, {
-    url,
-    provider: "ashat-hub",
-    callbackUrl: ashatConfig.callbackUrl,
+    url: `${authorizationEndpoint}${separator}${params.toString()}`,
+    provider: "ashat-hub-oidc",
+    state,
   });
 }
 
 /**
- * POST /api/auth/sso/finish
- * Body: { session_id: string, username?: string, role?: string, display_name?: string }
- * Server-to-server verifies the session_id against Ashat Hub, finds or
- * creates the linked Paws account, and returns a JWT the client stores
- * in localStorage. The `username/role/display_name` fields from the body
- * are taken as a hint only — the ashat-side verify response is the only
- * source of truth.
+ * POST /api/auth/oidc/callback
+ * Body: { code: string, state: string, code_verifier: string }
+ * The client's oidc-callback.html posts the code+state it received from
+ * ASHAT. The server exchanges the code at the token endpoint (one round
+ * trip), verifies the id_token against the JWKS, then upserts the linked
+ * account and mints a session JWT.
  */
-export async function ssoFinishHandler(
+export async function oidcCallbackHandler(
   req: IncomingMessage,
   res: ServerResponse,
 ): Promise<void> {
-  const body = (req as unknown as { body?: { session_id?: string } }).body;
-  const sessionId = typeof body?.session_id === "string" ? body.session_id : "";
-  if (sessionId === "") {
+  const body = (req as unknown as { body?: Record<string, unknown> }).body;
+  const code = typeof body?.code === "string" ? body.code : "";
+  const codeVerifier =
+    typeof body?.code_verifier === "string" ? body.code_verifier : "";
+
+  if (code === "" || codeVerifier === "") {
     errorResponse(
       res,
       400,
-      "MISSING_SESSION_ID",
-      "Request body must include session_id (received from Ashat popup callback)",
+      "MISSING_OIDC_PARAMS",
+      "Request body must include code and code_verifier",
     );
     return;
   }
 
-  const verified = await verifyAshatSession(sessionId);
-  if (verified === null) {
+  const exchanged = await exchangeAuthCode(code, codeVerifier);
+  if (exchanged.kind === "unreachable") {
+    errorResponse(
+      res,
+      502,
+      "OIDC_UPSTREAM_UNAVAILABLE",
+      "ASHAT Hub's token endpoint could not be reached — try again in a moment",
+    );
+    return;
+  }
+  if (exchanged.kind === "rejected") {
     errorResponse(
       res,
       401,
-      "SSO_VERIFY_FAILED",
-      "Ashat Hub did not recognize the session or the trust secret is misconfigured",
+      "OIDC_TOKEN_EXCHANGE_FAILED",
+      "ASHAT Hub rejected the authorization code — sign in again",
     );
     return;
   }
 
+  const verifyResult = await verifyOidcIdToken(exchanged.idToken);
+  if (verifyResult.kind === "unreachable") {
+    errorResponse(
+      res,
+      502,
+      "OIDC_UPSTREAM_UNAVAILABLE",
+      "ASHAT Hub's JWKS could not be reached — try again in a moment",
+    );
+    return;
+  }
+  if (verifyResult.kind === "invalid") {
+    errorResponse(
+      res,
+      401,
+      "OIDC_ID_TOKEN_INVALID",
+      "ASHAT Hub's id_token failed signature/issuer/audience validation",
+    );
+    return;
+  }
+  const identity = verifyResult.identity;
+
   const account = await findOrCreateAccountByAshatId({
-    ashatUserId: verified.user_id,
-    username: verified.username,
-    displayName: verified.display_name,
-    role: verified.role,
+    ashatUserId: identity.sub,
+    username: identity.username,
+    displayName: identity.displayName,
+    role: identity.role,
   });
 
   const token = await mintJwt({
     accountId: account.id,
-    ashatUserId: verified.user_id,
-    username: account.username ?? verified.username,
-    role: account.role ?? verified.role,
+    ashatUserId: identity.sub,
+    username: account.username ?? identity.username,
+    role: account.role ?? identity.role,
   });
 
-  logger.info("Issued JWT after SSO finish", {
+  logger.info("Issued JWT after OIDC callback", {
     accountId: account.id,
-    ashatUserId: verified.user_id,
+    ashatUserId: identity.sub,
     role: account.role,
   });
 

@@ -77,3 +77,243 @@
   color: #5a3a1a;
   background: rgba(0, 0, 0, 0.06);
 }
+
+/* ============================================================== */
+/* Phase 2 — Login overlay (Ashat Hub SSO gate)                    */
+/* ============================================================== */
+
+:root {
+  --login-cream: #f7f0e3;
+  --login-cream-soft: #fbf6ec;
+  --login-ink: #3a5a3a;
+  --login-ink-soft: #6d7a4f;
+  --login-leaf: #8fc98a;
+  --login-leaf-deep: #6da56b;
+  --login-warm: #d08a3e;
+  --login-error: #b3422a;
+}
+
+.login-overlay {
+  position: fixed;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  z-index: 50;
+  pointer-events: auto;
+  background:
+    radial-gradient(
+      circle at 50% 35%,
+      rgba(247, 240, 227, 0.96) 0%,
+      rgba(228, 213, 184, 0.96) 70%
+    );
+  animation: login-fade-in 280ms ease-out;
+}
+
+.login-overlay[hidden] {
+  display: none;
+}
+
+.login-overlay__backdrop {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='180' height='180' viewBox='0 0 180 180'><g fill='none' stroke='rgba(58, 90, 58, 0.06)' stroke-width='0.6'><circle cx='30' cy='40' r='1.5'/><circle cx='150' cy='60' r='1.2'/><circle cx='90' cy='130' r='1.8'/><circle cx='150' cy='150' r='1.4'/><circle cx='30' cy='120' r='1.1'/></g></svg>");
+  background-size: 180px 180px;
+  mix-blend-mode: multiply;
+  opacity: 0.7;
+}
+
+.login-card {
+  position: relative;
+  width: min(440px, calc(100vw - 48px));
+  padding: 36px 30px 28px;
+  background: var(--login-cream-soft);
+  border-radius: 18px;
+  /* Hand-drawn-feeling double border — two concentric layers with a tiny
+     rotation difference to suggest sketch ink. */
+  border: 2px solid var(--login-leaf-deep);
+  box-shadow:
+    0 2px 0 rgba(143, 201, 138, 0.55) inset,
+    0 12px 28px rgba(58, 90, 58, 0.18),
+    0 2px 6px rgba(143, 201, 138, 0.6);
+  font-family: Georgia, "Iowan Old Style", serif;
+  color: var(--login-ink);
+  text-align: center;
+  animation: login-card-rise 360ms cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+.login-card::before,
+.login-card::after {
+  /* Two corner-leaf flourishes — pseudo-elements hand-place them so the
+     markup stays semantic. */
+  content: "";
+  position: absolute;
+  width: 26px;
+  height: 26px;
+  background: radial-gradient(
+    circle at 30% 30%,
+    rgba(143, 201, 138, 0.6) 0%,
+    rgba(109, 165, 107, 0.0) 70%
+  );
+  pointer-events: none;
+}
+
+.login-card::before {
+  top: -10px;
+  left: -10px;
+  border-top: 2px solid var(--login-leaf-deep);
+  border-left: 2px solid var(--login-leaf-deep);
+  border-top-left-radius: 18px;
+  width: 22px;
+  height: 22px;
+  background: transparent;
+}
+
+.login-card::after {
+  bottom: -10px;
+  right: -10px;
+  border-bottom: 2px solid var(--login-leaf-deep);
+  border-right: 2px solid var(--login-leaf-deep);
+  border-bottom-right-radius: 18px;
+  width: 22px;
+  height: 22px;
+  background: transparent;
+}
+
+.login-card__leaf {
+  width: 48px;
+  height: 48px;
+  margin: 0 auto 10px;
+  display: block;
+  filter: drop-shadow(0 2px 4px rgba(58, 90, 58, 0.22));
+  animation: login-leaf-sway 6s ease-in-out infinite;
+}
+
+.login-card__title {
+  margin: 0 0 4px;
+  font-size: 1.6rem;
+  font-weight: bold;
+  color: var(--login-ink);
+  letter-spacing: 0.01em;
+}
+
+.login-card__tagline {
+  margin: 0 0 22px;
+  font-size: 0.95rem;
+  font-style: italic;
+  color: var(--login-ink-soft);
+}
+
+.login-card__status {
+  margin: 14px 0 6px;
+  font-size: 0.85rem;
+  color: var(--login-ink-soft);
+  min-height: 1.4em;
+}
+
+.login-card__error {
+  margin: 8px 0 0;
+  font-size: 0.85rem;
+  color: var(--login-error);
+  background: rgba(179, 66, 42, 0.08);
+  border-left: 3px solid var(--login-error);
+  padding: 8px 12px;
+  border-radius: 0 6px 6px 0;
+}
+
+.login-card__error[hidden] {
+  display: none;
+}
+
+.login-card__footnote {
+  margin: 18px 0 0;
+  font-size: 0.78rem;
+  color: var(--login-ink-soft);
+  font-style: italic;
+}
+
+.login-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 22px;
+  background: var(--login-leaf);
+  color: var(--login-ink);
+  border: 2px solid var(--login-leaf-deep);
+  border-radius: 999px;
+  font-family: inherit;
+  font-size: 0.98rem;
+  font-weight: bold;
+  cursor: pointer;
+  box-shadow: 0 3px 0 var(--login-leaf-deep);
+  transition:
+    transform 120ms ease,
+    box-shadow 120ms ease,
+    background 120ms ease;
+}
+
+.login-btn:hover {
+  background: #a3d39e;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 0 var(--login-leaf-deep);
+}
+
+.login-btn:active {
+  transform: translateY(2px);
+  box-shadow: 0 1px 0 var(--login-leaf-deep);
+}
+
+.login-btn:focus-visible {
+  outline: 3px solid var(--login-warm);
+  outline-offset: 2px;
+}
+
+.login-btn__icon {
+  display: inline-flex;
+  width: 18px;
+  height: 18px;
+}
+
+.login-btn__icon svg {
+  width: 100%;
+  height: 100%;
+}
+
+@keyframes login-fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes login-card-rise {
+  from {
+    opacity: 0;
+    transform: translateY(8px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes login-leaf-sway {
+  0%,
+  100% {
+    transform: rotate(-2deg);
+  }
+  50% {
+    transform: rotate(2deg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .login-overlay,
+  .login-card,
+  .login-card__leaf {
+    animation: none;
+  }
+}
+

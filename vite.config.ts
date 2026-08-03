@@ -6,6 +6,15 @@ export default defineConfig({
   server: {
     host: true,
     port: 5173,
+    proxy: {
+      // Dev: forward /api/* to the Node game server so the client can use
+      // relative URLs everywhere. Production hosts the API on the same origin
+      // — no proxy needed.
+      "/api": {
+        target: "http://localhost:3001",
+        changeOrigin: true,
+      },
+    },
   },
   build: {
     target: "es2022",

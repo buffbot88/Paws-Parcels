@@ -1,5 +1,5 @@
 {
-  "_comment": "Unified server config for Paws & Parcels. Copy this file to `server_config.json`, fill in the secret values (db.password, auth.jwtSecret, ashatHub.sharedSecret), and edit anything else you need. `server_config.json` is gitignored — never commit it.",
+  "_comment": "Unified server config for Paws & Parcels. Copy this file to `server_config.json`, fill in the secret values (db.password, auth.jwtSecret), and edit anything else you need. `server_config.json` is gitignored — never commit it.",
   "server": {
     "port": 3001,
     "host": "0.0.0.0",
@@ -22,16 +22,18 @@
     "refreshTokenTtlSeconds": 604800,
     "bcryptRounds": 12
   },
-  "ashatHub": {
-    "_comment_baseUrl": "Base URL of the Ashat Hub install that authenticates Paws players. Examples: https://agpstudios.org, https://ashatos.byethost7.com.",
-    "baseUrl": "https://agpstudios.org",
-    "_comment_sharedSecret": "Server-to-server trust secret. Must match PAWS_SHARED_SECRET in Ashat Hub's config/server_config.json exactly. Generate 32+ chars random.",
-    "sharedSecret": "REPLACE_ME_ASHAT_TO_PAWS_SHARED_SECRET_32_CHARS_MIN",
-    "_comment_callbackUrl": "Public URL of THIS game's 'Sign in' callback handler — Ashat Hub redirects the popup here after successful login. In dev: http://localhost:5173/api/auth/sso/callback (served by Vite proxy or static client). In prod: https://game.example.com/api/auth/sso/callback.",
-    "callbackUrl": "http://localhost:5173/api/auth/sso/callback",
-    "verifyPath": "/api/sso/verify-session",
-    "loginPath": "/auth/session/",
-    "verifyTimeoutMs": 5000
+  "oidc": {
+    "_comment_clientId": "Registered client_id in Ashat Hub's oauth_clients table (seeded for Paws & Parcels).",
+    "clientId": "paws-and-parcels",
+    "_comment_redirectUri": "Must exactly match one of the redirect_uris registered on the Ashat side (Vite serves public/oidc-callback.html at this URL in dev).",
+    "redirectUri": "http://localhost:5173/oidc-callback.html",
+    "_comment_scopes": "OpenID Connect scopes requested at the authorize endpoint.",
+    "scopes": "openid profile",
+    "_comment_discoveryUrl": "Ashat Hub's OIDC discovery document — the server reads authorization/token/jwks endpoints from it (cached).",
+    "discoveryUrl": "https://agpstudios.org/api/oauth/.well-known/openid-configuration",
+    "_comment_issuer": "The exact `iss` claim the server verifies id_tokens against. Ashat issues iss = {baseUrl}/api/oauth (note: discovery.issuer omits the /api/oauth suffix — keep this in sync with Ashat's actual issuer).",
+    "issuer": "https://agpstudios.org/api/oauth",
+    "_comment_jwksTtlSeconds": "How long the JWKS + discovery documents are cached before re-fetching (seconds).",
+    "jwksTtlSeconds": 600
   }
 }
-

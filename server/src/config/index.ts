@@ -9,8 +9,6 @@ import { resolve } from "node:path";
 
 const CONFIG_RELATIVE_PATH = "server_config.json";
 const JWS_PLACEHOLDER = "REPLACE_ME_JWT_SECRET_AT_LEAST_32_CHARS_LONG";
-const PAWS_SHARED_SECRET_PLACEHOLDER =
-  "REPLACE_ME_ASHAT_TO_PAWS_SHARED_SECRET_32_CHARS_MIN";
 
 function resolveConfigPath(): string {
   return resolve(process.cwd(), CONFIG_RELATIVE_PATH);
@@ -64,13 +62,13 @@ export interface AuthConfig {
   bcryptRounds: number;
 }
 
-export interface AshatHubConfig {
-  baseUrl: string;
-  sharedSecret: string;
-  callbackUrl: string;
-  verifyPath: string;
-  loginPath: string;
-  verifyTimeoutMs: number;
+export interface OidcConfig {
+  clientId: string;
+  redirectUri: string;
+  scopes: string;
+  discoveryUrl: string;
+  issuer: string;
+  jwksTtlSeconds: number;
 }
 
 const RAW = loadConfigFromDisk();
@@ -80,7 +78,7 @@ function validateAndNormalize(raw: unknown): {
   server: ServerConfig;
   db: DbConfig;
   auth: AuthConfig;
-  ashatHub: AshatHubConfig;
+  oidc: OidcConfig;
 } {
   const errors: string[] = [];
 
@@ -94,7 +92,7 @@ function validateAndNormalize(raw: unknown): {
   const serverRaw = (obj.server ?? {}) as Record<string, unknown>;
   const dbRaw = (obj.db ?? {}) as Record<string, unknown>;
   const authRaw = (obj.auth ?? {}) as Record<string, unknown>;
-  const ashatRaw = (obj.ashatHub ?? {}) as Record<string, unknown>;
+  const oidcRaw = (obj.oidc ?? {}) as Record<string, unknown>;
 
   // server
   const port = num(serverRaw.port, 3001, errors, "server.port");
@@ -155,45 +153,41 @@ function validateAndNormalize(raw: unknown): {
     errors.push(`auth.bcryptRounds must be 4-15 (got ${bcryptRounds}).`);
   }
 
-  // ashatHub (Phase 2 SSO bridge)
-  const baseUrl = reqStr(ashatRaw.baseUrl, "ashatHub.baseUrl", "", errors);
-  if (
-    baseUrl !== "" &&
-    !/^https?:\/\//.test(baseUrl)
-  ) {
-    errors.push(`ashatHub.baseUrl must start with http:// or https:// (got "${baseUrl}").`);
-  }
-  const sharedSecret = reqStr(
-    ashatRaw.sharedSecret,
-    "ashatHub.sharedSecret",
-    PAWS_SHARED_SECRET_PLACEHOLDER,
-    errors,
-  );
-  if (sharedSecret && sharedSecret.length < 32) {
+  // oidc (Phase 3 — ASHAT Hub as an OIDC issuer)
+  const clientId = reqStr(oidcRaw.clientId, "oidc.clientId", "", errors);
+  const redirectUri = reqStr(oidcRaw.redirectUri, "oidc.redirectUri", "", errors);
+  if (redirectUri !== "" && !/^https?:\/\//.test(redirectUri)) {
     errors.push(
-      `ashatHub.sharedSecret must be at least 32 characters (got ${sharedSecret.length}).`,
+      `oidc.redirectUri must start with http:// or https:// (got "${redirectUri}").`,
     );
   }
-  const callbackUrl = reqStr(
-    ashatRaw.callbackUrl,
-    "ashatHub.callbackUrl",
+  const scopes = str(oidcRaw.scopes, "openid profile", errors, "oidc.scopes");
+  const discoveryUrl = reqStr(
+    oidcRaw.discoveryUrl,
+    "oidc.discoveryUrl",
     "",
     errors,
   );
-  if (callbackUrl !== "" && !/^https?:\/\//.test(callbackUrl)) {
-    errors.push(`ashatHub.callbackUrl must start with http:// or https:// (got "${callbackUrl}").`);
-  }
-  const verifyPath = str(ashatRaw.verifyPath, "/api/sso/verify-session", errors, "ashatHub.verifyPath");
-  const loginPath = str(ashatRaw.loginPath, "/auth/session/", errors, "ashatHub.loginPath");
-  const verifyTimeoutMs = num(
-    ashatRaw.verifyTimeoutMs,
-    5000,
-    errors,
-    "ashatHub.verifyTimeoutMs",
-  );
-  if (verifyTimeoutMs < 100 || verifyTimeoutMs > 30000) {
+  if (discoveryUrl !== "" && !/^https?:\/\//.test(discoveryUrl)) {
     errors.push(
-      `ashatHub.verifyTimeoutMs must be 100-30000 ms (got ${verifyTimeoutMs}).`,
+      `oidc.discoveryUrl must start with http:// or https:// (got "${discoveryUrl}").`,
+    );
+  }
+  const issuer = reqStr(oidcRaw.issuer, "oidc.issuer", "", errors);
+  if (issuer !== "" && !/^https?:\/\//.test(issuer)) {
+    errors.push(
+      `oidc.issuer must start with http:// or https:// (got "${issuer}").`,
+    );
+  }
+  const jwksTtlSeconds = num(
+    oidcRaw.jwksTtlSeconds,
+    600,
+    errors,
+    "oidc.jwksTtlSeconds",
+  );
+  if (jwksTtlSeconds < 30 || jwksTtlSeconds > 86400) {
+    errors.push(
+      `oidc.jwksTtlSeconds must be 30-86400 (got ${jwksTtlSeconds}).`,
     );
   }
 
@@ -218,13 +212,13 @@ function validateAndNormalize(raw: unknown): {
       refreshTokenTtlSeconds: refreshTokenTtl,
       bcryptRounds,
     },
-    ashatHub: {
-      baseUrl: baseUrl.replace(/\/$/, ""),
-      sharedSecret,
-      callbackUrl,
-      verifyPath: verifyPath.startsWith("/") ? verifyPath : "/" + verifyPath,
-      loginPath: loginPath.startsWith("/") ? loginPath : "/" + loginPath,
-      verifyTimeoutMs,
+    oidc: {
+      clientId,
+      redirectUri,
+      scopes,
+      discoveryUrl,
+      issuer: issuer.replace(/\/$/, ""),
+      jwksTtlSeconds,
     },
   };
 }
@@ -307,4 +301,4 @@ function reqStr(
 export const server: ServerConfig = cfg.server;
 export const db: DbConfig = cfg.db;
 export const auth: AuthConfig = cfg.auth;
-export const ashatHub: AshatHubConfig = cfg.ashatHub;
+export const oidc: OidcConfig = cfg.oidc;
