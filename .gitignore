@@ -4,3 +4,10 @@ coverage/
 *.log
 .DS_Store
 /.freebuff
+
+# Server
+server/node_modules/
+server/dist/
+.env
+.env.local
+.env.*.local

@@ -1,0 +1,33 @@
+{
+  "name": "paws-and-parcels-server",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=23.6"
+  },
+  "description": "Paws & Parcels — authoritative game server",
+  "scripts": {
+    "dev": "node --import tsx src/index.ts",
+    "start": "node --import tsx src/index.ts",
+    "typecheck": "node node_modules/typescript/bin/tsc --noEmit",
+    "build": "node node_modules/typescript/bin/tsc",
+    "migrate": "node --import tsx src/db/migrate.ts",
+    "test": "node node_modules/vitest/vitest.mjs run",
+    "test:watch": "node node_modules/vitest/vitest.mjs"
+  },
+  "dependencies": {
+    "bcryptjs": "^2.4.3",
+    "jose": "^5.9.0",
+    "mysql2": "^3.14.0",
+    "tsx": "^4.19.0",
+    "typescript": "^7.0.2",
+    "uuid": "^11.1.0"
+  },
+  "devDependencies": {
+    "@types/bcryptjs": "^2.4.6",
+    "@types/node": "^26.1.2",
+    "@types/uuid": "^10.0.0",
+    "vitest": "^4.1.10"
+  }
+}
