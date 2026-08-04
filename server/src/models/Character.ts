@@ -30,6 +30,17 @@ export interface CharacterSessionRow {
   level: number;
 }
 
+/** Combat-relevant stats joined for the WS game server (Phase 3). */
+export interface CharacterCombatStats {
+  max_hp: number;
+  hp: number;
+  attack: number;
+  defense: number;
+  speed: number;
+  crit_chance: number;
+  crit_multiplier: number;
+}
+
 /** Outcome of createCharacter — distinguishes a taken name from other failures. */
 export type CreateCharacterResult =
   | { ok: true; character: CharacterRow }
@@ -202,18 +213,22 @@ export async function getCharacterById(
 }
 
 /**
- * Look up a character joined with its class key — the payload the WebSocket
- * server needs to open a session (name, class, current zone + position).
+ * Look up a character joined with its class key and combat stats — the
+ * payload the WebSocket server needs to open a session (name, class, zone,
+ * position, and the Phase 3 HP/attack/defense stats for combat).
  */
 export async function getCharacterWithClass(
   characterId: number,
-): Promise<CharacterSessionRow | null> {
+): Promise<CharacterSessionRow & CharacterCombatStats | null> {
   const row = getDb()
     .prepare(
       `SELECT c.id, c.account_id, c.name, cc.\`key\` AS class_key,
-              c.zone_id, c.pos_x, c.pos_y, c.level
+              c.zone_id, c.pos_x, c.pos_y, c.level,
+              c.hp, c.max_hp, cs.attack, cs.defense, cs.speed,
+              cs.crit_chance, cs.crit_multiplier
          FROM characters c
          JOIN character_classes cc ON cc.id = c.class_id
+         LEFT JOIN character_stats cs ON cs.character_id = c.id
         WHERE c.id = ?
         LIMIT 1`,
     )
@@ -228,7 +243,49 @@ export async function getCharacterWithClass(
     pos_x: Number(row.pos_x ?? 0),
     pos_y: Number(row.pos_y ?? 0),
     level: Number(row.level ?? 1),
+    hp: Number(row.hp ?? row.max_hp ?? 100),
+    max_hp: Number(row.max_hp ?? 100),
+    attack: Number(row.attack ?? 10),
+    defense: Number(row.defense ?? 5),
+    speed: Number(row.speed ?? 180),
+    crit_chance: Number(row.crit_chance ?? 5),
+    crit_multiplier: Number(row.crit_multiplier ?? 1.5),
   };
+}
+
+/**
+ * Persist a character's current HP (best-effort; called on defeat, zone
+ * leave, and logout so the health bar survives across sessions).
+ */
+export async function updateCharacterHp(
+  characterId: number,
+  hp: number,
+  maxHp: number,
+): Promise<void> {
+  getDb()
+    .prepare(
+      "UPDATE characters SET hp = ?, max_hp = ?, updated_at = ? WHERE id = ?",
+    )
+    .run(hp, maxHp, new Date().toISOString(), characterId);
+}
+
+/**
+ * Grant experience to a character (best-effort on kill). Returns the new
+ * experience total, or null when the character does not exist.
+ */
+export async function grantExperience(
+  characterId: number,
+  amount: number,
+): Promise<number | null> {
+  const row = getDb()
+    .prepare("SELECT experience FROM characters WHERE id = ?")
+    .get(characterId) as SqlRow | undefined;
+  if (row === undefined) return null;
+  const next = Number(row.experience ?? 0) + amount;
+  getDb()
+    .prepare("UPDATE characters SET experience = ?, updated_at = ? WHERE id = ?")
+    .run(next, new Date().toISOString(), characterId);
+  return next;
 }
 
 /**

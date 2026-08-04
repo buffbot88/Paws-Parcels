@@ -22,6 +22,8 @@ interface KeyMap {
   RIGHT: Phaser.Input.Keyboard.Key;
   E: Phaser.Input.Keyboard.Key;
   SPACE: Phaser.Input.Keyboard.Key;
+  /** Phase 3 — basic attack (J). */
+  J: Phaser.Input.Keyboard.Key;
 }
 
 /**
@@ -50,16 +52,18 @@ export class InputSystem {
   private pointerDownId: number | null = null;
   private tapQueue: Tap | null = null;
   private interactQueued = false;
+  private attackQueued = false;
 
   constructor(scene: Phaser.Scene) {
     this.scene = scene;
     this.keys = scene.input.keyboard!.addKeys(
-      "W,A,S,D,UP,DOWN,LEFT,RIGHT,E,SPACE",
+      "W,A,S,D,UP,DOWN,LEFT,RIGHT,E,SPACE,J",
     ) as unknown as KeyMap;
 
     const kb = scene.input.keyboard!;
     kb.on("keydown-E", this.queueInteract, this);
     kb.on("keydown-SPACE", this.queueInteract, this);
+    kb.on("keydown-J", this.queueAttack, this);
 
     scene.input.on("pointerdown", this.handlePointerDown, this);
     scene.input.on("pointermove", this.handlePointerMove, this);
@@ -73,6 +77,7 @@ export class InputSystem {
     if (kb) {
       kb.off("keydown-E", this.queueInteract, this);
       kb.off("keydown-SPACE", this.queueInteract, this);
+      kb.off("keydown-J", this.queueAttack, this);
     }
     this.scene.input.off("pointerdown", this.handlePointerDown, this);
     this.scene.input.off("pointermove", this.handlePointerMove, this);
@@ -112,6 +117,13 @@ export class InputSystem {
     return v;
   }
 
+  /** True exactly once per J press (edge-triggered — Phase 3 attack). */
+  consumeAttack(): boolean {
+    const v = this.attackQueued;
+    this.attackQueued = false;
+    return v;
+  }
+
   /** The tap (world coords) since the last call, or null. */
   consumeTap(): Tap | null {
     const t = this.tapQueue;
@@ -121,6 +133,10 @@ export class InputSystem {
 
   private queueInteract(): void {
     this.interactQueued = true;
+  }
+
+  private queueAttack(): void {
+    this.attackQueued = true;
   }
 
   private handlePointerDown(pointer: Phaser.Input.Pointer): void {

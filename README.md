@@ -77,7 +77,7 @@ server/            Node/TS game server (HTTP + WebSocket, SQLite persistence, mi
 | [`design/classes.md`](design/classes.md) | Bear Warrior · Cat Mage · Fox Archer cards |
 | [`design/combat.md`](design/combat.md) | Damage, health, defeat, respawn, validation |
 | [`design/quests.md`](design/quests.md) | Quest chains, prerequisites, gated deliveries |
-| [`design/monsters.md`](design/monsters.md) | Bramble Bug family, spawn, loot, respawn |
+| [`design/monsters.md`](design/monsters.md) | Happy Valley critter family, spawn, loot, respawn |
 | [`design/dungeons.md`](design/dungeons.md) | Instance lifecycle, encounters, rewards |
 | [`design/crafting.md`](design/crafting.md) | Materials, recipes, station, validation |
 | [`docs/archive/`](docs/archive/) | 🗃 Historical single-player docs (non-authoritative) |

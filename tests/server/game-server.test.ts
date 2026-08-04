@@ -44,6 +44,7 @@ const TEST_ZONE: ZoneData = {
   height: 5,
   isWalkable: (x, y) =>
     x >= 0 && y >= 0 && x < 5 && y < 5 && x !== 3, // wall at x=3
+  monsterSpawns: [],
 };
 
 const CHARACTERS = new Map<number, { accountId: number; name: string; classKey: string }>([
@@ -372,7 +373,7 @@ describe("GameServer", () => {
     const server = makeServer();
     const socket = fakeSocket();
     server.registerSocket(socket);
-    await server.onMessage(socket, JSON.stringify({ type: "attack", targetEntityId: "x" }));
+    await server.onMessage(socket, JSON.stringify({ type: "dance" }));
     const err = lastOfType(socket, "error");
     expect(err).toMatchObject({ code: "INVALID_MESSAGE" });
   });
@@ -392,5 +393,230 @@ describe("GameServer", () => {
       code: "INTERNAL_ERROR",
       requestType: "authenticate",
     });
+  });
+});
+
+describe("GameServer — Phase 3 combat", () => {
+  const BOAR_DEF = {
+    id: 1,
+    key: "monster-wild-boar",
+    display_name: "Wild Boar",
+    zone_id: 2,
+    family_id: "happy-valley",
+    level_min: 2,
+    level_max: 3,
+    max_hp: 55,
+    attack: 9,
+    defense: 6,
+    speed: 120,
+    aggro_behavior: "aggro" as const,
+    attack_behavior: "melee" as const,
+    loot_table: [{ key: "item-boar-hide", chance: 1, quantity: 1 }],
+    respawn_seconds: 30,
+    experience_reward: 20,
+  };
+
+  /** A combat zone: 7x7 open with a boar spawn at (4,4). */
+  const COMBAT_ZONE: ZoneData = {
+    zoneId: "zone-combat",
+    width: 7,
+    height: 7,
+    isWalkable: () => true,
+    monsterSpawns: [{ id: "spawn-boar", key: "monster-wild-boar", x: 4, y: 4 }],
+  };
+
+  function makeCombatServer(overrides: {
+    grantXp?: GameServer["deps"]["grantXp"];
+    persistHp?: GameServer["deps"]["persistHp"];
+  } = {}) {
+    const deps = {
+      loadCharacter: async (id: number) => {
+        const c = CHARACTERS.get(id);
+        if (c === undefined) return null;
+        return {
+          characterId: id,
+          accountId: c.accountId,
+          name: c.name,
+          classKey: c.classKey,
+          zoneId: COMBAT_ZONE.zoneId,
+          pos: { x: 1, y: 1 },
+          hp: 100,
+          maxHp: 100,
+          attack: 20,
+          defense: 5,
+          speed: 150,
+          critChance: 100,
+          critMultiplier: 2.0,
+        };
+      },
+      getZoneData: (zoneId: string) =>
+        zoneId === COMBAT_ZONE.zoneId || zoneId === "zone-clover-village"
+          ? COMBAT_ZONE
+          : null,
+      getMonsterDefinitions: async () => [BOAR_DEF],
+      persistPosition: async () => {},
+      grantXp: overrides.grantXp ?? (async () => 20),
+      persistHp: overrides.persistHp ?? (async () => {}),
+      tickMs: 1000,
+      graceMs: 60_000,
+      minMoveIntervalMs: 0,
+    };
+    return new GameServer(
+      deps as unknown as ConstructorParameters<typeof GameServer>[0],
+    );
+  }
+
+  async function joinCombat(
+    server: GameServer,
+    socket: FakeSocket,
+    characterId = 10,
+  ): Promise<void> {
+    server.registerSocket(socket);
+    const char = CHARACTERS.get(characterId);
+    if (char === undefined) throw new Error(`unknown test character ${characterId}`);
+    const token = issueWsToken(char.accountId, characterId);
+    await server.onMessage(socket, JSON.stringify({ type: "authenticate", token }));
+    await server.onMessage(socket, JSON.stringify({ type: "join_zone", zoneId: "zone-combat" }));
+  }
+
+  it("includes seeded monsters in zone_state", async () => {
+    const server = makeCombatServer();
+    const socket = fakeSocket();
+    await joinCombat(server, socket);
+    const state = lastOfType(socket, "zone_state");
+    const monsters = (state as { monsters: unknown[] }).monsters;
+    expect(monsters).toHaveLength(1);
+    expect((monsters[0] as { id: string }).id).toBe("spawn-boar");
+  });
+
+  it("rejects an attack on an unknown monster", async () => {
+    const server = makeCombatServer();
+    const socket = fakeSocket();
+    await joinCombat(server, socket);
+    await server.onMessage(
+      socket,
+      JSON.stringify({ type: "attack", targetEntityId: "spawn-nope" }),
+    );
+    const err = lastOfType(socket, "error");
+    expect(err).toMatchObject({ code: "INVALID_TARGET" });
+  });
+
+  it("attacks a monster in range and broadcasts a combat_event with damage", async () => {
+    const server = makeCombatServer();
+    const socket = fakeSocket();
+    // Birch is a fox-archer (range 5) — the boar at (4,4) is 3 tiles away.
+    await joinCombat(server, socket, 11);
+    await server.onMessage(
+      socket,
+      JSON.stringify({ type: "attack", targetEntityId: "spawn-boar" }),
+    );
+    const ev = lastOfType(socket, "combat_event");
+    expect(ev).toMatchObject({
+      instigatorId: 11,
+      targetId: "spawn-boar",
+      ability: "basic_attack",
+    });
+    // Archer attack 20 - boar defense 6 = 14; crit x2 = 28 (critChance 100).
+    expect((ev as { damage: number }).damage).toBe(28);
+    expect((ev as { targetHp: number }).targetHp).toBe(55 - 28);
+  });
+
+  it("rejects an attack outside the class's range", async () => {
+    const server = makeCombatServer();
+    const socket = fakeSocket();
+    // Maple is a bear-warrior (melee, range 1); the boar is 3 tiles away.
+    await joinCombat(server, socket, 10);
+    await server.onMessage(
+      socket,
+      JSON.stringify({ type: "attack", targetEntityId: "spawn-boar" }),
+    );
+    const err = lastOfType(socket, "error");
+    expect(err).toMatchObject({ code: "OUT_OF_RANGE" });
+  });
+
+  it("a lethal hit marks the monster defeated, rolls loot, and grants XP", async () => {
+    vi.useFakeTimers();
+    try {
+      const grantXp = vi.fn(async () => 20);
+      const server = makeCombatServer({ grantXp });
+      const socket = fakeSocket();
+      await joinCombat(server, socket, 11); // archer, range 5
+
+      // Archer attack 20 - defense 6 = 14; crit x2 = 28 per hit. Two hits kill
+      // the 55hp boar — but the 2s archer cooldown requires time between them.
+      await server.onMessage(
+        socket,
+        JSON.stringify({ type: "attack", targetEntityId: "spawn-boar" }),
+      );
+      vi.setSystemTime(Date.now() + 2500);
+      await server.onMessage(
+        socket,
+        JSON.stringify({ type: "attack", targetEntityId: "spawn-boar" }),
+      );
+      const ev = lastOfType(socket, "combat_event");
+      expect(ev).toMatchObject({ outcome: "defeated" });
+      expect(lastOfType(socket, "loot_received")).toMatchObject({
+        sourceId: "spawn-boar",
+      });
+      expect(grantXp).toHaveBeenCalledWith(11, 20);
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it("monsters attack players during the tick and can defeat them", async () => {
+    vi.useFakeTimers();
+    try {
+      const server = makeCombatServer();
+      const socket = fakeSocket();
+      await joinCombat(server, socket);
+
+      // Move the player adjacent to the boar so its AI can reach them.
+      // Boar at (4,4), player moves east twice to (3,1)... use direct pos set.
+      const zone = server["zones"].get("zone-combat", 10);
+      expect(zone).not.toBeNull();
+      zone!.pos = { x: 4, y: 3 };
+      zone!.hp = 5; // low HP so one boar hit (9 - 5 defense = 4) isn't lethal;
+      // run ticks until the boar lands a hit.
+      let hit = false;
+      for (let i = 0; i < 20 && !hit; i++) {
+        vi.setSystemTime(Date.now() + 250);
+        server.runTick();
+        hit = lastOfType(socket, "combat_event") !== undefined;
+      }
+      const ev = lastOfType(socket, "combat_event");
+      expect(ev).toBeDefined();
+      expect((ev as { instigatorId: string }).instigatorId).toBe("spawn-boar");
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it("a defeated player respawns at the safe hub with full HP + invuln", async () => {
+    vi.useFakeTimers();
+    try {
+      const persistHp = vi.fn(async () => {});
+      const server = makeCombatServer({ persistHp });
+      const socket = fakeSocket();
+      await joinCombat(server, socket);
+
+      // Put the player right next to the boar at 1 HP so the next monster hit
+      // is lethal, then run a tick to trigger the attack.
+      const zone = server["zones"].get("zone-combat", 10);
+      expect(zone).not.toBeNull();
+      zone!.pos = { x: 4, y: 3 };
+      zone!.hp = 1;
+      zone!.invulnUntil = 0;
+      vi.setSystemTime(Date.now() + 1000);
+      server.runTick();
+      await Promise.resolve();
+
+      const respawned = lastOfType(socket, "player_respawned");
+      expect(respawned).toMatchObject({ zoneId: "zone-clover-village" });
+      expect((respawned as { hp: number }).hp).toBe(100);
+      expect(persistHp).toHaveBeenCalled();
+    } finally {
+      vi.useRealTimers();
+    }
   });
 });

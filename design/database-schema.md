@@ -207,7 +207,7 @@ Static monster catalog.
 
 - **PK:** `id`
 - **FK:** `zone_id → zones.id` (spawn zone; **never the safe village**),
-  `family_id` (e.g. Bramble Bugs)
+  `family_id` (e.g. Happy Valley Critters)
 - **Columns:** `key` (`monster-…`), `display_name`, `level_min`, `level_max`,
   `max_hp`, `attack`, `defense`, `speed`, `aggro_behavior`
   (`passive`/`aggro-range`/`patrol`), `attack_behavior` (`melee`/`ranged`/`spit`),

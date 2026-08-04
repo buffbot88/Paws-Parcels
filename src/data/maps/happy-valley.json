@@ -1,0 +1,147 @@
+{
+  "id": "zone-happy-valley",
+  "name": "Happy Valley",
+  "width": 40,
+  "height": 26,
+  "rows": [
+    "TTTTTTTTTTTTTTTTTTTTPTTTTTTTTTTTTTTTTTTT",
+    "TGGGGGGGGGGGGGGGGGGGPGGGGGGGGGGGGGGGGGGT",
+    "TGGGGGGGGGGGGGGGGGGGPGGGGGGGGGGGGGGGGGGT",
+    "TGGGG~~~~GGGGGGGGGGGPGGGGGGGGGGGGGGGGGGT",
+    "TGGGG~~~~GGGTTTGGGGGPGGGGGGGGGGGGGGGGGGT",
+    "TGGGG~~~~GGGTTTGGGGGPGGGGGGXXGGGGGGGGGGT",
+    "TGGGG~~~~GGGTTTGGGGGPGGGGGGXGGGGGGGGGGGT",
+    "TGGGG~~~~GGGGGGGGGGGPGGGGGGGGGGGGGGGGGGT",
+    "TGGGG~~~~GGGGGGGGGGGPGGGGGGGGGGGGGGGGGGT",
+    "TGGGG~~~~GGGGGGGGGGGPGGGGGGGGGGGGGGGGGGT",
+    "TGGGGGGGGGGGGGGGGGGGPGGGGGGGGTTTGGGGGGGT",
+    "TGGGGGGGGGGGGGGGGGGGPGGGGGGGGTTTGGGGGGGT",
+    "TGGGGGGGGGGGGGGGGGGGPGGGGGGGGTTTGGGGGGGT",
+    "TGGGGGGGGGGGGGGGGGGGPGGGGGGGGTTTGGGGGGGT",
+    "TGGGGGGGGGGGGGGGGGGGPGGGGGGGGGGGGGGGGGGT",
+    "TGBBGGGGGGGXXGGGGGGGPGGGGGGGGGGGGGGGGGGT",
+    "TGBGGGGGGGGXGGGGGGGGPGGGGGGGGGGGGGGGGGGT",
+    "TGGGGGGGGGGGGGGGGGGGPGGGGGGGGGGGGGGGGGGT",
+    "TGGGGGGGGGGGGGGGGGGGPGGGGGGGGGGGGGBBGGGT",
+    "TGGTTGGGGGGGGGGGGGGGPGGGXXGGGGGGGGGBGGGT",
+    "TGGTGGGGGGGGGGGGTTGGPGGGGGGGGGGGGGGGGGGT",
+    "TGGGGGGGGGXXGGGGTTGGPGGGGGGGGGGGGGGGGGGT",
+    "TGGGGGGGGGGGGGGGGGGGPGGGGGGGGGGGGGGGGBGT",
+    "TGGGGGGGGGGGGGGGGGGGPGGGGGGGGGGGGGGGGGBT",
+    "TGGGGGGGGGGGGGGGGGGGPGGGGGGGGGGGGGGGGGGT",
+    "TTTTTTTTTTTTTTTTTTTTPTTTTTTTTTTTTTTTTTTT"
+  ],
+  "spawn": {
+    "x": 20,
+    "y": 1
+  },
+  "transitions": [
+    {
+      "id": "trans-valley-village",
+      "label": "Clover Village",
+      "x": 20,
+      "y": 0,
+      "toZone": "zone-clover-village",
+      "spawn": {
+        "x": 15,
+        "y": 17
+      }
+    }
+  ],
+  "interactables": [
+    {
+      "id": "object-valley-welcome",
+      "kind": "sign",
+      "label": "Valley Welcome Sign",
+      "x": 22,
+      "y": 3,
+      "lines": [
+        "Welcome to Happy Valley! Meadows, critters, and one very big boar. Mind your parcels."
+      ]
+    },
+    {
+      "id": "object-valley-pond-sign",
+      "kind": "sign",
+      "label": "Pond Sign",
+      "x": 4,
+      "y": 11,
+      "lines": [
+        "Mossy Pond — where the grouse roost and the deer drink at dusk."
+      ]
+    }
+  ],
+  "monsterSpawns": [
+    {
+      "id": "spawn-boar-1",
+      "key": "monster-wild-boar",
+      "x": 16,
+      "y": 8
+    },
+    {
+      "id": "spawn-boar-2",
+      "key": "monster-wild-boar",
+      "x": 22,
+      "y": 13
+    },
+    {
+      "id": "spawn-boar-3",
+      "key": "monster-wild-boar",
+      "x": 33,
+      "y": 8
+    },
+    {
+      "id": "spawn-fox-1",
+      "key": "monster-valley-fox",
+      "x": 10,
+      "y": 14
+    },
+    {
+      "id": "spawn-fox-2",
+      "key": "monster-valley-fox",
+      "x": 28,
+      "y": 18
+    },
+    {
+      "id": "spawn-hare-1",
+      "key": "monster-meadow-hare",
+      "x": 15,
+      "y": 18
+    },
+    {
+      "id": "spawn-hare-2",
+      "key": "monster-meadow-hare",
+      "x": 26,
+      "y": 21
+    },
+    {
+      "id": "spawn-hare-3",
+      "key": "monster-meadow-hare",
+      "x": 36,
+      "y": 17
+    },
+    {
+      "id": "spawn-deer-1",
+      "key": "monster-forest-deer",
+      "x": 27,
+      "y": 8
+    },
+    {
+      "id": "spawn-deer-2",
+      "key": "monster-forest-deer",
+      "x": 13,
+      "y": 23
+    },
+    {
+      "id": "spawn-grouse-1",
+      "key": "monster-black-grouse",
+      "x": 6,
+      "y": 12
+    },
+    {
+      "id": "spawn-grouse-2",
+      "key": "monster-black-grouse",
+      "x": 31,
+      "y": 17
+    }
+  ]
+}

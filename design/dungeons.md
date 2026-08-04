@@ -28,7 +28,7 @@
    (keeps progress) or reset (abandon run). Run transitions to `state: failed` on reset.
 6. **Destroy:** instance cleaned up after 5 minutes idle or on party leave.
 
-## 3. First MVP dungeon: Burrow of the Bramble King
+## 3. First MVP dungeon: Den of the Great Boar
 
 - **Entry requirements:** level 3+; quest chain "Pip's First Delivery" completed.
 - **Solo or party:** up to 3 players.
@@ -38,34 +38,34 @@
 
 | Room | Monster(s) | Notes |
 |---|---|---|
-| Entrance cavern | 2 Bramble Beetles + 1 Bramble Grub | Introductory trash |
-| Grub nursery | 3 Bramble Grubs + 1 Bramble Spitter | Ranged threat |
-| The Burrow (boss) | **Bramble King** (unique boss) | See below |
+| Entrance den | 2 Wild Boars + 1 Meadow Hare | Introductory trash |
+| Fox run | 2 Valley Foxes + 1 Black Grouse | Fast + ranged threat |
+| The Den (boss) | **Great Boar** (unique boss) | See below |
 
-### Boss: Bramble King
+### Boss: Great Boar
 
-- **Key:** `monster-bramble-king`
+- **Key:** `monster-great-boar`
 - **Level:** 4
 - **HP:** 200
 - **Attack:** 12
 - **Defense:** 6
 - **Abilities:**
-  - Bramble Slam (melee AoE in a 1-tile radius, 150% damage)
-  - Root Burst (roots the closest player in place for 3 s)
+  - Tusk Slam (melee AoE in a 1-tile radius, 150% damage)
+  - Charge Stomp (roots the closest player in place for 3 s)
 - **Loot table:**
 
 | Item | Chance | Quantity |
 |---|---|---|
-| item-king-thorn | 100% | 1 |
-| item-bramble-crown-shard | 50% | 1 |
-| item-beetle-shell | 80% | 2–3 |
-| item-bramble-resin | 60% | 1–2 |
+| item-great-boar-tusk | 100% | 1 |
+| item-valley-crown-shard | 50% | 1 |
+| item-boar-hide | 80% | 2–3 |
+| item-deer-antler | 60% | 1–2 |
 
 ## 4. Rewards
 
-- **Gear-crafting materials:** `item-king-thorn`, `item-bramble-crown-shard` — used to
-  craft a Bramble Set weapon or accessory.
-- **Monster materials:** `item-beetle-shell`, `item-bramble-resin` — general crafting.
+- **Gear-crafting materials:** `item-great-boar-tusk`, `item-valley-crown-shard` — used to
+  craft a Valley Set weapon or accessory.
+- **Monster materials:** `item-boar-hide`, `item-deer-antler` — general crafting.
 - **XP:** per-encounter + boss completion bonus.
 - **Stamps:** 25 on boss completion.
 

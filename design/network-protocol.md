@@ -5,7 +5,7 @@
 >
 > This defines the first set of WebSocket + HTTP messages for the MMORPG pivot.
 > **Client sends intent; server decides.** All messages are JSON-encoded.
-> Protocol version: `1.0` (first online milestone). Delivery: at least once; duplicate
+> Protocol version: `1.1` (Phase 3 adds combat). Delivery: at least once; duplicate
 > intents are idempotent where possible.
 
 ---
@@ -97,15 +97,18 @@ processes each message independently.
 ```json
 {
   "type": "attack",
-  "targetEntityId": "monster-bramble-beetle-01",
+  "targetEntityId": "spawn-boar-1",
   "ability": "basic_attack"
 }
 ```
 - **Validation:** target must exist in the same zone, be alive, and be in attack range
   (melee 1 tile, ranged 3–5 tiles class-based); cooldown for the ability must have
-  elapsed; character must have enough resource (stamina/mana/focus).
-- **Expected response:** `combat_event` (damage dealt, target new HP, resource cost).
-- **Failure cases:** out of range, out of resource, target dead, cooldown not elapsed.
+  elapsed. Monster instance ids are the map's spawn-point ids (e.g. `spawn-boar-1`).
+  Resource costs (stamina/mana/focus) are reserved for Phase 5 abilities — the
+  basic attack is free, so `INSUFFICIENT_RESOURCE` is not yet emitted.
+- **Expected response:** `combat_event` (damage dealt, target new HP, `resourceCost`
+  is `{}` until abilities land).
+- **Failure cases:** out of range, invalid target, target dead, cooldown not elapsed.
 
 ### equip_item
 ```json
@@ -158,7 +161,8 @@ processes each message independently.
     { "characterId": 8, "name": "Birch", "classKey": "bear-warrior", "pos": { "x": 3, "y": 7 } }
   ],
   "monsters": [
-    { "id": "monster-bramble-beetle-01", "pos": { "x": 25, "y": 8 }, "hp": 50, "maxHp": 50 }
+    { "id": "spawn-boar-1", "key": "monster-wild-boar", "displayName": "Wild Boar",
+      "pos": { "x": 16, "y": 8 }, "hp": 55, "maxHp": 55, "alive": true }
   ],
   "npcs": [ { "id": "npc-pip", "pos": { "x": 5, "y": 4 } } ],
   "objects": [ { "id": "object-mailbox", "pos": { "x": 5, "y": 13 } } ]
@@ -206,23 +210,58 @@ processes each message independently.
   positions of all players in the zone.
 - **Client action:** interpolate/reconcile local positions.
 
+### monster_snapshot
+```json
+{
+  "type": "monster_snapshot",
+  "monsters": [
+    { "id": "spawn-boar-1", "key": "monster-wild-boar", "displayName": "Wild Boar",
+      "pos": { "x": 16, "y": 8 }, "hp": 55, "maxHp": 55, "alive": true }
+  ]
+}
+```
+- **Payload:** periodic (every Nth tick) authoritative state of all monsters in the
+  zone — position, HP, alive flag.
+- **Client action:** interpolate monster positions; update HP bars; hide defeated
+  monsters and restore them when they respawn (`alive` flips back).
+
 ### combat_event
 ```json
 {
   "type": "combat_event",
   "instigatorId": 5,
-  "targetId": "monster-bramble-beetle-01",
+  "targetId": "spawn-boar-1",
   "ability": "basic_attack",
   "damage": 8,
   "targetHp": 42,
-  "targetMaxHp": 50,
+  "targetMaxHp": 55,
   "outcome": "hit",
-  "resourceCost": { "stamina": 5 }
+  "resourceCost": {}
 }
 ```
-- **Payload:** result of a combat action (attack or damage managed server-side).
+- **Payload:** result of a combat action (attack or damage managed server-side). When a
+  monster is the instigator, `instigatorId` is the monster's entity id (string) and the
+  target is a player character.
 - **Client action:** play damage number/effect; update the monster's HP bar locally.
 - **Variants:** `"outcome": "crit"`, `"outcome": "miss"`, `"outcome": "defeated"`.
+
+### player_respawned
+```json
+{
+  "type": "player_respawned",
+  "characterId": 5,
+  "zoneId": "zone-clover-village",
+  "pos": { "x": 15, "y": 13 },
+  "hp": 100,
+  "maxHp": 100,
+  "invulnUntil": 1764873600000
+}
+```
+- **Payload:** a player was defeated and respawned at the safe hub with full HP and a
+  short invulnerability window. Broadcast to the defeated player (and to others in the
+  zone for the entity swap).
+- **Client action:** transition the player to the respawn zone/position, restore the HP
+  chip, and show the invuln state.
 
 ### quest_updated
 ```json
@@ -255,14 +294,16 @@ processes each message independently.
 ```json
 {
   "type": "loot_received",
-  "sourceId": "monster-bramble-beetle-01",
+  "sourceId": "spawn-boar-1",
   "items": [
-    { "itemKey": "item-bramble-resin", "quantity": 2 }
+    { "itemKey": "item-boar-hide", "quantity": 1 }
   ]
 }
 ```
 - **Payload:** a monster or loot-source produced items for the character.
-- **Client action:** play loot animation; UI notification; `inventory_updated` follows.
+- **Client action:** play loot animation; UI notification. **Note:** until Phase 5,
+  this is an announcement + the monster's XP grant only — the item is not yet
+  granted to the character's inventory (`inventory_updated` arrives with Phase 5).
 
 ### error
 ```json
@@ -282,4 +323,4 @@ processes each message independently.
   `MOVE_COLLISION`, `MOVE_TELEPORT_DETECTED`, `QUEST_NOT_AVAILABLE`,
   `QUEST_PREREQUISITES_NOT_MET`, `QUEST_ALREADY_COMPLETE`, `ITEM_NOT_OWNED`,
   `INVENTORY_FULL`, `INVALID_SLOT`, `CLASS_RESTRICTED`, `ZONE_FULL`,
-  `ZONE_NOT_FOUND`, `INTERNAL_ERROR`
+  `ZONE_NOT_FOUND`, `NOT_AUTHENTICATED`, `NOT_IN_ZONE`, `INTERNAL_ERROR`

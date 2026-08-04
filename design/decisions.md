@@ -181,7 +181,8 @@
 ### Zones (now multiplayer; hub renamed to Clover Village)
 - **Decision:** The main hub is now `zone-clover-village` (safe village), replacing
   the old `zone-post-office` map. The old `zone-bramble-patch` map was removed;
-  outdoor monster content returns in Phase 3 with a fresh map + zone key.
+  outdoor monster content returns in Phase 3 on the **Happy Valley** map
+  (`zone-happy-valley`, from the Happy Valley art pack).
   Whispering Pines / Sunlit Clearing IDs stay reserved. The first dungeon is a
   new instanced zone.
 - **Reason:** The village was rebuilt around the new Clover Village art pack

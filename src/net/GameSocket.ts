@@ -23,6 +23,36 @@ export interface NetPlayerInfo extends NetPlayerPos {
   classKey: string;
 }
 
+/** A monster as sent by the server (zone_state + monster_snapshot). */
+export interface NetMonsterInfo {
+  id: string;
+  key: string;
+  displayName: string;
+  pos: { x: number; y: number };
+  hp: number;
+  maxHp: number;
+  alive: boolean;
+}
+
+/** A resolved combat hit (player → monster or monster → player). */
+export interface NetCombatEvent {
+  instigatorId: string;
+  targetId: string;
+  ability: string;
+  damage: number;
+  targetHp: number;
+  targetMaxHp: number;
+  outcome: "hit" | "crit" | "defeated";
+}
+
+/** Player defeat payload — respawn the scene at the safe hub. */
+export interface NetRespawnInfo {
+  zoneId: string;
+  pos: { x: number; y: number };
+  hp: number;
+  maxHp: number;
+}
+
 export type NetStatus =
   | "idle"
   | "fetching-token"
@@ -34,11 +64,21 @@ export type NetStatus =
 
 export interface GameSocketCallbacks {
   onStatus?: (status: NetStatus, detail?: string) => void;
-  onAuthenticated?: (info: { accountId: number; characterId: number; zoneId: string }) => void;
-  onZoneState?: (zoneId: string, players: NetPlayerInfo[]) => void;
+  onAuthenticated?: (info: {
+    accountId: number;
+    characterId: number;
+    zoneId: string;
+    hp?: number;
+    maxHp?: number;
+  }) => void;
+  onZoneState?: (zoneId: string, players: NetPlayerInfo[], monsters: NetMonsterInfo[]) => void;
   onPlayerJoined?: (player: NetPlayerInfo) => void;
   onPlayerLeft?: (characterId: number) => void;
   onSnapshot?: (players: NetPlayerPos[]) => void;
+  onMonsterSnapshot?: (monsters: NetMonsterInfo[]) => void;
+  onCombatEvent?: (event: NetCombatEvent) => void;
+  onRespawn?: (info: NetRespawnInfo) => void;
+  onLoot?: (sourceId: string, items: { itemKey: string; quantity: number }[]) => void;
   onError?: (code: string, message: string) => void;
 }
 
@@ -200,6 +240,15 @@ export class GameSocket {
     this.ws.send(encodeMessage({ type: "move_intent", dx, dy }));
   }
 
+  /** Send an attack intent against a monster entity (server validates all). */
+  attack(targetEntityId: string): void {
+    if (this.ws === null || !this.authenticated || this.joinedZoneId === null) return;
+    if (this.ws.readyState !== WS_READY_OPEN) return;
+    this.ws.send(
+      encodeMessage({ type: "attack", targetEntityId, ability: "basic_attack" }),
+    );
+  }
+
   /** Notify the server we're leaving the zone (scene transition / shutdown). */
   leaveZone(): void {
     if (this.ws !== null && this.joinedZoneId !== null && this.ws.readyState === WS_READY_OPEN) {
@@ -235,6 +284,8 @@ export class GameSocket {
           accountId: Number(msg.accountId),
           characterId: Number(msg.characterId),
           zoneId,
+          hp: Number(msg.hp),
+          maxHp: Number(msg.maxHp),
         });
         if (this.pendingZoneId !== null && zoneId !== "") {
           this.joinZone(this.pendingZoneId);
@@ -245,7 +296,11 @@ export class GameSocket {
         this.setStatus("joined");
         const zoneId = typeof msg.zoneId === "string" ? msg.zoneId : "";
         this.joinedZoneId = zoneId;
-        this.callbacks.onZoneState?.(zoneId, normalizePlayers(msg.players));
+        this.callbacks.onZoneState?.(
+          zoneId,
+          normalizePlayers(msg.players),
+          normalizeMonsters(msg.monsters),
+        );
         break;
       }
       case "player_joined":
@@ -256,6 +311,44 @@ export class GameSocket {
         break;
       case "player_snapshot":
         this.callbacks.onSnapshot?.(normalizePositions(msg.players));
+        break;
+      case "monster_snapshot":
+        this.callbacks.onMonsterSnapshot?.(normalizeMonsters(msg.monsters));
+        break;
+      case "combat_event": {
+        const outcome =
+          msg.outcome === "crit" || msg.outcome === "defeated"
+            ? msg.outcome
+            : "hit";
+        this.callbacks.onCombatEvent?.({
+          instigatorId: String(msg.instigatorId),
+          targetId: String(msg.targetId),
+          ability: typeof msg.ability === "string" ? msg.ability : "basic_attack",
+          damage: Number(msg.damage ?? 0),
+          targetHp: Number(msg.targetHp ?? 0),
+          targetMaxHp: Number(msg.targetMaxHp ?? 0),
+          outcome,
+        });
+        break;
+      }
+      case "player_respawned": {
+        const pos = msg.pos as { x?: unknown; y?: unknown } | undefined;
+        this.callbacks.onRespawn?.({
+          zoneId: typeof msg.zoneId === "string" ? msg.zoneId : "zone-clover-village",
+          pos: {
+            x: Number(pos?.x ?? 15),
+            y: Number(pos?.y ?? 13),
+          },
+          hp: Number(msg.hp ?? 0),
+          maxHp: Number(msg.maxHp ?? 0),
+        });
+        break;
+      }
+      case "loot_received":
+        this.callbacks.onLoot?.(
+          String(msg.sourceId ?? ""),
+          normalizeLoot(msg.items),
+        );
         break;
       case "error": {
         const code = typeof msg.code === "string" ? msg.code : "UNKNOWN";
@@ -329,6 +422,42 @@ function normalizePositions(raw: unknown): NetPlayerPos[] {
         x: Number(pos?.x ?? 0),
         y: Number(pos?.y ?? 0),
       },
+    };
+  });
+}
+
+/** Monster entries (zone_state / monster_snapshot). */
+function normalizeMonsters(raw: unknown): NetMonsterInfo[] {
+  if (!Array.isArray(raw)) return [];
+  return raw.map((p) => {
+    const entry = p as Record<string, unknown>;
+    const pos = entry.pos as { x?: unknown; y?: unknown } | undefined;
+    return {
+      id: String(entry.id ?? ""),
+      key: typeof entry.key === "string" ? entry.key : "monster-unknown",
+      displayName:
+        typeof entry.displayName === "string" ? entry.displayName : "Critter",
+      pos: {
+        x: Number(pos?.x ?? 0),
+        y: Number(pos?.y ?? 0),
+      },
+      hp: Number(entry.hp ?? 0),
+      maxHp: Number(entry.maxHp ?? 0),
+      alive: entry.alive !== false,
+    };
+  });
+}
+
+/** loot_received items. */
+function normalizeLoot(
+  raw: unknown,
+): { itemKey: string; quantity: number }[] {
+  if (!Array.isArray(raw)) return [];
+  return raw.map((p) => {
+    const entry = p as Record<string, unknown>;
+    return {
+      itemKey: String(entry.itemKey ?? ""),
+      quantity: Number(entry.quantity ?? 1),
     };
   });
 }

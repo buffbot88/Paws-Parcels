@@ -19,6 +19,19 @@ export interface ZonePlayer {
   dirty: boolean;
   /** Time of the last periodic DB write (ms epoch) — persistence throttle. */
   lastPersistAt: number;
+  // --- Phase 3 combat state ---
+  hp: number;
+  maxHp: number;
+  attack: number;
+  defense: number;
+  /** Class speed in px/sec — drives per-player movement speed cap. */
+  speed: number;
+  critChance: number;
+  critMultiplier: number;
+  /** Time of the last accepted attack (ms epoch) — cooldown bookkeeping. */
+  lastAttackAt: number;
+  /** Respawn invulnerability window end (ms epoch). */
+  invulnUntil: number;
 }
 
 export interface ZoneSnapshotPlayer {

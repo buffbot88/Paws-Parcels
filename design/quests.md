@@ -77,12 +77,12 @@ and having the quest in `active` state. The server validates:
 
 **Chain: "Pip's First Delivery"** (introduces delivery gating)
 
-> Note: the Bramble Patch map is deferred to Phase 3 (monsters) — its quests
-> below land once the outdoor zone returns.
+> Note: the outdoor combat zone is **Happy Valley** (Phase 3, monsters) — the
+> gathering/combat quests below land once the zone returns.
 
 | Position | Quest | Type | Prerequisite | Reward |
 |---|---|---|---|---|
-| 1 | `quest-pip-intro` | Gather 3 berries from Bramble Patch | none | 10 Stamps, 50 XP |
+| 1 | `quest-pip-intro` | Gather 3 berries from Happy Valley | none | 10 Stamps, 50 XP |
 | 2 | `quest-warm-letter-maple` | Deliver letter → Maple | `quest-pip-intro` completed | 15 Stamps, 80 XP, +1 Pip rep |
 | 3 | `quest-maple-reply` | Deliver reply → Pip | `quest-warm-letter-maple` completed | 20 Stamps, 100 XP, +1 Maple rep |
-| 4 | `quest-bramble-beetles` | Defeat 5 Bramble Beetles | `quest-maple-reply` completed | 25 Stamps, 150 XP, unlocks next village delivery chain |
+| 4 | `quest-valley-boars` | Defeat 5 Wild Boars in Happy Valley | `quest-maple-reply` completed | 25 Stamps, 150 XP, unlocks next village delivery chain |

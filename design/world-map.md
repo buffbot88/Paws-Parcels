@@ -6,8 +6,8 @@
 > **no server-authoritative zone transitions**.
 >
 > **Current hub:** `zone-clover-village` (see `src/data/maps/clover-village.json`).
-> The old Post Office + Bramble Patch maps were removed; Bramble Patch is
-> deferred to Phase 3 (monsters). For the online game, see
+> The old Post Office + Bramble Patch maps were removed; **Happy Valley** is
+> the Phase 3 open-world monster map. For the online game, see
 > [`BuildPlan.md`](../BuildPlan.md) §8 (monster maps) and
 > [`design/monsters.md`](monsters.md) for spawn rules.
 
@@ -46,16 +46,18 @@ Key objects (all `interactable`):
 
 Collision: post office building walls, pond water, garden bushes (decorative), border trees.
 
-## Zones: Bramble Patch — deferred (Phase 3)
+## Zones: Happy Valley — planned (Phase 3)
 
-The old `zone-bramble-patch` map was removed. Outdoor monster content returns
-in Phase 3 with a fresh map + zone key (see `design/monsters.md`).
+The old `zone-bramble-patch` map was removed. The Phase 3 open-world monster map is
+**Happy Valley** (`zone-happy-valley`), seeded from the Happy Valley art pack
+(`src/data/maps/HappyValley/`). Full tile sketch lands with the map JSON in Phase 3
+(see `design/monsters.md` for the critter family).
 
 ## Content placement rules
 - Gathering nodes regrow daily (respawn on new in-game day) — set in Phase 4.
 - NPCs never move between zones in MVP; dialogue changes with friendship level.
 
-## Lost-item spawn locations (errand quests, deferred with Bramble Patch)
+## Lost-item spawn locations (errand quests, deferred to the outdoor zone)
 | Quest | Item | findAt | Spawn tile |
 |---|---|---|---|
 | `quest-pip-letter-opener` | `item-letter-opener` | behind the counter | hub ~(4,6) |

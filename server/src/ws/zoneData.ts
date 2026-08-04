@@ -25,12 +25,15 @@ export interface ZoneData {
   height: number;
   /** True when the tile at (x, y) is in bounds and walkable. */
   isWalkable: (x: number, y: number) => boolean;
+  /** Outdoor monster spawn points (design/monsters.md §1); empty in safe zones. */
+  monsterSpawns: { id: string; key: string; x: number; y: number }[];
 }
 
 interface MapFile {
   width: number;
   height: number;
   rows: string[];
+  monsterSpawns?: { id: string; key: string; x: number; y: number }[];
 }
 
 // Resolve relative to this module, never process.cwd() — the server must find
@@ -62,7 +65,27 @@ export function loadZoneData(zoneId: string): ZoneData | null {
     width: map.width,
     height: map.height,
     isWalkable: (x, y) => isWalkableTile(map, x, y),
+    monsterSpawns: normalizeSpawns(map.monsterSpawns),
   };
+}
+
+/** Keep only well-formed spawn entries (id + key + in-bounds coords). */
+function normalizeSpawns(
+  raw: MapFile["monsterSpawns"],
+): { id: string; key: string; x: number; y: number }[] {
+  if (!Array.isArray(raw)) return [];
+  const out: { id: string; key: string; x: number; y: number }[] = [];
+  for (const s of raw) {
+    if (
+      typeof s.id === "string" &&
+      typeof s.key === "string" &&
+      Number.isInteger(s.x) &&
+      Number.isInteger(s.y)
+    ) {
+      out.push({ id: s.id, key: s.key, x: s.x, y: s.y });
+    }
+  }
+  return out;
 }
 
 function isWalkableTile(map: MapFile, x: number, y: number): boolean {

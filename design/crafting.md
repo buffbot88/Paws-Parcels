@@ -35,17 +35,17 @@ within 2 tiles of the station can open the crafting UI and use recipes.
 
 | Output | Materials required | Station |
 |---|---|---|
-| `item-bramble-helmet` (head, gear) | 2 × `item-king-thorn`, 3 × `item-beetle-shell` | Village station |
-| `item-bramble-bow` (weapon, gear) | 1 × `item-bramble-crown-shard`, 3 × `item-spitter-gland` | Village station |
-| `item-bramble-cloak` (body, gear) | 2 × `item-soft-grub-silk`, 2 × `item-bramble-resin` | Village station |
+| `item-valley-helmet` (head, gear) | 2 × `item-deer-antler`, 3 × `item-boar-hide` | Village station |
+| `item-valley-bow` (weapon, gear) | 1 × `item-boar-tusk`, 3 × `item-grouse-feather` | Village station |
+| `item-valley-cloak` (body, gear) | 2 × `item-fox-pelt`, 2 × `item-hare-fur` | Village station |
 
-Gear items provide base stat bonuses when equipped (e.g. `bramble-helmet` = +5 defense).
+Gear items provide base stat bonuses when equipped (e.g. `valley-helmet` = +5 defense).
 
 ### Upgrade materials
 
 | Input | Output | Materials |
 |---|---|---|
-| Any gear item + 1 upgrade | Gear level +1 | 2 × `item-bramble-resin`, 50 Stamps |
+| Any gear item + 1 upgrade | Gear level +1 | 2 × `item-boar-hide`, 50 Stamps |
 
 Max gear level = 3 for MVP gear. Each upgrade level adds +10% to the gear's base stat.
 

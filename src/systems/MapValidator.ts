@@ -69,6 +69,20 @@ export function validateMapData(map: MapData): MapValidationResult {
     checkPoint(target, t.spawn, `transition "${t.id}" spawn`, errors);
   }
 
+  const seenSpawns = new Set<string>();
+  for (const s of map.monsterSpawns ?? []) {
+    if (seenSpawns.has(s.id)) errors.push(`${id}: duplicate monster spawn id "${s.id}"`);
+    seenSpawns.add(s.id);
+    if (!s.key.trim()) {
+      errors.push(`${id}: monster spawn "${s.id}" is missing a key`);
+    }
+    if (s.x < 0 || s.y < 0 || s.x >= map.width || s.y >= map.height) {
+      errors.push(`${id}: monster spawn "${s.id}" (${s.x},${s.y}) is outside ${map.width}x${map.height}`);
+    } else if (tileCollides(map, s.x, s.y)) {
+      errors.push(`${id}: monster spawn "${s.id}" (${s.x},${s.y}) sits on a colliding tile`);
+    }
+  }
+
   const seenObjects = new Set<string>();
   for (const o of map.interactables) {
     if (seenObjects.has(o.id)) errors.push(`${id}: duplicate interactable id "${o.id}"`);

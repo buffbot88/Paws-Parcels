@@ -23,10 +23,19 @@
     "TGGGGBBGGGGGGGGGGGGGGBBGGGGGGT",
     "TGGGGBBGGGGGGGGGGGGGGBBGGGGGGT",
     "TGGGGGGGGGGGGGGGGGGGGGGGGGGGGT",
-    "TTTTTTTTTTTTTTTTTTTTTTTTTTTTTT"
+    "TTTTTTTTTTTTTTTGTTTTTTTTTTTTTT"
   ],
   "spawn": { "x": 15, "y": 13 },
-  "transitions": [],
+  "transitions": [
+    {
+      "id": "trans-clover-valley",
+      "label": "Happy Valley",
+      "x": 15,
+      "y": 19,
+      "toZone": "zone-happy-valley",
+      "spawn": { "x": 20, "y": 1 }
+    }
+  ],
   "interactables": [
     {
       "id": "object-counter",

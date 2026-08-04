@@ -12,6 +12,15 @@ function player(overrides: Partial<ZonePlayer> = {}): ZonePlayer {
     lastMoveAt: 0,
     dirty: false,
     lastPersistAt: 0,
+    hp: 100,
+    maxHp: 100,
+    attack: 10,
+    defense: 5,
+    speed: 150,
+    critChance: 2,
+    critMultiplier: 1.5,
+    lastAttackAt: 0,
+    invulnUntil: 0,
     ...overrides,
   };
 }

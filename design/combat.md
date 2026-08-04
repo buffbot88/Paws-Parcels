@@ -47,7 +47,7 @@ All stats are server-side and level-scaled. No client contribution to damage.
 - **Attack:** monsters attack the nearest player in range, or the player with aggro
   (taunt from Bear Hug overrides).
 - **Defeat:** monster HP ≤ 0 → death animation + loot drop + respawn timer.
-- **Monster respawn:** fixed timer per monster type (e.g. 30 s for Bramble Beetle);
+- **Monster respawn:** fixed timer per monster type (e.g. 30 s for a Wild Boar);
   timer starts on death.
 
 ## 5. Loot

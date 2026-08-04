@@ -37,7 +37,7 @@ coordinates). See the 2.5D decision in [`design/decisions.md`](design/decisions.
 | Term | Meaning here |
 |---|---|
 | Server-authoritative | The game server owns and decides all gameplay state; the client renders intent. |
-| Zone | A tiled world area (e.g. Main Village, Bramble Patch, Dungeon X). Players are synchronized per zone. |
+| Zone | A tiled world area (e.g. Main Village, Happy Valley, Dungeon X). Players are synchronized per zone. |
 | Outdoor map | A shared, persistent world zone that may contain monsters. |
 | Dungeon | An **instanced** zone created per party/run; isolated from the outdoor map. |
 | Player snapshot | Periodic server → client position/state broadcast for other players. |
@@ -127,8 +127,8 @@ See [`design/combat.md`](design/combat.md). Summary:
 See [`design/monsters.md`](design/monsters.md). Rules:
 
 - **Monsters cannot spawn inside the protected Main Village** (safe hub).
-- Outdoor maps (Bramble Patch) contain monsters by zone + level range.
-- First family: **Bramble Bugs** (beetle, grub, spitter) — level 1–3.
+- Outdoor maps (Happy Valley) contain monsters by zone + level range.
+- First family: **Happy Valley Critters** (boar, fox, hare, deer, black grouse) — level 1–3.
 - Respawn: fixed timers per monster type; loot drops to the defeating player.
 
 ## 9. Quest-Chain System
@@ -167,7 +167,7 @@ See [`design/quests.md`](design/quests.md). Summary:
 See [`design/dungeons.md`](design/dungeons.md). Summary:
 
 - **Instanced**: each run gets its own zone instance; isolated from outdoor maps.
-- Entry requirements: level + quest-chain prerequisite (e.g. "Burrow of the Bramble King").
+- Entry requirements: level + quest-chain prerequisite (e.g. "Den of the Great Boar").
 - Party or solo; instance lifecycle: create → enter → run → complete/fail → destroy.
 - Encounters: trash packs + boss; rewards: gear-crafting materials + upgrade materials.
 - Failure = respawn at dungeon entrance or instance reset (no permanent loss).
@@ -249,30 +249,31 @@ See [`design/crafting.md`](design/crafting.md). Summary:
 - [x] Lock the 2.5D approach (isometric/pseudo-3D, Phaser 4)
 - [x] Define server boundaries, DB ownership, first WS protocol, vertical-slice scope
 
-### Phase 1 — Online Foundation — ⏭ next
-- Create server application (Node/TS, same monorepo or sibling package)
-- Configuration + environment handling
-- SQLite connection + versioned migrations
-- Health check endpoint + structured server logging
-- Account & character data models
-- Authentication foundation (register/login, tokens)
+### Phase 1 — Online Foundation — ✅ built
+- [x] Create server application (Node/TS, same monorepo or sibling package)
+- [x] Configuration + environment handling
+- [x] SQLite connection + versioned migrations (001–004)
+- [x] Health check endpoint + structured server logging
+- [x] Account & character data models
+- [x] Authentication foundation (ASHAT Hub OIDC + JWT sessions)
 
-### Phase 2 — Multiplayer Village
-- Connect client to server (HTTP + WS)
-- Authenticate a player; join Main Village
-- Synchronize player presence (other players visible)
-- Synchronize movement (`move_intent` + snapshots)
-- **Validate movement server-side** (speed, collision, teleport sanity)
-- Handle disconnects and reconnects (grace window, zone resume)
+### Phase 2 — Multiplayer Village — ✅ built
+- [x] Connect client to server (HTTP + WS)
+- [x] Authenticate a player; join Main Village
+- [x] Synchronize player presence (other players visible)
+- [x] Synchronize movement (`move_intent` + snapshots)
+- [x] **Validate movement server-side** (speed, collision, teleport sanity)
+- [x] Handle disconnects and reconnects (grace window, zone resume)
+- [x] Courier desk (character create/select) + in-game courier menu
 
-### Phase 3 — Classes and Combat
-- Add Bear Warrior, Cat Mage, Fox Archer (stats from SQLite)
-- Add health and defeat states
-- Add one monster map (Bramble Patch outdoor) + one monster family
-- Add basic attacks (cooldown-gated, server-computed)
-- Add damage validation + monster respawn + player respawn
+### Phase 3 — Classes and Combat — ✅ built
+- [x] Add Bear Warrior, Cat Mage, Fox Archer (stats from SQLite)
+- [x] Add health and defeat states
+- [x] Add one monster map (Happy Valley outdoor) + one monster family
+- [x] Add basic attacks (cooldown-gated, server-computed)
+- [x] Add damage validation + monster respawn + player respawn
 
-### Phase 4 — Quest Chains and Deliveries
+### Phase 4 — Quest Chains and Deliveries — ⏭ next
 - Add quest prerequisites + ordered quest chains
 - Add NPC interactions (server-authoritative)
 - Add parcel and letter rewards (gated by chain)
@@ -320,10 +321,10 @@ See [`design/crafting.md`](design/crafting.md). Summary:
 ## 21. MVP / Vertical-Slice Definition of Done
 
 **Vertical slice (Phases 1–3, first playable online):**
-- A player can register, log in, create a Bear/Cat/Fox character.
-- Two players in Main Village can see each other and move (server-validated).
-- A player can go to Bramble Patch, fight Bramble Bugs, defeat/respawn, and be defeated
-  and respawn at the village.
+- [x] A player can register, log in, create a Bear/Cat/Fox character.
+- [x] Two players in Main Village can see each other and move (server-validated).
+- [x] A player can go to Happy Valley, fight wild critters, defeat/respawn, and be
+      defeated and respawn at the village.
 
 **MVP (Phases 1–6 complete):**
 - One quest chain with a **gated delivery** completes end-to-end (server-validated).
@@ -346,7 +347,7 @@ See [`design/crafting.md`](design/crafting.md). Summary:
 | [`design/classes.md`](design/classes.md) | Warrior / Mage / Archer cards |
 | [`design/combat.md`](design/combat.md) | Damage, health, defeat, respawn, validation |
 | [`design/quests.md`](design/quests.md) | Chains, prerequisites, gated deliveries |
-| [`design/monsters.md`](design/monsters.md) | Bramble Bug family, spawn, loot, respawn |
+| [`design/monsters.md`](design/monsters.md) | Happy Valley critter family, spawn, loot, respawn |
 | [`design/dungeons.md`](design/dungeons.md) | Instance lifecycle, encounters, rewards |
 | [`design/crafting.md`](design/crafting.md) | Materials, recipes, station, validation |
 | [`docs/archive/`](docs/archive/) | 🗃 Historical single-player docs (non-authoritative) |

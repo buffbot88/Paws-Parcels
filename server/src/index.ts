@@ -9,9 +9,12 @@ import { logger } from "./middleware/logger.ts";
 import { createRouter } from "./routes/index.ts";
 import { GameServer } from "./ws/gameServer.ts";
 import { loadZoneData } from "./ws/zoneData.ts";
+import { getMonsterDefinitionsByZone } from "./models/Monster.ts";
 import {
   getCharacterWithClass,
   updateCharacterPosition,
+  updateCharacterHp,
+  grantExperience,
 } from "./models/Character.ts";
 
 async function main(): Promise<void> {
@@ -53,11 +56,22 @@ async function main(): Promise<void> {
         classKey: row.class_key,
         zoneId: row.zone_id,
         pos: { x: row.pos_x, y: row.pos_y },
+        hp: row.hp,
+        maxHp: row.max_hp,
+        attack: row.attack,
+        defense: row.defense,
+        speed: row.speed,
+        critChance: row.crit_chance,
+        critMultiplier: row.crit_multiplier,
       };
     },
     getZoneData: loadZoneData,
+    getMonsterDefinitions: getMonsterDefinitionsByZone,
     persistPosition: (characterId, zoneId, pos) =>
       updateCharacterPosition(characterId, zoneId, pos.x, pos.y),
+    persistHp: (characterId, hp, maxHp) =>
+      updateCharacterHp(characterId, hp, maxHp),
+    grantXp: (characterId, amount) => grantExperience(characterId, amount),
   });
 
   const server = createServer(async (req: IncomingMessage, res: ServerResponse) => {

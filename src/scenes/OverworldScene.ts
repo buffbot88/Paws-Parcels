@@ -29,6 +29,8 @@ const NPCS = npcsJson.npcs as NPCDefinition[];
 const DIALOGUE = dialogueJson.dialogue as DialogueSet[];
 /** One DOM panel for the whole app — scenes come and go, the overlay persists. */
 export const dialoguePanel = new DialoguePanel();
+/** Client-side attack-pickup radius (tiles); the server enforces the real range. */
+const ATTACK_TARGET_RANGE = 6;
 
 /**
  * The zone-capable world scene (Phase 2-3): builds a tilemap from the custom
@@ -123,8 +125,24 @@ export class OverworldScene extends Phaser.Scene {
 
     this.inputSystem = new InputSystem(this);
 
-    // Phase 2 — multiplayer: bind the network layer and join this zone.
+    // Phase 2-3 — multiplayer: bind the network layer and join this zone.
     this.network.attach(this);
+    // Defeat = respawn at the safe hub (server says where).
+    this.network.onDefeat = (info) => {
+      if (info.zoneId === this.mapData.id) {
+        // Same zone respawn — just move the courier + restore HP.
+        this.player.setPosition(
+          info.pos.x * TILE_SIZE + TILE_SIZE / 2,
+          info.pos.y * TILE_SIZE + TILE_SIZE / 2,
+        );
+      } else {
+        this.network.joinZone(info.zoneId);
+        this.scene.restart({
+          zoneId: info.zoneId,
+          spawn: info.pos,
+        } satisfies OverworldSceneData);
+      }
+    };
     this.network.start(zoneId);
 
     this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
@@ -152,6 +170,18 @@ export class OverworldScene extends Phaser.Scene {
       this.network.moveIntent(Math.sign(vector.x), 0);
     } else {
       this.network.moveIntent(0, Math.sign(vector.y));
+    }
+
+    // Phase 3 — attack: J targets the nearest monster in class range (the
+    // server re-validates range + cooldown and rejects anything untrustworthy).
+    if (this.inputSystem.consumeAttack()) {
+      this.network.attackNearest(
+        {
+          x: Math.floor(this.player.x / TILE_SIZE),
+          y: Math.floor(this.player.y / TILE_SIZE),
+        },
+        ATTACK_TARGET_RANGE,
+      );
     }
     this.network.update();
 

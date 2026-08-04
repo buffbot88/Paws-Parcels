@@ -193,7 +193,7 @@
     {
       "id": "quest-biscuit-ingredient-run",
       "title": "Ingredients for the Café",
-      "description": "Biscuit is out of blueberries for his famous pastries. Gather three from the Bramble Patch bushes.",
+      "description": "Biscuit is out of blueberries for his famous pastries. Gather three from the Happy Valley bushes.",
       "type": "gathering",
       "giverId": "npc-biscuit",
       "targetId": "npc-biscuit",

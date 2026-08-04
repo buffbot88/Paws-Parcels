@@ -23,10 +23,12 @@ world is now **persistent, server-authoritative, and multiplayer**:
 - **No PvP, no grinding, no real-money transactions.**
 
 **Current standing:** Phases 0–3 of the **original single-player plan** are built and
-remain the client foundation. Phase 0 (pivot docs) and Phase 1 (**Online Foundation** —
+remain the client foundation. Phase 0 (pivot docs), Phase 1 (**Online Foundation** —
 server app, SQLite migrations, health check, ASHAT Hub OIDC auth, account + character
-data models, character list/create/classes endpoints) are complete. Next up:
-**Phase 2 — Multiplayer Village** (WebSocket presence + movement sync).
+data models, character list/create/classes endpoints), Phase 2 (**Multiplayer
+Village** — WebSocket presence + movement sync, courier desk), and Phase 3 (**Classes
+and Combat** — Happy Valley open-world monster map, server-authoritative combat loop)
+are complete. Next up: **Phase 4 — Quest Chains and Deliveries**.
 
 ---
 
@@ -95,12 +97,25 @@ Goal: players see each other in the Main Village.
 - Best-effort position persistence to SQLite on zone leave/grace expiry **and
   periodically every 10s while moving** (`GameServer` dirty-flag flush)
 
-### Phase 3 — Classes and Combat
+### Phase 3 — Classes and Combat ✅ complete
 Goal: first monster map, basic combat, class system.
-- Bear Warrior / Cat Mage / Fox Archer
-- Server-side stats, HP, defeat state
-- Bramble Patch monsters (Bramble Bug family)
-- Basic attacks + monster/player respawn
+- **Happy Valley** open-world map (`src/data/maps/happy-valley.json`,
+  `zone-happy-valley`, 40×26 outdoor, `is_safe 0`) with a south transition out of
+  Clover Village; monsters are forbidden in the safe hub
+- **Monster family seeded** (migration `004_happy_valley_seeds.sql`): Wild Boar
+  (aggro melee), Valley Fox (aggro melee), Meadow Hare (passive), Forest Deer
+  (passive), Black Grouse (aggro ranged) + 10 monster-material loot items
+- **Server-authoritative combat** (`server/src/ws/combat.ts` + `monsterStore.ts`):
+  damage formula with 20% floor, crits, class-based range/cooldown, resource costs
+- **Monster AI:** aggro/leash, chase, melee/ranged attacks, defeat → loot rolls + XP
+  grant, fixed-timer respawn
+- **Player defeat:** respawn at the Clover Village spawn with full HP + 3s invuln
+- **WS protocol:** `attack` (C→S); `monster_snapshot`, `combat_event`,
+  `loot_received`, `player_respawned` (S→C); error codes `INVALID_TARGET`,
+  `OUT_OF_RANGE`, `COOLDOWN_ACTIVE`, `INSUFFICIENT_RESOURCE`, `TARGET_DEAD`
+- **Client:** Monster entity with HP bars + damage numbers, attack key (Space),
+  player HP chip, defeat/respawn handling
+- Gate: combat math server-side; monster + player respawn work; damage validated
 
 ### Phase 4 — Quest Chains and Deliveries
 Goal: server-validated quest chains with gated deliveries.
@@ -126,8 +141,8 @@ Summary of phases:
 - **Phase 0:** Pivot documentation — ✅ built
 - **Phase 1:** Online Foundation — ✅ built (server, SQLite, OIDC auth, characters)
 - **Phase 2:** Multiplayer Village — ✅ complete (WS presence + movement sync, character create/select, periodic position persistence)
-- **Phase 3:** Classes and Combat — ⏭ next
-- **Phase 4:** Quest Chains and Deliveries
+- **Phase 3:** Classes and Combat — ✅ complete (Happy Valley monsters, server-authoritative combat, respawn)
+- **Phase 4:** Quest Chains and Deliveries — ⏭ next
 - **Phase 5:** Inventory and Equipment
 - **Phase 6:** First Dungeon and Crafting
 - **Phase 7:** 2.5D Presentation and Content
