@@ -1,3 +1,5 @@
+import { apiPath } from "../config.ts";
+
 /**
  * Browser WebSocket client for the Phase 2 game server (design/network-protocol.md).
  *
@@ -138,7 +140,7 @@ export class GameSocket {
 
   constructor(opts: GameSocketOptions) {
     this.opts = {
-      tokenUrl: "/api/ws-token",
+      tokenUrl: apiPath("/api/ws-token"),
       fetchImpl: fetch,
       WebSocketImpl: WebSocket,
       moveIntervalMs: 260,

@@ -107,10 +107,9 @@
 
         function fail(message, friendly) {
           document.querySelector(".spinner").style.display = "none";
-          title.textContent = "Sign-in didn't complete";
-          detail.innerHTML =
+          title.textContent = "Sign-in didn't complete";            detail.innerHTML =
             friendly +
-            ' <a href="/">Back to Paws &amp; Parcels</a>.';
+            ' <a href="./">Back to Paws &amp; Parcels</a>.';
           void message;
         }
 
@@ -120,7 +119,13 @@
           return;
         }
 
-        fetch("/api/auth/oidc/callback", {
+        // ---------------------------------------------------------------
+        // IMPORTANT: When deploying to a new server, update this URL to
+        // point to the game server (Omega). This file is in public/ and
+        // can't use Vite env vars, so it must be edited manually.
+        // ---------------------------------------------------------------
+        var API_BASE = "https://ashatneuralhost.agpstudios.org";
+        fetch(API_BASE + "/api/auth/oidc/callback", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           credentials: "omit",
@@ -157,9 +162,10 @@
             }
             title.textContent = "Welcome back, courier!";
             detail.textContent = "Handing you your parcel bag…";
-            // Full-page redirect back to the game; bootAfterAuth validates
-            // the stored JWT against /api/auth/me and boots Phaser.
-            window.location.replace("/");
+            // Redirect back to the game (relative path handles subpath deploys).
+            // bootAfterAuth validates the stored JWT and boots the game or
+            // shows the maintenance screen.
+            window.location.replace("./");
           })
           .catch(function () {
             fail("network error", "The post office is unreachable right now.");

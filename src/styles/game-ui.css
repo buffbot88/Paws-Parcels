@@ -796,6 +796,34 @@
 }
 
 /* ============================================================== */
+/* Maintenance screen (post-auth, game server offline)              */
+/* ============================================================== */
+
+.maintenance-card {
+  text-align: center;
+}
+
+.maintenance-status {
+  margin: 14px 0 6px;
+  font-size: 1rem;
+  font-weight: bold;
+  color: var(--login-warm, #d08a3e);
+  background: rgba(208, 138, 62, 0.1);
+  border-left: 3px solid var(--login-warm, #d08a3e);
+  padding: 10px 14px;
+  border-radius: 0 8px 8px 0;
+  text-align: left;
+}
+
+.maintenance-detail {
+  margin: 12px 0 0;
+  font-size: 0.88rem;
+  color: var(--login-ink-soft, #6d7a4f);
+  line-height: 1.5;
+  text-align: left;
+}
+
+/* ============================================================== */
 /* Phase 3 — Player HP bar (HUD)                                   */
 /* ============================================================== */
 

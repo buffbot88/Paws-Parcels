@@ -18,6 +18,7 @@ import {
 } from "../net/bootTarget.ts";
 import { TILE_SIZE } from "../game/GameConfig.ts";
 import type { MapPoint } from "../game/Maps.ts";
+import { apiPath, getWsUrl } from "../config.ts";
 
 /** Read the stored JWT (written by LoginOverlay / oidc-callback.html). */
 function readToken(): string | null {
@@ -33,10 +34,9 @@ function pickPlayCharacter(): BootCharacter | null {
   return pickCharacter(readBootCharacters(), readSelectedCharacterId());
 }
 
-/** ws(s):// URL for the game server, same origin (Vite proxies /ws in dev). */
+/** ws(s):// URL for the game server — configurable via VITE_GAME_SERVER_URL. */
 function wsUrl(): string {
-  const proto = window.location.protocol === "https:" ? "wss" : "ws";
-  return `${proto}://${window.location.host}/ws`;
+  return getWsUrl();
 }
 
 /**
@@ -162,6 +162,7 @@ export class NetworkSystem {
     this.myCharacterId = character?.id ?? null;
     const socket = new GameSocket({
       wsUrl: wsUrl(),
+      tokenUrl: apiPath("/api/ws-token"),
       getToken: readToken,
       getCharacterId: () => pickPlayCharacter()?.id ?? null,
     });

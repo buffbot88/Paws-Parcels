@@ -4,11 +4,13 @@
     "port": 3001,
     "host": "0.0.0.0",
     "nodeEnv": "development",
+    "_comment_cors": "In production, this MUST include the origin of the browser client (Alpha). For the split-host topology: Alpha serves the client, Omega runs this server. Without Alpha's URL here, cross-origin fetch/WS from the browser will be blocked.",
     "corsAllowedOrigins": [
       "http://localhost:5173",
-      "http://localhost:3001"
+      "http://localhost:3001",
+      "https://www.agpstudios.org"
     ],
-    "_comment_staticDir": "Directory (relative to project root) of the built client to serve from this same process — single-host hosting (client + API + WebSocket on one port). Empty string disables it. PaaS hosts (Render/Railway/Fly) override the listen port via the $PORT env var automatically.",
+    "_comment_staticDir": "Directory (relative to project root) of the built client. In single-process hosting, set to 'dist' to serve the client from this server. In split-host mode (client on Alpha, server on Omega), set to '' to disable — Omega only serves the API + WebSocket.",
     "staticDir": "dist"
   },
   "db": {
@@ -24,8 +26,8 @@
   "oidc": {
     "_comment_clientId": "Registered client_id in Ashat Hub's oauth_clients table (seeded for Paws & Parcels).",
     "clientId": "paws-and-parcels",
-    "_comment_redirectUri": "Must exactly match one of the redirect_uris registered on the Ashat side (Vite serves public/oidc-callback.html at this URL in dev).",
-    "redirectUri": "http://localhost:5173/oidc-callback.html",
+    "_comment_redirectUri": "Must exactly match one of the redirect_uris registered on the Ashat side. In split-host mode, this points to the client host (Alpha), not the game server (Omega).",
+    "redirectUri": "https://www.agpstudios.org/oidc-callback.html",
     "_comment_scopes": "OpenID Connect scopes requested at the authorize endpoint.",
     "scopes": "openid profile",
     "_comment_discoveryUrl": "Ashat Hub's OIDC discovery document — the server reads authorization/token/jwks endpoints from it (cached).",

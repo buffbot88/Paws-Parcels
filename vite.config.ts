@@ -3,6 +3,13 @@ import { defineConfig } from "vite";
 export default defineConfig({
   // Relative base so the built game works from any static host subpath.
   base: "./",
+  // Inject the game server URL at build time. Set VITE_GAME_SERVER_URL in
+  // .env or the shell to make the client talk to a remote server (e.g.
+  // Omega). An empty string means same-origin (single-process hosting).
+  define: {
+    __GAME_SERVER_URL__: JSON.stringify(process.env.VITE_GAME_SERVER_URL ?? ""),
+    __MAINTENANCE__: JSON.stringify(process.env.VITE_MAINTENANCE ?? "true"),
+  },
   server: {
     host: true,
     port: 5173,

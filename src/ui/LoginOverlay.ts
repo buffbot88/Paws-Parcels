@@ -6,6 +6,7 @@
  * the redirect but die with the tab.
  */
 import { SELECTED_CHARACTER_KEY } from "../net/bootTarget.ts";
+import { apiPath } from "../config.ts";
 
 const TOKEN_KEY = "paws.auth.token";
 const ACCOUNT_KEY = "paws.auth.account";
@@ -197,7 +198,7 @@ export class LoginOverlay {
     let authorizeUrl: string | null = null;
     try {
       const res = await fetch(
-        `/api/auth/login-url?state=${encodeURIComponent(state)}&code_challenge=${encodeURIComponent(challenge)}`,
+        apiPath(`/api/auth/login-url?state=${encodeURIComponent(state)}&code_challenge=${encodeURIComponent(challenge)}`),
         { credentials: "omit" },
       );
       if (res.ok) {
@@ -233,7 +234,7 @@ export class LoginOverlay {
       return null;
     }
     try {
-      const res = await fetch("/api/auth/me", {
+      const res = await fetch(apiPath("/api/auth/me"), {
         headers: { Authorization: `Bearer ${token}` },
         credentials: "omit",
       });

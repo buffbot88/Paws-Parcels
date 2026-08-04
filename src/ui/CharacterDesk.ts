@@ -9,6 +9,7 @@ import {
   type CharacterListItem,
 } from "./LoginOverlay.ts";
 import { deskStepFor, validateCharacterName } from "./characterFlow.ts";
+import { apiPath } from "../config.ts";
 
 /** Shape of GET /api/classes entries (server/src/models/CharacterClass.ts). */
 export interface ClassOption {
@@ -393,7 +394,7 @@ export class CharacterDesk {
     status.textContent = "Registering your courier…";
 
     try {
-      const res = await fetch("/api/characters", {
+      const res = await fetch(apiPath("/api/characters"), {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -450,7 +451,7 @@ export class CharacterDesk {
     this.classesFailed = false;
     if (force) this.refreshClassesIntoCurrentView(); // show "fetching…" again
     try {
-      const res = await fetch("/api/classes", {
+      const res = await fetch(apiPath("/api/classes"), {
         headers: { Authorization: `Bearer ${this.detail.token}` },
         credentials: "omit",
       });
