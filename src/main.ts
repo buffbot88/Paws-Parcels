@@ -15,7 +15,8 @@ import { deskStepFor } from "./ui/characterFlow.ts";
 import { writeSelectedCharacterId } from "./net/bootTarget.ts";
 import { NetworkSystem } from "./systems/NetworkSystem.ts";
 import { dialoguePanel } from "./scenes/OverworldScene.ts";
-import { MAINTENANCE } from "./config.ts";
+import { loadClientConfig } from "./clientConfig.ts";
+import { isMaintenance } from "./config.ts";
 
 initErrorLogging();
 
@@ -171,13 +172,17 @@ function showMaintenance(detail: AuthFinishDetail): void {
  * and has a character to play as (a character id is required for the ws-token).
  */
 async function bootAfterAuth(): Promise<void> {
+  // Load runtime config from server_config.json (on the web server).
+  // Falls back to Vite build-time defines for local dev.
+  await loadClientConfig();
+
   const overlay = new LoginOverlay();
 
   try {
     const existing = await overlay.checkExistingSession();
     if (existing !== null) {
       // Maintenance mode — show the maintenance screen instead of booting.
-      if (MAINTENANCE) {
+      if (isMaintenance()) {
         showMaintenance(existing);
         return;
       }

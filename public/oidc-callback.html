@@ -107,7 +107,8 @@
 
         function fail(message, friendly) {
           document.querySelector(".spinner").style.display = "none";
-          title.textContent = "Sign-in didn't complete";            detail.innerHTML =
+          title.textContent = "Sign-in didn't complete";
+          detail.innerHTML =
             friendly +
             ' <a href="./">Back to Paws &amp; Parcels</a>.';
           void message;
@@ -119,18 +120,23 @@
           return;
         }
 
-        // ---------------------------------------------------------------
-        // IMPORTANT: When deploying to a new server, update this URL to
-        // point to the game server (Omega). This file is in public/ and
-        // can't use Vite env vars, so it must be edited manually.
-        // ---------------------------------------------------------------
-        var API_BASE = "https://ashatneuralhost.agpstudios.org";
-        fetch(API_BASE + "/api/auth/oidc/callback", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          credentials: "omit",
-          body: JSON.stringify({ code: code, state: state, code_verifier: verifier }),
-        })
+        // Load the game server URL from server_config.json (same file the
+        // main app reads). Falls back to same-origin if the file is missing.
+        fetch("./server_config.json", { cache: "no-store" })
+          .then(function (res) { return res.ok ? res.json() : {}; })
+          .catch(function () { return {}; })
+          .then(function (cfg) {
+            var API_BASE = (cfg && typeof cfg.gameServerUrl === "string")
+              ? cfg.gameServerUrl
+              : "";
+
+            return fetch(API_BASE + "/api/auth/oidc/callback", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              credentials: "omit",
+              body: JSON.stringify({ code: code, state: state, code_verifier: verifier }),
+            });
+          })
           .then(function (res) {
             return res.json().then(function (body) {
               return { ok: res.ok, status: res.status, body: body };

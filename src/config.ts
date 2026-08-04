@@ -1,28 +1,45 @@
 /**
- * Central client config — the game server URL is injected at build time by
- * Vite's `define` option (vite.config.ts). An empty string means "same
- * origin" (the default for single-process hosting). When set, all API
- * fetches and the WebSocket connect go to this absolute URL instead.
+ * Central client config — resolves the game server URL and maintenance flag
+ * from the runtime-loaded server_config.json (on the web server) with Vite
+ * build-time defines as fallback for local dev.
  *
- * Set via: VITE_GAME_SERVER_URL=https://ashatneuralhost.agpstudios.org
- *          npm run build
+ * Resolution order:
+ *   1. server_config.json (fetched at boot by clientConfig.ts)
+ *   2. Vite __GAME_SERVER_URL__ / __MAINTENANCE__ defines
+ *   3. Hardcoded defaults (same-origin, maintenance on)
+ *
+ * apiPath() and getWsUrl() read the loaded config dynamically, so they
+ * always use the latest values after loadClientConfig() completes.
  */
 
-declare const __GAME_SERVER_URL__: string;
+import { getClientConfig } from "./clientConfig.ts";
 
-/** Absolute base URL of the game server (e.g. "https://ashatneuralhost.agpstudios.org"). Empty = same-origin. */
-export const GAME_SERVER_URL: string = typeof __GAME_SERVER_URL__ !== "undefined" ? __GAME_SERVER_URL__ : "";
+// --- Vite build-time defines (used as fallback before server_config.json loads) ---
+
+declare const __GAME_SERVER_URL__: string | undefined;
+declare const __MAINTENANCE__: string | undefined;
+
+const BUILD_GAME_SERVER_URL: string =
+  typeof __GAME_SERVER_URL__ !== "undefined" ? __GAME_SERVER_URL__ : "";
+const BUILD_MAINTENANCE: boolean =
+  typeof __MAINTENANCE__ !== "undefined" ? __MAINTENANCE__ !== "false" : true;
+
+// --- Runtime accessors ---
+
+/** The resolved game server URL (reads from loaded config or build-time default). */
+export function getGameServerUrl(): string {
+  return getClientConfig()?.gameServerUrl ?? BUILD_GAME_SERVER_URL;
+}
 
 /** Whether the client is configured for a remote game server (cross-origin). */
-export const isRemoteServer: boolean = GAME_SERVER_URL.length > 0;
+export function isRemoteServer(): boolean {
+  return getGameServerUrl().length > 0;
+}
 
-/**
- * Maintenance flag — when true, the client shows a "game server offline"
- * screen after login instead of booting Phaser. Set VITE_MAINTENANCE=false
- * in the build environment to enable the game.
- */
-declare const __MAINTENANCE__: string;
-export const MAINTENANCE: boolean = typeof __MAINTENANCE__ !== "undefined" ? __MAINTENANCE__ !== "false" : true;
+/** Whether maintenance mode is active (reads from loaded config or build-time default). */
+export function isMaintenance(): boolean {
+  return getClientConfig()?.maintenance ?? BUILD_MAINTENANCE;
+}
 
 /**
  * Build a full API path — when a remote game server is configured, prefix
@@ -32,9 +49,10 @@ export const MAINTENANCE: boolean = typeof __MAINTENANCE__ !== "undefined" ? __M
  * Example: apiPath("/api/auth/me") → "https://ashatneuralhost.agpstudios.org/api/auth/me"
  */
 export function apiPath(path: string): string {
-  if (GAME_SERVER_URL === "") return path;
+  const baseUrl = getGameServerUrl();
+  if (baseUrl === "") return path;
   // Ensure no double-slash between the base and the path.
-  const base = GAME_SERVER_URL.endsWith("/") ? GAME_SERVER_URL.slice(0, -1) : GAME_SERVER_URL;
+  const base = baseUrl.endsWith("/") ? baseUrl.slice(0, -1) : baseUrl;
   // Guard against a missing leading slash on the path.
   const p = path.startsWith("/") ? path : `/${path}`;
   return `${base}${p}`;
@@ -45,8 +63,9 @@ export function apiPath(path: string): string {
  * Derives wss:// from https://, ws:// from http://.
  */
 export function getWsUrl(): string {
-  if (GAME_SERVER_URL !== "") {
-    const url = new URL("/ws", GAME_SERVER_URL);
+  const baseUrl = getGameServerUrl();
+  if (baseUrl !== "") {
+    const url = new URL("/ws", baseUrl);
     url.protocol = url.protocol === "https:" ? "wss:" : "ws:";
     return url.toString();
   }
