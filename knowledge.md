@@ -43,7 +43,7 @@ This file gives Freebuff context about your project: goals, commands, convention
 - **Persistence:** SQLite for all gameplay state. localStorage limited to client settings (audio, UI, controls).
 - **Maps:** custom JSON (ASCII `rows` + spawn/transitions); **assets:** Aseprite → sprite sheets + JSON atlases
 - **Data:** JSON content files under `src/data/` (npcs, items, quests, upgrades, dialogue) — may be mirrored to SQLite seed data
-- **Deployment:** static hosting (Vercel/Netlify) for client; containerized server + managed SQLite
+- **Deployment:** single-process hosting — one Node server serves the built client (`dist/` via `server/src/static/client.ts`) + the HTTP API + the WebSocket endpoint on one port, so the client's same-origin relative URLs just work. Hosts: Render (web service), Fly.io, a VPS, or Oracle Cloud Always-Free (`npm run build && npm run start:server`; `$PORT` env is honored for PaaS; `scripts/write-server-config.mjs` + `render.yaml` generate `server_config.json` from env vars). Vercel/Netlify can host the client alone, but the game server cannot run on serverless (connection lifetime caps + read-only/ephemeral filesystem break long-lived WebSockets and SQLite writes).
 
 ## Scene flow (client, current)
 `boot` → `preloader` (generates placeholder geometric textures at runtime via `make.graphics().generateTexture` — no binary assets until Phase 7; one `tileset-main` sheet, tile frames defined in `src/game/Tiles.ts`) → `overworld` (zone-capable: builds tilemaps from custom JSON maps, `layer.setCollision` for walls/water/trees, camera `setBounds` + `startFollow`, tile-based transitions via `scene.restart({ zoneId, spawn })`)

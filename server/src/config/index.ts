@@ -2,9 +2,10 @@ import { readFileSync, existsSync } from "node:fs";
 import { resolve } from "node:path";
 
 /**
- * Unified server config loader. Never reads process.env — config comes
- * exclusively from `server_config.json` at the project root. Missing file,
- * malformed shape, or placeholder secrets cause the server to fail fast.
+ * Unified server config loader. Config comes from `server_config.json` at the
+ * project root (missing file, malformed shape, or placeholder secrets cause
+ * the server to fail fast). The ONE deliberate process.env exception is the
+ * listen port: PaaS hosts (Render/Railway/Fly) inject it via $PORT.
  */
 
 const CONFIG_RELATIVE_PATH = "server_config.json";
@@ -45,6 +46,11 @@ export interface ServerConfig {
   isDev: boolean;
   corsAllowedOrigins: string[];
   debug: boolean;
+  /**
+   * Directory (relative to project root) of the built client to serve from
+   * this process. Empty string disables static serving (API/WS only).
+   */
+  staticDir: string;
 }
 
 export interface DbConfig {
@@ -92,7 +98,11 @@ function validateAndNormalize(raw: unknown): {
   const oidcRaw = (obj.oidc ?? {}) as Record<string, unknown>;
 
   // server
-  const port = num(serverRaw.port, 3001, errors, "server.port");
+  const configuredPort = num(serverRaw.port, 3001, errors, "server.port");
+  // PaaS hosts inject the listen port via $PORT — honor it when present.
+  const envPort = Number(process.env.PORT);
+  const port =
+    Number.isFinite(envPort) && envPort > 0 ? envPort : configuredPort;
   const host = str(serverRaw.host, "0.0.0.0", errors, "server.host");
   const nodeEnv = str(serverRaw.nodeEnv, "development", errors, "server.nodeEnv");
   const isDev = nodeEnv === "development";
@@ -103,6 +113,7 @@ function validateAndNormalize(raw: unknown): {
     "server.corsAllowedOrigins",
   );
   const debug = bool(serverRaw.debug, isDev, errors, "server.debug");
+  const staticDir = str(serverRaw.staticDir, "dist", errors, "server.staticDir");
 
   // db
   const dbFile = reqStr(dbRaw.file, "db.file", "", errors);
@@ -186,7 +197,7 @@ function validateAndNormalize(raw: unknown): {
   }
 
   return {
-    server: { port, host, nodeEnv, isDev, corsAllowedOrigins, debug },
+    server: { port, host, nodeEnv, isDev, corsAllowedOrigins, debug, staticDir },
     db: {
       file: dbFile,
     },

@@ -10,7 +10,7 @@ friendships. Server-authoritative, multiplayer, and always cozy.
 - **Persistence:** SQLite (server-side) — localStorage only for client settings
 - **Server:** Node/TS (separate process; HTTP + WebSocket, SQLite persistence)
 - **Tests:** Vitest (client) + server test suite
-- **Hosting:** static hosting for client (Vercel/Netlify) + containerized server
+- **Hosting:** single-process hosting — one Node server serves the built client + API + WebSocket on one port (Render/Fly.io/VPS/Oracle Always-Free; Vercel can host the client alone but not the game server — serverless can't hold long-lived WebSockets or write SQLite)
 
 ## Commands
 

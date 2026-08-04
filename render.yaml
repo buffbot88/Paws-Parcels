@@ -1,0 +1,22 @@
+# Render blueprint — one free web service runs the whole game (client + API +
+# WebSocket on a single port, per the single-process hosting decision).
+# Deploy: New → Blueprint → pick this repo, then set the JWT_SECRET env var
+# (and PUBLIC_URL if you want to override Render's auto-detected URL).
+services:
+  - type: web
+    name: paws-and-parcels
+    runtime: node
+    plan: free
+    buildCommand: npm ci && node scripts/write-server-config.mjs && npm run build
+    startCommand: npm run start:server
+    healthCheckPath: /api/health
+    envVars:
+      - key: NODE_VERSION
+        value: "24"
+      # Must be set at first deploy (the blueprint will prompt you). Generate
+      # one with: node -e "console.log(require('crypto').randomBytes(48).toString('hex'))"
+      - key: JWT_SECRET
+        sync: false
+      # Optional — defaults to Render's auto-detected public URL.
+      - key: PUBLIC_URL
+        sync: false

@@ -7,7 +7,9 @@
     "corsAllowedOrigins": [
       "http://localhost:5173",
       "http://localhost:3001"
-    ]
+    ],
+    "_comment_staticDir": "Directory (relative to project root) of the built client to serve from this same process — single-host hosting (client + API + WebSocket on one port). Empty string disables it. PaaS hosts (Render/Railway/Fly) override the listen port via the $PORT env var automatically.",
+    "staticDir": "dist"
   },
   "db": {
     "_comment_file": "Path to the SQLite database file (relative to the project root). The file is created + migrated on first server boot and is committed to the repo.",

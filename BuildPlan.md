@@ -217,11 +217,19 @@ See [`design/crafting.md`](design/crafting.md). Summary:
 
 ## 17. Deployment Requirements
 
-- **Client:** static hosting (Vercel/Netlify) as today; WS-capable (wss).
-- **Server:** containerized Node/TS service(s) on a host with TLS termination; SQLite
-  managed or containerized; both deployed together.
-- **Env/secrets:** all credentials via environment variables / secret store — never in
-  the repo.
+- **Single-process hosting (locked):** one Node process serves the built client
+  (`dist/` via `server/src/static/client.ts`) + the HTTP API + the WebSocket endpoint
+  on one port. The client uses same-origin relative URLs (`/api/*`,
+  `ws(s)://same-origin/ws`), so no CORS or proxy layer is needed in production.
+- **Host:** any always-on Node host — Render (web service), Fly.io, a VPS, or Oracle
+  Cloud Always-Free — running `npm run build && npm run start:server`.
+  Vercel/Netlify can host the client alone, but the game server (long-lived
+  WebSockets + SQLite writes) **cannot** run on serverless: functions cap connection
+  lifetime and the filesystem is read-only/ephemeral.
+- **Secrets:** `server_config.json` is gitignored; PaaS deploys generate it from env
+  vars via `scripts/write-server-config.mjs` (see `render.yaml` blueprint).
+- **Port:** PaaS hosts inject the listen port via `$PORT`; the config honors it
+  (`server_config.json` port is the local default).
 - **Migrations:** run on deploy (or a one-shot job), versioned, idempotent.
 - **Observability:** structured logs + health check endpoint + error reporting
   (see [`design/architecture.md`](design/architecture.md)).

@@ -1,4 +1,5 @@
 import { createServer, type IncomingMessage, type ServerResponse } from "node:http";
+import { existsSync } from "node:fs";
 // Side-effect: config is validated and loaded at module import — any bad
 // server_config.json fails fast before main() runs.
 import { server as serverConfig } from "./config/index.ts";
@@ -7,6 +8,7 @@ import { runMigrations } from "./db/migrate.ts";
 import { middleware, parseBody, jsonResponse, errorResponse } from "./middleware/index.ts";
 import { logger } from "./middleware/logger.ts";
 import { createRouter } from "./routes/index.ts";
+import { createStaticClientServer } from "./static/client.ts";
 import { GameServer } from "./ws/gameServer.ts";
 import { loadZoneData } from "./ws/zoneData.ts";
 import { getMonsterDefinitionsByZone } from "./models/Monster.ts";
@@ -41,6 +43,22 @@ async function main(): Promise<void> {
   }
 
   const router = createRouter();
+
+  // Phase 3.5 — single-process hosting: serve the built client (dist/) from
+  // this same server so one host runs the whole game. When the dir is missing
+  // (dev), the API/WS-only server still boots and requests fall through to 404.
+  const staticDir = serverConfig.staticDir;
+  const serveClientFile =
+    staticDir !== "" ? createStaticClientServer(staticDir) : null;
+  if (serveClientFile !== null) {
+    if (!existsSync(staticDir)) {
+      logger.warn(
+        `Static client dir ./${staticDir} not found — API/WS only (run "npm run build" to serve the game).`,
+      );
+    } else {
+      logger.info(`Serving client from ./${staticDir}`);
+    }
+  }
 
   // Phase 2 — WebSocket game server (authoritative presence + movement).
   // Position persistence is best-effort: gameplay continues in memory if the
@@ -95,6 +113,11 @@ async function main(): Promise<void> {
     const matched = await router.resolve(req, res);
 
     if (!matched) {
+      // Not an API route — serve the built client (production single-process
+      // hosting), otherwise 404.
+      if (serveClientFile !== null && serveClientFile(req, res)) {
+        return;
+      }
       jsonResponse(res, 404, {
         error: "NOT_FOUND",
         message: `Route ${req.method} ${req.url} not found`,
