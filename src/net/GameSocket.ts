@@ -18,6 +18,9 @@ import { apiPath } from "../config.ts";
 export interface NetPlayerPos {
   characterId: number;
   pos: { x: number; y: number };
+  /** Snapshot metadata lets the client recover if a player_joined frame is missed. */
+  name?: string;
+  classKey?: string;
 }
 
 export interface NetPlayerInfo extends NetPlayerPos {
@@ -64,6 +67,47 @@ export type NetStatus =
   | "reconnecting"
   | "closed";
 
+export interface NetChatMessage {
+  characterId: number;
+  name: string;
+  text: string;
+}
+
+export type NetQuestState = "locked" | "available" | "active" | "completed";
+
+export interface NetQuestSnapshot {
+  questId: string;
+  title: string;
+  description: string;
+  type: string;
+  giverId: string;
+  targetId: string | null;
+  requiredItemId: string | null;
+  requiredQuantity: number;
+  state: NetQuestState;
+  progress: number;
+  stampReward: number;
+  xpReward: number;
+  reputationNpcId: string | null;
+  reputationPoints: number;
+  chainPosition: number;
+}
+
+export interface NetQuestInventoryItem {
+  itemInstanceId: number;
+  itemKey: string;
+  slot: number | null;
+  quantity: number;
+  locked: boolean;
+}
+
+export interface NetSnapshotMeta {
+  sequence: number;
+  serverTime: number;
+  /** Local receipt time used for interpolation; avoids cross-device clock skew. */
+  receivedAt: number;
+}
+
 export interface GameSocketCallbacks {
   onStatus?: (status: NetStatus, detail?: string) => void;
   onAuthenticated?: (info: {
@@ -76,11 +120,16 @@ export interface GameSocketCallbacks {
   onZoneState?: (zoneId: string, players: NetPlayerInfo[], monsters: NetMonsterInfo[]) => void;
   onPlayerJoined?: (player: NetPlayerInfo) => void;
   onPlayerLeft?: (characterId: number) => void;
-  onSnapshot?: (players: NetPlayerPos[]) => void;
+  onSnapshot?: (players: NetPlayerPos[], zoneId?: string, meta?: NetSnapshotMeta) => void;
   onMonsterSnapshot?: (monsters: NetMonsterInfo[]) => void;
+  onChatMessage?: (message: NetChatMessage) => void;
   onCombatEvent?: (event: NetCombatEvent) => void;
   onRespawn?: (info: NetRespawnInfo) => void;
   onLoot?: (sourceId: string, items: { itemKey: string; quantity: number }[]) => void;
+  onNpcInteraction?: (npcId: string, quests: NetQuestSnapshot[]) => void;
+  onQuestState?: (quests: NetQuestSnapshot[]) => void;
+  onQuestUpdated?: (payload: { action: string; quest: NetQuestSnapshot; quests: NetQuestSnapshot[]; inventory: NetQuestInventoryItem[]; stamps: number; xp: number; message: string }) => void;
+  onInventoryUpdated?: (items: NetQuestInventoryItem[], stamps: number) => void;
   onError?: (code: string, message: string) => void;
 }
 
@@ -135,6 +184,7 @@ export class GameSocket {
   private reconnectTimer: ReturnType<typeof setTimeout> | null = null;
   private closedByUser = false;
   private wsToken: string | null = null;
+  private connectPromise: Promise<void> | null = null;
 
   readonly callbacks: GameSocketCallbacks = {};
 
@@ -157,12 +207,27 @@ export class GameSocket {
 
   /** Start the session: fetch a token, connect, authenticate. */
   async connect(): Promise<void> {
-    // Re-entrancy guard — never stack a second socket on a live one.
-    if (this.ws !== null && this.ws.readyState === WS_READY_OPEN) return;
+    // The scene and main boot path can both request the same connection while
+    // the first ws-token fetch is still pending. Share that promise so one
+    // character never opens two sockets or burns two single-use tokens.
+    if (this.connectPromise !== null) return this.connectPromise;
+    this.connectPromise = this.connectInternal();
+    try {
+      await this.connectPromise;
+    } finally {
+      this.connectPromise = null;
+    }
+  }
+
+  private async connectInternal(): Promise<void> {
+    // Re-entrancy guard — never stack a second socket while the existing
+    // browser connection is either opening or already open.
+    if (this.ws !== null && (this.ws.readyState === 0 || this.ws.readyState === WS_READY_OPEN)) return;
     this.closedByUser = false;
     const token = this.opts.getToken();
     if (token === null) {
       this.setStatus("closed", "Not signed in");
+      this.callbacks.onError?.("NOT_SIGNED_IN", "No active sign-in session");
       return;
     }
     this.setStatus("fetching-token");
@@ -172,7 +237,11 @@ export class GameSocket {
     } catch (err) {
       this.wsToken = null;
       this.setStatus("closed", "Could not reach the server for a ws-token");
-      this.callbacks.onError?.("WS_TOKEN_FAILED", "Network error fetching ws-token");
+      const detail = err instanceof Error ? err.message : String(err);
+      this.callbacks.onError?.(
+        "WS_TOKEN_NETWORK_FAILED",
+        `Network error fetching ws-token: ${detail}`,
+      );
       return;
     }
     if (this.wsToken === null) {
@@ -185,7 +254,14 @@ export class GameSocket {
 
     this.setStatus("connecting");
     const WS = this.opts.WebSocketImpl;
-    const ws = new WS(this.opts.wsUrl);
+    let ws: WebSocket;
+    try {
+      ws = new WS(this.opts.wsUrl);
+    } catch (err) {
+      this.setStatus("closed", "Could not open the WebSocket");
+      this.callbacks.onError?.("WS_CONSTRUCTOR_FAILED", String(err));
+      return;
+    }
     this.ws = ws;
     ws.onopen = () => {
       if (this.wsToken !== null) {
@@ -207,18 +283,41 @@ export class GameSocket {
   /** Ask the server for a fresh session (after reconnect). */
   private async fetchWsToken(jwt: string): Promise<string | null> {
     const characterId = this.opts.getCharacterId();
-    if (characterId === null) return null;
+    if (characterId === null) {
+      this.callbacks.onError?.("CHARACTER_NOT_SELECTED", "No playable courier is selected");
+      return null;
+    }
     const url = `${this.opts.tokenUrl}?characterId=${encodeURIComponent(String(characterId))}`;
-    const res = await this.opts.fetchImpl(url, {
+    // Native browser fetch can require its global receiver. Calling the
+    // injected function detached (`this.opts.fetchImpl(...)`) throws
+    // "Illegal invocation" in Chromium; bind it explicitly for both the
+    // browser implementation and test doubles.
+    const res = await this.opts.fetchImpl.call(globalThis, url, {
       headers: { Authorization: `Bearer ${jwt}` },
       credentials: "omit",
+      cache: "no-store",
     });
     if (!res.ok) {
-      this.callbacks.onError?.("WS_TOKEN_FAILED", `Server returned ${res.status}`);
+      let detail = "";
+      try {
+        const body = (await res.json()) as { error?: unknown; message?: unknown };
+        const code = typeof body.error === "string" ? body.error : "";
+        const message = typeof body.message === "string" ? body.message : "";
+        detail = [code, message].filter(Boolean).join(": ");
+      } catch {
+        // Keep the HTTP status when the proxy returns a non-JSON error page.
+      }
+      this.callbacks.onError?.(
+        "WS_TOKEN_FAILED",
+        `Server returned ${res.status}${detail === "" ? "" : ` — ${detail}`}`,
+      );
       return null;
     }
     const body = (await res.json()) as { wsToken?: unknown };
-    if (typeof body.wsToken !== "string") return null;
+    if (typeof body.wsToken !== "string") {
+      this.callbacks.onError?.("WS_TOKEN_INVALID", "The server returned no WebSocket token");
+      return null;
+    }
     return body.wsToken;
   }
 
@@ -240,6 +339,27 @@ export class GameSocket {
     if (now - this.lastIntentAt < this.opts.moveIntervalMs) return;
     this.lastIntentAt = now;
     this.ws.send(encodeMessage({ type: "move_intent", dx, dy }));
+  }
+
+  /** Ask the server to interact with an NPC; range and quest completion are server-validated. */
+  interact(targetId: string): void {
+    if (this.ws === null || !this.authenticated || this.joinedZoneId === null) return;
+    if (this.ws.readyState !== WS_READY_OPEN) return;
+    this.ws.send(encodeMessage({ type: "interact", targetId, kind: "npc" }));
+  }
+
+  /** Accept a server-offered quest; prerequisites and parcel creation are authoritative. */
+  acceptQuest(questId: string): void {
+    if (this.ws === null || !this.authenticated || this.joinedZoneId === null) return;
+    if (this.ws.readyState !== WS_READY_OPEN) return;
+    this.ws.send(encodeMessage({ type: "accept_quest", questId }));
+  }
+
+  /** Send a same-zone chat message; the server validates length and rate. */
+  chat(text: string): void {
+    if (this.ws === null || !this.authenticated || this.joinedZoneId === null) return;
+    if (this.ws.readyState !== WS_READY_OPEN) return;
+    this.ws.send(encodeMessage({ type: "zone_chat", text }));
   }
 
   /** Send an attack intent against a monster entity (server validates all). */
@@ -303,20 +423,63 @@ export class GameSocket {
           normalizePlayers(msg.players),
           normalizeMonsters(msg.monsters),
         );
+        if (Array.isArray(msg.quests)) this.callbacks.onQuestState?.(normalizeQuests(msg.quests));
         break;
       }
+      case "npc_interaction":
+        this.callbacks.onNpcInteraction?.(String(msg.npcId ?? ""), normalizeQuests(msg.quests));
+        break;
+      case "quest_updated": {
+        const quests = normalizeQuests(msg.quests);
+        const quest = normalizeQuests([msg.quest])[0];
+        if (quest !== undefined) {
+          this.callbacks.onQuestState?.(quests);
+          this.callbacks.onQuestUpdated?.({
+            action: typeof msg.action === "string" ? msg.action : "updated",
+            quest,
+            quests,
+            inventory: normalizeQuestInventory(msg.inventory),
+            stamps: Number(msg.stamps ?? 0),
+            xp: Number(msg.xp ?? 0),
+            message: typeof msg.message === "string" ? msg.message : "Quest updated",
+          });
+        }
+        break;
+      }
+      case "inventory_updated":
+        this.callbacks.onInventoryUpdated?.(normalizeQuestInventory(msg.items), Number(msg.stamps ?? 0));
+        break;
       case "player_joined":
         this.callbacks.onPlayerJoined?.(normalizePlayer(msg));
         break;
       case "player_left":
         this.callbacks.onPlayerLeft?.(Number(msg.characterId));
         break;
-      case "player_snapshot":
-        this.callbacks.onSnapshot?.(normalizePositions(msg.players));
+      case "player_snapshot": {
+        const sequence = Number(msg.sequence);
+        const serverTime = Number(msg.serverTime);
+        const receivedAt = this.opts.now();
+        const players = normalizePositions(msg.players);
+        const zoneId = typeof msg.zoneId === "string" ? msg.zoneId : undefined;
+        if (Number.isFinite(sequence) && sequence > 0 && Number.isFinite(serverTime) && serverTime > 0) {
+          this.callbacks.onSnapshot?.(players, zoneId, { sequence, serverTime, receivedAt });
+        } else {
+          this.callbacks.onSnapshot?.(players, zoneId);
+        }
         break;
+      }
       case "monster_snapshot":
         this.callbacks.onMonsterSnapshot?.(normalizeMonsters(msg.monsters));
         break;
+      case "zone_chat": {
+        const characterId = Number(msg.characterId);
+        const name = typeof msg.name === "string" ? msg.name : "Courier";
+        const text = typeof msg.text === "string" ? msg.text : "";
+        if (Number.isInteger(characterId) && text !== "") {
+          this.callbacks.onChatMessage?.({ characterId, name, text });
+        }
+        break;
+      }
       case "combat_event": {
         const outcome =
           msg.outcome === "crit" || msg.outcome === "defeated"
@@ -424,6 +587,8 @@ function normalizePositions(raw: unknown): NetPlayerPos[] {
         x: Number(pos?.x ?? 0),
         y: Number(pos?.y ?? 0),
       },
+      ...(typeof entry.name === "string" ? { name: entry.name } : {}),
+      ...(typeof entry.classKey === "string" ? { classKey: entry.classKey } : {}),
     };
   });
 }
@@ -451,6 +616,45 @@ function normalizeMonsters(raw: unknown): NetMonsterInfo[] {
 }
 
 /** loot_received items. */
+function normalizeQuests(raw: unknown): NetQuestSnapshot[] {
+  if (!Array.isArray(raw)) return [];
+  return raw.map((entry) => {
+    const q = entry as Record<string, unknown>;
+    const state: NetQuestState = q.state === "available" || q.state === "active" || q.state === "completed" ? q.state : "locked";
+    return {
+      questId: String(q.questId ?? ""),
+      title: String(q.title ?? ""),
+      description: String(q.description ?? ""),
+      type: String(q.type ?? "delivery"),
+      giverId: String(q.giverId ?? ""),
+      targetId: q.targetId === null ? null : String(q.targetId ?? ""),
+      requiredItemId: q.requiredItemId === null ? null : String(q.requiredItemId ?? ""),
+      requiredQuantity: Number(q.requiredQuantity ?? 1),
+      state,
+      progress: Number(q.progress ?? 0),
+      stampReward: Number(q.stampReward ?? 0),
+      xpReward: Number(q.xpReward ?? 0),
+      reputationNpcId: q.reputationNpcId === null ? null : String(q.reputationNpcId ?? ""),
+      reputationPoints: Number(q.reputationPoints ?? 0),
+      chainPosition: Number(q.chainPosition ?? 0),
+    };
+  }).filter((q) => q.questId !== "");
+}
+
+function normalizeQuestInventory(raw: unknown): NetQuestInventoryItem[] {
+  if (!Array.isArray(raw)) return [];
+  return raw.map((entry) => {
+    const item = entry as Record<string, unknown>;
+    return {
+      itemInstanceId: Number(item.itemInstanceId ?? 0),
+      itemKey: String(item.itemKey ?? ""),
+      slot: item.slot === null ? null : Number(item.slot ?? 0),
+      quantity: Number(item.quantity ?? 1),
+      locked: item.locked === true,
+    };
+  });
+}
+
 function normalizeLoot(
   raw: unknown,
 ): { itemKey: string; quantity: number }[] {

@@ -10,6 +10,7 @@
 
 import type { MonsterDefinitionRow, MonsterLootEntry } from "../models/Monster.ts";
 import { tileDistance, computeDamage } from "./combat.ts";
+import type { BrainMonsterDecision } from "../ai/prompts.ts";
 
 /** A spawned monster instance (one per spawn point). */
 export interface MonsterInstance {
@@ -113,6 +114,7 @@ export class MonsterStore {
     players: MonsterPlayer[],
     isWalkable: (x: number, y: number) => boolean,
     elapsedMs: number,
+    brainDecisions?: ReadonlyMap<string, BrainMonsterDecision> | null,
   ): MonsterAttackEvent[] {
     const events: MonsterAttackEvent[] = [];
     for (const monster of this.monsters(zoneId)) {
@@ -120,7 +122,7 @@ export class MonsterStore {
         if (now >= monster.respawnAt) this.respawn(monster, now);
         continue;
       }
-      this.aiStep(monster, now, players, isWalkable, elapsedMs, events);
+      this.aiStep(monster, now, players, isWalkable, elapsedMs, events, brainDecisions);
     }
     return events;
   }
@@ -162,7 +164,24 @@ export class MonsterStore {
     isWalkable: (x: number, y: number) => boolean,
     elapsedMs: number,
     events: MonsterAttackEvent[],
+    brainDecisions?: ReadonlyMap<string, BrainMonsterDecision> | null,
   ): void {
+    const brainDecision =
+      brainDecisions === undefined || brainDecisions === null
+        ? undefined
+        : brainDecisions.get(m.id);
+    if (brainDecision !== undefined) {
+      const handled = this.applyBrainDecision(
+        m,
+        brainDecision,
+        now,
+        players,
+        isWalkable,
+        elapsedMs,
+        events,
+      );
+      if (handled) return;
+    }
     const target = this.pickTarget(m, players, now);
     if (target === null) {
       // No target: idle at home, or return to it if leashed.
@@ -196,6 +215,97 @@ export class MonsterStore {
       this.moveToward(m, m.home, isWalkable, elapsedMs);
     } else {
       this.moveToward(m, target.pos, isWalkable, elapsedMs);
+    }
+  }
+
+  /**
+   * Apply a world-brain decision as an override. Returns false when the
+   * decision can't be honored (e.g. its target vanished) so the caller falls
+   * back to the deterministic AI.
+   */
+  private applyBrainDecision(
+    m: MonsterInstance,
+    decision: BrainMonsterDecision,
+    now: number,
+    players: MonsterPlayer[],
+    isWalkable: (x: number, y: number) => boolean,
+    elapsedMs: number,
+    events: MonsterAttackEvent[],
+  ): boolean {
+    switch (decision.action) {
+      case "attack": {
+        const target =
+          players.find((p) => p.characterId === decision.targetPlayerId) ??
+          this.pickTarget(m, players, now);
+        if (target === null) return false;
+        const range = tileDistance(m.pos, target.pos);
+        const attackRange =
+          m.attackBehavior === "ranged" ? RANGED_RANGE : MELEE_RANGE;
+        if (range <= attackRange && target.invulnUntil <= now) {
+          if (now - m.lastAttackAt >= 2000) {
+            m.lastAttackAt = now;
+            const result = computeDamage(
+              { attack: m.attack, critChance: 0, critMultiplier: 1 },
+              { defense: target.defense },
+            );
+            events.push({
+              monsterId: m.id,
+              playerId: target.characterId,
+              damage: result.damage,
+              crit: false,
+            });
+          }
+        } else {
+          this.moveToward(m, target.pos, isWalkable, elapsedMs);
+        }
+        return true;
+      }
+      case "flee": {
+        const threat = decision.targetTile ?? m.home;
+        this.moveAwayFrom(m, threat, isWalkable, elapsedMs);
+        return true;
+      }
+      case "seek":
+      case "patrol": {
+        if (decision.targetTile === null) return false;
+        if (tileDistance(m.pos, decision.targetTile) > 0) {
+          this.moveToward(m, decision.targetTile, isWalkable, elapsedMs);
+        }
+        return true;
+      }
+      default:
+        return false;
+    }
+  }
+
+  /** Move one tile per step directly away from a threat point. */
+  private moveAwayFrom(
+    m: MonsterInstance,
+    threat: { x: number; y: number },
+    isWalkable: (x: number, y: number) => boolean,
+    elapsedMs: number,
+  ): void {
+    const steps = Math.max(1, Math.round((elapsedMs / 1000) * m.tilesPerSecond));
+    for (let i = 0; i < steps; i++) {
+      let dx = m.pos.x - threat.x;
+      let dy = m.pos.y - threat.y;
+      if (dx === 0 && dy === 0) break; // cornered — hold ground
+      const scale = Math.max(Math.abs(dx), Math.abs(dy), 1);
+      const nx = m.pos.x + Math.round(dx / scale);
+      const ny = m.pos.y + Math.round(dy / scale);
+      if (nx === m.pos.x && ny === m.pos.y) break;
+      if (isWalkable(nx, ny)) {
+        m.pos = { x: nx, y: ny };
+      } else {
+        // Try the dominant axis alone.
+        const altX = Math.abs(dx) >= Math.abs(dy) ? { x: nx, y: m.pos.y } : null;
+        const altY = Math.abs(dy) > Math.abs(dx) ? { x: m.pos.x, y: ny } : null;
+        const fallback = altX !== null && isWalkable(altX.x, altX.y) ? altX
+          : altY !== null && isWalkable(altY.x, altY.y) ? altY
+          : null;
+        if (fallback === null) break;
+        m.pos = { x: fallback.x, y: fallback.y };
+      }
     }
   }
 

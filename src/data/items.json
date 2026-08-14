@@ -1,5 +1,6 @@
 {
   "items": [
+    { "id": "item-village-welcome-card", "name": "Welcome Card", "description": "A little card welcoming a new courier to Clover Village.", "category": "delivery", "maxStack": 1, "icon": "delivery-letter" },
     { "id": "item-strawberry", "name": "Strawberry", "description": "A sweet red berry from the Happy Valley meadows.", "category": "resource", "maxStack": 10, "icon": "berry-strawberry" },
     { "id": "item-blueberry", "name": "Blueberry", "description": "A tiny blue berry, perfect for baking.", "category": "resource", "maxStack": 10, "icon": "berry-blueberry" },
     { "id": "item-wild-herb", "name": "Wild Herb", "description": "A fragrant herb growing in sunny patches.", "category": "resource", "maxStack": 10, "icon": "herb-wild" },

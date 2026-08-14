@@ -28,6 +28,19 @@ vi.mock("../../server/src/config/index.ts", () => ({
     issuer: "https://ashat.test/api/oauth",
     jwksTtlSeconds: 600,
   },
+  ai: {
+    enabled: false,
+    port: 3101,
+    modelPath: "",
+    mmprojPath: "",
+    idleMs: 600_000,
+    warmupTimeoutMs: 90_000,
+    requestTimeoutMs: 4_000,
+    monsterDecisionIntervalMs: 5_000,
+    maxTokensMonster: 40,
+    maxTokensNpc: 160,
+    npcTalkMinIntervalMs: 6_000,
+  },
 }));
 
 import type { ZoneData } from "../../server/src/ws/zoneData.ts";
@@ -42,6 +55,7 @@ const TEST_ZONE: ZoneData = {
   zoneId: "zone-test",
   width: 5,
   height: 5,
+  spawn: { x: 2, y: 2 },
   isWalkable: (x, y) =>
     x >= 0 && y >= 0 && x < 5 && y < 5 && x !== 3, // wall at x=3
   monsterSpawns: [],
@@ -196,16 +210,24 @@ describe("GameServer", () => {
     expect(err).toMatchObject({ code: "ZONE_NOT_FOUND" });
   });
 
-  it("broadcasts player_joined to other players in the zone", async () => {
+  it("keeps two distinct authenticated characters together in one shared zone", async () => {
     const server = makeServer();
     const a = fakeSocket();
     const b = fakeSocket();
-    await connectAndJoin(server, a, 10);
-    await connectAndJoin(server, b, 11);
+    await connectAndJoin(server, a, 10, TEST_ZONE.zoneId);
+    await connectAndJoin(server, b, 11, TEST_ZONE.zoneId);
+
     expect(lastOfType(a, "player_joined")).toMatchObject({
       characterId: 11,
       name: "Birch",
     });
+    const bState = lastOfType(b, "zone_state") as { zoneId: string; players: Array<{ characterId: number }> };
+    expect(bState.zoneId).toBe(TEST_ZONE.zoneId);
+    expect(bState.players.map((player) => player.characterId).sort()).toEqual([10, 11]);
+
+    server.runTick();
+    expect((lastOfType(a, "player_snapshot") as { players: unknown[] }).players).toHaveLength(2);
+    expect((lastOfType(b, "player_snapshot") as { players: unknown[] }).players).toHaveLength(2);
   });
 
   it("moves a player when the move_intent is valid and broadcasts via snapshot", async () => {
@@ -265,6 +287,21 @@ describe("GameServer", () => {
     await connectAndJoin(server, b, 11);
     await server.onMessage(a, JSON.stringify({ type: "leave_zone" }));
     expect(lastOfType(b, "player_left")).toMatchObject({ characterId: 10 });
+  });
+
+  it("broadcasts chat only to connected players in the same zone", async () => {
+    const server = makeServer();
+    const a = fakeSocket();
+    const b = fakeSocket();
+    await connectAndJoin(server, a, 10);
+    await connectAndJoin(server, b, 11);
+
+    await server.onMessage(a, JSON.stringify({ type: "zone_chat", text: "  Hello, village!  " }));
+    expect(lastOfType(a, "zone_chat")).toMatchObject({ characterId: 10, name: "Maple", text: "Hello, village!" });
+    expect(lastOfType(b, "zone_chat")).toMatchObject({ characterId: 10, text: "Hello, village!" });
+
+    await server.onMessage(a, JSON.stringify({ type: "zone_chat", text: "too soon" }));
+    expect(lastOfType(a, "error")).toMatchObject({ code: "CHAT_RATE_LIMIT" });
   });
 
   it("keeps a disconnected player in the zone during the grace window, then removes", async () => {
@@ -421,12 +458,14 @@ describe("GameServer — Phase 3 combat", () => {
     zoneId: "zone-combat",
     width: 7,
     height: 7,
+    spawn: { x: 3, y: 3 },
     isWalkable: () => true,
     monsterSpawns: [{ id: "spawn-boar", key: "monster-wild-boar", x: 4, y: 4 }],
   };
 
   function makeCombatServer(overrides: {
     grantXp?: GameServer["deps"]["grantXp"];
+    grantInventory?: GameServer["deps"]["grantInventory"];
     persistHp?: GameServer["deps"]["persistHp"];
   } = {}) {
     const deps = {
@@ -456,6 +495,7 @@ describe("GameServer — Phase 3 combat", () => {
       getMonsterDefinitions: async () => [BOAR_DEF],
       persistPosition: async () => {},
       grantXp: overrides.grantXp ?? (async () => 20),
+      grantInventory: overrides.grantInventory ?? (async () => {}),
       persistHp: overrides.persistHp ?? (async () => {}),
       tickMs: 1000,
       graceMs: 60_000,
@@ -538,7 +578,8 @@ describe("GameServer — Phase 3 combat", () => {
     vi.useFakeTimers();
     try {
       const grantXp = vi.fn(async () => 20);
-      const server = makeCombatServer({ grantXp });
+      const grantInventory = vi.fn(async () => {});
+      const server = makeCombatServer({ grantXp, grantInventory });
       const socket = fakeSocket();
       await joinCombat(server, socket, 11); // archer, range 5
 
@@ -559,6 +600,7 @@ describe("GameServer — Phase 3 combat", () => {
         sourceId: "spawn-boar",
       });
       expect(grantXp).toHaveBeenCalledWith(11, 20);
+      expect(grantInventory).toHaveBeenCalledWith(11, [{ itemKey: "item-boar-hide", quantity: 1 }]);
     } finally {
       vi.useRealTimers();
     }

@@ -1,0 +1,4 @@
+{
+  "gameServerUrl": "",
+  "maintenance": false
+}

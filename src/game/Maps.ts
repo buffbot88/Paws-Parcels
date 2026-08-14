@@ -66,7 +66,7 @@ export interface MapData {
 
 /** Expected dimensions from design/world-map.md (enforced by the map validator). */
 export const MAP_DIMENSIONS: Readonly<Record<string, { width: number; height: number }>> = {
-  [ZoneKeys.CloverVillage]: { width: 30, height: 20 },
+  [ZoneKeys.CloverVillage]: { width: 75, height: 75 },
   [ZoneKeys.HappyValley]: { width: 40, height: 26 },
 };
 

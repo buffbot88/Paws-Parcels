@@ -75,6 +75,7 @@ beforeEach(() => {
   clientDir = mkdtempSync(join(tmpdir(), "pnp-static-"));
   mkdirSync(join(clientDir, "assets"), { recursive: true });
   writeFileSync(join(clientDir, "index.html"), "<!doctype html><title>Paws</title>");
+  writeFileSync(join(clientDir, "client-version.txt"), "index-game123.js\n");
   writeFileSync(join(clientDir, "oidc-callback.html"), "<!doctype html><title>OIDC</title>");
   writeFileSync(join(clientDir, "assets", "game-abc123.js"), "console.log('hi');");
   writeFileSync(join(clientDir, "assets", "art.png"), "PNGDATA");
@@ -93,7 +94,9 @@ describe("createStaticClientServer", () => {
     expect(res._status).toBe(200);
     expect(res._body).toContain("<title>Paws</title>");
     expect(res._headers["Content-Type"]).toContain("text/html");
-    expect(res._headers["Cache-Control"]).toBe("no-cache");
+    expect(res._headers["Cache-Control"]).toBe(
+      "no-store, no-cache, must-revalidate, max-age=0",
+    );
   });
 
   it("serves hashed asset files with immutable caching", async () => {
@@ -106,6 +109,19 @@ describe("createStaticClientServer", () => {
     expect(res._headers["Content-Type"]).toBe("text/javascript; charset=utf-8");
     expect(res._headers["Cache-Control"]).toBe(
       "public, max-age=31536000, immutable",
+    );
+  });
+
+  it("serves the client version manifest without caching", async () => {
+    const serve = createStaticClientServer(clientDir);
+    const res = makeRes();
+    const handled = serve(makeReq({ url: "/client-version.txt?ts=123" }), res);
+    expect(handled).toBe(true);
+    expect(res._status).toBe(200);
+    expect(res._body).toBe("index-game123.js\n");
+    expect(res._headers["Content-Type"]).toContain("text/plain");
+    expect(res._headers["Cache-Control"]).toBe(
+      "no-store, no-cache, must-revalidate, max-age=0",
     );
   });
 

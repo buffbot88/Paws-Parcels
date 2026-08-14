@@ -29,11 +29,22 @@ describe("resolveBootTarget", () => {
     });
   });
 
-  it("picks the first character when several exist", () => {
+  it("uses the server-selected courier when several exist", () => {
+    const target = resolveBootTarget([
+      char(),
+      char({ id: 2, pos_x: 21, pos_y: 22 }),
+    ], 2);
+    expect(target).toEqual({
+      zoneId: ZoneKeys.CloverVillage,
+      pos: { x: 21, y: 22 },
+    });
+  });
+
+  it("falls back to the first character when the server selection is stale", () => {
     const target = resolveBootTarget([
       char(),
       char({ id: 2, zone_id: "zone-not-registered" }),
-    ]);
+    ], 999);
     expect(target.zoneId).toBe(ZoneKeys.CloverVillage);
   });
 

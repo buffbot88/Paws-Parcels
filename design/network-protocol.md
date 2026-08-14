@@ -81,11 +81,22 @@ processes each message independently.
   validation state).
 - **Failure cases:** out of range, target not in zone, invalid targetId.
 
+### interact
+```json
+{
+  "type": "interact",
+  "targetId": "npc-pip",
+  "kind": "npc"
+}
+```
+- **Validation:** target NPC must exist in the current zone and be within 2 tiles.
+- **Behavior:** the server attempts to complete an active delivery at that NPC; if no delivery completes, it returns the current quest offers/state for the NPC.
+
 ### accept_quest
 ```json
 {
   "type": "accept_quest",
-  "questId": "quest-warm-letter-maple"
+  "questId": "quest-village-welcome"
 }
 ```
 - **Validation:** quest must be `available` for this character (state machine:
@@ -263,17 +274,43 @@ processes each message independently.
 - **Client action:** transition the player to the respawn zone/position, restore the HP
   chip, and show the invuln state.
 
+### npc_interaction
+```json
+{
+  "type": "npc_interaction",
+  "npcId": "npc-pip",
+  "quests": [ /* quest snapshots */ ]
+}
+```
+- **Payload:** current server-approved quest snapshots relevant to the interacted NPC.
+
 ### quest_updated
 ```json
 {
   "type": "quest_updated",
-  "questId": "quest-warm-letter-maple",
-  "state": "active"
+  "action": "accepted",
+  "quest": { "questId": "quest-village-welcome", "state": "active" },
+  "quests": [ /* full tutorial state */ ],
+  "inventory": [ /* quest-bound item snapshots */ ],
+  "stamps": 5,
+  "xp": 15,
+  "message": "Quest accepted: Welcome to Clover Village"
 }
 ```
-- **Payload:** a quest state changed for the receiving character: `available` → `active` →
-  `completed`.
-- **Client action:** update quest log UI; show completion/delivery notification.
+- **Payload:** a server-validated quest transition. `action` is `accepted` or `delivery`.
+- **Client action:** update the tutorial tracker and authoritative parcel state.
+
+### inventory_updated
+```json
+{
+  "type": "inventory_updated",
+  "items": [
+    { "itemInstanceId": 1, "itemKey": "item-village-welcome-card", "slot": 0, "quantity": 1, "locked": true }
+  ],
+  "stamps": 5
+}
+```
+- **Payload:** the minimal quest/inventory snapshot emitted after accepting or completing a tutorial route.
 
 ### inventory_updated
 ```json
@@ -322,5 +359,7 @@ processes each message independently.
   `OUT_OF_RANGE`, `COOLDOWN_ACTIVE`, `INSUFFICIENT_RESOURCE`, `TARGET_DEAD`,
   `MOVE_COLLISION`, `MOVE_TELEPORT_DETECTED`, `QUEST_NOT_AVAILABLE`,
   `QUEST_PREREQUISITES_NOT_MET`, `QUEST_ALREADY_COMPLETE`, `ITEM_NOT_OWNED`,
-  `INVENTORY_FULL`, `INVALID_SLOT`, `CLASS_RESTRICTED`, `ZONE_FULL`,
-  `ZONE_NOT_FOUND`, `NOT_AUTHENTICATED`, `NOT_IN_ZONE`, `INTERNAL_ERROR`
+  `INVENTORY_FULL`, `INVALID_SLOT`, `CLASS_RESTRICTED`, `ZONE_FULL`,  `ZONE_NOT_FOUND`, `OUT_OF_RANGE`, `QUEST_NOT_AVAILABLE`, `QUEST_ALREADY_ACTIVE`,
+  `QUEST_ALREADY_COMPLETE`, `QUEST_NOT_ACTIVE`, `QUEST_ITEM_MISSING`,
+  `WRONG_DELIVERY_TARGET`, `INVENTORY_FULL`,
+  `NOT_AUTHENTICATED`, `NOT_IN_ZONE`, `INTERNAL_ERROR`

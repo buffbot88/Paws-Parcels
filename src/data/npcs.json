@@ -7,7 +7,7 @@
       "personality": "energetic",
       "role": "Post office assistant",
       "homeZone": "zone-clover-village",
-      "homeTile": { "x": 8, "y": 4 }
+      "homeTile": { "x": 29, "y": 31 }
     },
     {
       "id": "npc-maple",
@@ -16,7 +16,7 @@
       "personality": "shy",
       "role": "Florist",
       "homeZone": "zone-clover-village",
-      "homeTile": { "x": 25, "y": 9 }
+      "homeTile": { "x": 56, "y": 35 }
     },
     {
       "id": "npc-biscuit",
@@ -25,7 +25,7 @@
       "personality": "cheerful",
       "role": "Café owner",
       "homeZone": "zone-clover-village",
-      "homeTile": { "x": 24, "y": 16 }
+      "homeTile": { "x": 20, "y": 35 }
     },
     {
       "id": "npc-lumi",
@@ -34,7 +34,7 @@
       "personality": "mysterious",
       "role": "Forest researcher",
       "homeZone": "zone-clover-village",
-      "homeTile": { "x": 12, "y": 10 }
+      "homeTile": { "x": 45, "y": 32 }
     },
     {
       "id": "npc-moss",
@@ -43,7 +43,7 @@
       "personality": "sleepy",
       "role": "Gardener",
       "homeZone": "zone-clover-village",
-      "homeTile": { "x": 8, "y": 16 }
+      "homeTile": { "x": 37, "y": 46 }
     }
   ]
 }

@@ -1,6 +1,7 @@
 import Phaser from "phaser";
 import "./styles/global.css";
 import "./styles/game-ui.css";
+import { initClientUpdateMonitor } from "./clientUpdate.ts";
 import { gameConfig } from "./game/GameConfig.ts";
 import { initErrorLogging } from "./game/ErrorLog.ts";
 import {
@@ -11,14 +12,24 @@ import {
 } from "./ui/LoginOverlay.ts";
 import { CharacterDesk } from "./ui/CharacterDesk.ts";
 import { CharacterMenu } from "./ui/CharacterMenu.ts";
+import { CharacterProfilePanel } from "./ui/CharacterProfilePanel.ts";
 import { deskStepFor } from "./ui/characterFlow.ts";
-import { writeSelectedCharacterId } from "./net/bootTarget.ts";
+import {
+  pickCharacter,
+  resolveBootTarget,
+  writeSelectedCharacterId,
+} from "./net/bootTarget.ts";
 import { NetworkSystem } from "./systems/NetworkSystem.ts";
 import { dialoguePanel } from "./scenes/OverworldScene.ts";
 import { loadClientConfig } from "./clientConfig.ts";
 import { isMaintenance } from "./config.ts";
+import { initGameWindowScale } from "./ui/gameWindow.ts";
 
 initErrorLogging();
+initClientUpdateMonitor();
+// Size the game window to the device before the auth flow (and keep it in
+// sync on resize/orientation) so Phaser boots into a correctly scaled canvas.
+initGameWindowScale();
 
 type GameWindow = Window & {
   game?: Phaser.Game;
@@ -32,6 +43,28 @@ const win = window as GameWindow;
 /** One desk + one HUD menu, reused across boot and in-game switch flows. */
 const desk = new CharacterDesk();
 const menu = new CharacterMenu();
+const profilePanel = new CharacterProfilePanel();
+
+/** Keep startup failures visible instead of leaving a silent offline canvas. */
+function showConnectionDiagnostic(title: string, detail: string): void {
+  const container = document.getElementById("game-container");
+  if (container === null) return;
+  const existing = container.querySelector<HTMLElement>(".connection-diagnostic");
+  existing?.remove();
+  const panel = document.createElement("div");
+  panel.className = "connection-diagnostic";
+  panel.setAttribute("role", "alert");
+  const heading = document.createElement("strong");
+  heading.textContent = title;
+  const message = document.createElement("span");
+  message.textContent = detail;
+  panel.append(heading, message);
+  container.appendChild(panel);
+}
+
+NetworkSystem.get().onError = (code, message) => {
+  showConnectionDiagnostic("Village connection failed", `${code}: ${message}`);
+};
 
 /**
  * Boot the Phaser game once auth + a playable courier are confirmed (exposed
@@ -46,15 +79,40 @@ function startGame(
   win.pawsAccount = detail.account;
   win.pawsCharacters = characters;
   win.pawsSelectedCharacterId = selectedId;
-  if (selectedId !== null) writeSelectedCharacterId(selectedId);
-  win.game = new Phaser.Game(gameConfig);
+  // Resolve one authoritative courier for this boot and persist that exact id
+  // before either the socket or Phaser scene reads tab state.
+  const resolvedCharacter = pickCharacter(characters, selectedId);
+  const resolvedCharacterId = resolvedCharacter?.id ?? null;
+  if (resolvedCharacterId !== null) writeSelectedCharacterId(resolvedCharacterId);
+  // Begin the authenticated multiplayer session before Phaser initializes any
+  // scenes or optional art. This guarantees /api/ws-token is attempted even
+  // when a renderer/asset/UI error prevents the overworld from being created.
+  const bootTarget = resolveBootTarget(characters, resolvedCharacterId);
+  if (resolvedCharacterId !== null) {
+    NetworkSystem.get().start(bootTarget.zoneId, resolvedCharacterId);
+  }
+  try {
+    win.game = new Phaser.Game(gameConfig);
+  } catch (error) {
+    showConnectionDiagnostic(
+      "The forest could not open",
+      error instanceof Error ? error.message : String(error),
+    );
+    console.error("Phaser startup failed", error);
+  }
   menu.mount({
     account: detail.account,
     characters,
     selectedId,
     onSwitch: (id) => playWith(detail, characters, id),
     onCreate: () => openCreateDesk(detail, characters),
+    onOpenProfile: () => {
+      const activeId = selectedId ?? characters[0]?.id;
+      const token = readAuthToken();
+      if (activeId !== undefined && token !== null) profilePanel.open(activeId, token);
+    },
     onSignOut: () => {
+      profilePanel.close();
       clearAuthStorage();
       window.location.reload();
     },
@@ -67,6 +125,7 @@ function playWith(
   characters: CharacterListItem[],
   selectedId: number,
 ): void {
+  profilePanel.close();
   menu.unmount();
   NetworkSystem.get().shutdown();
   dialoguePanel.close(); // don't carry a stale dialogue into the new session
@@ -93,10 +152,10 @@ function openCreateDesk(
   );
 }
 
-/** The JWT stays in localStorage during play; the desk needs it for /api/classes. */
+/** The JWT stays in this tab's sessionStorage during play; the desk needs it for /api/classes. */
 function readAuthToken(): string | null {
   try {
-    return window.localStorage.getItem("paws.auth.token");
+    return window.sessionStorage.getItem("paws.auth.token");
   } catch {
     return null;
   }
@@ -186,10 +245,13 @@ async function bootAfterAuth(): Promise<void> {
         showMaintenance(existing);
         return;
       }
+      const serverSelectedId = existing.account.last_played_character_id ?? null;
+      const serverCharacter = existing.characters.find((c) => c.id === serverSelectedId);
       const step = deskStepFor(existing.characters.length).step;
-      if (step === "play") {
-        const only = existing.characters[0];
-        startGame(existing, existing.characters, only?.id ?? null);
+      // The account row is authoritative. If the server remembers a valid
+      // courier, refresh boots directly into it instead of reopening select.
+      if (serverCharacter !== undefined || step === "play") {
+        startGame(existing, existing.characters, serverCharacter?.id ?? existing.characters[0]?.id ?? null);
       } else {
         desk.show(existing, (characters, selectedId) =>
           startGame(existing, characters, selectedId),

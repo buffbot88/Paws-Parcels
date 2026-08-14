@@ -8,6 +8,20 @@ import { errorResponse } from "./index.ts";
  * the linked account row. On success returns the account; on failure writes
  * the appropriate 401 response and returns null (callers must return).
  */
+/** Require a valid session whose canonical account role is exactly Admin. */
+export async function requireAdmin(
+  req: IncomingMessage,
+  res: ServerResponse,
+): Promise<AccountRow | null> {
+  const account = await requireAccount(req, res);
+  if (account === null) return null;
+  if (account.role !== "Admin") {
+    errorResponse(res, 403, "ADMIN_REQUIRED", "Admin role required");
+    return null;
+  }
+  return account;
+}
+
 export async function requireAccount(
   req: IncomingMessage,
   res: ServerResponse,

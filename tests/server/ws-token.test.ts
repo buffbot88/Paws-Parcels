@@ -28,10 +28,24 @@ vi.mock("../../server/src/config/index.ts", () => ({
     issuer: "https://ashat.test/api/oauth",
     jwksTtlSeconds: 600,
   },
+  ai: {
+    enabled: false,
+    port: 3101,
+    modelPath: "",
+    mmprojPath: "",
+    idleMs: 600_000,
+    warmupTimeoutMs: 90_000,
+    requestTimeoutMs: 4_000,
+    monsterDecisionIntervalMs: 5_000,
+    maxTokensMonster: 40,
+    maxTokensNpc: 160,
+    npcTalkMinIntervalMs: 6_000,
+  },
 }));
 
 vi.mock("../../server/src/models/Account.ts", () => ({
   getAccountByAshatId: vi.fn(),
+  setLastPlayedCharacter: vi.fn(),
 }));
 
 vi.mock("../../server/src/models/Character.ts", () => ({

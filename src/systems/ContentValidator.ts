@@ -11,7 +11,7 @@ export interface ValidationResult {
 }
 
 const ZONE_DIMS: Record<ZoneId, { w: number; h: number }> = {
-  "zone-clover-village": { w: 30, h: 20 },
+  "zone-clover-village": { w: 75, h: 75 },
 };
 
 const CATEGORIES: readonly ItemCategory[] = ["resource", "gift", "delivery", "quest", "cosmetic"];

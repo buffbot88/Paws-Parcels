@@ -32,6 +32,8 @@ export interface ZonePlayer {
   lastAttackAt: number;
   /** Respawn invulnerability window end (ms epoch). */
   invulnUntil: number;
+  /** Time of the last zone-chat message for server-side rate limiting. */
+  lastChatAt?: number;
 }
 
 export interface ZoneSnapshotPlayer {

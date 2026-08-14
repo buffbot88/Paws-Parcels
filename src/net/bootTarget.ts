@@ -28,7 +28,7 @@ export function readBootCharacters(): BootCharacter[] | undefined {
 }
 
 /**
- * The localStorage key holding the courier the player chose to play as
+ * The tab-scoped storage key holding the courier the player chose to play as
  * (written by the character select desk, Phase 2 client hookup).
  */
 export const SELECTED_CHARACTER_KEY = "paws.auth.selectedCharacter";
@@ -37,7 +37,7 @@ export const SELECTED_CHARACTER_KEY = "paws.auth.selectedCharacter";
 export function readSelectedCharacterId(): number | null {
   if (typeof window === "undefined") return null; // node test env
   try {
-    const raw = window.localStorage.getItem(SELECTED_CHARACTER_KEY);
+    const raw = window.sessionStorage.getItem(SELECTED_CHARACTER_KEY);
     if (raw === null) return null;
     const n = Number(raw);
     return Number.isInteger(n) && n > 0 ? n : null;
@@ -50,7 +50,7 @@ export function readSelectedCharacterId(): number | null {
 export function writeSelectedCharacterId(id: number): void {
   if (typeof window === "undefined") return;
   try {
-    window.localStorage.setItem(SELECTED_CHARACTER_KEY, String(id));
+    window.sessionStorage.setItem(SELECTED_CHARACTER_KEY, String(id));
   } catch {
     // Private mode — selection lives only for this session.
   }
@@ -78,8 +78,12 @@ export function pickCharacter(
  */
 export function resolveBootTarget(
   characters: BootCharacter[] | undefined,
+  serverSelectedId: number | null = null,
 ): BootTarget {
-  const character = pickCharacter(characters, readSelectedCharacterId());
+  const character = pickCharacter(
+    characters,
+    serverSelectedId ?? readSelectedCharacterId(),
+  );
   if (character !== null && MAPS[character.zone_id] !== undefined) {
     return {
       zoneId: character.zone_id,

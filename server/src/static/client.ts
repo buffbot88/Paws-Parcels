@@ -78,6 +78,7 @@ export function createStaticClientServer(clientDir: string) {
     const type =
       MIME_TYPES[extname(filePath).toLowerCase()] ?? "application/octet-stream";
     const isHtml = extname(filePath).toLowerCase() === ".html";
+    const isVersionManifest = filePath === resolve(root, "client-version.txt");
 
     res.setHeader("Content-Type", type);
     res.setHeader("Content-Length", String(stat.size));
@@ -85,7 +86,9 @@ export function createStaticClientServer(clientDir: string) {
     // the entry point and must stay fresh.
     res.setHeader(
       "Cache-Control",
-      isHtml ? "no-cache" : "public, max-age=31536000, immutable",
+      isHtml || isVersionManifest
+        ? "no-store, no-cache, must-revalidate, max-age=0"
+        : "public, max-age=31536000, immutable",
     );
 
     if (req.method === "HEAD") {

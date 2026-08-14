@@ -1,6 +1,76 @@
 {
   "quests": [
     {
+      "id": "quest-village-welcome",
+      "title": "Welcome to Clover Village",
+      "description": "Take Pip's welcome card to Biscuit at the café.",
+      "type": "delivery",
+      "giverId": "npc-pip",
+      "targetId": "npc-biscuit",
+      "requiredItemId": "item-village-welcome-card",
+      "requiredQuantity": 1,
+      "stampReward": 5,
+      "friendshipReward": 1,
+      "friendshipNpcId": "npc-biscuit",
+      "daily": false
+    },
+    {
+      "id": "quest-fresh-bread-biscuit",
+      "title": "Fresh Bread for Biscuit",
+      "description": "Carry a fresh bread parcel from Pip to Biscuit.",
+      "type": "delivery",
+      "giverId": "npc-pip",
+      "targetId": "npc-biscuit",
+      "requiredItemId": "item-tiny-parcel",
+      "requiredQuantity": 1,
+      "stampReward": 8,
+      "friendshipReward": 1,
+      "friendshipNpcId": "npc-biscuit",
+      "daily": false
+    },
+    {
+      "id": "quest-flower-note-maple",
+      "title": "A Flower Note for Maple",
+      "description": "Deliver Biscuit's flower note to Maple in the flower field.",
+      "type": "delivery",
+      "giverId": "npc-biscuit",
+      "targetId": "npc-maple",
+      "requiredItemId": "item-sealed-letter",
+      "requiredQuantity": 1,
+      "stampReward": 10,
+      "friendshipReward": 1,
+      "friendshipNpcId": "npc-maple",
+      "daily": false
+    },
+    {
+      "id": "quest-moon-note-lumi",
+      "title": "A Moon Note for Lumi",
+      "description": "Carry Maple's moon note to Lumi at the research garden.",
+      "type": "delivery",
+      "giverId": "npc-maple",
+      "targetId": "npc-lumi",
+      "requiredItemId": "item-sealed-letter",
+      "requiredQuantity": 1,
+      "stampReward": 12,
+      "friendshipReward": 1,
+      "friendshipNpcId": "npc-lumi",
+      "daily": false
+    },
+    {
+      "id": "quest-garden-greeting-moss",
+      "title": "A Garden Greeting for Moss",
+      "description": "Deliver Lumi's garden greeting to Moss by the burrows.",
+      "type": "delivery",
+      "giverId": "npc-lumi",
+      "targetId": "npc-moss",
+      "requiredItemId": "item-tiny-parcel",
+      "requiredQuantity": 1,
+      "stampReward": 15,
+      "friendshipReward": 1,
+      "friendshipNpcId": "npc-moss",
+      "daily": false
+    },
+    {
       "id": "quest-warm-letter-maple",
       "title": "A Warm Letter for Maple",
       "description": "Deliver a letter from Pip to Maple at the flower field.",
@@ -12,20 +82,6 @@
       "stampReward": 15,
       "friendshipReward": 1,
       "friendshipNpcId": "npc-maple",
-      "daily": true
-    },
-    {
-      "id": "quest-fresh-bread-biscuit",
-      "title": "Fresh Bread for Biscuit",
-      "description": "Carry a parcel of fresh bread from the post office to Biscuit's picnic corner.",
-      "type": "delivery",
-      "giverId": "npc-pip",
-      "targetId": "npc-biscuit",
-      "requiredItemId": "item-tiny-parcel",
-      "requiredQuantity": 1,
-      "stampReward": 12,
-      "friendshipReward": 1,
-      "friendshipNpcId": "npc-biscuit",
       "daily": true
     },
     {

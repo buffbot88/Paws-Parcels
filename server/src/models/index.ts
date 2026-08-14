@@ -4,6 +4,7 @@ export {
   findOrCreateAccountByAshatId,
   getAccountByAshatId,
   toPublicAccount,
+  setLastPlayedCharacter,
 } from "./Account.ts";
 export {
   type CharacterRow,
@@ -15,6 +16,9 @@ export {
   getCharactersByAccountId,
   toPublicCharacter,
   updateCharacterPosition,
+  getCharacterProfile,
+  grantInventoryItems,
+  unlockSkill,
 } from "./Character.ts";
 export {
   type CharacterClassRow,

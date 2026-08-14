@@ -3,8 +3,8 @@ import { defineConfig } from "vite";
 export default defineConfig({
   // Relative base so the built game works from any static host subpath.
   base: "./",
-  // Build-time fallback defines — used only when server_config.json is
-  // absent (local dev). Production reads server_config.json at boot.
+  // Build-time fallback defines — used only when client-config.txt is
+  // absent (local dev). Production reads client-config.txt at boot.
   define: {
     __GAME_SERVER_URL__: JSON.stringify(""),
     __MAINTENANCE__: JSON.stringify("true"),
@@ -29,6 +29,14 @@ export default defineConfig({
   },
   build: {
     target: "es2022",
+    // Assets land under /static/ (not /assets/): the ASHAT Hub server config
+    // globally aliases /assets/ (and /css/, /js/, /images/) to the Hub's own
+    // public dir on every vhost, which would hijack game asset requests and
+    // SPA-fallback them to index.html. "static" is untouched by those aliases.
+    assetsDir: "static",
+    // Keep the 36x36 courier frames as cacheable files instead of inlining
+    // hundreds of tiny images into the Phaser bundle.
+    assetsInlineLimit: 0,
     // Phaser is a single large bundle; raise the warning threshold deliberately.
     chunkSizeWarningLimit: 2500,
     // The server (Node-only) is intentionally excluded from the client bundle.

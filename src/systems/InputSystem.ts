@@ -24,6 +24,8 @@ interface KeyMap {
   SPACE: Phaser.Input.Keyboard.Key;
   /** Phase 3 — basic attack (J). */
   J: Phaser.Input.Keyboard.Key;
+  /** Developer-only visual review capture (Ctrl+Shift+V). */
+  V: Phaser.Input.Keyboard.Key;
 }
 
 /**
@@ -53,17 +55,21 @@ export class InputSystem {
   private tapQueue: Tap | null = null;
   private interactQueued = false;
   private attackQueued = false;
+  private captureQueued = false;
+  private readonly devAccess: boolean;
 
-  constructor(scene: Phaser.Scene) {
+  constructor(scene: Phaser.Scene, options: { devAccess?: boolean } = {}) {
+    this.devAccess = options.devAccess === true;
     this.scene = scene;
     this.keys = scene.input.keyboard!.addKeys(
-      "W,A,S,D,UP,DOWN,LEFT,RIGHT,E,SPACE,J",
+      "W,A,S,D,UP,DOWN,LEFT,RIGHT,E,SPACE,J,V",
     ) as unknown as KeyMap;
 
     const kb = scene.input.keyboard!;
     kb.on("keydown-E", this.queueInteract, this);
     kb.on("keydown-SPACE", this.queueInteract, this);
     kb.on("keydown-J", this.queueAttack, this);
+    kb.on("keydown-V", this.queueCapture, this);
 
     scene.input.on("pointerdown", this.handlePointerDown, this);
     scene.input.on("pointermove", this.handlePointerMove, this);
@@ -78,6 +84,7 @@ export class InputSystem {
       kb.off("keydown-E", this.queueInteract, this);
       kb.off("keydown-SPACE", this.queueInteract, this);
       kb.off("keydown-J", this.queueAttack, this);
+      kb.off("keydown-V", this.queueCapture, this);
     }
     this.scene.input.off("pointerdown", this.handlePointerDown, this);
     this.scene.input.off("pointermove", this.handlePointerMove, this);
@@ -87,6 +94,7 @@ export class InputSystem {
 
   /** Normalized movement vector (-1..1 per axis); joystick wins over keyboard when active. */
   getMoveVector(): MoveVector {
+    if (this.isDomTextInputFocused()) return { x: 0, y: 0 };
     if (this.joystickActive) {
       const jx = this.joystickDelta.x / InputSystem.JOYSTICK_RADIUS;
       const jy = this.joystickDelta.y / InputSystem.JOYSTICK_RADIUS;
@@ -124,6 +132,13 @@ export class InputSystem {
     return v;
   }
 
+  /** True exactly once per Ctrl+Shift+V press (developer visual capture). */
+  consumeCapture(): boolean {
+    const v = this.captureQueued;
+    this.captureQueued = false;
+    return v;
+  }
+
   /** The tap (world coords) since the last call, or null. */
   consumeTap(): Tap | null {
     const t = this.tapQueue;
@@ -132,11 +147,28 @@ export class InputSystem {
   }
 
   private queueInteract(): void {
+    if (this.isDomTextInputFocused()) return;
     this.interactQueued = true;
   }
 
   private queueAttack(): void {
+    if (this.isDomTextInputFocused()) return;
     this.attackQueued = true;
+  }
+
+  private queueCapture(event: KeyboardEvent): void {
+    if (this.isDomTextInputFocused()) return;
+    if (!this.devAccess || !event.ctrlKey || !event.shiftKey) return;
+    event.preventDefault();
+    this.captureQueued = true;
+  }
+
+  private isDomTextInputFocused(): boolean {
+    const active = document.activeElement;
+    if (active instanceof HTMLInputElement || active instanceof HTMLTextAreaElement || active instanceof HTMLSelectElement || (active instanceof HTMLElement && active.isContentEditable)) return true;
+    // Modal DOM panels pause gameplay shortcuts even when focus is on the
+    // canvas/body or on a tab/button rather than a text field.
+    return document.querySelector<HTMLElement>(".profile-panel:not([hidden])") !== null;
   }
 
   private handlePointerDown(pointer: Phaser.Input.Pointer): void {

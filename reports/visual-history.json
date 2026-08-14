@@ -1,0 +1,77 @@
+{
+  "status": "insufficient-data",
+  "generatedAt": "2026-08-10T23:19:00.309Z",
+  "reportCount": 9,
+  "okReportCount": 1,
+  "unavailableReportCount": 7,
+  "invalidReportCount": 1,
+  "skippedReportCount": 0,
+  "overallAverage": 3,
+  "overallTrend": "unknown",
+  "recurringIssues": [],
+  "sources": [
+    {
+      "path": "tmp/visual-review-smoke.json",
+      "reviewedAt": "2026-08-10T17:26:45.669Z",
+      "status": "unavailable",
+      "overall": 0,
+      "issueCount": 0
+    },
+    {
+      "path": "tmp/visual-review-smoke-2.json",
+      "reviewedAt": "2026-08-10T17:29:39.134Z",
+      "status": "unavailable",
+      "overall": 0,
+      "issueCount": 0
+    },
+    {
+      "path": "reports/visual-review-2026-08-10T23-02-49-007Z-5770f795-85f.json",
+      "reviewedAt": "2026-08-10T23:04:25.077Z",
+      "status": "unavailable",
+      "overall": 0,
+      "issueCount": 0
+    },
+    {
+      "path": "tmp/visual-review-live-diagnostic.json",
+      "reviewedAt": "2026-08-10T23:05:17.286Z",
+      "status": "unavailable",
+      "overall": 0,
+      "issueCount": 0
+    },
+    {
+      "path": "reports/visual-review-2026-08-10T23-02-49-007Z-5770f795-85f-1.json",
+      "reviewedAt": "2026-08-10T23:05:46.324Z",
+      "status": "unavailable",
+      "overall": 0,
+      "issueCount": 0
+    },
+    {
+      "path": "reports/visual-review-2026-08-10T23-13-09-009Z-d5b52843-779.json",
+      "reviewedAt": "2026-08-10T23:14:01.261Z",
+      "status": "unavailable",
+      "overall": 0,
+      "issueCount": 0
+    },
+    {
+      "path": "tmp/visual-review-fresh-diagnostic.json",
+      "reviewedAt": "2026-08-10T23:14:46.232Z",
+      "status": "unavailable",
+      "overall": 0,
+      "issueCount": 0
+    },
+    {
+      "path": "reports/visual-review-2026-08-10T23-13-09-009Z-d5b52843-779-1.json",
+      "reviewedAt": "2026-08-10T23:16:05.412Z",
+      "status": "invalid",
+      "overall": 0,
+      "issueCount": 0
+    },
+    {
+      "path": "reports/visual-review-2026-08-10T23-13-09-009Z-d5b52843-779-2.json",
+      "reviewedAt": "2026-08-10T23:18:12.136Z",
+      "status": "ok",
+      "overall": 3,
+      "issueCount": 0
+    }
+  ]
+}

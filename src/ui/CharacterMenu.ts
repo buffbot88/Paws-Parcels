@@ -7,6 +7,7 @@ export interface CharacterMenuOptions {
   selectedId: number | null;
   onSwitch: (characterId: number) => void;
   onCreate: () => void;
+  onOpenProfile: () => void;
   onSignOut: () => void;
 }
 
@@ -101,6 +102,16 @@ export class CharacterMenu {
       panel.appendChild(this.courierRow(character));
     }
 
+    const profile = document.createElement("button");
+    profile.type = "button";
+    profile.className = "character-menu__action";
+    profile.textContent = "◈ Character, bag & skills";
+    profile.addEventListener("click", () => {
+      this.close();
+      this.opts?.onOpenProfile();
+    });
+    panel.appendChild(profile);
+
     const divider = document.createElement("div");
     divider.className = "character-menu__divider";
     panel.appendChild(divider);
@@ -114,6 +125,16 @@ export class CharacterMenu {
       this.opts?.onCreate();
     });
     panel.appendChild(create);
+
+    const reportBug = document.createElement("a");
+    reportBug.className = "character-menu__action character-menu__action--link";
+    reportBug.setAttribute("role", "menuitem");
+    reportBug.href = "https://agpstudios.org/support";
+    reportBug.target = "_blank";
+    reportBug.rel = "noopener noreferrer";
+    reportBug.textContent = "Report bug";
+    reportBug.addEventListener("click", () => this.close());
+    panel.appendChild(reportBug);
 
     const signOut = document.createElement("button");
     signOut.type = "button";

@@ -24,8 +24,9 @@ body {
 
 #game-container {
   position: relative;
+  /* Filled by src/ui/gameWindow.ts to the largest 16:9 box that fits the
+     viewport (auto-scale on any device); these are just the no-JS fallback. */
   width: 100%;
-  max-width: 1280px;
   aspect-ratio: 16 / 9;
   box-shadow: 0 8px 32px rgba(58, 90, 58, 0.25);
   border-radius: 12px;

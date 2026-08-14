@@ -4,7 +4,10 @@ import { errorResponse, jsonResponse } from "../middleware/index.ts";
 import {
   createCharacter,
   getCharactersByAccountId,
+  getCharacterById,
+  getCharacterProfile,
   toPublicCharacter,
+  unlockSkill,
 } from "../models/Character.ts";
 import {
   getCharacterClassById,
@@ -33,6 +36,62 @@ export async function listCharactersHandler(
   jsonResponse(res, 200, {
     characters: characters.map(toPublicCharacter),
   });
+}
+
+/**
+ * GET /api/characters/:characterId/profile
+ * Return the authoritative profile, inventory, and class skill tree.
+ */
+export async function characterProfileHandler(
+  req: IncomingMessage,
+  res: ServerResponse,
+  params?: Record<string, string>,
+): Promise<void> {
+  const account = await requireAccount(req, res);
+  if (account === null) return;
+  const characterId = Number(params?.characterId ?? "");
+  if (!Number.isInteger(characterId) || characterId < 1) {
+    errorResponse(res, 400, "INVALID_CHARACTER_ID", "characterId must be a positive integer");
+    return;
+  }
+  const character = await getCharacterById(characterId);
+  if (character === null || character.account_id !== account.id) {
+    errorResponse(res, 404, "CHARACTER_NOT_FOUND", "No such character for this account");
+    return;
+  }
+  const profile = await getCharacterProfile(characterId);
+  if (profile === null) {
+    errorResponse(res, 404, "CHARACTER_NOT_FOUND", "No such character for this account");
+    return;
+  }
+  jsonResponse(res, 200, { profile });
+}
+
+/**
+ * POST /api/characters/:characterId/skills/:skillKey/unlock
+ * Unlock a server-validated skill and return the fresh profile.
+ */
+export async function unlockSkillHandler(
+  req: IncomingMessage,
+  res: ServerResponse,
+  params?: Record<string, string>,
+): Promise<void> {
+  const account = await requireAccount(req, res);
+  if (account === null) return;
+  const characterId = Number(params?.characterId ?? "");
+  const skillKey = params?.skillKey ?? "";
+  const character = Number.isInteger(characterId) ? await getCharacterById(characterId) : null;
+  if (character === null || character.account_id !== account.id) {
+    errorResponse(res, 404, "CHARACTER_NOT_FOUND", "No such character for this account");
+    return;
+  }
+  const result = await unlockSkill(characterId, skillKey);
+  if (!result.ok) {
+    const status = result.reason === "SKILL_NOT_FOUND" || result.reason === "WRONG_CLASS" ? 404 : 409;
+    errorResponse(res, status, result.reason, "That skill cannot be unlocked yet");
+    return;
+  }
+  jsonResponse(res, 200, { profile: result.profile });
 }
 
 /**

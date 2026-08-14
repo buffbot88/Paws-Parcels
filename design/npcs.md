@@ -8,7 +8,8 @@
 >   and used as quest-chain gates (see [`design/quests.md`](quests.md)).
 > - **Dialogue** is now served from the server, validated by quest state.
 > - Combat NPCs (monsters) are a separate system — see [`design/monsters.md`](monsters.md).
-> - The `homeTile` positions are still valid for client rendering.
+> - Home tiles now live in `src/data/npcs.json` (kept in sync with the
+>   regenerated Clover Village map layout — see `scripts/generate-clover-village.py`).
 
 # Paws & Parcels — NPC Design Cards (LEGACY — single-player)
 

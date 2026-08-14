@@ -28,7 +28,7 @@ server app, SQLite migrations, health check, ASHAT Hub OIDC auth, account + char
 data models, character list/create/classes endpoints), Phase 2 (**Multiplayer
 Village** — WebSocket presence + movement sync, courier desk), and Phase 3 (**Classes
 and Combat** — Happy Valley open-world monster map, server-authoritative combat loop)
-are complete. Next up: **Phase 4 — Quest Chains and Deliveries**.
+are complete. Next up: **Phase 4A — Clover Village Tutorial Quest Chain**, followed by optional village side quests before expanding into Happy Valley progression.
 
 ---
 
@@ -117,8 +117,14 @@ Goal: first monster map, basic combat, class system.
   player HP chip, defeat/respawn handling
 - Gate: combat math server-side; monster + player respawn work; damage validated
 
-### Phase 4 — Quest Chains and Deliveries
-Goal: server-validated quest chains with gated deliveries.
+### Phase 4A — Clover Village Tutorial Quest Chain
+Goal: teach movement, interaction, quest acceptance, parcel carrying, and local deliveries entirely inside the safe hub.
+- Five-step `Clover Village Courier Circuit` from Pip → Biscuit → Maple → Lumi → Moss
+- Server-bound parcels, ordered prerequisites, persisted progress, Stamp/XP/reputation rewards
+- Client tutorial tracker and server-confirmed delivery feedback
+
+### Phase 4B — Village Side Quests
+Goal: add optional local errands and friendship-gated stories before opening broader progression.
 
 ### Phase 5 — Inventory and Equipment
 Goal: server-authoritative inventory + equipment with gear stats.
@@ -142,7 +148,8 @@ Summary of phases:
 - **Phase 1:** Online Foundation — ✅ built (server, SQLite, OIDC auth, characters)
 - **Phase 2:** Multiplayer Village — ✅ complete (WS presence + movement sync, character create/select, periodic position persistence)
 - **Phase 3:** Classes and Combat — ✅ complete (Happy Valley monsters, server-authoritative combat, respawn)
-- **Phase 4:** Quest Chains and Deliveries — ⏭ next
+- **Phase 4A:** Clover Village Tutorial Quest Chain — 🟡 in progress
+- **Phase 4B:** Village Side Quests — ⬜ planned
 - **Phase 5:** Inventory and Equipment
 - **Phase 6:** First Dungeon and Crafting
 - **Phase 7:** 2.5D Presentation and Content

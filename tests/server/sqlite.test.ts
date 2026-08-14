@@ -29,6 +29,19 @@ vi.mock("../../server/src/config/index.ts", () => ({
     issuer: "https://ashat.test/api/oauth",
     jwksTtlSeconds: 600,
   },
+  ai: {
+    enabled: false,
+    port: 3101,
+    modelPath: "",
+    mmprojPath: "",
+    idleMs: 600_000,
+    warmupTimeoutMs: 90_000,
+    requestTimeoutMs: 4_000,
+    monsterDecisionIntervalMs: 5_000,
+    maxTokensMonster: 40,
+    maxTokensNpc: 160,
+    npcTalkMinIntervalMs: 6_000,
+  },
 }));
 
 import { runMigrations } from "../../server/src/db/migrate.ts";
@@ -39,6 +52,9 @@ import {
   getCharacterById,
   getCharactersByAccountId,
   getCharacterWithClass,
+  getCharacterProfile,
+  grantInventoryItems,
+  unlockSkill,
   updateCharacterPosition,
 } from "../../server/src/models/Character.ts";
 import { getCharacterClasses } from "../../server/src/models/CharacterClass.ts";
@@ -55,8 +71,8 @@ describe("SQLite persistence layer", () => {
 
     const zone = await getZoneByKey("zone-clover-village");
     expect(zone?.key).toBe("zone-clover-village");
-    expect(zone?.default_spawn_x).toBe(15);
-    expect(zone?.default_spawn_y).toBe(13);
+    expect(zone?.default_spawn_x).toBe(37);
+    expect(zone?.default_spawn_y).toBe(38);
     expect(zone?.is_safe).toBe(true);
 
     const classes = await getCharacterClasses();
@@ -133,6 +149,30 @@ describe("SQLite persistence layer", () => {
     expect(chars[0].zone_id).toBe("zone-clover-village");
   });
 
+  it("loads profile/inventory/skill data and enforces skill unlocks", async () => {
+    await runMigrations();
+    const account = await findOrCreateAccountByAshatId({ ashatUserId: "u-profile", username: "profile", displayName: "Profile", role: "Member" });
+    const classes = await getCharacterClasses();
+    const created = await createCharacter({ accountId: account.id, name: "Profile", classId: classes[0].id, appearance: {}, cls: classes[0] });
+    expect(created.ok).toBe(true);
+    if (!created.ok) return;
+
+    const before = await getCharacterProfile(created.character.id);
+    expect(before?.inventory.slotCount).toBe(12);
+    expect(before?.skills.entries.length).toBe(3);
+    expect(before?.skills.skillPoints).toBe(1);
+
+    await grantInventoryItems(created.character.id, [{ itemKey: "item-boar-hide", quantity: 2 }]);
+    const afterLoot = await getCharacterProfile(created.character.id);
+    expect(afterLoot?.inventory.items[0]).toMatchObject({ key: "item-boar-hide", quantity: 2, slot: 0 });
+
+    const unlocked = await unlockSkill(created.character.id, "bear-iron-hide");
+    expect(unlocked.ok).toBe(true);
+    if (unlocked.ok) expect(unlocked.profile.skills.entries[0].unlocked).toBe(true);
+    expect((await unlockSkill(created.character.id, "bear-iron-hide"))).toEqual({ ok: false, reason: "ALREADY_UNLOCKED" });
+    expect((await unlockSkill(created.character.id, "cat-arcane-focus"))).toEqual({ ok: false, reason: "WRONG_CLASS" });
+  });
+
   it("returns the class key for a WS session and persists position updates", async () => {
     await runMigrations();
     const account = await findOrCreateAccountByAshatId({
@@ -158,8 +198,8 @@ describe("SQLite persistence layer", () => {
 
     const session = await getCharacterWithClass(created.character.id);
     expect(session?.class_key).toBe("fox-archer");
-    expect(session?.pos_x).toBe(15);
-    expect(session?.pos_y).toBe(13);
+    expect(session?.pos_x).toBe(37);
+    expect(session?.pos_y).toBe(38);
 
     await updateCharacterPosition(created.character.id, "zone-clover-village", 4, 7);
     const after = await getCharacterWithClass(created.character.id);

@@ -1,11 +1,21 @@
 import { createServer, type IncomingMessage, type ServerResponse } from "node:http";
 import { existsSync } from "node:fs";
+import npcsJson from "../../src/data/npcs.json" with { type: "json" };
 // Side-effect: config is validated and loaded at module import — any bad
 // server_config.json fails fast before main() runs.
-import { server as serverConfig } from "./config/index.ts";
+import { server as serverConfig, ai as aiConfig } from "./config/index.ts";
+import { ModelInstance } from "./ai/ModelInstance.ts";
+import { GameBrain } from "./ai/GameBrain.ts";
+import { MonsterBrain } from "./ai/MonsterBrain.ts";
 import { getDb, closeDb, pingDb } from "./db/connection.ts";
 import { runMigrations } from "./db/migrate.ts";
-import { middleware, parseBody, jsonResponse, errorResponse } from "./middleware/index.ts";
+import {
+  middleware,
+  parseBody,
+  jsonResponse,
+  errorResponse,
+  RequestBodyTooLargeError,
+} from "./middleware/index.ts";
 import { logger } from "./middleware/logger.ts";
 import { createRouter } from "./routes/index.ts";
 import { createStaticClientServer } from "./static/client.ts";
@@ -17,7 +27,14 @@ import {
   updateCharacterPosition,
   updateCharacterHp,
   grantExperience,
+  grantInventoryItems,
 } from "./models/Character.ts";
+import {
+  getQuestState,
+  acceptQuest,
+  completeDelivery,
+  getQuestInventory,
+} from "./models/Quest.ts";
 
 async function main(): Promise<void> {
 
@@ -42,7 +59,40 @@ async function main(): Promise<void> {
     process.exit(1);
   }
 
-  const router = createRouter();
+  // Phase 4 experimental — AI game engine. The game-owned 450M VL instance
+  // is power-managed: spawned on demand, spun down after idleMs idle, and
+  // stopped on shutdown. When disabled (or on failure) the game falls back
+  // to deterministic monster AI + canned dialogue.
+  const modelInstance = aiConfig.enabled
+    ? new ModelInstance({
+        port: aiConfig.port,
+        modelPath: aiConfig.modelPath,
+        mmprojPath: aiConfig.mmprojPath,
+        idleMs: aiConfig.idleMs,
+        warmupTimeoutMs: aiConfig.warmupTimeoutMs,
+      })
+    : null;
+  const gameBrain =
+    modelInstance === null
+      ? null
+      : new GameBrain(modelInstance, {
+          requestTimeoutMs: aiConfig.requestTimeoutMs,
+        });
+  const monsterBrain =
+    gameBrain === null
+      ? null
+      : new MonsterBrain(gameBrain, {
+          intervalMs: aiConfig.monsterDecisionIntervalMs,
+          maxTokens: aiConfig.maxTokensMonster,
+        });
+  if (modelInstance !== null) {
+    logger.info("AI game engine enabled — model instance is power-managed", {
+      port: aiConfig.port,
+      idleMs: aiConfig.idleMs,
+    });
+  }
+
+  const router = createRouter({ npcBrain: gameBrain });
 
   // Phase 3.5 — single-process hosting: serve the built client (dist/) from
   // this same server so one host runs the whole game. When the dir is missing
@@ -90,6 +140,16 @@ async function main(): Promise<void> {
     persistHp: (characterId, hp, maxHp) =>
       updateCharacterHp(characterId, hp, maxHp),
     grantXp: (characterId, amount) => grantExperience(characterId, amount),
+    grantInventory: (characterId, items) => grantInventoryItems(characterId, items),
+    getNpcPosition: (npcId, zoneId) => {
+      const npc = npcsJson.npcs.find((entry) => entry.id === npcId && entry.homeZone === zoneId);
+      return npc === undefined ? null : npc.homeTile;
+    },
+    getQuestState,
+    acceptQuest,
+    completeDelivery,
+    getQuestInventory,
+    monsterBrain,
   });
 
   const server = createServer(async (req: IncomingMessage, res: ServerResponse) => {
@@ -102,7 +162,11 @@ async function main(): Promise<void> {
     try {
       body = await parseBody(req);
     } catch (err) {
-      errorResponse(res, 400, "INVALID_JSON", "Request body is not valid JSON");
+      if (err instanceof RequestBodyTooLargeError) {
+        errorResponse(res, 413, "REQUEST_TOO_LARGE", "Request body exceeds the upload limit");
+      } else {
+        errorResponse(res, 400, "INVALID_JSON", "Request body is not valid JSON");
+      }
       return;
     }
 
@@ -139,6 +203,9 @@ async function main(): Promise<void> {
     logger.info(`Received ${signal}, shutting down gracefully`);
     gameServer.close();
     server.close(async () => {
+      if (modelInstance !== null) {
+        await modelInstance.stop();
+      }
       await closeDb();
       logger.info("Server shut down");
       process.exit(0);

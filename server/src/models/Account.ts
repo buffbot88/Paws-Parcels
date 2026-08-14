@@ -11,6 +11,7 @@ export interface AccountRow {
   display_name: string;
   role: string;
   ashat_user_id: string | null;
+  last_played_character_id?: number | null;
 }
 
 /**
@@ -33,7 +34,7 @@ export async function getAccountByAshatId(
 ): Promise<AccountRow | null> {
   const row = getDb()
     .prepare(
-      "SELECT id, username, email, display_name, role, ashat_user_id FROM accounts WHERE ashat_user_id = ? LIMIT 1",
+      "SELECT id, username, email, display_name, role, ashat_user_id, last_played_character_id FROM accounts WHERE ashat_user_id = ? LIMIT 1",
     )
     .get(ashatUserId) as SqlRow | undefined;
   if (row === undefined) return null;
@@ -84,6 +85,7 @@ export async function findOrCreateAccountByAshatId(
     display_name: payload.displayName,
     role: payload.role,
     ashat_user_id: payload.ashatUserId,
+    last_played_character_id: null,
   };
 }
 
@@ -98,10 +100,24 @@ function rowToAccount(row: SqlRow): AccountRow {
       row.ashat_user_id === null || row.ashat_user_id === undefined
         ? null
         : String(row.ashat_user_id),
+    last_played_character_id:
+      row.last_played_character_id === null || row.last_played_character_id === undefined
+        ? null
+        : Number(row.last_played_character_id),
   };
 }
 
 /** The public account shape returned by /api/auth/me and auth flows. */
+/** Persist the courier this account most recently entered the world as. */
+export async function setLastPlayedCharacter(
+  accountId: number,
+  characterId: number,
+): Promise<void> {
+  getDb()
+    .prepare("UPDATE accounts SET last_played_character_id = ?, updated_at = ? WHERE id = ?")
+    .run(characterId, new Date().toISOString(), accountId);
+}
+
 export function toPublicAccount(a: AccountRow): Record<string, unknown> {
   return {
     id: a.id,
@@ -109,5 +125,6 @@ export function toPublicAccount(a: AccountRow): Record<string, unknown> {
     display_name: a.display_name,
     role: a.role,
     ashat_user_id: a.ashat_user_id,
+    last_played_character_id: a.last_played_character_id,
   };
 }

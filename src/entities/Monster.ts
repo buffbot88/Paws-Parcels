@@ -2,6 +2,7 @@ import Phaser from "phaser";
 import { TILE_SIZE } from "../game/GameConfig.ts";
 import { TextureKeys } from "../game/GameConstants.ts";
 import type { NetMonsterInfo } from "../net/GameSocket.ts";
+import { worldDepth } from "../game/WorldDepth.ts";
 
 /** One cozy tint per species family (placeholder palette; art lands Phase 8). */
 const SPECIES_TINTS: Readonly<Record<string, number>> = {
@@ -62,7 +63,7 @@ export class Monster extends Phaser.GameObjects.Container {
       .setStrokeStyle(1, 0xffffff, 0.8);
 
     this.add([shadow, blob, this.nameTag, this.hpBar]);
-    this.setDepth(3);
+    this.setDepth(worldDepth(py));
     this.setHp(info.hp);
     scene.add.existing(this);
   }
@@ -85,6 +86,7 @@ export class Monster extends Phaser.GameObjects.Container {
   update(): void {
     this.x += (this.targetX - this.x) * LERP;
     this.y += (this.targetY - this.y) * LERP;
+    this.setDepth(worldDepth(this.y));
     this.nameTag.setPosition(0, -34);
     this.hpBar.setPosition(0, -18);
   }

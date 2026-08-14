@@ -9,7 +9,7 @@
   "description": "Paws & Parcels — cozy browser-based 2.5D online RPG (server-authoritative, SQLite-backed, multiplayer).",
   "scripts": {
     "dev": "node node_modules/vite/bin/vite.js",
-    "build": "node node_modules/vite/bin/vite.js build",
+    "build": "node node_modules/vite/bin/vite.js build && node scripts/write-client-version.mjs && node -e \"require('node:fs').copyFileSync('deploy/alpha/.htaccess','dist/.htaccess')\"",
     "preview": "node node_modules/vite/bin/vite.js preview",
     "dev:server": "node --import tsx server/src/index.ts",
     "start:server": "node --import tsx server/src/index.ts",
@@ -17,7 +17,14 @@
     "typecheck": "node node_modules/typescript/bin/tsc --noEmit",
     "test": "node node_modules/vitest/vitest.mjs run",
     "test:watch": "node node_modules/vitest/vitest.mjs",
-    "validate": "node scripts/validate-content.ts"
+    "validate": "node scripts/validate-content.ts",
+    "tiles:render": "node --import tsx scripts/render-tiles.mjs",
+    "tiles:review": "node --import tsx scripts/ai-tile-review.mjs",
+    "tiles:loop": "node --import tsx scripts/render-tiles.mjs && node --import tsx scripts/ai-tile-review.mjs",
+    "tiles:tune": "node --import tsx scripts/auto-tune-tiles.mjs",
+    "visual:review": "node --import tsx scripts/visual-director.mjs",
+    "visual:latest": "node --import tsx scripts/visual-latest.mjs",
+    "visual:history": "node --import tsx scripts/visual-history.mjs"
   },
   "devDependencies": {
     "@types/bcryptjs": "^2.4.6",

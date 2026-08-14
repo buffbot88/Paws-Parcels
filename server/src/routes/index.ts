@@ -10,8 +10,14 @@ import {
   classesHandler,
   createCharacterHandler,
   listCharactersHandler,
+  characterProfileHandler,
+  unlockSkillHandler,
 } from "./characters.ts";
 import { wsTokenHandler } from "./ws-token.ts";
+import { createNpcTalkHandler } from "./npc.ts";
+import { createVisualCaptureHandler } from "./visual-capture.ts";
+import type { GameBrain } from "../ai/GameBrain.ts";
+import { ai as aiConfig } from "../config/index.ts";
 
 /** Route handler signature. */
 export type RouteHandler = (
@@ -74,8 +80,13 @@ export class Router {
   }
 }
 
+/** Dependencies the API router can optionally receive. */
+export interface RouterDeps {
+  npcBrain?: GameBrain | null;
+}
+
 /** Create the API router with all routes. */
-export function createRouter(): Router {
+export function createRouter(deps?: RouterDeps): Router {
   const router = new Router();
 
   // Liveness probe (no DB ping — start of server boot).
@@ -91,9 +102,23 @@ export function createRouter(): Router {
   router.get("/api/characters", listCharactersHandler);
   router.get("/api/classes", classesHandler);
   router.post("/api/characters", createCharacterHandler);
+  router.get("/api/characters/:characterId/profile", characterProfileHandler);
+  router.post("/api/characters/:characterId/skills/:skillKey/unlock", unlockSkillHandler);
 
   // Phase 2 — WebSocket handshake token (30s, single-use).
   router.get("/api/ws-token", wsTokenHandler);
+
+  // Phase 4 experimental — AI game engine: dynamic NPC dialogue.
+  router.post("/api/admin/visual-capture", createVisualCaptureHandler());
+
+  router.post(
+    "/api/npc/talk",
+    createNpcTalkHandler({
+      brain: deps?.npcBrain ?? null,
+      npcTalkMinIntervalMs: aiConfig.npcTalkMinIntervalMs,
+      maxTokensNpc: aiConfig.maxTokensNpc,
+    }),
+  );
 
   return router;
 }

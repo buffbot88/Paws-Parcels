@@ -10,7 +10,7 @@ import {
   findOrCreateAccountByAshatId,
   toPublicAccount,
 } from "../models/Account.ts";
-import { getCharactersByAccountId, toPublicCharacter } from "../models/Character.ts";
+import {  getCharactersByAccountId, toPublicCharacter } from "../models/Character.ts";
 import { requireAccount } from "../middleware/auth.ts";
 import { errorResponse, jsonResponse } from "../middleware/index.ts";
 import { logger } from "../middleware/logger.ts";

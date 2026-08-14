@@ -2,6 +2,7 @@ import type { IncomingMessage, ServerResponse } from "node:http";
 import { requireAccount } from "../middleware/auth.ts";
 import { errorResponse, jsonResponse } from "../middleware/index.ts";
 import { getCharacterById } from "../models/Character.ts";
+import { setLastPlayedCharacter } from "../models/Account.ts";
 import {
   WS_TOKEN_TTL_SECONDS,
   issueWsToken,
@@ -34,6 +35,9 @@ export async function wsTokenHandler(
     return;
   }
 
+  // The server, not tab storage, owns the last courier selection. This is
+  // what makes refreshes and new devices resume the same character.
+  await setLastPlayedCharacter(account.id, characterId);
   const wsToken = issueWsToken(account.id, characterId);
   jsonResponse(res, 200, {
     wsToken,

@@ -281,14 +281,19 @@ See [`design/crafting.md`](design/crafting.md). Summary:
 - [x] Add basic attacks (cooldown-gated, server-computed)
 - [x] Add damage validation + monster respawn + player respawn
 
-### Phase 4 — Quest Chains and Deliveries — ⏭ next
-- Add quest prerequisites + ordered quest chains
-- Add NPC interactions (server-authoritative)
-- Add parcel and letter rewards (gated by chain)
-- Add delivery validation (server-side)
-- Add quest progress persistence + Stamp/currency rewards
+### Phase 4 — Quest Chains and Deliveries — 🟡 in progress
+- [x] Scope the first chain to Clover Village as a safe tutorial
+- [x] Seed the five-step Clover Village Courier Circuit
+- [x] Add server-created, quest-bound tutorial parcels
+- [x] Add persisted quest state, delivery validation, and Stamp/XP/reputation rewards
+- [x] Add WebSocket quest acceptance, NPC interaction, and quest updates
+- [x] Add a client tutorial tracker and delivery feedback
+- [ ] Add richer NPC quest dialogue and optional local side quests
+- [ ] Expand quest content outward into Happy Valley after the tutorial is stable
 
 ### Phase 5 — Inventory and Equipment
+
+> The tutorial includes only the minimal locked parcel slice needed for delivery quests; full inventory/equipment interactions remain Phase 5.
 - Add server-authoritative inventory
 - Add item ownership validation
 - Add equipment slots + gear stats
@@ -320,7 +325,7 @@ See [`design/crafting.md`](design/crafting.md). Summary:
 | Phase 1 | Server boots, connects to SQLite, migrations run, health check 200, register/login works |
 | Phase 2 | Two browsers see each other move; movement validation rejects teleports/speed hacks |
 | Phase 3 | Combat math server-side; monster + player respawn work; damage validated |
-| Phase 4 | Quest chain gating works end-to-end; delivery validated server-side |
+| Phase 4 | Clover Village tutorial chain gating works end-to-end; delivery validated server-side |
 | Phase 5 | Inventory/equipment owned & validated server-side; economy audited |
 | Phase 6 | Dungeon instance lifecycle + crafting recipe validation pass |
 | Phase 7 | No critical-path placeholders; depth sorting correct |

@@ -2,10 +2,17 @@ import Phaser from "phaser";
 import { TILE_SIZE } from "../game/GameConfig.ts";
 import { SceneKeys, TextureKeys } from "../game/GameConstants.ts";
 import { TILES, TILESET_COLUMNS } from "../game/Tiles.ts";
+import { renderTilesetCanvas } from "../game/TileTextures.ts";
+import { queueClassAssets, registerClassAnimations } from "../game/classAssets.ts";
+import { queueCloverVillageAssets } from "../game/cloverVillageAssets.ts";
+import {
+  queueCloverVillageNpcAssets,
+  registerCloverVillageNpcAnimations,
+} from "../game/cloverVillageNpcAssets.ts";
 
 /**
- * Preloader generates placeholder geometric textures at runtime (no binary
- * assets yet — BuildPlan: keep placeholders until Phase 4/8 art lands), shows
+ * Preloader loads the selected class art and generates the remaining
+ * placeholder textures at runtime, shows
  * a loading bar, then starts the overworld.
  */
 export class PreloaderScene extends Phaser.Scene {
@@ -13,7 +20,15 @@ export class PreloaderScene extends Phaser.Scene {
     super(SceneKeys.Preloader);
   }
 
+  preload(): void {
+    queueClassAssets(this);
+    queueCloverVillageAssets(this);
+    queueCloverVillageNpcAssets(this);
+  }
+
   create(): void {
+    registerClassAnimations(this);
+    registerCloverVillageNpcAnimations(this);
     this.generatePlaceholderTextures();
     this.showLoadingBar();
     this.time.delayedCall(400, () => this.scene.start(SceneKeys.Overworld));
@@ -22,23 +37,14 @@ export class PreloaderScene extends Phaser.Scene {
   private generatePlaceholderTextures(): void {
     // Single tileset sheet: every tile type in src/game/Tiles.ts gets a frame
     // at its `index` — maps reference tiles by frame index (custom JSON maps).
-    const cols = TILESET_COLUMNS;
-    const sheetWidth = cols * TILE_SIZE;
-    const sheetHeight = Math.ceil(TILES.length / cols) * TILE_SIZE;
-    const g = this.make.graphics();
-    for (const tile of TILES) {
-      const fx = (tile.index % cols) * TILE_SIZE;
-      const fy = Math.floor(tile.index / cols) * TILE_SIZE;
-      g.fillStyle(tile.base, 1);
-      g.fillRect(fx, fy, TILE_SIZE, TILE_SIZE);
-      g.fillStyle(tile.edge, 1);
-      g.fillRect(fx, fy, TILE_SIZE, 4);
-      g.fillRect(fx, fy + TILE_SIZE - 4, TILE_SIZE, 4);
-    }
-    g.generateTexture(TextureKeys.TilesetMain, sheetWidth, sheetHeight);
-    g.destroy();
+    // Ground tiles now carry procedural textures (see TileTextures.ts).
+    this.textures.addCanvas(
+      TextureKeys.TilesetMain,
+      renderTilesetCanvas(TILES, TILESET_COLUMNS),
+    );
 
-    // Player placeholder: a simple rounded blob with eyes.
+    // Player fallback: a simple rounded blob with eyes. Real class sprites
+    // are loaded above; this texture keeps unknown/legacy class data safe.
     const p = this.make.graphics();
     p.fillStyle(0xf2c94c, 1);
     p.fillCircle(TILE_SIZE / 2, TILE_SIZE / 2, TILE_SIZE / 2 - 4);

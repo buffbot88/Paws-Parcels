@@ -29,6 +29,10 @@ export const gameConfig: Phaser.Types.Core.GameConfig = {
   },
   render: {
     antialias: true,
-    roundPixels: true,
+    // Keep high-resolution village PNGs smooth when scaled in WebGL.
+    mipmapFilter: "LINEAR",
+    // The village pack is smooth 2.5D artwork, not pixel art. Preserve
+    // fractional positions so scaled sprites and camera motion stay fluid.
+    roundPixels: false,
   },
 };

@@ -52,7 +52,7 @@ function interactableFixture(overrides: Partial<MapData["interactables"][number]
 
 describe("map validation — shipped maps", () => {
   it("the hub zone matches the dimensions locked in design/world-map.md", () => {
-    expect(MAP_DIMENSIONS[ZoneKeys.CloverVillage]).toEqual({ width: 30, height: 20 });
+    expect(MAP_DIMENSIONS[ZoneKeys.CloverVillage]).toEqual({ width: 75, height: 75 });
   });
 
   it("validates cleanly and matches the expected dimensions", () => {
@@ -79,6 +79,25 @@ describe("map validation — shipped maps", () => {
       expect(
         result.errors.some((e) => e.includes("colliding tile")),
       ).toBe(false);
+    }
+  });
+
+  it("keeps former authored-building placeholders free of invisible walls", () => {
+    const map = MAPS[ZoneKeys.CloverVillage];
+    const footprints = [
+      { x: 27, y: 26, width: 5, height: 5 },
+      { x: 43, y: 26, width: 5, height: 5 },
+      { x: 19, y: 44, width: 3, height: 3 },
+      { x: 55, y: 44, width: 3, height: 3 },
+      { x: 19, y: 32, width: 3, height: 3 },
+      { x: 55, y: 32, width: 3, height: 3 },
+    ];
+    for (const footprint of footprints) {
+      for (let y = footprint.y; y < footprint.y + footprint.height; y++) {
+        for (let x = footprint.x; x < footprint.x + footprint.width; x++) {
+          expect(isWalkableTile(map, x, y), `legacy footprint (${x},${y})`).toBe(true);
+        }
+      }
     }
   });
 });
@@ -150,7 +169,7 @@ describe("map validation — rule coverage", () => {
           x: 1,
           y: 0,
           toZone: ZoneKeys.CloverVillage,
-          spawn: { x: 99, y: 99 },
+          spawn: { x: 80, y: 80 }, // clover village is now 75x75
         },
       ],
     });
@@ -274,9 +293,38 @@ describe("sanitizeSpawn / isWalkableTile", () => {
 });
 
 describe("npc placement", () => {
+  it("every shipped NPC is inside the compact 75x75 hub", () => {
+    const npcs = npcsJson.npcs as NPC[];
+    expect(npcs.every((npc) => npc.homeTile.x >= 0 && npc.homeTile.x < 75 && npc.homeTile.y >= 0 && npc.homeTile.y < 75)).toBe(true);
+  });
+
   it("every shipped NPC stands on a non-colliding tile", () => {
     const npcs = npcsJson.npcs as NPC[];
     expect(validateNpcPlacement(npcs)).toEqual([]);
+  });
+
+  it("places Pip outside the post office on its south entrance path", () => {
+    const pip = (npcsJson.npcs as NPC[]).find((npc) => npc.id === "npc-pip");
+    expect(pip?.homeTile).toEqual({ x: 29, y: 31 });
+    expect(MAPS[ZoneKeys.CloverVillage].rows[31]?.[29]).toBe("P");
+  });
+
+  it("places Lumi on the north path near the village edge", () => {
+    const lumi = (npcsJson.npcs as NPC[]).find((npc) => npc.id === "npc-lumi");
+    expect(lumi?.homeTile).toEqual({ x: 45, y: 32 });
+    expect(MAPS[ZoneKeys.CloverVillage].rows[32]?.[45]).toBe("P");
+  });
+
+  it("places Biscuit on the west village path", () => {
+    const biscuit = (npcsJson.npcs as NPC[]).find((npc) => npc.id === "npc-biscuit");
+    expect(biscuit?.homeTile).toEqual({ x: 20, y: 35 });
+    expect(MAPS[ZoneKeys.CloverVillage].rows[35]?.[20]).toBe("P");
+  });
+
+  it("places Maple on the northeast village path", () => {
+    const maple = (npcsJson.npcs as NPC[]).find((npc) => npc.id === "npc-maple");
+    expect(maple?.homeTile).toEqual({ x: 56, y: 35 });
+    expect(MAPS[ZoneKeys.CloverVillage].rows[35]?.[56]).toBe("P");
   });
 
   it("reports an NPC placed on a colliding tile", () => {
@@ -286,7 +334,7 @@ describe("npc placement", () => {
         ...npcs[0],
         id: "npc-bad",
         homeZone: "zone-clover-village",
-        homeTile: { x: 4, y: 3 }, // post office wall column (W)
+        homeTile: { x: 0, y: 0 }, // outer tree boundary (T) remains colliding
       },
     ] as NPC[];
     const errors = validateNpcPlacement(bad);

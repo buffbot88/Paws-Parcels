@@ -84,6 +84,20 @@ export class DialoguePanel {
     return true;
   }
 
+  /**
+   * Append a line while open (AI-generated replies land after the canned
+   * lines). If the player is already on the last line, reveal it now.
+   */
+  appendLine(line: string): void {
+    if (!this.isOpenState || line.trim() === "") return;
+    const wasOnLast = this.index === this.lines.length - 1;
+    this.lines.push(line);
+    if (wasOnLast) {
+      this.index = this.lines.length - 1;
+      this.renderLine();
+    }
+  }
+
   /** Advances to the next line, or closes after the final one. */
   advance(): void {
     if (!this.isOpenState) return;

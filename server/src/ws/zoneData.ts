@@ -23,6 +23,8 @@ export interface ZoneData {
   zoneId: string;
   width: number;
   height: number;
+  /** The map's default spawn tile (defeat respawn + stale-position rescue). */
+  spawn: { x: number; y: number };
   /** True when the tile at (x, y) is in bounds and walkable. */
   isWalkable: (x: number, y: number) => boolean;
   /** Outdoor monster spawn points (design/monsters.md §1); empty in safe zones. */
@@ -33,6 +35,7 @@ interface MapFile {
   width: number;
   height: number;
   rows: string[];
+  spawn?: { x: number; y: number };
   monsterSpawns?: { id: string; key: string; x: number; y: number }[];
 }
 
@@ -64,6 +67,7 @@ export function loadZoneData(zoneId: string): ZoneData | null {
     zoneId,
     width: map.width,
     height: map.height,
+    spawn: map.spawn ?? { x: 0, y: 0 },
     isWalkable: (x, y) => isWalkableTile(map, x, y),
     monsterSpawns: normalizeSpawns(map.monsterSpawns),
   };

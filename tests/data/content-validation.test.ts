@@ -70,8 +70,8 @@ describe("shipped content", () => {
   it("has the expected MVP content counts", () => {
     const data = realContent();
     expect(data.npcs).toHaveLength(5);
-    expect(data.items).toHaveLength(20);
-    expect(data.quests).toHaveLength(19);
+    expect(data.items).toHaveLength(21);
+    expect(data.quests).toHaveLength(23);
     expect(data.upgrades).toHaveLength(3);
     expect(data.dialogue).toHaveLength(6);
   });
@@ -108,7 +108,7 @@ describe("NPC rules", () => {
 
   it("rejects a homeTile outside the zone bounds", () => {
     const data = baseContent();
-    data.npcs[0] = { ...data.npcs[0], homeTile: { x: 31, y: 5 } }; // clover village is 30x20
+    data.npcs[0] = { ...data.npcs[0], homeTile: { x: 76, y: 5 } }; // clover village is 75x75
     expect(validateContent(data).errors.some((e) => e.includes("outside"))).toBe(true);
   });
 

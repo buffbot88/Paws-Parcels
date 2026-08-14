@@ -41,11 +41,10 @@
       "label": "Clover Village",
       "x": 20,
       "y": 0,
-      "toZone": "zone-clover-village",
-      "spawn": {
-        "x": 15,
-        "y": 17
-      }
+      "toZone": "zone-clover-village",   "spawn": {
+    "x": 37,
+    "y": 74
+   }
     }
   ],
   "interactables": [

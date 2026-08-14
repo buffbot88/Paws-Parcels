@@ -2,7 +2,7 @@
 
 > Companion docs: [`BuildPlan.md`](../BuildPlan.md), [`decisions.md`](decisions.md),
 > [`monsters.md`](monsters.md), [`database-schema.md`](database-schema.md).
-> Status: ⬜ planned (Phase 4 implementation).
+> Status: 🟡 Phase 4A — Clover Village tutorial foundation implemented.
 
 ---
 
@@ -75,14 +75,27 @@ and having the quest in `active` state. The server validates:
 
 ## 6. First MVP chain
 
-**Chain: "Pip's First Delivery"** (introduces delivery gating)
+The first chain is now a **Clover Village-only tutorial**, deliberately avoiding
+Happy Valley until the player understands movement, interaction, quest acceptance,
+parcel carrying, and delivery completion.
 
-> Note: the outdoor combat zone is **Happy Valley** (Phase 3, monsters) — the
-> gathering/combat quests below land once the zone returns.
+**Chain: "Clover Village Courier Circuit"**
 
-| Position | Quest | Type | Prerequisite | Reward |
+| Position | Quest | Type | Route | Reward |
 |---|---|---|---|---|
-| 1 | `quest-pip-intro` | Gather 3 berries from Happy Valley | none | 10 Stamps, 50 XP |
-| 2 | `quest-warm-letter-maple` | Deliver letter → Maple | `quest-pip-intro` completed | 15 Stamps, 80 XP, +1 Pip rep |
-| 3 | `quest-maple-reply` | Deliver reply → Pip | `quest-warm-letter-maple` completed | 20 Stamps, 100 XP, +1 Maple rep |
-| 4 | `quest-valley-boars` | Defeat 5 Wild Boars in Happy Valley | `quest-maple-reply` completed | 25 Stamps, 150 XP, unlocks next village delivery chain |
+| 1 | `quest-village-welcome` | Delivery | Pip → Biscuit | 5 Stamps, 15 XP, +1 Biscuit rep |
+| 2 | `quest-fresh-bread-biscuit` | Delivery | Pip → Biscuit | 8 Stamps, 20 XP, +1 Biscuit rep |
+| 3 | `quest-flower-note-maple` | Delivery | Biscuit → Maple | 10 Stamps, 25 XP, +1 Maple rep |
+| 4 | `quest-moon-note-lumi` | Delivery | Maple → Lumi | 12 Stamps, 30 XP, +1 Lumi rep |
+| 5 | `quest-garden-greeting-moss` | Delivery | Lumi → Moss | 15 Stamps, 40 XP, +1 Moss rep |
+
+Quest-bound parcels are created by the server when a quest is accepted, marked
+locked in the inventory stack metadata, and removed only after the server validates
+the active quest, recipient, and bound item. The existing Happy Valley gathering
+and combat quests remain follow-up content rather than onboarding requirements.
+
+## 7. Follow-up village content
+
+Optional local errands can follow the tutorial: Moss's lost pebble, Pip's missing
+letter opener, Biscuit's herb request, Maple's picnic delivery, and Lumi's lost
+notebook. These should be added after the core circuit is playable and tested.

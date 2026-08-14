@@ -135,10 +135,22 @@ describe("GameSocket.connect", () => {
       "/api/ws-token?characterId=5",
       expect.objectContaining({
         headers: { Authorization: `Bearer ${JWT}` },
+        cache: "no-store",
       }),
     );
     expect(FakeWebSocket.instances).toHaveLength(1);
     expect(FakeWebSocket.instances[0].url).toBe("ws://localhost:3001/ws");
+  });
+
+  it("calls the injected fetch with the global receiver", async () => {
+    let receiver: unknown;
+    const fetchImpl = function (this: unknown, input: RequestInfo | URL, init?: RequestInit): Promise<Response> {
+      receiver = this;
+      return makeFetch()(input, init);
+    } as typeof fetch;
+    const socket = makeSocket({ fetchImpl });
+    await socket.connect();
+    expect(receiver).toBe(globalThis);
   });
 
   it("authenticates once the socket opens", async () => {
@@ -187,7 +199,10 @@ describe("GameSocket.connect", () => {
     await socket.connect();
     expect(FakeWebSocket.instances).toHaveLength(0);
     expect(socket.statusValue).toBe("closed");
-    expect(onError).toHaveBeenCalledWith("WS_TOKEN_FAILED", expect.any(String));
+    expect(onError).toHaveBeenCalledWith(
+      "WS_TOKEN_NETWORK_FAILED",
+      "Network error fetching ws-token: offline",
+    );
   });
 
   it("is re-entrancy safe: a second connect while open does not stack sockets", async () => {
@@ -288,11 +303,16 @@ describe("GameSocket message dispatch", () => {
     const ws = await connectedSocket(socket);
     ws.receive({
       type: "player_snapshot",
-      players: [{ characterId: 9, pos: { x: 3, y: 4 } }],
+      zoneId: "zone-clover-village",
+      sequence: 12,
+      serverTime: 1700000000123,
+      players: [{ characterId: 9, pos: { x: 3, y: 4 }, name: "Birch", classKey: "fox-archer" }],
     });
-    expect(onSnapshot).toHaveBeenCalledWith([
-      { characterId: 9, pos: { x: 3, y: 4 } },
-    ]);
+    expect(onSnapshot).toHaveBeenCalledWith(
+      [{ characterId: 9, pos: { x: 3, y: 4 }, name: "Birch", classKey: "fox-archer" }],
+      "zone-clover-village",
+      { sequence: 12, serverTime: 1700000000123, receivedAt: expect.any(Number) },
+    );
     expect(onZoneState).toHaveBeenCalled();
   });
 
@@ -327,6 +347,19 @@ describe("GameSocket message dispatch", () => {
     const ws = await connectedSocket(socket);
     ws.receive({ type: "error", code: "MOVE_COLLISION", message: "nope", requestType: "move_intent" });
     expect(onError).toHaveBeenCalledWith("MOVE_COLLISION", "nope");
+  });
+
+  it("sends and dispatches same-zone chat messages", async () => {
+    const socket = makeSocket();
+    const onChat = vi.fn();
+    socket.callbacks.onChatMessage = onChat;
+    const ws = await connectedSocket(socket);
+
+    socket.chat("Hello, village!");
+    expect(ws.sentOfType("zone_chat")).toEqual([{ type: "zone_chat", text: "Hello, village!" }]);
+
+    ws.receive({ type: "zone_chat", characterId: 9, name: "Birch", text: "Welcome!" });
+    expect(onChat).toHaveBeenCalledWith({ characterId: 9, name: "Birch", text: "Welcome!" });
   });
 });
 

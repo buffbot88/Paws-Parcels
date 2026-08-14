@@ -1,0 +1,312 @@
+{
+  "zoneId": "zone-clover-village",
+  "zoneName": "Clover Village",
+  "map": {
+    "width": 75,
+    "height": 75
+  },
+  "camera": {
+    "zoom": 0.8,
+    "viewportWidth": 960,
+    "viewportHeight": 540
+  },
+  "visibleTiles": {
+    "x": 25,
+    "y": 15
+  },
+  "entities": [
+    {
+      "id": "local-player",
+      "kind": "player",
+      "x": 56.34164659497009,
+      "y": 35.846885585121804,
+      "scale": 1.33,
+      "depth": 36.846885585121804,
+      "asset": "cat-mage"
+    },
+    {
+      "id": "npc-pip",
+      "kind": "npc",
+      "x": 29.5,
+      "y": 31.440414724171166,
+      "scale": 0.095,
+      "depth": 32.440937952206,
+      "asset": "citizen"
+    },
+    {
+      "id": "npc-maple",
+      "kind": "npc",
+      "x": 49.5,
+      "y": 38.44041472417117,
+      "scale": 0.095,
+      "depth": 39.440937952206,
+      "asset": "astrologer"
+    },
+    {
+      "id": "npc-biscuit",
+      "kind": "npc",
+      "x": 20.5,
+      "y": 35.44041472417117,
+      "scale": 0.095,
+      "depth": 36.440937952206,
+      "asset": "artist"
+    },
+    {
+      "id": "npc-lumi",
+      "kind": "npc",
+      "x": 45.5,
+      "y": 32.44041472417117,
+      "scale": 0.095,
+      "depth": 33.440937952206,
+      "asset": "astrologer"
+    },
+    {
+      "id": "npc-moss",
+      "kind": "npc",
+      "x": 37.5,
+      "y": 46.44041472417117,
+      "scale": 0.095,
+      "depth": 47.440937952206006,
+      "asset": "artist"
+    },
+    {
+      "id": "set-piece-0",
+      "kind": "set-piece",
+      "x": 29.5,
+      "y": 31,
+      "scale": 0.5,
+      "depth": 32,
+      "asset": "clover-village-building-post-office"
+    },
+    {
+      "id": "set-piece-1",
+      "kind": "set-piece",
+      "x": 45.5,
+      "y": 31,
+      "scale": 0.4,
+      "depth": 32,
+      "asset": "clover-village-building-shop"
+    },
+    {
+      "id": "set-piece-2",
+      "kind": "set-piece",
+      "x": 20.5,
+      "y": 47,
+      "scale": 0.28,
+      "depth": 48,
+      "asset": "clover-village-building-cafe"
+    },
+    {
+      "id": "set-piece-3",
+      "kind": "set-piece",
+      "x": 56.5,
+      "y": 47,
+      "scale": 0.28,
+      "depth": 48,
+      "asset": "clover-village-building-florist"
+    },
+    {
+      "id": "set-piece-4",
+      "kind": "set-piece",
+      "x": 16.5,
+      "y": 35,
+      "scale": 0.22,
+      "depth": 36,
+      "asset": "clover-village-building-cottage-north-west"
+    },
+    {
+      "id": "set-piece-5",
+      "kind": "set-piece",
+      "x": 56.5,
+      "y": 35,
+      "scale": 0.18,
+      "depth": 36,
+      "asset": "clover-village-building-cottage-north-east"
+    },
+    {
+      "id": "set-piece-6",
+      "kind": "set-piece",
+      "x": 8.5,
+      "y": 16,
+      "scale": 0.27,
+      "depth": 17,
+      "asset": "clover-village-tree"
+    },
+    {
+      "id": "set-piece-7",
+      "kind": "set-piece",
+      "x": 66.5,
+      "y": 21,
+      "scale": 0.29,
+      "depth": 22,
+      "asset": "clover-village-tree-alt"
+    },
+    {
+      "id": "set-piece-8",
+      "kind": "set-piece",
+      "x": 12.5,
+      "y": 64,
+      "scale": 0.25,
+      "depth": 65,
+      "asset": "clover-village-tree"
+    },
+    {
+      "id": "set-piece-9",
+      "kind": "set-piece",
+      "x": 64.5,
+      "y": 64,
+      "scale": 0.25,
+      "depth": 65,
+      "asset": "clover-village-tree-alt"
+    },
+    {
+      "id": "set-piece-10",
+      "kind": "set-piece",
+      "x": 19.5,
+      "y": 27,
+      "scale": 0.42,
+      "depth": 28,
+      "asset": "clover-village-greenery"
+    },
+    {
+      "id": "set-piece-11",
+      "kind": "set-piece",
+      "x": 24.5,
+      "y": 33,
+      "scale": 0.34,
+      "depth": 34,
+      "asset": "clover-village-greenery-alt"
+    },
+    {
+      "id": "set-piece-12",
+      "kind": "set-piece",
+      "x": 51.5,
+      "y": 33,
+      "scale": 0.36,
+      "depth": 34,
+      "asset": "clover-village-greenery-third"
+    },
+    {
+      "id": "set-piece-13",
+      "kind": "set-piece",
+      "x": 56.5,
+      "y": 35,
+      "scale": 0.42,
+      "depth": 36,
+      "asset": "clover-village-greenery"
+    },
+    {
+      "id": "set-piece-14",
+      "kind": "set-piece",
+      "x": 24.5,
+      "y": 45,
+      "scale": 0.32,
+      "depth": 46,
+      "asset": "clover-village-greenery-alt"
+    },
+    {
+      "id": "set-piece-15",
+      "kind": "set-piece",
+      "x": 51.5,
+      "y": 45,
+      "scale": 0.32,
+      "depth": 46,
+      "asset": "clover-village-greenery-third"
+    },
+    {
+      "id": "set-piece-16",
+      "kind": "set-piece",
+      "x": 16.5,
+      "y": 52,
+      "scale": 0.36,
+      "depth": 53,
+      "asset": "clover-village-greenery-alt"
+    },
+    {
+      "id": "set-piece-17",
+      "kind": "set-piece",
+      "x": 60.5,
+      "y": 52,
+      "scale": 0.36,
+      "depth": 53,
+      "asset": "clover-village-greenery-third"
+    },
+    {
+      "id": "set-piece-18",
+      "kind": "set-piece",
+      "x": 34.5,
+      "y": 22,
+      "scale": 0.55,
+      "depth": 23.01,
+      "asset": "clover-village-stones"
+    },
+    {
+      "id": "set-piece-19",
+      "kind": "set-piece",
+      "x": 22.5,
+      "y": 40,
+      "scale": 0.34,
+      "depth": 41.01,
+      "asset": "clover-village-stones-alt"
+    },
+    {
+      "id": "set-piece-20",
+      "kind": "set-piece",
+      "x": 47.5,
+      "y": 39,
+      "scale": 0.32,
+      "depth": 40.01,
+      "asset": "clover-village-stones-third"
+    },
+    {
+      "id": "object-counter",
+      "kind": "interactable",
+      "x": 28,
+      "y": 28,
+      "asset": "counter"
+    },
+    {
+      "id": "object-quest-board",
+      "kind": "interactable",
+      "x": 32,
+      "y": 38,
+      "asset": "quest-board"
+    },
+    {
+      "id": "object-mailbox",
+      "kind": "interactable",
+      "x": 30,
+      "y": 38,
+      "asset": "mailbox"
+    },
+    {
+      "id": "object-shop",
+      "kind": "interactable",
+      "x": 44,
+      "y": 28,
+      "asset": "shop"
+    },
+    {
+      "id": "object-welcome-sign",
+      "kind": "interactable",
+      "x": 38,
+      "y": 21,
+      "asset": "sign"
+    },
+    {
+      "id": "remote-player-2",
+      "kind": "player",
+      "x": 46.5,
+      "y": 27.5,
+      "scale": 1,
+      "depth": 28.5,
+      "asset": "fox-archer"
+    }
+  ],
+  "notes": [
+    "Captured from the live Phaser canvas with Ctrl+Shift+V.",
+    "The screenshot excludes DOM overlays; metadata includes the world entities used for visual review."
+  ],
+  "capturedAt": "2026-08-11T00:33:35.417Z",
+  "capturedBy": "stressthismess"
+}

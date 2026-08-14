@@ -3,10 +3,8 @@ import type { CharacterClassRow } from "./CharacterClass.ts";
 import { getZoneByKey } from "./Zone.ts";
 import { logger } from "../middleware/logger.ts";
 
-/** A row object as returned by node:sqlite (null | number | bigint | string). */
 type SqlRow = Record<string, unknown>;
 
-/** Character row as stored in the Paws `characters` table. */
 export interface CharacterRow {
   id: number;
   account_id: number;
@@ -18,7 +16,6 @@ export interface CharacterRow {
   level: number;
 }
 
-/** Character + class key, used to start a WebSocket session. */
 export interface CharacterSessionRow {
   id: number;
   account_id: number;
@@ -30,7 +27,6 @@ export interface CharacterSessionRow {
   level: number;
 }
 
-/** Combat-relevant stats joined for the WS game server (Phase 3). */
 export interface CharacterCombatStats {
   max_hp: number;
   hp: number;
@@ -41,18 +37,46 @@ export interface CharacterCombatStats {
   crit_multiplier: number;
 }
 
-/** Outcome of createCharacter — distinguishes a taken name from other failures. */
 export type CreateCharacterResult =
   | { ok: true; character: CharacterRow }
   | { ok: false; reason: "NAME_TAKEN" };
 
-/**
- * Create a character and its 1:1 player-state rows (character_stats derived
- * from the class template, plus a starter inventory) in one transaction.
- * Initial spawn is the Clover Village default (matches zones seed + map JSON).
- * Returns NAME_TAKEN when the account already has a character with that name
- * (the UNIQUE(account_id, name) index is the source of truth).
- */
+export interface CharacterProfile {
+  character: Record<string, unknown>;
+  class: Record<string, unknown>;
+  stats: Record<string, number>;
+  inventory: {
+    slotCount: number;
+    items: {
+      instanceId: number;
+      slot: number | null;
+      quantity: number;
+      key: string;
+      name: string;
+      description: string;
+      category: string;
+      rarity: string;
+      icon: string | null;
+    }[];
+  };
+  skills: {
+    skillPoints: number;
+    entries: {
+      key: string;
+      name: string;
+      description: string;
+      cost: number;
+      requiredLevel: number;
+      prerequisiteKey: string | null;
+      unlocked: boolean;
+    }[];
+  };
+}
+
+export type UnlockSkillResult =
+  | { ok: true; profile: CharacterProfile }
+  | { ok: false; reason: "CHARACTER_NOT_FOUND" | "SKILL_NOT_FOUND" | "WRONG_CLASS" | "LEVEL_REQUIRED" | "PREREQUISITE_REQUIRED" | "NOT_ENOUGH_POINTS" | "ALREADY_UNLOCKED" };
+
 export async function createCharacter(params: {
   accountId: number;
   name: string;
@@ -63,257 +87,192 @@ export async function createCharacter(params: {
   const base = params.cls.base_stats;
   const maxHp = base.hp ?? 100;
   const resourceMax = params.cls.resource_max;
-
-  // New couriers start at the zone's authoritative default spawn (zones
-  // seed), falling back to the schema defaults only if the zone row is
-  // missing — never duplicate coordinates in two places.
   const startZone = "zone-clover-village";
   const startZoneRow = await getZoneByKey(startZone);
-  if (startZoneRow === null) {
-    logger.warn("createCharacter: start zone missing from zones table", {
-      zone: startZone,
-    });
-  }
-  const startX = startZoneRow?.default_spawn_x ?? 15;
-  const startY = startZoneRow?.default_spawn_y ?? 13;
+  if (startZoneRow === null) logger.warn("createCharacter: start zone missing from zones table", { zone: startZone });
+  const startX = startZoneRow?.default_spawn_x ?? 62;
+  const startY = startZoneRow?.default_spawn_y ?? 65;
 
   const db = getDb();
   try {
     db.exec("BEGIN");
-
-    const info = db
-      .prepare(
-        `INSERT INTO characters
-           (account_id, class_id, name, appearance, zone_id, pos_x, pos_y,
-            level, experience, stamps, hp, max_hp, resource_current)
-         VALUES (?, ?, ?, ?, ?, ?, ?, 1, 0, 0, ?, ?, ?)`,
-      )
-      .run(
-        params.accountId,
-        params.classId,
-        params.name,
-        JSON.stringify(params.appearance),
-        startZone,
-        startX,
-        startY,
-        maxHp,
-        maxHp,
-        resourceMax,
-      );
-    const characterId = Number(info.lastInsertRowid);
-
-    // character_stats — the resource family is chosen by the class template.
-    // maxCol/regenCol come from a closed whitelist (stamina/mana/focus) —
-    // never from client or DB input, so string-building the column names is
-    // injection-safe here.
-    const res =
-      params.cls.primary_resource === "mana"
-        ? { maxCol: "mana_max", regenCol: "mana_regen" }
-        : params.cls.primary_resource === "focus"
-          ? { maxCol: "focus_max", regenCol: "focus_regen" }
-          : { maxCol: "stamina_max", regenCol: "stamina_regen" };
-    db.prepare(
-      `INSERT INTO character_stats
-         (character_id, attack, defense, speed, crit_chance, crit_multiplier,
-          ${res.maxCol}, ${res.regenCol})
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
-    ).run(
-      characterId,
-      base.attack ?? 10,
-      base.defense ?? 5,
-      base.speed ?? 180,
-      base.crit_chance ?? 5,
-      base.crit_multiplier ?? 1.5,
-      resourceMax,
-      params.cls.resource_regen_per_sec,
+    const info = db.prepare(`INSERT INTO characters
+      (account_id, class_id, name, appearance, zone_id, pos_x, pos_y, level, experience, stamps, hp, max_hp, resource_current)
+      VALUES (?, ?, ?, ?, ?, ?, ?, 1, 0, 0, ?, ?, ?)`).run(
+      params.accountId, params.classId, params.name, JSON.stringify(params.appearance),
+      startZone, startX, startY, maxHp, maxHp, resourceMax,
     );
-
-    // Starter inventory (12 slots, schema default).
-    db.prepare(
-      "INSERT INTO inventories (character_id, slot_count) VALUES (?, 12)",
-    ).run(characterId);
-
+    const characterId = Number(info.lastInsertRowid);
+    const res = params.cls.primary_resource === "mana"
+      ? { maxCol: "mana_max", regenCol: "mana_regen" }
+      : params.cls.primary_resource === "focus"
+        ? { maxCol: "focus_max", regenCol: "focus_regen" }
+        : { maxCol: "stamina_max", regenCol: "stamina_regen" };
+    db.prepare(`INSERT INTO character_stats
+      (character_id, attack, defense, speed, crit_chance, crit_multiplier, ${res.maxCol}, ${res.regenCol})
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?)`).run(
+      characterId, base.attack ?? 10, base.defense ?? 5, base.speed ?? 180,
+      base.crit_chance ?? 5, base.crit_multiplier ?? 1.5,
+      resourceMax, params.cls.resource_regen_per_sec,
+    );
+    db.prepare("INSERT INTO inventories (character_id, slot_count) VALUES (?, 12)").run(characterId);
     db.exec("COMMIT");
-    return {
-      ok: true,
-      character: {
-        id: characterId,
-        account_id: params.accountId,
-        class_id: params.classId,
-        name: params.name,
-        zone_id: startZone,
-        pos_x: startX,
-        pos_y: startY,
-        level: 1,
-      },
-    };
+    return { ok: true, character: { id: characterId, account_id: params.accountId, class_id: params.classId, name: params.name, zone_id: startZone, pos_x: startX, pos_y: startY, level: 1 } };
   } catch (err) {
-    try {
-      db.exec("ROLLBACK");
-    } catch (rollbackErr) {
-      logger.error("createCharacter: rollback failed", {
-        error: String(rollbackErr),
-      });
-    }
+    try { db.exec("ROLLBACK"); } catch (rollbackErr) { logger.error("createCharacter: rollback failed", { error: String(rollbackErr) }); }
     if (isUniqueConstraintError(err)) return { ok: false, reason: "NAME_TAKEN" };
     throw err;
   }
 }
 
-/** The public character shape used by /api/auth/me and /api/characters. */
 export function toPublicCharacter(c: CharacterRow): Record<string, unknown> {
-  return {
-    id: c.id,
-    name: c.name,
-    class_id: c.class_id,
-    zone_id: c.zone_id,
-    pos_x: c.pos_x,
-    pos_y: c.pos_y,
-    level: c.level,
-  };
+  return { id: c.id, name: c.name, class_id: c.class_id, zone_id: c.zone_id, pos_x: c.pos_x, pos_y: c.pos_y, level: c.level };
 }
 
-/** node:sqlite reports unique violations as "UNIQUE constraint failed: …". */
 function isUniqueConstraintError(err: unknown): boolean {
   return String(err).includes("UNIQUE constraint failed");
 }
 
-/**
- * Look up all characters that belong to the given Paws account id.
- * Returns an empty array when the account has no characters yet — the
- * client prompts the player to create one (courier desk).
- */
-export async function getCharactersByAccountId(
-  accountId: number,
-): Promise<CharacterRow[]> {
-  const rows = getDb()
-    .prepare(
-      `SELECT id, account_id, class_id, name, zone_id, pos_x, pos_y, level
-         FROM characters
-        WHERE account_id = ?
-        ORDER BY id ASC`,
-    )
-    .all(accountId) as SqlRow[];
+export async function getCharactersByAccountId(accountId: number): Promise<CharacterRow[]> {
+  const rows = getDb().prepare(`SELECT id, account_id, class_id, name, zone_id, pos_x, pos_y, level FROM characters WHERE account_id = ? ORDER BY id ASC`).all(accountId) as SqlRow[];
   return rows.map(rowToCharacter);
 }
 
-/** Look up a single character by id, or null. */
-export async function getCharacterById(
-  characterId: number,
-): Promise<CharacterRow | null> {
-  const row = getDb()
-    .prepare(
-      `SELECT id, account_id, class_id, name, zone_id, pos_x, pos_y, level
-         FROM characters
-        WHERE id = ?
-        LIMIT 1`,
-    )
-    .get(characterId) as SqlRow | undefined;
+export async function getCharacterById(characterId: number): Promise<CharacterRow | null> {
+  const row = getDb().prepare(`SELECT id, account_id, class_id, name, zone_id, pos_x, pos_y, level FROM characters WHERE id = ? LIMIT 1`).get(characterId) as SqlRow | undefined;
   return row === undefined ? null : rowToCharacter(row);
 }
 
-/**
- * Look up a character joined with its class key and combat stats — the
- * payload the WebSocket server needs to open a session (name, class, zone,
- * position, and the Phase 3 HP/attack/defense stats for combat).
- */
-export async function getCharacterWithClass(
-  characterId: number,
-): Promise<CharacterSessionRow & CharacterCombatStats | null> {
-  const row = getDb()
-    .prepare(
-      `SELECT c.id, c.account_id, c.name, cc.\`key\` AS class_key,
-              c.zone_id, c.pos_x, c.pos_y, c.level,
-              c.hp, c.max_hp, cs.attack, cs.defense, cs.speed,
-              cs.crit_chance, cs.crit_multiplier
-         FROM characters c
-         JOIN character_classes cc ON cc.id = c.class_id
-         LEFT JOIN character_stats cs ON cs.character_id = c.id
-        WHERE c.id = ?
-        LIMIT 1`,
-    )
-    .get(characterId) as SqlRow | undefined;
+export async function getCharacterWithClass(characterId: number): Promise<CharacterSessionRow & CharacterCombatStats | null> {
+  const row = getDb().prepare(`SELECT c.id, c.account_id, c.name, cc.\`key\` AS class_key,
+      c.zone_id, c.pos_x, c.pos_y, c.level, c.hp, c.max_hp, cs.attack, cs.defense, cs.speed,
+      cs.crit_chance, cs.crit_multiplier FROM characters c JOIN character_classes cc ON cc.id = c.class_id
+      LEFT JOIN character_stats cs ON cs.character_id = c.id WHERE c.id = ? LIMIT 1`).get(characterId) as SqlRow | undefined;
   if (row === undefined) return null;
+  return { id: Number(row.id), account_id: Number(row.account_id), name: String(row.name ?? ""), class_key: String(row.class_key ?? ""), zone_id: String(row.zone_id ?? "zone-clover-village"), pos_x: Number(row.pos_x ?? 0), pos_y: Number(row.pos_y ?? 0), level: Number(row.level ?? 1), hp: Number(row.hp ?? row.max_hp ?? 100), max_hp: Number(row.max_hp ?? 100), attack: Number(row.attack ?? 10), defense: Number(row.defense ?? 5), speed: Number(row.speed ?? 180), crit_chance: Number(row.crit_chance ?? 5), crit_multiplier: Number(row.crit_multiplier ?? 1.5) };
+}
+
+/** Load all server-owned data needed by the Character Info, Inventory, and Skill Tree screens. */
+export async function getCharacterProfile(characterId: number): Promise<CharacterProfile | null> {
+  const db = getDb();
+  const row = db.prepare(`SELECT c.id, c.account_id, c.class_id, c.name, c.appearance, c.zone_id, c.pos_x, c.pos_y,
+      c.level, c.experience, c.stamps, c.hp, c.max_hp, c.resource_current, c.skill_points,
+      cc.\`key\` AS class_key, cc.display_name AS class_name, cc.animal, cc.role, cc.primary_resource,
+      cc.resource_max, cc.description AS class_description,
+      cs.attack, cs.defense, cs.speed, cs.crit_chance, cs.crit_multiplier,
+      cs.stamina_max, cs.stamina_regen, cs.mana_max, cs.mana_regen, cs.focus_max, cs.focus_regen
+      FROM characters c JOIN character_classes cc ON cc.id = c.class_id
+      LEFT JOIN character_stats cs ON cs.character_id = c.id WHERE c.id = ? LIMIT 1`).get(characterId) as SqlRow | undefined;
+  if (row === undefined) return null;
+  const inv = db.prepare(`SELECT i.id AS instance_id, i.slot, i.quantity, d.key, d.name, d.description,
+      d.category, d.rarity, d.icon FROM inventories v LEFT JOIN inventory_items i ON i.character_id = v.character_id
+      LEFT JOIN item_definitions d ON d.id = i.item_definition_id WHERE v.character_id = ? ORDER BY i.slot ASC, i.id ASC`).all(characterId) as SqlRow[];
+  const skillRows = db.prepare(`SELECT s.skill_key, s.name, s.description, s.cost, s.required_level,
+      s.prerequisite_key, CASE WHEN cs.skill_key IS NULL THEN 0 ELSE 1 END AS unlocked
+      FROM skill_definitions s LEFT JOIN character_skills cs ON cs.skill_key = s.skill_key AND cs.character_id = ?
+      WHERE s.class_key = ? ORDER BY s.required_level ASC, s.skill_key ASC`).all(characterId, String(row.class_key ?? "")) as SqlRow[];
+  const stats: Record<string, number> = {};
+  for (const key of ["attack", "defense", "speed", "crit_chance", "crit_multiplier", "stamina_max", "stamina_regen", "mana_max", "mana_regen", "focus_max", "focus_regen"]) {
+    if (row[key] !== null && row[key] !== undefined) stats[key] = Number(row[key]);
+  }
   return {
-    id: Number(row.id),
-    account_id: Number(row.account_id),
-    name: String(row.name ?? ""),
-    class_key: String(row.class_key ?? ""),
-    zone_id: String(row.zone_id ?? "zone-clover-village"),
-    pos_x: Number(row.pos_x ?? 0),
-    pos_y: Number(row.pos_y ?? 0),
-    level: Number(row.level ?? 1),
-    hp: Number(row.hp ?? row.max_hp ?? 100),
-    max_hp: Number(row.max_hp ?? 100),
-    attack: Number(row.attack ?? 10),
-    defense: Number(row.defense ?? 5),
-    speed: Number(row.speed ?? 180),
-    crit_chance: Number(row.crit_chance ?? 5),
-    crit_multiplier: Number(row.crit_multiplier ?? 1.5),
+    character: { id: Number(row.id), name: String(row.name ?? ""), classId: Number(row.class_id), level: Number(row.level ?? 1), experience: Number(row.experience ?? 0), stamps: Number(row.stamps ?? 0), hp: Number(row.hp ?? 0), maxHp: Number(row.max_hp ?? 0), resource: Number(row.resource_current ?? 0), zoneId: String(row.zone_id ?? ""), pos: { x: Number(row.pos_x ?? 0), y: Number(row.pos_y ?? 0) }, appearance: parseJsonObject(row.appearance) },
+    class: { key: String(row.class_key ?? ""), name: String(row.class_name ?? ""), animal: String(row.animal ?? ""), role: String(row.role ?? ""), primaryResource: String(row.primary_resource ?? ""), resourceMax: Number(row.resource_max ?? 0), description: String(row.class_description ?? "") },
+    stats,
+    inventory: { slotCount: Number((db.prepare("SELECT slot_count FROM inventories WHERE character_id = ?").get(characterId) as SqlRow | undefined)?.slot_count ?? 12), items: inv.filter((item) => item.instance_id !== null).map((item) => ({ instanceId: Number(item.instance_id), slot: item.slot === null ? null : Number(item.slot), quantity: Number(item.quantity ?? 1), key: String(item.key ?? ""), name: String(item.name ?? "Unknown parcel"), description: String(item.description ?? ""), category: String(item.category ?? ""), rarity: String(item.rarity ?? "common"), icon: item.icon === null ? null : String(item.icon) })) },
+    skills: { skillPoints: Number(row.skill_points ?? 0), entries: skillRows.map((skill) => ({ key: String(skill.skill_key), name: String(skill.name), description: String(skill.description), cost: Number(skill.cost ?? 1), requiredLevel: Number(skill.required_level ?? 1), prerequisiteKey: skill.prerequisite_key === null ? null : String(skill.prerequisite_key), unlocked: Number(skill.unlocked) === 1 })) },
   };
 }
 
-/**
- * Persist a character's current HP (best-effort; called on defeat, zone
- * leave, and logout so the health bar survives across sessions).
- */
-export async function updateCharacterHp(
-  characterId: number,
-  hp: number,
-  maxHp: number,
-): Promise<void> {
-  getDb()
-    .prepare(
-      "UPDATE characters SET hp = ?, max_hp = ?, updated_at = ? WHERE id = ?",
-    )
-    .run(hp, maxHp, new Date().toISOString(), characterId);
+/** Store loot in SQLite, merging stacks and allocating the first free slot. */
+export async function grantInventoryItems(characterId: number, items: { itemKey: string; quantity: number }[]): Promise<void> {
+  const db = getDb();
+  const inventory = db.prepare("SELECT slot_count FROM inventories WHERE character_id = ?").get(characterId) as SqlRow | undefined;
+  if (inventory === undefined) return;
+  const findDef = db.prepare("SELECT id, max_stack FROM item_definitions WHERE key = ? LIMIT 1");
+  const findStacks = db.prepare("SELECT id, quantity FROM inventory_items WHERE character_id = ? AND item_definition_id = ? AND quantity < ? ORDER BY id ASC");
+  const findSlot = db.prepare("SELECT slot FROM inventory_items WHERE character_id = ? AND slot IS NOT NULL");
+  const insert = db.prepare("INSERT INTO inventory_items (character_id, item_definition_id, slot, quantity) VALUES (?, ?, ?, ?)");
+  for (const item of items) {
+    let remaining = Math.max(1, Math.floor(item.quantity));
+    const def = findDef.get(item.itemKey) as SqlRow | undefined;
+    if (def === undefined) continue;
+    const maxStack = Math.max(1, Number(def.max_stack ?? 1));
+    const stacks = findStacks.all(characterId, Number(def.id), maxStack) as SqlRow[];
+    for (const stack of stacks) {
+      if (remaining <= 0) break;
+      const add = Math.min(remaining, maxStack - Number(stack.quantity));
+      if (add <= 0) continue;
+      db.prepare("UPDATE inventory_items SET quantity = quantity + ? WHERE id = ?").run(add, Number(stack.id));
+      remaining -= add;
+    }
+    while (remaining > 0) {
+      const used = new Set(findSlot.all(characterId).map((r) => Number((r as SqlRow).slot)));
+      let slot: number | null = null;
+      for (let candidate = 0; candidate < Number(inventory.slot_count ?? 12); candidate++) if (!used.has(candidate)) { slot = candidate; break; }
+      if (slot === null) return;
+      const add = Math.min(remaining, maxStack);
+      insert.run(characterId, Number(def.id), slot, add);
+      remaining -= add;
+    }
+  }
 }
 
-/**
- * Grant experience to a character (best-effort on kill). Returns the new
- * experience total, or null when the character does not exist.
- */
-export async function grantExperience(
-  characterId: number,
-  amount: number,
-): Promise<number | null> {
-  const row = getDb()
-    .prepare("SELECT experience FROM characters WHERE id = ?")
-    .get(characterId) as SqlRow | undefined;
+export async function unlockSkill(characterId: number, skillKey: string): Promise<UnlockSkillResult> {
+  const db = getDb();
+  const character = db.prepare("SELECT c.id, c.level, c.skill_points, cc.key AS class_key FROM characters c JOIN character_classes cc ON cc.id = c.class_id WHERE c.id = ?").get(characterId) as SqlRow | undefined;
+  if (character === undefined) return { ok: false, reason: "CHARACTER_NOT_FOUND" };
+  const skill = db.prepare("SELECT skill_key, cost, required_level, prerequisite_key, class_key FROM skill_definitions WHERE skill_key = ?").get(skillKey) as SqlRow | undefined;
+  if (skill === undefined) return { ok: false, reason: "SKILL_NOT_FOUND" };
+  if (String(skill.class_key) !== String(character.class_key)) return { ok: false, reason: "WRONG_CLASS" };
+  if (Number(character.level) < Number(skill.required_level)) return { ok: false, reason: "LEVEL_REQUIRED" };
+  if (skill.prerequisite_key !== null && db.prepare("SELECT 1 FROM character_skills WHERE character_id = ? AND skill_key = ?").get(characterId, String(skill.prerequisite_key)) === undefined) return { ok: false, reason: "PREREQUISITE_REQUIRED" };
+  if (db.prepare("SELECT 1 FROM character_skills WHERE character_id = ? AND skill_key = ?").get(characterId, skillKey) !== undefined) return { ok: false, reason: "ALREADY_UNLOCKED" };
+  if (Number(character.skill_points) < Number(skill.cost)) return { ok: false, reason: "NOT_ENOUGH_POINTS" };
+  db.exec("BEGIN");
+  try {
+    db.prepare("INSERT INTO character_skills (character_id, skill_key) VALUES (?, ?)").run(characterId, skillKey);
+    db.prepare("UPDATE characters SET skill_points = skill_points - ?, updated_at = ? WHERE id = ?").run(Number(skill.cost), new Date().toISOString(), characterId);
+    db.exec("COMMIT");
+  } catch (err) {
+    try { db.exec("ROLLBACK"); } catch { /* preserve original failure */ }
+    throw err;
+  }
+  const profile = await getCharacterProfile(characterId);
+  return profile === null ? { ok: false, reason: "CHARACTER_NOT_FOUND" } : { ok: true, profile };
+}
+
+export async function updateCharacterHp(characterId: number, hp: number, maxHp: number): Promise<void> {
+  getDb().prepare("UPDATE characters SET hp = ?, max_hp = ?, updated_at = ? WHERE id = ?").run(hp, maxHp, new Date().toISOString(), characterId);
+}
+
+export async function grantExperience(characterId: number, amount: number): Promise<number | null> {
+  const db = getDb();
+  const row = db.prepare("SELECT experience, level, skill_points FROM characters WHERE id = ?").get(characterId) as SqlRow | undefined;
   if (row === undefined) return null;
-  const next = Number(row.experience ?? 0) + amount;
-  getDb()
-    .prepare("UPDATE characters SET experience = ?, updated_at = ? WHERE id = ?")
-    .run(next, new Date().toISOString(), characterId);
+  const next = Math.max(0, Number(row.experience ?? 0) + Math.max(0, amount));
+  let level = Math.max(1, Number(row.level ?? 1));
+  let skillPoints = Math.max(0, Number(row.skill_points ?? 0));
+  let threshold = level * 100;
+  while (next >= threshold) {
+    level += 1;
+    skillPoints += 1;
+    threshold = level * 100;
+  }
+  db.prepare("UPDATE characters SET experience = ?, level = ?, skill_points = ?, updated_at = ? WHERE id = ?")
+    .run(next, level, skillPoints, new Date().toISOString(), characterId);
   return next;
 }
 
-/**
- * Persist a character's zone + tile position (best-effort; called on zone
- * leave, logout, and periodically by the game server).
- */
-export async function updateCharacterPosition(
-  characterId: number,
-  zoneId: string,
-  posX: number,
-  posY: number,
-): Promise<void> {
-  getDb()
-    .prepare(
-      "UPDATE characters SET zone_id = ?, pos_x = ?, pos_y = ?, updated_at = ? WHERE id = ?",
-    )
-    .run(zoneId, posX, posY, new Date().toISOString(), characterId);
+export async function updateCharacterPosition(characterId: number, zoneId: string, posX: number, posY: number): Promise<void> {
+  getDb().prepare("UPDATE characters SET zone_id = ?, pos_x = ?, pos_y = ?, updated_at = ? WHERE id = ?").run(zoneId, posX, posY, new Date().toISOString(), characterId);
 }
 
 function rowToCharacter(row: SqlRow): CharacterRow {
-  return {
-    id: Number(row.id),
-    account_id: Number(row.account_id),
-    class_id: Number(row.class_id),
-    name: String(row.name ?? ""),
-    zone_id: String(row.zone_id ?? ""),
-    pos_x: Number(row.pos_x ?? 0),
-    pos_y: Number(row.pos_y ?? 0),
-    level: Number(row.level ?? 1),
-  };
+  return { id: Number(row.id), account_id: Number(row.account_id), class_id: Number(row.class_id), name: String(row.name ?? ""), zone_id: String(row.zone_id ?? ""), pos_x: Number(row.pos_x ?? 0), pos_y: Number(row.pos_y ?? 0), level: Number(row.level ?? 1) };
+}
+
+function parseJsonObject(raw: unknown): Record<string, unknown> {
+  if (typeof raw !== "string") return {};
+  try { const parsed: unknown = JSON.parse(raw); return typeof parsed === "object" && parsed !== null && !Array.isArray(parsed) ? parsed as Record<string, unknown> : {}; } catch { return {}; }
 }

@@ -7,6 +7,9 @@ import { MonsterStore, type MonsterPlayer } from "./monsterStore.ts";
 import { classCombatProfile, computeDamage, tileDistance, validateAttack } from "./combat.ts";
 import type { MonsterDefinitionRow } from "../models/Monster.ts";
 import type { ZoneData } from "./zoneData.ts";
+import type { MonsterBrain } from "../ai/MonsterBrain.ts";
+import type { ZoneScene } from "../ai/prompts.ts";
+import type { QuestMutationResult, QuestSnapshot, QuestInventoryItem } from "../models/Quest.ts";
 import { logger } from "../middleware/logger.ts";
 
 /** Defaults from design/architecture.md §5/§7 (180 px/s over 48px tiles). */
@@ -56,8 +59,19 @@ export interface GameServerDeps {
   persistHp?: (characterId: number, hp: number, maxHp: number) => Promise<void>;
   /** Best-effort XP grant on monster kill (DB); defaults to no-op. */
   grantXp?: (characterId: number, amount: number) => Promise<number | null>;
+  /** Best-effort inventory grant on monster loot (DB); defaults to no-op. */
+  grantInventory?: (characterId: number, items: { itemKey: string; quantity: number }[]) => Promise<void>;
   /** Monster templates for a zone (DB); defaults to [] so safe zones stay empty. */
   getMonsterDefinitions?: (zoneKey: string) => Promise<MonsterDefinitionRow[]>;
+  /** AI game engine: optional world-brain that overrides monster decisions. */
+  monsterBrain?: MonsterBrain | null;
+  /** Server-side NPC tile lookup used to validate interaction range. */
+  getNpcPosition?: (npcId: string, zoneId: string) => { x: number; y: number } | null;
+  /** Phase 4A quest state and mutations; omitted in isolated combat tests. */
+  getQuestState?: (characterId: number) => Promise<QuestSnapshot[]>;
+  acceptQuest?: (characterId: number, questId: string) => Promise<QuestMutationResult>;
+  completeDelivery?: (characterId: number, targetNpcId: string) => Promise<QuestMutationResult>;
+  getQuestInventory?: (characterId: number) => QuestInventoryItem[];
   tickMs?: number;
   graceMs?: number;
   tilesPerSecond?: number;
@@ -92,6 +106,7 @@ export class GameServer {
   private graceMs: number;
   private minMoveIntervalMs: number;
   private persistIntervalMs: number;
+  private snapshotSequences = new Map<string, number>();
 
   constructor(private deps: GameServerDeps) {
     this.tickMs = deps.tickMs ?? DEFAULT_TICK_MS;
@@ -121,6 +136,7 @@ export class GameServer {
     this.graceTimers.clear();
     this.wss?.close();
     this.wss = null;
+    this.snapshotSequences.clear();
   }
 
   private wireSocket(ws: WebSocket): void {
@@ -157,7 +173,17 @@ export class GameServer {
     for (const zoneId of this.zones.zoneIds()) {
       const players = this.zones.snapshot(zoneId);
       if (players.length === 0) continue;
-      this.broadcast(zoneId, { type: "player_snapshot", players });
+      const sequence = (this.snapshotSequences.get(zoneId) ?? 0) + 1;
+      this.snapshotSequences.set(zoneId, sequence);
+      this.broadcast(zoneId, {
+        type: "player_snapshot",
+        zoneId,
+        sequence,
+        serverTime: now,
+        players,
+      });
+      // Fire-and-forget: ask the world-brain for this zone (never awaited).
+      this.requestMonsterDecisions(zoneId, now);
       this.tickMonsters(zoneId, now);
       // Best-effort periodic persistence: a moving player's position is
       // flushed at most once per interval (and immediately on leave/grace).
@@ -183,6 +209,7 @@ export class GameServer {
       this.zonePlayers(zoneId),
       zone.isWalkable,
       this.tickMs,
+      this.deps.monsterBrain?.decisionsFor(zoneId) ?? null,
     );
     for (const event of events) this.applyMonsterAttack(zoneId, event, now);
     this.broadcast(zoneId, {
@@ -244,6 +271,15 @@ export class GameServer {
         return;
       case "attack":
         this.handleAttack(session, msg);
+        return;
+      case "interact":
+        await this.handleInteract(session, msg);
+        return;
+      case "accept_quest":
+        await this.handleAcceptQuest(session, msg);
+        return;
+      case "zone_chat":
+        this.handleZoneChat(session, msg);
         return;
       case "leave_zone":
         this.handleLeaveZone(session);
@@ -316,7 +352,15 @@ export class GameServer {
       this.sendError(session, "INVALID_TOKEN", "Character no longer exists");
       return;
     }
+    // A world resize can leave stale saved positions on colliding tiles —
+    // snap to the zone spawn instead of trusting the DB blindly.
+    const savedPos = { x: character.pos.x, y: character.pos.y };
+    const pos = zone.isWalkable(savedPos.x, savedPos.y)
+      ? savedPos
+      : { ...zone.spawn };
     await this.seedZoneMonsters(zoneId);
+    // Warm the model so the first monster/NPC AI call isn't cold.
+    this.deps.monsterBrain?.prewarm();
     const existing = this.zones.get(zoneId, characterId);
     if (existing !== null) {
       // Grace restore: reuse the server-authoritative position. The position
@@ -334,7 +378,7 @@ export class GameServer {
         accountId: session.accountId as number,
         name: character.name,
         classKey: character.classKey,
-        pos: { ...character.pos },
+        pos,
         connected: true,
         lastMoveAt: 0,
         dirty: false,
@@ -368,6 +412,79 @@ export class GameServer {
       monsters: this.monsters.monsters(zoneId).map(monsterSnapshot),
       npcs: [],
       objects: [],
+      quests: this.deps.getQuestState === undefined
+        ? []
+        : await this.deps.getQuestState(characterId),
+      inventory: this.deps.getQuestInventory?.(characterId) ?? [],
+    });
+  }
+
+  private async handleInteract(session: Session, msg: Record<string, unknown>): Promise<void> {
+    if (!this.requireAuth(session)) return;
+    const zoneId = session.zoneId;
+    const characterId = session.characterId;
+    const targetId = typeof msg.targetId === "string" ? msg.targetId : "";
+    if (zoneId === null || characterId === null) {
+      this.sendError(session, "NOT_IN_ZONE", "join_zone before interact", "interact");
+      return;
+    }
+    const target = this.deps.getNpcPosition?.(targetId, zoneId);
+    const player = this.zones.get(zoneId, characterId);
+    if (target === null || target === undefined || player === null || tileDistance(player.pos, target) > 2) {
+      this.sendError(session, "OUT_OF_RANGE", "NPC is out of interaction range", "interact");
+      return;
+    }
+    const delivery = this.deps.completeDelivery === undefined
+      ? null
+      : await this.deps.completeDelivery(characterId, targetId);
+    if (delivery !== null && delivery.ok) {
+      this.sendQuestMutation(session, delivery, "delivery");
+      return;
+    }
+    const quests = this.deps.getQuestState === undefined ? [] : await this.deps.getQuestState(characterId);
+    session.socket.send({ type: "npc_interaction", npcId: targetId, quests });
+  }
+
+  private async handleAcceptQuest(session: Session, msg: Record<string, unknown>): Promise<void> {
+    if (!this.requireAuth(session)) return;
+    const characterId = session.characterId;
+    const questId = typeof msg.questId === "string" ? msg.questId : "";
+    const zoneId = session.zoneId;
+    if (characterId === null || zoneId === null || questId === "" || this.deps.acceptQuest === undefined) {
+      this.sendError(session, "QUEST_NOT_AVAILABLE", "Quest cannot be accepted", "accept_quest");
+      return;
+    }
+    const offeredQuest = (this.deps.getQuestState === undefined ? [] : await this.deps.getQuestState(characterId))
+      .find((quest) => quest.questId === questId);
+    const player = this.zones.get(zoneId, characterId);
+    const giver = offeredQuest === undefined ? null : this.deps.getNpcPosition?.(offeredQuest.giverId, zoneId);
+    if (offeredQuest === undefined || player === null || giver === null || giver === undefined || tileDistance(player.pos, giver) > 2) {
+      this.sendError(session, "OUT_OF_RANGE", "Stand near the quest giver to accept this route", "accept_quest");
+      return;
+    }
+    const result = await this.deps.acceptQuest(characterId, questId);
+    if (!result.ok) {
+      this.sendError(session, result.reason, "Quest cannot be accepted", "accept_quest");
+      return;
+    }
+    this.sendQuestMutation(session, result, "accepted");
+  }
+
+  private sendQuestMutation(session: Session, result: Extract<QuestMutationResult, { ok: true }>, action: "accepted" | "delivery"): void {
+    session.socket.send({
+      type: "quest_updated",
+      action,
+      quest: result.quest,
+      quests: result.quests,
+      inventory: result.inventory,
+      stamps: result.stamps,
+      xp: result.xp,
+      message: result.message,
+    });
+    session.socket.send({
+      type: "inventory_updated",
+      items: result.inventory,
+      stamps: result.stamps,
     });
   }
 
@@ -422,6 +539,35 @@ export class GameServer {
     player.dirty = true; // mark for the periodic DB flush
     session.lastMoveAt = Date.now();
     // No direct reply — the tick broadcasts the authoritative snapshot.
+  }
+
+  private handleZoneChat(session: Session, msg: Record<string, unknown>): void {
+    if (!this.requireAuth(session)) return;
+    const zoneId = session.zoneId;
+    if (zoneId === null) {
+      this.sendError(session, "NOT_IN_ZONE", "join_zone before zone_chat");
+      return;
+    }
+    const text = typeof msg.text === "string" ? msg.text.trim().slice(0, 240) : "";
+    if (text === "") {
+      this.sendError(session, "INVALID_CHAT", "Chat message cannot be empty");
+      return;
+    }
+    const now = Date.now();
+    const player = this.zones.get(zoneId, session.characterId as number);
+    if (player === null || !player.connected) return;
+    const chatAt = (player as ZonePlayer & { lastChatAt?: number }).lastChatAt ?? 0;
+    if (now - chatAt < 1_000) {
+      this.sendError(session, "CHAT_RATE_LIMIT", "Please wait before sending another message");
+      return;
+    }
+    (player as ZonePlayer & { lastChatAt?: number }).lastChatAt = now;
+    this.broadcast(zoneId, {
+      type: "zone_chat",
+      characterId: player.characterId,
+      name: player.name,
+      text,
+    });
   }
 
   private handleLeaveZone(session: Session): void {
@@ -511,6 +657,13 @@ export class GameServer {
     // actual inventory grants land with Phase 5.
     const loot = rollLoot(monster.lootTable);
     if (loot.length > 0) {
+      if (this.deps.grantInventory !== undefined) {
+        try {
+          await this.deps.grantInventory(killerId, loot);
+        } catch (err) {
+          logger.warn("grantInventory failed (best-effort)", { killerId, error: String(err) });
+        }
+      }
       this.broadcast(zoneId, {
         type: "loot_received",
         sourceId: monsterId,
@@ -573,8 +726,8 @@ export class GameServer {
     this.zones.leave(zoneId, player.characterId);
     player.hp = player.maxHp;
     player.invulnUntil = now + DEFEAT_INVULN_MS;
-    // Respawn at the safe zone's default spawn (clover-village.json spawn).
-    player.pos = { x: 15, y: 13 };
+    // Respawn at the safe zone's default spawn (the map JSON's spawn tile).
+    player.pos = { ...zone.spawn };
     this.zones.join(safeZone, player);
     this.persist(player.characterId, safeZone, player.pos);
     this.persistHp(player.characterId, player.hp, player.maxHp);
@@ -593,6 +746,42 @@ export class GameServer {
   private moveIntervalFor(speedPx: number): number {
     if (speedPx <= 0) return this.minMoveIntervalMs;
     return moveIntervalMsForSpeed(speedPx / 48);
+  }
+
+  /** Ask the world-brain for this zone's next monster moves (non-blocking). */
+  private requestMonsterDecisions(zoneId: string, now: number): void {
+    const brain = this.deps.monsterBrain;
+    if (brain === undefined || brain === null) return;
+    const monsters = this.monsters.monsters(zoneId);
+    const zone = this.deps.getZoneData(zoneId);
+    if (zone === null || monsters.length === 0) return;
+    const scene: ZoneScene = {
+      zoneId,
+      width: zone.width,
+      height: zone.height,
+      monsters: monsters
+        .filter((m) => m.alive)
+        .map((m) => ({
+          id: m.id,
+          name: m.displayName,
+          pos: { ...m.pos },
+          hp: m.hp,
+          maxHp: m.maxHp,
+          aggro: m.aggroBehavior === "aggro",
+        })),
+      players: this.zones
+        .players(zoneId)
+        .filter((p) => p.connected)
+        .map((p) => ({
+          id: p.characterId,
+          name: p.name,
+          pos: { ...p.pos },
+          hp: p.hp,
+          maxHp: p.maxHp,
+        })),
+      isWalkable: zone.isWalkable,
+    };
+    brain.requestDecision(scene, now);
   }
 
   /** Players in a zone shaped for monster AI (connected + combat state). */

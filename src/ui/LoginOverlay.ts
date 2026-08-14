@@ -11,6 +11,15 @@ import { apiPath } from "../config.ts";
 const TOKEN_KEY = "paws.auth.token";
 const ACCOUNT_KEY = "paws.auth.account";
 const CHARACTERS_KEY = "paws.auth.characters";
+
+/** Auth belongs to a browser tab, not shared localStorage. */
+function sessionStore(): Storage | null {
+  try {
+    return window.sessionStorage;
+  } catch {
+    return null;
+  }
+}
 const OIDC_STATE_KEY = "paws.oidc.state";
 const OIDC_VERIFIER_KEY = "paws.oidc.verifier";
 
@@ -33,7 +42,7 @@ export interface CharacterListItem {
 }
 
 export interface AuthFinishDetail {
-  account: AccountPublic;
+  account: AccountPublic & { last_played_character_id?: number | null };
   characters: CharacterListItem[];
   token: string;
 }
@@ -41,9 +50,26 @@ export interface AuthFinishDetail {
 /** The OS-supplied remote-storage tokens we accept (iOS Safari private mode has none). */
 function readToken(): string | null {
   try {
-    return window.localStorage.getItem(TOKEN_KEY);
+    return sessionStore()?.getItem(TOKEN_KEY) ?? null;
   } catch {
     return null;
+  }
+}
+
+/** Read the stored session JWT (null when signed out) — for API calls. */
+export function readAuthToken(): string | null {
+  return readToken();
+}
+
+/** Admin is the only role allowed to use in-game developer tools. */
+export function hasAdminDevAccess(): boolean {
+  try {
+    const raw = sessionStore()?.getItem(ACCOUNT_KEY) ?? null;
+    if (raw === null) return false;
+    const account = JSON.parse(raw) as { role?: unknown };
+    return account.role === "Admin";
+  } catch {
+    return false;
   }
 }
 
@@ -53,17 +79,25 @@ function writeToken(
   characters: CharacterListItem[],
 ): void {
   try {
-    window.localStorage.setItem(TOKEN_KEY, token);
-    window.localStorage.setItem(ACCOUNT_KEY, JSON.stringify(account));
-    window.localStorage.setItem(CHARACTERS_KEY, JSON.stringify(characters));
+    const storage = sessionStore();
+    storage?.setItem(TOKEN_KEY, token);
+    storage?.setItem(ACCOUNT_KEY, JSON.stringify(account));
+    storage?.setItem(CHARACTERS_KEY, JSON.stringify(characters));
   } catch {
-    // Private mode — token lives only in memory for this session.
+    // If sessionStorage is blocked, the callback will report the sign-in failure.
   }
 }
 
-/** Drop the stored auth (used by the overlay and the courier desk's sign-out). */
+/** Drop the tab-scoped auth and any credentials left by older builds. */
 export function clearAuthStorage(): void {
   try {
+    const storage = sessionStore();
+    storage?.removeItem(TOKEN_KEY);
+    storage?.removeItem(ACCOUNT_KEY);
+    storage?.removeItem(CHARACTERS_KEY);
+    storage?.removeItem(SELECTED_CHARACTER_KEY);
+    // One-time migration cleanup: older builds stored the active account in
+    // localStorage, which could make two logged-in tabs impersonate each other.
     window.localStorage.removeItem(TOKEN_KEY);
     window.localStorage.removeItem(ACCOUNT_KEY);
     window.localStorage.removeItem(CHARACTERS_KEY);

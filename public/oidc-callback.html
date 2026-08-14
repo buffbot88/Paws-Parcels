@@ -120,9 +120,9 @@
           return;
         }
 
-        // Load the game server URL from server_config.json (same file the
+        // Load the game server URL from client-config.txt (same file the
         // main app reads). Falls back to same-origin if the file is missing.
-        fetch("./server_config.json", { cache: "no-store" })
+        fetch("./client-config.txt", { cache: "no-store" })
           .then(function (res) { return res.ok ? res.json() : {}; })
           .catch(function () { return {}; })
           .then(function (cfg) {
@@ -150,21 +150,24 @@
               );
               return;
             }
-            // Store the JWT + account, then drop the PKCE secrets.
+            // Store the JWT + account in this tab, then drop the PKCE secrets.
+            // Never redirect without credentials: storage-blocked browsers
+            // would otherwise loop back to the login screen indefinitely.
             try {
-              localStorage.setItem("paws.auth.token", result.body.token);
-              localStorage.setItem(
+              sessionStorage.setItem("paws.auth.token", result.body.token);
+              sessionStorage.setItem(
                 "paws.auth.account",
                 JSON.stringify(result.body.account),
               );
-              localStorage.setItem(
+              sessionStorage.setItem(
                 "paws.auth.characters",
                 JSON.stringify(result.body.characters),
               );
               sessionStorage.removeItem("paws.oidc.state");
               sessionStorage.removeItem("paws.oidc.verifier");
             } catch (err) {
-              // Private mode — token lives in memory for this page only.
+              fail("storage blocked", "This browser blocked tab storage, so sign-in cannot continue.");
+              return;
             }
             title.textContent = "Welcome back, courier!";
             detail.textContent = "Handing you your parcel bag…";

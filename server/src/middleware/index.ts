@@ -35,15 +35,57 @@ export function middleware(
   });
 }
 
-export function parseBody(req: IncomingMessage): Promise<unknown> {
+const MAX_JSON_BODY_BYTES = 2_400_000;
+
+/** Error raised when a JSON request exceeds the server-wide buffering limit. */
+export class RequestBodyTooLargeError extends Error {
+  constructor() {
+    super("Request body exceeds the upload limit");
+    this.name = "RequestBodyTooLargeError";
+  }
+}
+
+export function parseBody(
+  req: IncomingMessage,
+  maxBytes = MAX_JSON_BODY_BYTES,
+): Promise<unknown> {
   return new Promise((resolve, reject) => {
     if (req.method === "GET" || req.method === "HEAD") {
       resolve(undefined);
       return;
     }
+    const declaredLength = Number(req.headers["content-length"] ?? 0);
+    if (Number.isFinite(declaredLength) && declaredLength > maxBytes) {
+      // Consume the rejected request before returning so keep-alive sockets
+      // are not left with unread bytes from the oversized body.
+      req.resume();
+      reject(new RequestBodyTooLargeError());
+      return;
+    }
     const chunks: Buffer[] = [];
-    req.on("data", (chunk: Buffer) => chunks.push(chunk));
+    let received = 0;
+    let settled = false;
+    const failTooLarge = (): void => {
+      if (settled) return;
+      settled = true;
+      // Drain the remainder so keep-alive connections are not left with a
+      // half-consumed request body after the 413 response.
+      req.resume();
+      reject(new RequestBodyTooLargeError());
+    };
+    req.on("data", (chunk: Buffer | string) => {
+      if (settled) return;
+      const buffer = Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk);
+      received += buffer.byteLength;
+      if (received > maxBytes) {
+        failTooLarge();
+        return;
+      }
+      chunks.push(buffer);
+    });
     req.on("end", () => {
+      if (settled) return;
+      settled = true;
       const raw = Buffer.concat(chunks).toString("utf-8");
       if (!raw) {
         resolve(undefined);
@@ -55,7 +97,11 @@ export function parseBody(req: IncomingMessage): Promise<unknown> {
         reject(new Error("Invalid JSON body"));
       }
     });
-    req.on("error", reject);
+    req.on("error", (error) => {
+      if (settled) return;
+      settled = true;
+      reject(error);
+    });
   });
 }
 

@@ -74,6 +74,28 @@ export interface OidcConfig {
   jwksTtlSeconds: number;
 }
 
+export interface AiConfig {
+  /** Master switch — when false the AI game engine is inert (default). */
+  enabled: boolean;
+  /** Port for the game-owned llama-server instance (separate from the Hub's). */
+  port: number;
+  /** Path to the GGUF model (LFM2.5-VL-450M) and its vision projector. */
+  modelPath: string;
+  mmprojPath: string;
+  /** Spin the instance down after this long without requests. */
+  idleMs: number;
+  /** Max time to wait for the instance to reach /health ready. */
+  warmupTimeoutMs: number;
+  /** Per-inference HTTP timeout; a miss falls back to deterministic AI. */
+  requestTimeoutMs: number;
+  /** How often the monster brain asks the model per zone. */
+  monsterDecisionIntervalMs: number;
+  maxTokensMonster: number;
+  maxTokensNpc: number;
+  /** Min ms between /api/npc/talk calls per account (1-core protection). */
+  npcTalkMinIntervalMs: number;
+}
+
 const RAW = loadConfigFromDisk();
 const cfg = validateAndNormalize(RAW);
 
@@ -82,6 +104,7 @@ function validateAndNormalize(raw: unknown): {
   db: DbConfig;
   auth: AuthConfig;
   oidc: OidcConfig;
+  ai: AiConfig;
 } {
   const errors: string[] = [];
 
@@ -96,6 +119,7 @@ function validateAndNormalize(raw: unknown): {
   const dbRaw = (obj.db ?? {}) as Record<string, unknown>;
   const authRaw = (obj.auth ?? {}) as Record<string, unknown>;
   const oidcRaw = (obj.oidc ?? {}) as Record<string, unknown>;
+  const aiRaw = (obj.ai ?? {}) as Record<string, unknown>;
 
   // server
   const configuredPort = num(serverRaw.port, 3001, errors, "server.port");
@@ -196,6 +220,54 @@ function validateAndNormalize(raw: unknown): {
     );
   }
 
+  // ai — AI game engine (Phase 4 experimental: power-managed 450M VL)
+  const aiEnabled = bool(aiRaw.enabled, false, errors, "ai.enabled");
+  const aiPort = num(aiRaw.port, 3101, errors, "ai.port");
+  const modelPath = aiEnabled
+    ? reqStr(aiRaw.modelPath, "ai.modelPath", "", errors)
+    : str(aiRaw.modelPath, "", errors, "ai.modelPath");
+  const mmprojPath = aiEnabled
+    ? reqStr(aiRaw.mmprojPath, "ai.mmprojPath", "", errors)
+    : str(aiRaw.mmprojPath, "", errors, "ai.mmprojPath");
+  const idleMs = num(aiRaw.idleMs, 600_000, errors, "ai.idleMs");
+  const warmupTimeoutMs = num(
+    aiRaw.warmupTimeoutMs,
+    90_000,
+    errors,
+    "ai.warmupTimeoutMs",
+  );
+  const requestTimeoutMs = num(
+    aiRaw.requestTimeoutMs,
+    4_000,
+    errors,
+    "ai.requestTimeoutMs",
+  );
+  const monsterDecisionIntervalMs = num(
+    aiRaw.monsterDecisionIntervalMs,
+    5_000,
+    errors,
+    "ai.monsterDecisionIntervalMs",
+  );
+  const maxTokensMonster = num(aiRaw.maxTokensMonster, 40, errors, "ai.maxTokensMonster");
+  const maxTokensNpc = num(aiRaw.maxTokensNpc, 160, errors, "ai.maxTokensNpc");
+  const npcTalkMinIntervalMs = num(
+    aiRaw.npcTalkMinIntervalMs,
+    6_000,
+    errors,
+    "ai.npcTalkMinIntervalMs",
+  );
+  if (idleMs < 5_000) {
+    errors.push(`ai.idleMs must be at least 5000ms (got ${idleMs}).`);
+  }
+  if (requestTimeoutMs < 200 || requestTimeoutMs > 60_000) {
+    errors.push(`ai.requestTimeoutMs must be 200-60000 (got ${requestTimeoutMs}).`);
+  }
+  if (npcTalkMinIntervalMs < 1000) {
+    errors.push(
+      `ai.npcTalkMinIntervalMs must be at least 1000ms (got ${npcTalkMinIntervalMs}).`,
+    );
+  }
+
   return {
     server: { port, host, nodeEnv, isDev, corsAllowedOrigins, debug, staticDir },
     db: {
@@ -214,6 +286,19 @@ function validateAndNormalize(raw: unknown): {
       discoveryUrl,
       issuer: issuer.replace(/\/$/, ""),
       jwksTtlSeconds,
+    },
+    ai: {
+      enabled: aiEnabled,
+      port: aiPort,
+      modelPath,
+      mmprojPath,
+      idleMs,
+      warmupTimeoutMs,
+      requestTimeoutMs,
+      monsterDecisionIntervalMs,
+      maxTokensMonster,
+      maxTokensNpc,
+      npcTalkMinIntervalMs,
     },
   };
 }
@@ -297,3 +382,4 @@ export const server: ServerConfig = cfg.server;
 export const db: DbConfig = cfg.db;
 export const auth: AuthConfig = cfg.auth;
 export const oidc: OidcConfig = cfg.oidc;
+export const ai: AiConfig = cfg.ai;
