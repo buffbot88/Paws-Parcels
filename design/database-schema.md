@@ -31,7 +31,7 @@ Persistent identity for a human player.
 
 ## 2. sessions / refresh_tokens
 
-Long-lived sessions used to mint short-lived access tokens.
+Session records support authentication lifecycle and auditability. The current OIDC flow issues a server-signed access JWT with a 24-hour absolute lifetime; refresh-token rotation remains available for a later auth-flow expansion.
 
 - **PK:** `id`
 - **FK:** `account_id → accounts.id`
@@ -252,9 +252,9 @@ characters 1─N audit_economy_events
 - **Passwords:** argon2id (preferred) or bcrypt; salted per-user; never stored or logged
   in plain text; never returned by any endpoint.
 - **Refresh tokens:** 256-bit random; stored as SHA-256 hash in `refresh_tokens`;
-  rotated on use; revoked on logout/security event.
-- **Access tokens (JWT):** short-lived (15 min), signed with server secret; no player
-  state claims beyond `sub` (account id) + `char` (character id).
+  rotated on use; revoked on logout/security event.- **Access tokens (JWT):** 24-hour absolute lifetime by default, signed with the server
+  secret; no player state claims beyond account identity and role.
+
 - **WS handshake tokens:** short-lived (30 s), single-use, issued via `/api/ws-token`.
 - **Secret management:** `JWT_SECRET`, DB credentials, argon2 pepper in environment /
   secrets store (never committed). `.env.example` documents names only, no values.

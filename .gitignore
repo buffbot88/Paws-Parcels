@@ -10,6 +10,9 @@ coverage/
 # Commit server_config.example.json instead; copy it locally and fill in secrets.
 server_config.json
 
+# The SQLite game database is intentionally tracked for the current Alpha workflow.
+# Keep this repository private if it contains real account/character data; never
+# commit server_config.json, credentials, tokens, or production secrets.
 # Runtime game-data JSON is committed. Large local art packs are kept in the
 # ignored reference archive and are never added by plain `git add .`.
 /reference/assets/

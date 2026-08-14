@@ -29,12 +29,16 @@ import {
   isSnapshotForZone,
 } from "../net/snapshotOrdering.ts";
 
-/** Read the stored JWT (written by LoginOverlay / oidc-callback.html). */
+/** Read the persistent 24-hour JWT (with a legacy tab-session fallback). */
 function readToken(): string | null {
   try {
-    return window.sessionStorage.getItem("paws.auth.token");
+    return window.localStorage.getItem("paws.auth.token") ?? window.sessionStorage.getItem("paws.auth.token");
   } catch {
-    return null;
+    try {
+      return window.sessionStorage.getItem("paws.auth.token");
+    } catch {
+      return null;
+    }
   }
 }
 

@@ -16,7 +16,7 @@ beforeEach(() => {
   vi.resetModules();
 });
 
-describe("tab-scoped courier selection", () => {
+describe("persistent courier session", () => {
   it("ignores a legacy localStorage selection", async () => {
     const session = makeStorage();
     vi.stubGlobal("window", {
@@ -27,14 +27,26 @@ describe("tab-scoped courier selection", () => {
     expect(readSelectedCharacterId()).toBeNull();
   });
 
-  it("reads the active JWT from the tab session, never shared localStorage", async () => {
-    const session = makeStorage({ "paws.auth.token": "tab-token" });
-    vi.stubGlobal("window", {
-      sessionStorage: session,
-      localStorage: makeStorage({ "paws.auth.token": "other-account-token" }),
-    });
+  it("reads the active JWT from persistent localStorage", async () => {
+    const session = makeStorage();
+    const local = makeStorage({ "paws.auth.token": "persistent-token" });
+    vi.stubGlobal("window", { sessionStorage: session, localStorage: local });
     const { readAuthToken } = await import("../../src/ui/LoginOverlay.ts");
-    expect(readAuthToken()).toBe("tab-token");
+    expect(readAuthToken()).toBe("persistent-token");
+  });
+
+  it("promotes a legacy tab JWT into persistent storage", async () => {
+    const session = makeStorage({
+      "paws.auth.token": "legacy-token",
+      "paws.auth.account": '{"role":"Member"}',
+      "paws.auth.characters": "[]",
+    });
+    const local = makeStorage();
+    vi.stubGlobal("window", { sessionStorage: session, localStorage: local });
+    const { readAuthToken } = await import("../../src/ui/LoginOverlay.ts");
+    expect(readAuthToken()).toBe("legacy-token");
+    expect(local.getItem("paws.auth.token")).toBe("legacy-token");
+    expect(local.getItem("paws.auth.account")).toBe('{"role":"Member"}');
   });
 
   it("keeps two browser tabs on different selected couriers", async () => {

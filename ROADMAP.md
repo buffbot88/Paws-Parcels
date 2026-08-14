@@ -1,6 +1,6 @@
 # Paws & Parcels — Development Roadmap
 
-> 🗃 **Legacy/archived single-player roadmap:** [`docs/archive/ROADMAP-single-player.md`](docs/archive/ROADMAP-single-player.md)
+> 🗃 **Legacy single-player roadmap:** retired from the active repository; current planning lives below.
 > **Current authoritative plan:** [`BuildPlan.md`](BuildPlan.md) (online 2.5D MMORPG pivot)
 > Locked decisions: [`design/decisions.md`](design/decisions.md) · Architecture: [`design/architecture.md`](design/architecture.md)
 > Status markers: ✅ built · ⏭ next · ⬜ planned · ⚠ blocked or undecided · 🗃 archived

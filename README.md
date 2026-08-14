@@ -7,7 +7,7 @@ friendships. Server-authoritative, multiplayer, and always cozy.
 - **Engine:** Phaser 4 (Canvas/WebGL, depth-sorted isometric/pseudo-3D)
 - **Language/Tooling:** TypeScript, Vite 8
 - **UI:** DOM-over-Canvas (HTML/CSS layered above the game canvas)
-- **Persistence:** SQLite (server-side) — localStorage only for client settings
+- **Persistence:** SQLite (server-side) — the current Alpha database file is intentionally tracked; auth sessions persist locally for 24 hours while gameplay state never lives in browser storage
 - **Server:** Node/TS (separate process; HTTP + WebSocket, SQLite persistence)
 - **Tests:** Vitest (client) + server test suite
 - **Hosting:** single-process hosting — one Node server serves the built client + API + WebSocket on one port (Render/Fly.io/VPS/Oracle Always-Free; Vercel can host the client alone but not the game server — serverless can't hold long-lived WebSockets or write SQLite)
@@ -44,6 +44,8 @@ Config lives under `ai` in `server_config.json` (see `server_config.example.json
 | **Ctrl+Shift+V in-game (Admin only)** | Save a live `paws-visual-*.png` screenshot plus matching `paws-visual-*.json` scene metadata to the server's `server/data/visual-captures/` directory for Visual Director review |
 | `npm run dev:server` | Start the game/API server (localhost:3001) |
 | `npm run migrate` | Apply SQLite migrations + seeds (`server/data/paws-and-parcels.sqlite`) |
+
+The current Alpha workflow keeps `server/data/paws-and-parcels.sqlite` in the repository so the database can be transferred through GitHub. Keep the repository private when it contains real account or character data; GitHub is not a safe public production-database backup or concurrent database service.
 
 > **Windows note:** the repo folder contains `&` (`Paws&Parcels`), which breaks npm's
 > `node_modules/.bin` PATH shims. Scripts call tools via explicit
@@ -100,7 +102,7 @@ server/            Node/TS game server (HTTP + WebSocket, SQLite persistence, mi
 | [`design/monsters.md`](design/monsters.md) | Happy Valley critter family, spawn, loot, respawn |
 | [`design/dungeons.md`](design/dungeons.md) | Instance lifecycle, encounters, rewards |
 | [`design/crafting.md`](design/crafting.md) | Materials, recipes, station, validation |
-| [`docs/archive/`](docs/archive/) | 🗃 Historical single-player docs (non-authoritative) |
+
 
 - `VOWS.md` — development practices that bind all work here
-- `design/world-map.md`, `design/npcs.md` — legacy single-player references (retained for NPC/lore content)
+- `design/world-map.md`, `design/npcs.md` — legacy references retained for current map and NPC/lore content

@@ -1,8 +1,7 @@
 # Paws & Parcels — Online RPG Build Plan
 
 > **Status: 🏛 AUTHORITATIVE (Phase 3.5 documentation pivot, 2026-08-03).**
-> This plan supersedes the archived single-player plan
-> ([`docs/archive/BuildPlan-single-player.md`](docs/archive/BuildPlan-single-player.md)).
+> This plan supersedes the retired single-player plan and is the sole authoritative build plan.
 > Locked decisions: [`design/decisions.md`](design/decisions.md). Architecture:
 > [`design/architecture.md`](design/architecture.md). Schema: [`design/database-schema.md`](design/database-schema.md).
 > Protocol: [`design/network-protocol.md`](design/network-protocol.md).
@@ -190,8 +189,8 @@ See [`design/crafting.md`](design/crafting.md). Summary:
   skills, recipes, and dialogue — is authored in versioned `src/data/*.json` files.
 - The server synchronizes JSON catalogs into relational lookup caches at boot; SQL migrations
   define schema and player-state compatibility only, never catalog values.
-- **localStorage is limited to non-authoritative client settings** (audio, UI,
-  controls) — never gameplay state.
+- **localStorage may hold the server-issued 24-hour auth session and client settings**
+  (audio, UI, controls) — never authoritative gameplay state.
 - All queries server-side; credentials in server env/secrets only.
 - Schema + entity ownership: [`design/database-schema.md`](design/database-schema.md).
 - Migrations are versioned and run by the server at boot (Phase 1).
@@ -253,7 +252,7 @@ See [`design/crafting.md`](design/crafting.md). Summary:
 ## 19. Phased Milestones
 
 ### Phase 0 — Pivot Documentation & Architecture Spike — ✅ built (docs)
-- [x] Archive contradictory single-player plans → [`docs/archive/`](docs/archive/)
+- [x] Retire contradictory single-player plans from the active repository
 - [x] Rewrite `BuildPlan.md` and `design/decisions.md`
 - [x] Add `design/architecture.md`, `design/database-schema.md`, `design/network-protocol.md`
 - [x] Add `design/classes.md`, `design/combat.md`, `design/quests.md`, `design/monsters.md`,
@@ -378,4 +377,3 @@ See [`design/crafting.md`](design/crafting.md). Summary:
 | [`design/monsters.md`](design/monsters.md) | Happy Valley critter family, spawn, loot, respawn |
 | [`design/dungeons.md`](design/dungeons.md) | Instance lifecycle, encounters, rewards |
 | [`design/crafting.md`](design/crafting.md) | Materials, recipes, station, validation |
-| [`docs/archive/`](docs/archive/) | 🗃 Historical single-player docs (non-authoritative) |

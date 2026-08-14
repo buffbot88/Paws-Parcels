@@ -156,13 +156,13 @@ function validateAndNormalize(raw: unknown): {
   }
   const accessTokenTtl = num(
     authRaw.accessTokenTtlSeconds,
-    900,
+    86_400,
     errors,
     "auth.accessTokenTtlSeconds",
   );
   const refreshTokenTtl = num(
     authRaw.refreshTokenTtlSeconds,
-    604800,
+    86_400,
     errors,
     "auth.refreshTokenTtlSeconds",
   );

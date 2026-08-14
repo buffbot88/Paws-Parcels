@@ -2,8 +2,9 @@
  * Phase 3 — LoginOverlay (OIDC redirect pattern). The whole page redirects
  * to ASHAT Hub's /authorize endpoint with PKCE; /oidc-callback.html receives
  * the code, POSTs it to /api/auth/oidc/callback, and returns here with a
- * stored JWT. PKCE verifier + state live in sessionStorage so they survive
- * the redirect but die with the tab.
+ * stored JWT. The 24-hour auth session lives in localStorage so a page
+ * refresh does not require another sign-in; PKCE verifier + state remain
+ * tab-scoped in sessionStorage and die with the tab.
  */
 import { SELECTED_CHARACTER_KEY } from "../net/bootTarget.ts";
 import { apiPath } from "../config.ts";
@@ -12,8 +13,17 @@ const TOKEN_KEY = "paws.auth.token";
 const ACCOUNT_KEY = "paws.auth.account";
 const CHARACTERS_KEY = "paws.auth.characters";
 
-/** Auth belongs to a browser tab, not shared localStorage. */
-function sessionStore(): Storage | null {
+/** Persistent auth storage survives page refreshes for the server JWT TTL. */
+function persistentStore(): Storage | null {
+  try {
+    return window.localStorage;
+  } catch {
+    return null;
+  }
+}
+
+/** Tab-scoped fallback for private browsing or legacy sessions. */
+function tabStore(): Storage | null {
   try {
     return window.sessionStorage;
   } catch {
@@ -47,13 +57,41 @@ export interface AuthFinishDetail {
   token: string;
 }
 
-/** The OS-supplied remote-storage tokens we accept (iOS Safari private mode has none). */
-function readToken(): string | null {
+/** Read a persistent auth value, falling back to an older tab-scoped value. */
+function readAuthValue(key: string): string | null {
   try {
-    return sessionStore()?.getItem(TOKEN_KEY) ?? null;
+    const persistent = persistentStore()?.getItem(key);
+    if (persistent !== null && persistent !== undefined) return persistent;
+  } catch {
+    // Try the tab-scoped fallback below.
+  }
+  try {
+    return tabStore()?.getItem(key) ?? null;
   } catch {
     return null;
   }
+}
+
+/** Promote a legacy tab session into the persistent 24-hour auth session. */
+function migrateLegacyAuth(): void {
+  const persistent = persistentStore();
+  const legacy = tabStore();
+  if (persistent === null || legacy === null) return;
+  try {
+    if (persistent.getItem(TOKEN_KEY) !== null || legacy.getItem(TOKEN_KEY) === null) return;
+    for (const key of [TOKEN_KEY, ACCOUNT_KEY, CHARACTERS_KEY]) {
+      const value = legacy.getItem(key);
+      if (value !== null) persistent.setItem(key, value);
+    }
+  } catch {
+    // Storage may be unavailable or quota-limited; the tab session can continue.
+  }
+}
+
+function readToken(): string | null {
+  const token = readAuthValue(TOKEN_KEY);
+  if (token !== null) migrateLegacyAuth();
+  return token;
 }
 
 /** Read the stored session JWT (null when signed out) — for API calls. */
@@ -64,7 +102,7 @@ export function readAuthToken(): string | null {
 /** Admin is the only role allowed to use in-game developer tools. */
 export function hasAdminDevAccess(): boolean {
   try {
-    const raw = sessionStore()?.getItem(ACCOUNT_KEY) ?? null;
+    const raw = readAuthValue(ACCOUNT_KEY);
     if (raw === null) return false;
     const account = JSON.parse(raw) as { role?: unknown };
     return account.role === "Admin";
@@ -79,31 +117,34 @@ function writeToken(
   characters: CharacterListItem[],
 ): void {
   try {
-    const storage = sessionStore();
+    const storage = persistentStore() ?? tabStore();
     storage?.setItem(TOKEN_KEY, token);
     storage?.setItem(ACCOUNT_KEY, JSON.stringify(account));
     storage?.setItem(CHARACTERS_KEY, JSON.stringify(characters));
   } catch {
-    // If sessionStorage is blocked, the callback will report the sign-in failure.
+    // If persistent storage is blocked, the tab-scoped session can continue.
+    try {
+      const fallback = tabStore();
+      fallback?.setItem(TOKEN_KEY, token);
+      fallback?.setItem(ACCOUNT_KEY, JSON.stringify(account));
+      fallback?.setItem(CHARACTERS_KEY, JSON.stringify(characters));
+    } catch {
+      // The callback will report the sign-in failure when storage is unavailable.
+    }
   }
 }
 
-/** Drop the tab-scoped auth and any credentials left by older builds. */
+/** Drop the persistent auth and any legacy tab-scoped credentials. */
 export function clearAuthStorage(): void {
-  try {
-    const storage = sessionStore();
-    storage?.removeItem(TOKEN_KEY);
-    storage?.removeItem(ACCOUNT_KEY);
-    storage?.removeItem(CHARACTERS_KEY);
-    storage?.removeItem(SELECTED_CHARACTER_KEY);
-    // One-time migration cleanup: older builds stored the active account in
-    // localStorage, which could make two logged-in tabs impersonate each other.
-    window.localStorage.removeItem(TOKEN_KEY);
-    window.localStorage.removeItem(ACCOUNT_KEY);
-    window.localStorage.removeItem(CHARACTERS_KEY);
-    window.localStorage.removeItem(SELECTED_CHARACTER_KEY);
-  } catch {
-    // best effort
+  for (const storage of [persistentStore(), tabStore()]) {
+    try {
+      storage?.removeItem(TOKEN_KEY);
+      storage?.removeItem(ACCOUNT_KEY);
+      storage?.removeItem(CHARACTERS_KEY);
+      storage?.removeItem(SELECTED_CHARACTER_KEY);
+    } catch {
+      // best effort
+    }
   }
 }
 
@@ -295,7 +336,7 @@ export class LoginOverlay {
    * Storage event from another tab logging out — drop our cached copy.
    */
   private handleStorage = (event: StorageEvent): void => {
-    if (event.key === TOKEN_KEY && event.newValue === null) {
+    if (event.storageArea === window.localStorage && event.key === TOKEN_KEY && event.newValue === null) {
       this.show({
         kind: "error",
         message: "Signed out in another tab — sign in again to keep playing.",

@@ -15,7 +15,7 @@ export async function verifyPassword(
   return bcrypt.compare(password, hash);
 }
 
-/** Generate a short-lived access token (JWT). */
+/** Generate the server-authoritative 24-hour session JWT. */
 export async function generateAccessToken(payload: {
   accountId: number;
   ashatUserId: string;

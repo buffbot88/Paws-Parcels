@@ -28,7 +28,7 @@
 - Capture input (movement, interact, attack, UI) and send as **intents**.
 - Predict movement locally; reconcile with authoritative snapshots.
 - Display server-approved results (combat events, quest updates, inventory).
-- Persist only non-authoritative settings (audio, UI, controls) in localStorage.
+- Persist the non-authoritative 24-hour auth session in localStorage so page refreshes do not require another sign-in; gameplay state remains server-side.
 - Never mutate gameplay state locally; never trust its own state for validation.
 
 ### Game/API server
@@ -88,8 +88,8 @@ HTTP is for auth, character management, and content. All real-time gameplay is W
 
 ```text
 client ── POST /api/auth/login ──► server ──► SQLite (verify hash)
-server ── { accessToken (JWT, 15m), refreshToken (random, 7d) } ──► client
-client stores tokens (localStorage/sessionStorage; gameplay state stays server-side)
+server ── { accessToken (JWT, 24h session), refreshToken (random, 24h policy) } ──► client
+client stores the session token in localStorage (PKCE state remains tab-scoped); gameplay state stays server-side
 client ── GET /api/ws-token ──► server ──► { wsToken (30s) }
 client ── WS connect + { type: "authenticate", token: wsToken } ──► server
 server validates wsToken → binds socket to account+character → sends "authenticated"
@@ -98,7 +98,7 @@ server validates wsToken → binds socket to account+character → sends "authen
 - **Passwords:** hashed with **argon2id** (or bcrypt) — never plain text, never logged.
 - **Refresh tokens:** random, stored hashed in SQLite (`refresh_tokens`), rotated on each
   refresh, revocable on logout/compromise.
-- **Access tokens:** short-lived JWTs signed with a server secret from env.
+- **Access tokens:** server-signed JWTs with a default 24-hour absolute session lifetime; the server rejects them after expiration.
 - **Secrets:** `JWT_SECRET`, DB credentials, token-pepper — env/secrets store only;
   never in the repo (`docs/` and `.env*` excluded from commits; `.gitignore` updated in
   Phase 1).

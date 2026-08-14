@@ -6,7 +6,7 @@
 > Status markers: ✅ built · ⏭ next · ⬜ planned · ⚠ blocked or undecided · 🗃 archived
 >
 > Historical single-player decisions were archived to
-> [`docs/archive/decisions-single-player.md`](../docs/archive/decisions-single-player.md).
+> The former single-player decisions document was retired when this online plan became authoritative.
 
 ---
 
@@ -112,13 +112,14 @@
 - **Consequences:** Save system moves entirely server-side; migration scripts versioned.
 - **Status:** ✅ decided.
 
-### localStorage is limited to non-authoritative client settings
-- **Decision:** localStorage may hold **only** client settings (audio volumes, text speed,
-  UI toggles, control bindings, cached login hint). Never gameplay state.
-- **Reason:** Gameplay state is authoritative and must live server-side; local copies would
-  desync and invite cheating.
-- **Consequences:** A save system is no longer a client feature; "progress survives
-  refresh" is replaced by "progress persists on the server."
+### localStorage holds the 24-hour auth session, never gameplay state
+- **Decision:** localStorage may hold the server-issued authentication session and client
+  settings (audio volumes, text speed, UI toggles, control bindings). It must never hold
+  authoritative gameplay state, inventory, quest progress, or character saves.
+- **Reason:** Players should not have to sign in after every page refresh, while gameplay
+  remains server-authoritative and protected from client-side state edits.
+- **Consequences:** The access JWT has a 24-hour absolute lifetime; logout clears it, and
+  a 401 clears the browser session. PKCE state/verifiers remain tab-scoped in sessionStorage.
 - **Status:** ✅ decided.
 
 ---

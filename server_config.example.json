@@ -19,8 +19,8 @@
   },
   "auth": {
     "jwtSecret": "REPLACE_ME_JWT_SECRET_AT_LEAST_32_CHARS_LONG",
-    "accessTokenTtlSeconds": 900,
-    "refreshTokenTtlSeconds": 604800,
+    "accessTokenTtlSeconds": 86400,
+    "refreshTokenTtlSeconds": 86400,
     "bcryptRounds": 12
   },
   "oidc": {

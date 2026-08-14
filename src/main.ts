@@ -7,6 +7,7 @@ import { initErrorLogging } from "./game/ErrorLog.ts";
 import {
   LoginOverlay,
   clearAuthStorage,
+  readAuthToken,
   type AuthFinishDetail,
   type CharacterListItem,
 } from "./ui/LoginOverlay.ts";
@@ -150,15 +151,6 @@ function openCreateDesk(
     (nextCharacters, selectedId) => playWith(detail, nextCharacters, selectedId),
     { forceCreate: true },
   );
-}
-
-/** The JWT stays in this tab's sessionStorage during play; the desk needs it for /api/classes. */
-function readAuthToken(): string | null {
-  try {
-    return window.sessionStorage.getItem("paws.auth.token");
-  } catch {
-    return null;
-  }
 }
 
 /**
