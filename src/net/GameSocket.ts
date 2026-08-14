@@ -106,6 +106,29 @@ export interface NetQuestInventoryItem {
   slot: number | null;
   quantity: number;
   locked: boolean;
+  name?: string;
+  category?: string;
+  rarity?: string;
+  icon?: string | null;
+  equippedSlot?: string | null;
+}
+
+export interface NetEquipmentItem {
+  slot: string;
+  itemInstanceId: number;
+  itemKey: string;
+  name: string;
+  rarity: string;
+  icon: string | null;
+  itemStats: Record<string, number>;
+  courierEffects: Record<string, number>;
+}
+
+export interface NetInventoryState {
+  items: NetQuestInventoryItem[];
+  equipment: NetEquipmentItem[];
+  slotCount: number;
+  stats: Record<string, number>;
 }
 
 export interface NetSnapshotMeta {
@@ -137,7 +160,7 @@ export interface GameSocketCallbacks {
   onQuestState?: (quests: NetQuestSnapshot[]) => void;
   onQuestUpdated?: (payload: { action: string; quest: NetQuestSnapshot; quests: NetQuestSnapshot[]; inventory: NetQuestInventoryItem[]; stamps: number; xp: number; message: string }) => void;
   onQuestNotice?: (message: string) => void;
-  onInventoryUpdated?: (items: NetQuestInventoryItem[], stamps: number) => void;
+  onInventoryUpdated?: (items: NetQuestInventoryItem[], stamps: number, state?: NetInventoryState) => void;
   onError?: (code: string, message: string) => void;
 }
 
@@ -370,6 +393,30 @@ export class GameSocket {
     this.ws.send(encodeMessage({ type: "accept_quest", questId }));
   }
 
+  /** Move an owned inventory item to an empty slot; the server validates ownership. */
+  moveInventoryItem(itemInstanceId: number, targetSlot: number): void {
+    if (this.ws === null || !this.authenticated || this.joinedZoneId === null || this.ws.readyState !== WS_READY_OPEN) return;
+    this.ws.send(encodeMessage({ type: "move_item", itemInstanceId, targetSlot }));
+  }
+
+  /** Equip an owned JSON-defined gear item. */
+  equipItem(itemInstanceId: number, slot?: string): void {
+    if (this.ws === null || !this.authenticated || this.joinedZoneId === null || this.ws.readyState !== WS_READY_OPEN) return;
+    this.ws.send(encodeMessage({ type: "equip_item", itemInstanceId, ...(slot === undefined ? {} : { slot }) }));
+  }
+
+  /** Unequip a slot into the first available authoritative inventory slot. */
+  unequipItem(slot: string): void {
+    if (this.ws === null || !this.authenticated || this.joinedZoneId === null || this.ws.readyState !== WS_READY_OPEN) return;
+    this.ws.send(encodeMessage({ type: "unequip_item", slot }));
+  }
+
+  /** Request the complete server inventory snapshot. */
+  requestInventory(): void {
+    if (this.ws === null || !this.authenticated || this.ws.readyState !== WS_READY_OPEN) return;
+    this.ws.send(encodeMessage({ type: "request_inventory" }));
+  }
+
   /** Send a same-zone chat message; the server validates length and rate. */
   chat(text: string): void {
     if (this.ws === null || !this.authenticated || this.joinedZoneId === null) return;
@@ -439,6 +486,10 @@ export class GameSocket {
           normalizeMonsters(msg.monsters),
         );
         if (Array.isArray(msg.quests)) this.callbacks.onQuestState?.(normalizeQuests(msg.quests));
+        if (msg.inventoryState !== undefined) {
+          const state = normalizeInventoryState(msg.inventoryState);
+          this.callbacks.onInventoryUpdated?.(state.items, Number(msg.stamps ?? 0), state);
+        }
         break;
       }
       case "npc_interaction":
@@ -464,9 +515,11 @@ export class GameSocket {
       case "quest_notice":
         if (typeof msg.message === "string" && msg.message !== "") this.callbacks.onQuestNotice?.(msg.message);
         break;
-      case "inventory_updated":
-        this.callbacks.onInventoryUpdated?.(normalizeQuestInventory(msg.items), Number(msg.stamps ?? 0));
+      case "inventory_updated": {
+        const state = normalizeInventoryState(msg);
+        this.callbacks.onInventoryUpdated?.(state.items, Number(msg.stamps ?? 0), state);
         break;
+      }
       case "player_joined":
         this.callbacks.onPlayerJoined?.(normalizePlayer(msg));
         break;
@@ -683,8 +736,41 @@ function normalizeQuestInventory(raw: unknown): NetQuestInventoryItem[] {
       slot: item.slot === null ? null : Number(item.slot ?? 0),
       quantity: Number(item.quantity ?? 1),
       locked: item.locked === true,
+      ...(typeof item.name === "string" ? { name: item.name } : {}),
+      ...(typeof item.category === "string" ? { category: item.category } : {}),
+      ...(typeof item.rarity === "string" ? { rarity: item.rarity } : {}),
+      ...(item.icon === null || typeof item.icon === "string" ? { icon: item.icon as string | null } : {}),
+      ...(item.equippedSlot === null || typeof item.equippedSlot === "string" ? { equippedSlot: item.equippedSlot as string | null } : {}),
     };
   });
+}
+
+function normalizeInventoryState(raw: unknown): NetInventoryState {
+  const payload = raw as Record<string, unknown>;
+  const equipment = Array.isArray(payload.equipment) ? payload.equipment.map((entry) => {
+    const item = entry as Record<string, unknown>;
+    return {
+      slot: String(item.slot ?? ""),
+      itemInstanceId: Number(item.itemInstanceId ?? 0),
+      itemKey: String(item.itemKey ?? ""),
+      name: String(item.name ?? "Unknown item"),
+      rarity: String(item.rarity ?? "common"),
+      icon: item.icon === null ? null : String(item.icon ?? ""),
+      itemStats: normalizeNumericRecord(item.itemStats),
+      courierEffects: normalizeNumericRecord(item.courierEffects),
+    };
+  }) : [];
+  return {
+    items: normalizeQuestInventory(payload.items),
+    equipment,
+    slotCount: Number(payload.slotCount ?? 12),
+    stats: normalizeNumericRecord(payload.stats),
+  };
+}
+
+function normalizeNumericRecord(raw: unknown): Record<string, number> {
+  if (typeof raw !== "object" || raw === null || Array.isArray(raw)) return {};
+  return Object.fromEntries(Object.entries(raw as Record<string, unknown>).filter(([, value]) => typeof value === "number" && Number.isFinite(value))) as Record<string, number>;
 }
 
 function normalizeLoot(

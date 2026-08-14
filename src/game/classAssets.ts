@@ -45,11 +45,11 @@ export function classSpeedFromId(classId: number): number {
 }
 
 const idleFrames: AssetGlob = import.meta.glob(
-  "../data/Classes/*/Idle/animations/**/*.png",
+  "../../reference/assets/Classes/*/Idle/animations/**/*.png",
   { eager: true, query: "?url", import: "default" },
 ) as AssetGlob;
 const idleRotations: AssetGlob = import.meta.glob(
-  "../data/Classes/*/Idle/rotations/**/*.png",
+  "../../reference/assets/Classes/*/Idle/rotations/**/*.png",
   { eager: true, query: "?url", import: "default" },
 ) as AssetGlob;
 
@@ -58,15 +58,15 @@ const idleRotations: AssetGlob = import.meta.glob(
 // combat pass without shipping the entire 180 MB source directory.
 const effectFrames: AssetGlob = {
   ...import.meta.glob(
-    "../data/Classes/Archer/AttackEffects/Fire Arrow/PNG/*.png",
+    "../../reference/assets/Classes/Archer/AttackEffects/Fire Arrow/PNG/*.png",
     { eager: true, query: "?url", import: "default" },
   ),
   ...import.meta.glob(
-    "../data/Classes/Mage/AttackEffects/Fire Ball/PNG/*.png",
+    "../../reference/assets/Classes/Mage/AttackEffects/Fire Ball/PNG/*.png",
     { eager: true, query: "?url", import: "default" },
   ),
   ...import.meta.glob(
-    "../data/Classes/Warrior/AttackEffects/PNG/1/*.png",
+    "../../reference/assets/Classes/Warrior/AttackEffects/PNG/1/*.png",
     { eager: true, query: "?url", import: "default" },
   ),
 } as AssetGlob;

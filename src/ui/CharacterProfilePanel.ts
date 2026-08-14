@@ -1,4 +1,5 @@
 import { apiPath } from "../config.ts";
+import { NetworkSystem } from "../systems/NetworkSystem.ts";
 
 export interface CharacterProfileData {
   character: {
@@ -34,7 +35,32 @@ export interface CharacterProfileData {
       category: string;
       rarity: string;
       icon: string | null;
+      equippedSlot: string | null;
+      equipmentSlot?: string | null;
     }[];
+  };
+  equipment: {
+    slot: string;
+    itemInstanceId: number;
+    itemKey: string;
+    name: string;
+    description: string;
+    rarity: string;
+    icon: string | null;
+    itemStats: Record<string, number>;
+    courierEffects: Record<string, number>;
+  }[];
+  derived: {
+    attack: number;
+    defense: number;
+    speed: number;
+    critChance: number;
+    critMultiplier: number;
+    parcelCapacity: number;
+    movementBonus: number;
+    fragileProtection: number;
+    weatherProtection: number;
+    navigationBonus: number;
   };
   skills: {
     skillPoints: number;
@@ -218,10 +244,10 @@ export class CharacterProfilePanel {
     const values: [string, string][] = [
       ["Vitality", `${profile.character.hp} / ${profile.character.maxHp}`],
       ["Stamps", String(profile.character.stamps)],
-      ["Attack", String(profile.stats.attack ?? 0)],
-      ["Defense", String(profile.stats.defense ?? 0)],
-      ["Speed", String(profile.stats.speed ?? 0)],
-      ["Critical", `${profile.stats.crit_chance ?? 0}%`],
+      ["Attack", String(profile.derived.attack ?? profile.stats.attack ?? 0)],
+      ["Defense", String(profile.derived.defense ?? profile.stats.defense ?? 0)],
+      ["Speed", String(Math.round(profile.derived.speed ?? profile.stats.speed ?? 0))],
+      ["Critical", `${profile.derived.critChance ?? profile.stats.crit_chance ?? 0}%`],
     ];
     for (const [label, value] of values) {
       const item = document.createElement("div");
@@ -238,6 +264,59 @@ export class CharacterProfilePanel {
   }
 
   private renderInventory(content: HTMLElement, profile: CharacterProfileData): void {
+    const gearHeading = document.createElement("div");
+    gearHeading.className = "profile-section-heading";
+    gearHeading.append(this.text("strong", "Courier Gear"), this.text("span", `${profile.equipment.length} / 6 equipped`));
+    content.appendChild(gearHeading);
+    const gearGrid = document.createElement("div");
+    gearGrid.className = "equipment-grid";
+    for (const slot of ["head", "body", "weapon", "accessory", "boots", "courier-bag"]) {
+      const equipped = profile.equipment.find((item) => item.slot === slot);
+      const card = document.createElement("article");
+      card.className = `equipment-card${equipped === undefined ? " equipment-card--empty" : ""}`;
+      const label = document.createElement("span");
+      label.className = "equipment-card__slot";
+      label.textContent = slot === "courier-bag" ? "Courier Bag" : slot.charAt(0).toUpperCase() + slot.slice(1);
+      const name = document.createElement("strong");
+      name.textContent = equipped?.name ?? "Empty";
+      card.append(label, name);
+      if (equipped !== undefined) {
+        const action = document.createElement("button");
+        action.type = "button";
+        action.className = "profile-panel__action";
+        action.textContent = "Unequip";
+        action.addEventListener("click", () => {
+          NetworkSystem.get().unequipItem(slot);
+          this.setStatus("Unequipping gear…");
+        });
+        card.appendChild(action);
+      }
+      gearGrid.appendChild(card);
+    }
+    content.appendChild(gearGrid);
+
+    const bonusHeading = document.createElement("div");
+    bonusHeading.className = "profile-section-heading";
+    bonusHeading.append(this.text("strong", "Courier Effects"), this.text("span", "From equipped gear"));
+    content.appendChild(bonusHeading);
+    const bonuses = document.createElement("div");
+    bonuses.className = "profile-stat-grid";
+    const bonusValues: [string, string][] = [
+      ["Parcel capacity", `+${profile.derived.parcelCapacity}`],
+      ["Movement", `+${Math.round(profile.derived.movementBonus * 100)}%`],
+      ["Fragile protection", `+${profile.derived.fragileProtection}`],
+      ["Weather protection", `+${profile.derived.weatherProtection}`],
+      ["Navigation", `+${profile.derived.navigationBonus}`],
+      ["Gear speed", String(Math.round(profile.derived.speed))],
+    ];
+    for (const [label, value] of bonusValues) {
+      const item = document.createElement("div");
+      item.className = "profile-stat";
+      item.append(this.text("span", label), this.text("strong", value));
+      bonuses.appendChild(item);
+    }
+    content.appendChild(bonuses);
+
     const heading = document.createElement("div");
     heading.className = "profile-section-heading";
     heading.append(this.text("strong", "Inventory"), this.text("span", `${profile.inventory.items.length} / ${profile.inventory.slotCount} slots`));
@@ -250,9 +329,21 @@ export class CharacterProfilePanel {
       cell.type = "button";
       cell.className = "inventory-slot";
       if (item === undefined) {
-        cell.disabled = true;
-        cell.setAttribute("aria-label", `Empty slot ${slot + 1}`);
+        cell.classList.add("inventory-slot--empty");
+        cell.setAttribute("aria-label", `Empty slot ${slot + 1} — drop an item here`);
+        cell.addEventListener("dragover", (event) => event.preventDefault());
+        cell.addEventListener("drop", (event) => {
+          event.preventDefault();
+          const instanceId = Number(event.dataTransfer?.getData("text/plain"));
+          if (!Number.isInteger(instanceId) || instanceId < 1) return;
+          NetworkSystem.get().moveInventoryItem(instanceId, slot);
+          this.setStatus("Moving item…");
+        });
       } else {
+        cell.draggable = true;
+        cell.addEventListener("dragstart", (event) => {
+          event.dataTransfer?.setData("text/plain", String(item.instanceId));
+        });
         cell.title = `${item.name}: ${item.description}`;
         cell.setAttribute("aria-label", `${item.name}, quantity ${item.quantity}`);
         const icon = document.createElement("span");
@@ -262,6 +353,18 @@ export class CharacterProfilePanel {
         quantity.className = "inventory-slot__quantity";
         quantity.textContent = String(item.quantity);
         cell.append(icon, quantity);
+        if (item.equipmentSlot !== null && item.equipmentSlot !== undefined && item.equippedSlot === null) {
+          const equip = document.createElement("button");
+          equip.type = "button";
+          equip.className = "profile-panel__action inventory-slot__action";
+          equip.textContent = "Equip";
+          equip.addEventListener("click", (event) => {
+            event.stopPropagation();
+            NetworkSystem.get().equipItem(item.instanceId, item.equipmentSlot ?? undefined);
+            this.setStatus("Equipping gear…");
+          });
+          cell.appendChild(equip);
+        }
       }
       grid.appendChild(cell);
     }

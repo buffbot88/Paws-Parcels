@@ -134,8 +134,17 @@ Goal: add optional local errands and friendship-gated stories before opening bro
 - Friendship-gated personal stories with cosmetic and keepsake rewards
 - JSON-authored content with persisted per-character quest/friendship state
 
-### Phase 5 — Inventory and Equipment
+### Phase 5 — Inventory and Equipment 🔄
 Goal: server-authoritative inventory + equipment with gear stats.
+
+Initial vertical slice implemented:
+- JSON-authored equipment definitions and six gear slots
+- Ownership/lock/class/level validation for inventory transactions
+- Equip, unequip, move, and request-inventory WebSocket actions
+- Derived combat and courier effects, including satchel capacity and movement
+- Append-only audit events for item grants and equipment transactions
+
+Remaining polish: weather-system integration and deeper navigation/parcel-condition rules.
 
 ### Phase 6 — First Dungeon and Crafting
 Goal: instanced dungeon + crafting station with recipes.
@@ -159,7 +168,7 @@ Summary of phases:
 - **Phase 4A:** Clover Village Tutorial Quest Chain — ✅ complete
 - **Phase 4B:** Village Side Quests — ✅ complete (initial slice)
 - **JSON content migration:** Items, classes, monsters, loot tables, zones, and skills — ✅ complete
-- **Phase 5:** Inventory and Equipment — ⏭ next
+- **Phase 5:** Inventory and Equipment — 🔄 vertical slice in progress
 - **Phase 6:** First Dungeon and Crafting
 - **Phase 7:** 2.5D Presentation and Content
 - **Phase 8:** Testing and Online Release

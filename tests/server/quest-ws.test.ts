@@ -11,9 +11,10 @@ vi.mock("../../server/src/config/index.ts", () => ({
 import { runMigrations } from "../../server/src/db/migrate.ts";
 import { closeDb } from "../../server/src/db/connection.ts";
 import { findOrCreateAccountByAshatId } from "../../server/src/models/Account.ts";
-import { createCharacter } from "../../server/src/models/Character.ts";
+import { createCharacter, getCharacterWithClass, grantInventoryItems } from "../../server/src/models/Character.ts";
 import { getCharacterClasses } from "../../server/src/models/CharacterClass.ts";
 import { acceptQuest, completeDelivery, getQuestInventory, getQuestState } from "../../server/src/models/Quest.ts";
+import { equipItem, getInventoryState, unequipItem } from "../../server/src/models/Equipment.ts";
 import { GameServer, type SocketLike } from "../../server/src/ws/gameServer.ts";
 import { issueWsToken, resetWsTokenStore } from "../../server/src/ws/tokenStore.ts";
 
@@ -42,9 +43,11 @@ function lastOfType(socket: FakeSocket, type: string): Record<string, unknown> |
 
 function makeServer(characterId: number, accountId: number) {
   return new GameServer({
-    loadCharacter: async (id: number) => id === characterId
-      ? { characterId: id, accountId, name: "Quest User", classKey: "bear-warrior", zoneId: ZONE, pos: { ...PIP_TILE }, hp: 100, maxHp: 100, attack: 5, defense: 5, speed: 4, critChance: 0.05, critMultiplier: 1.5 }
-      : null,
+    loadCharacter: async (id: number) => {
+      if (id !== characterId) return null;
+      const row = await getCharacterWithClass(id);
+      return row === null ? null : { characterId: id, accountId, name: row.name, classKey: row.class_key, zoneId: ZONE, pos: { ...PIP_TILE }, hp: row.hp, maxHp: row.max_hp, attack: row.attack, defense: row.defense, speed: row.speed, critChance: row.crit_chance, critMultiplier: row.crit_multiplier };
+    },
     getZoneData: () => ({
       zoneId: ZONE, width: 100, height: 100, spawn: { x: 0, y: 0 },
       isWalkable: () => true, monsterSpawns: [],
@@ -54,6 +57,9 @@ function makeServer(characterId: number, accountId: number) {
     acceptQuest,
     completeDelivery,
     getQuestInventory,
+    getInventoryState,
+    equipItem,
+    unequipItem,
   } as unknown as ConstructorParameters<typeof GameServer>[0]);
 }
 
@@ -101,6 +107,30 @@ describe("GameServer quest flow (WS)", () => {
     expect(updated).toBeDefined();
     expect(updated).toMatchObject({ action: "accepted" });
     expect((updated as { quest: { questId: string; state: string } }).quest).toMatchObject({ questId: "quest-village-welcome", state: "active" });
+  });
+
+  it("equips and unequips JSON-authored gear through authoritative WS transactions", async () => {
+    await runMigrations();
+    const account = await findOrCreateAccountByAshatId({ ashatUserId: "ws-equipment-user", username: "ws-equipment-user", displayName: "WS Equipment User", role: "Member" });
+    const cls = (await getCharacterClasses())[0];
+    const created = await createCharacter({ accountId: account.id, name: "WS Equipment User", classId: cls.id, appearance: {}, cls });
+    if (!created.ok) throw new Error("character creation failed");
+    await grantInventoryItems(created.character.id, [{ itemKey: "item-training-blade", quantity: 1 }]);
+
+    const server = makeServer(created.character.id, account.id);
+    const socket = fakeSocket();
+    await connectAndJoin(server, socket, created.character.id, account.id);
+    const blade = getInventoryState(created.character.id).items.find((item) => item.itemKey === "item-training-blade");
+    if (blade === undefined) throw new Error("gear grant failed");
+
+    await server.onMessage(socket, JSON.stringify({ type: "equip_item", itemInstanceId: blade.itemInstanceId, slot: "weapon" }));
+    const equipped = lastOfType(socket, "inventory_updated");
+    expect(equipped).toMatchObject({ type: "inventory_updated", message: "Weapon equipped." });
+    expect((equipped as { equipment: Array<{ slot: string }> }).equipment.map((item) => item.slot)).toContain("weapon");
+    expect((equipped as { stats: { attack: number } }).stats.attack).toBe(cls.base_stats.attack + 3);
+
+    await server.onMessage(socket, JSON.stringify({ type: "unequip_item", slot: "weapon" }));
+    expect(lastOfType(socket, "inventory_updated")).toMatchObject({ message: "Weapon unequipped." });
   });
 
   it("interact with an out-of-range NPC is rejected with OUT_OF_RANGE", async () => {

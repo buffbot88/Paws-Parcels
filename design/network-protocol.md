@@ -134,6 +134,19 @@ processes each message independently.
   is `{}` until abilities land).
 - **Failure cases:** out of range, invalid target, target dead, cooldown not elapsed.
 
+### move_item
+```json
+{
+  "type": "move_item",
+  "itemInstanceId": 42,
+  "targetSlot": 5
+}
+```
+- **Validation:** item must belong to the authenticated character, be unlocked and
+  unequipped, and target an empty slot within the effective inventory capacity.
+- **Expected response:** `inventory_updated` with the complete inventory/equipment snapshot.
+- **Failure cases:** item not owned, item locked/equipped, invalid or occupied slot.
+
 ### equip_item
 ```json
 {
@@ -142,11 +155,32 @@ processes each message independently.
   "slot": "weapon"
 }
 ```
-- **Validation:** item must exist in character's inventory, be unequipped, belong to a
-  valid equipment category for that slot, and have no level/class restrictions (or the
-  character must meet them).
-- **Expected response:** `inventory_updated` (item removed from inventory slot, equipped).
-- **Failure cases:** item not owned, wrong slot, class restricted, insufficient level.
+- **Validation:** item must exist in character's inventory, be unlocked and unequipped,
+  belong to a valid JSON-authored equipment category for that slot, and satisfy any
+  class/level restrictions. Existing gear in the slot is atomically swapped back into
+  the incoming item's inventory slot.
+- **Expected response:** `inventory_updated` with equipment, derived stats, and effective
+  slot capacity.
+- **Failure cases:** item not owned, locked/equipped, wrong slot, class restricted,
+  insufficient level.
+
+### unequip_item
+```json
+{
+  "type": "unequip_item",
+  "slot": "weapon"
+}
+```
+- **Validation:** the slot must contain gear owned by the character and an effective
+  inventory slot must be available.
+- **Expected response:** `inventory_updated`.
+- **Failure cases:** invalid/empty slot, inventory full.
+
+### request_inventory
+```json
+{ "type": "request_inventory" }
+```
+- **Expected response:** the complete authoritative `inventory_updated` snapshot.
 
 ### leave_zone
 ```json
@@ -330,25 +364,16 @@ processes each message independently.
   "items": [
     { "itemInstanceId": 1, "itemKey": "item-village-welcome-card", "slot": 0, "quantity": 1, "locked": true }
   ],
+  "equipment": [],
+  "slotCount": 12,
+  "stats": { "attack": 10, "defense": 8, "speed": 150, "parcelCapacity": 0 },
   "stamps": 5
 }
 ```
-- **Payload:** the minimal quest/inventory snapshot emitted after accepting or completing a tutorial route.
-
-### inventory_updated
-```json
-{
-  "type": "inventory_updated",
-  "items": [
-    { "itemInstanceId": 1, "itemKey": "item-strawberry", "slot": 1, "quantity": 3 },
-    { "itemInstanceId": 2, "itemKey": "item-letter", "slot": 2, "quantity": 1 }
-  ],
-  "stamps": 125
-}
-```
-- **Payload:** the character's full current inventory state (idempotent; always the full
-  list for the character — the client diffs locally).
-- **Client action:** update inventory UI; play loot sound if new items.
+- **Payload:** the complete current inventory/equipment state. Item definitions, gear
+  stats, and courier effects originate in JSON; ownership and slots originate in SQLite.
+  The payload is idempotent and safe to apply repeatedly.
+- **Client action:** update inventory UI and derived courier stats; play loot sound if new items.
 
 ### loot_received
 ```json
@@ -361,9 +386,8 @@ processes each message independently.
 }
 ```
 - **Payload:** a monster or loot-source produced items for the character.
-- **Client action:** play loot animation; UI notification. **Note:** until Phase 5,
-  this is an announcement + the monster's XP grant only — the item is not yet
-  granted to the character's inventory (`inventory_updated` arrives with Phase 5).
+- **Client action:** play loot animation and UI notification. The server commits the
+  item grant and emits a full `inventory_updated` snapshot.
 
 ### error
 ```json
@@ -384,5 +408,7 @@ processes each message independently.
   `QUEST_PREREQUISITES_NOT_MET`, `QUEST_ALREADY_COMPLETE`, `ITEM_NOT_OWNED`,
   `INVENTORY_FULL`, `INVALID_SLOT`, `CLASS_RESTRICTED`, `ZONE_FULL`,  `ZONE_NOT_FOUND`, `OUT_OF_RANGE`, `QUEST_NOT_AVAILABLE`, `QUEST_ALREADY_ACTIVE`,
   `QUEST_ALREADY_COMPLETE`, `QUEST_NOT_ACTIVE`, `QUEST_ITEM_MISSING`,
-  `WRONG_DELIVERY_TARGET`, `INVENTORY_FULL`,
-  `NOT_AUTHENTICATED`, `NOT_IN_ZONE`, `INTERNAL_ERROR`
+  `WRONG_DELIVERY_TARGET`, `INVENTORY_FULL`, `ITEM_NOT_OWNED`, `ITEM_LOCKED`,
+  `ITEM_EQUIPPED`, `INVALID_SLOT`, `SLOT_OCCUPIED`, `CLASS_RESTRICTED`,
+  `LEVEL_REQUIRED`, `NOT_EQUIPPED`, `NOT_AUTHENTICATED`, `NOT_IN_ZONE`,
+  `INTERNAL_ERROR`

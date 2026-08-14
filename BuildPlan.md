@@ -303,13 +303,16 @@ See [`design/crafting.md`](design/crafting.md). Summary:
 - [x] Synchronize static JSON into runtime lookup tables without hardcoded SQL seeds
 - [ ] Expand broader quest content outward into Happy Valley after the side-quest slice is stable
 
-### Phase 5 — Inventory and Equipment
+### Phase 5 — Inventory and Equipment (in progress)
 
-> The tutorial includes only the minimal locked parcel slice needed for delivery quests; full inventory/equipment interactions remain Phase 5.
-- Add server-authoritative inventory
-- Add item ownership validation
-- Add equipment slots + gear stats
-- Add item rewards + secure item transactions (audited)
+> The tutorial includes only the minimal locked parcel slice needed for delivery quests; Phase 5 expands that foundation into player-owned gear and courier effects.
+- [x] Add server-authoritative inventory snapshots and slot movement protocol
+- [x] Add item ownership, locked-parcel, class, and level validation
+- [x] Add six equipment slots + JSON-authored gear stats
+- [x] Add courier effects for satchel capacity, movement, fragile parcels, weather, and navigation
+- [x] Add item rewards/loot and secure equip, unequip, and move transactions with audit events
+- [x] Add basic drag-and-drop inventory presentation
+- [ ] Add weather-system integration and deeper navigation/parcel-condition rules
 
 ### Phase 6 — First Dungeon and Crafting
 - Add one dungeon (instanced, isolated)

@@ -18,6 +18,7 @@
     "test": "node node_modules/vitest/vitest.mjs run",
     "test:watch": "node node_modules/vitest/vitest.mjs",
     "validate": "node scripts/validate-content.ts",
+    "assets:inventory": "node scripts/inventory-assets.mjs",
     "tiles:render": "node --import tsx scripts/render-tiles.mjs",
     "tiles:review": "node --import tsx scripts/ai-tile-review.mjs",
     "tiles:loop": "node --import tsx scripts/render-tiles.mjs && node --import tsx scripts/ai-tile-review.mjs",

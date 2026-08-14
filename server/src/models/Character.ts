@@ -2,6 +2,7 @@ import { getDb } from "../db/connection.ts";
 import type { CharacterClassRow } from "./CharacterClass.ts";
 import { getZoneByKey } from "./Zone.ts";
 import { logger } from "../middleware/logger.ts";
+import { auditInventoryEvent, getDerivedEquipmentStats, getEffectiveSlotCount, getInventoryState, type EquipmentStats } from "./Equipment.ts";
 
 type SqlRow = Record<string, unknown>;
 
@@ -35,6 +36,11 @@ export interface CharacterCombatStats {
   speed: number;
   crit_chance: number;
   crit_multiplier: number;
+  parcel_capacity: number;
+  movement_bonus: number;
+  fragile_protection: number;
+  weather_protection: number;
+  navigation_bonus: number;
 }
 
 export type CreateCharacterResult =
@@ -57,8 +63,22 @@ export interface CharacterProfile {
       category: string;
       rarity: string;
       icon: string | null;
+      equippedSlot: string | null;
+      equipmentSlot: string | null;
     }[];
   };
+  equipment: {
+    slot: string;
+    itemInstanceId: number;
+    itemKey: string;
+    name: string;
+    description: string;
+    rarity: string;
+    icon: string | null;
+    itemStats: Record<string, number>;
+    courierEffects: Record<string, number>;
+  }[];
+  derived: EquipmentStats;
   skills: {
     skillPoints: number;
     entries: {
@@ -149,7 +169,21 @@ export async function getCharacterWithClass(characterId: number): Promise<Charac
       cs.crit_chance, cs.crit_multiplier FROM characters c JOIN character_classes cc ON cc.id = c.class_id
       LEFT JOIN character_stats cs ON cs.character_id = c.id WHERE c.id = ? LIMIT 1`).get(characterId) as SqlRow | undefined;
   if (row === undefined) return null;
-  return { id: Number(row.id), account_id: Number(row.account_id), name: String(row.name ?? ""), class_key: String(row.class_key ?? ""), zone_id: String(row.zone_id ?? "zone-clover-village"), pos_x: Number(row.pos_x ?? 0), pos_y: Number(row.pos_y ?? 0), level: Number(row.level ?? 1), hp: Number(row.hp ?? row.max_hp ?? 100), max_hp: Number(row.max_hp ?? 100), attack: Number(row.attack ?? 10), defense: Number(row.defense ?? 5), speed: Number(row.speed ?? 180), crit_chance: Number(row.crit_chance ?? 5), crit_multiplier: Number(row.crit_multiplier ?? 1.5) };
+  const derived = getDerivedEquipmentStats(characterId, {
+    attack: Number(row.attack ?? 10),
+    defense: Number(row.defense ?? 5),
+    speed: Number(row.speed ?? 180),
+    critChance: Number(row.crit_chance ?? 5),
+    critMultiplier: Number(row.crit_multiplier ?? 1.5),
+  });
+  return {
+    id: Number(row.id), account_id: Number(row.account_id), name: String(row.name ?? ""), class_key: String(row.class_key ?? ""),
+    zone_id: String(row.zone_id ?? "zone-clover-village"), pos_x: Number(row.pos_x ?? 0), pos_y: Number(row.pos_y ?? 0),
+    level: Number(row.level ?? 1), hp: Number(row.hp ?? row.max_hp ?? 100), max_hp: Number(row.max_hp ?? 100),
+    attack: derived.attack, defense: derived.defense, speed: derived.speed, crit_chance: derived.critChance,
+    crit_multiplier: derived.critMultiplier, parcel_capacity: derived.parcelCapacity, movement_bonus: derived.movementBonus,
+    fragile_protection: derived.fragileProtection, weather_protection: derived.weatherProtection, navigation_bonus: derived.navigationBonus,
+  };
 }
 
 /** Load all server-owned data needed by the Character Info, Inventory, and Skill Tree screens. */
@@ -164,9 +198,7 @@ export async function getCharacterProfile(characterId: number): Promise<Characte
       FROM characters c JOIN character_classes cc ON cc.id = c.class_id
       LEFT JOIN character_stats cs ON cs.character_id = c.id WHERE c.id = ? LIMIT 1`).get(characterId) as SqlRow | undefined;
   if (row === undefined) return null;
-  const inv = db.prepare(`SELECT i.id AS instance_id, i.slot, i.quantity, d.key, d.name, d.description,
-      d.category, d.rarity, d.icon FROM inventories v LEFT JOIN inventory_items i ON i.character_id = v.character_id
-      LEFT JOIN item_definitions d ON d.id = i.item_definition_id WHERE v.character_id = ? ORDER BY i.slot ASC, i.id ASC`).all(characterId) as SqlRow[];
+  const equipmentState = getInventoryState(characterId);
   const skillRows = db.prepare(`SELECT s.skill_key, s.name, s.description, s.cost, s.required_level,
       s.prerequisite_key, CASE WHEN cs.skill_key IS NULL THEN 0 ELSE 1 END AS unlocked
       FROM skill_definitions s LEFT JOIN character_skills cs ON cs.skill_key = s.skill_key AND cs.character_id = ?
@@ -179,7 +211,9 @@ export async function getCharacterProfile(characterId: number): Promise<Characte
     character: { id: Number(row.id), name: String(row.name ?? ""), classId: Number(row.class_id), level: Number(row.level ?? 1), experience: Number(row.experience ?? 0), stamps: Number(row.stamps ?? 0), courierRank: String(row.courier_rank ?? "Trainee"), hp: Number(row.hp ?? 0), maxHp: Number(row.max_hp ?? 0), resource: Number(row.resource_current ?? 0), zoneId: String(row.zone_id ?? ""), pos: { x: Number(row.pos_x ?? 0), y: Number(row.pos_y ?? 0) }, appearance: parseJsonObject(row.appearance) },
     class: { key: String(row.class_key ?? ""), name: String(row.class_name ?? ""), animal: String(row.animal ?? ""), role: String(row.role ?? ""), primaryResource: String(row.primary_resource ?? ""), resourceMax: Number(row.resource_max ?? 0), description: String(row.class_description ?? "") },
     stats,
-    inventory: { slotCount: Number((db.prepare("SELECT slot_count FROM inventories WHERE character_id = ?").get(characterId) as SqlRow | undefined)?.slot_count ?? 12), items: inv.filter((item) => item.instance_id !== null).map((item) => ({ instanceId: Number(item.instance_id), slot: item.slot === null ? null : Number(item.slot), quantity: Number(item.quantity ?? 1), key: String(item.key ?? ""), name: String(item.name ?? "Unknown parcel"), description: String(item.description ?? ""), category: String(item.category ?? ""), rarity: String(item.rarity ?? "common"), icon: item.icon === null ? null : String(item.icon) })) },
+    inventory: { slotCount: equipmentState.slotCount, items: equipmentState.items.map((item) => ({ instanceId: item.itemInstanceId, slot: item.slot, quantity: item.quantity, key: item.itemKey, name: item.name, description: item.description, category: item.category, rarity: item.rarity, icon: item.icon, equippedSlot: item.equippedSlot, equipmentSlot: item.equipmentSlot })) },
+    equipment: equipmentState.equipment,
+    derived: equipmentState.stats,
     skills: { skillPoints: Number(row.skill_points ?? 0), entries: skillRows.map((skill) => ({ key: String(skill.skill_key), name: String(skill.name), description: String(skill.description), cost: Number(skill.cost ?? 1), requiredLevel: Number(skill.required_level ?? 1), prerequisiteKey: skill.prerequisite_key === null ? null : String(skill.prerequisite_key), unlocked: Number(skill.unlocked) === 1 })) },
   };
 }
@@ -189,6 +223,7 @@ export async function grantInventoryItems(characterId: number, items: { itemKey:
   const db = getDb();
   const inventory = db.prepare("SELECT slot_count FROM inventories WHERE character_id = ?").get(characterId) as SqlRow | undefined;
   if (inventory === undefined) return;
+  const effectiveSlotCount = getEffectiveSlotCount(characterId);
   const findDef = db.prepare("SELECT id, max_stack FROM item_definitions WHERE key = ? LIMIT 1");
   const findStacks = db.prepare("SELECT id, quantity FROM inventory_items WHERE character_id = ? AND item_definition_id = ? AND quantity < ? ORDER BY id ASC");
   const findSlot = db.prepare("SELECT slot FROM inventory_items WHERE character_id = ? AND slot IS NOT NULL");
@@ -204,15 +239,17 @@ export async function grantInventoryItems(characterId: number, items: { itemKey:
       const add = Math.min(remaining, maxStack - Number(stack.quantity));
       if (add <= 0) continue;
       db.prepare("UPDATE inventory_items SET quantity = quantity + ? WHERE id = ?").run(add, Number(stack.id));
+      auditInventoryEvent(characterId, "item_grant", Number(stack.id), add, "monster_loot");
       remaining -= add;
     }
     while (remaining > 0) {
       const used = new Set(findSlot.all(characterId).map((r) => Number((r as SqlRow).slot)));
       let slot: number | null = null;
-      for (let candidate = 0; candidate < Number(inventory.slot_count ?? 12); candidate++) if (!used.has(candidate)) { slot = candidate; break; }
+      for (let candidate = 0; candidate < effectiveSlotCount; candidate++) if (!used.has(candidate)) { slot = candidate; break; }
       if (slot === null) return;
       const add = Math.min(remaining, maxStack);
-      insert.run(characterId, Number(def.id), slot, add);
+      const inserted = insert.run(characterId, Number(def.id), slot, add);
+      auditInventoryEvent(characterId, "item_grant", Number(inserted.lastInsertRowid), add, "monster_loot");
       remaining -= add;
     }
   }

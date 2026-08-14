@@ -6,7 +6,7 @@
 >
 > **Map note:** Phase 3's open-world combat zone is **Happy Valley** (`zone-happy-valley`).
 > The old Bramble Patch plan was dropped — the art pack shipped for Happy Valley instead
-> (`src/data/maps/HappyValley/`), so the first monster family is built from its mobs.
+> (`reference/assets/maps/HappyValley/`), so the first monster family is built from its mobs.
 
 ---
 
@@ -23,7 +23,7 @@
 
 ## 2. First monster family: Happy Valley Critters
 
-Built from the Happy Valley art pack mobs (`src/data/maps/HappyValley/Mob/` — boar,
+Built from the Happy Valley art pack mobs (`reference/assets/maps/HappyValley/Mob/` — boar,
 fox, hare, deer, black grouse).
 
 | Species | Key | Level | HP | Attack | Defense | Behavior |

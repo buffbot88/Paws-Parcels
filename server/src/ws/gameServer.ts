@@ -10,6 +10,7 @@ import type { ZoneData } from "./zoneData.ts";
 import type { MonsterBrain } from "../ai/MonsterBrain.ts";
 import type { ZoneScene } from "../ai/prompts.ts";
 import type { QuestMutationResult, QuestSnapshot, QuestInventoryItem } from "../models/Quest.ts";
+import type { EquipmentMutationResult, InventoryState } from "../models/Equipment.ts";
 import { logger } from "../middleware/logger.ts";
 
 /** Defaults from design/architecture.md §5/§7 (180 px/s over 48px tiles). */
@@ -73,6 +74,10 @@ export interface GameServerDeps {
   completeDelivery?: (characterId: number, targetNpcId: string) => Promise<QuestMutationResult>;
   searchQuest?: (characterId: number, objectId: string) => Promise<QuestMutationResult>;
   getQuestInventory?: (characterId: number) => QuestInventoryItem[];
+  getInventoryState?: (characterId: number) => InventoryState;
+  moveInventoryItem?: (characterId: number, itemInstanceId: number, targetSlot: number) => EquipmentMutationResult;
+  equipItem?: (characterId: number, itemInstanceId: number, requestedSlot?: string) => EquipmentMutationResult;
+  unequipItem?: (characterId: number, slot: string) => EquipmentMutationResult;
   /** Server-side map-object tile lookup used to validate search interactions. */
   getObjectPosition?: (objectId: string, zoneId: string) => { x: number; y: number } | null;
   /** Reset fragile tutorial parcels when a courier is defeated. */
@@ -286,6 +291,18 @@ export class GameServer {
       case "search_quest":
         await this.handleSearchQuest(session, msg);
         return;
+      case "move_item":
+        this.handleMoveItem(session, msg);
+        return;
+      case "equip_item":
+        await this.handleEquipItem(session, msg);
+        return;
+      case "unequip_item":
+        await this.handleUnequipItem(session, msg);
+        return;
+      case "request_inventory":
+        this.handleRequestInventory(session);
+        return;
       case "zone_chat":
         this.handleZoneChat(session, msg);
         return;
@@ -424,6 +441,7 @@ export class GameServer {
         ? []
         : await this.deps.getQuestState(characterId),
       inventory: this.deps.getQuestInventory?.(characterId) ?? [],
+      ...(this.deps.getInventoryState === undefined ? {} : { inventoryState: this.deps.getInventoryState(characterId) }),
     });
   }
 
@@ -474,6 +492,89 @@ export class GameServer {
       return;
     }
     this.sendQuestMutation(session, result, "searched");
+  }
+
+  private handleRequestInventory(session: Session): void {
+    if (!this.requireAuth(session)) return;
+    const characterId = session.characterId;
+    if (characterId === null || this.deps.getInventoryState === undefined) {
+      this.sendError(session, "INTERNAL_ERROR", "Inventory service is unavailable", "request_inventory");
+      return;
+    }
+    this.sendInventoryState(session, this.deps.getInventoryState(characterId));
+  }
+
+  private handleMoveItem(session: Session, msg: Record<string, unknown>): void {
+    if (!this.requireAuth(session)) return;
+    const characterId = session.characterId;
+    if (characterId === null || this.deps.moveInventoryItem === undefined) {
+      this.sendError(session, "INTERNAL_ERROR", "Inventory service is unavailable", "move_item");
+      return;
+    }
+    const result = this.deps.moveInventoryItem(characterId, Number(msg.itemInstanceId), Number(msg.targetSlot));
+    if (!result.ok) {
+      this.sendError(session, result.reason, "Inventory move rejected", "move_item");
+      return;
+    }
+    this.sendInventoryState(session, result.inventory);
+  }
+
+  private async handleEquipItem(session: Session, msg: Record<string, unknown>): Promise<void> {
+    if (!this.requireAuth(session)) return;
+    const characterId = session.characterId;
+    if (characterId === null || this.deps.equipItem === undefined) {
+      this.sendError(session, "INTERNAL_ERROR", "Equipment service is unavailable", "equip_item");
+      return;
+    }
+    const requestedSlot = typeof msg.slot === "string" ? msg.slot : undefined;
+    const result = this.deps.equipItem(characterId, Number(msg.itemInstanceId), requestedSlot);
+    if (!result.ok) {
+      this.sendError(session, result.reason, "Equipment change rejected", "equip_item");
+      return;
+    }
+    await this.refreshSessionStats(session);
+    this.sendInventoryState(session, result.inventory, result.message);
+  }
+
+  private async handleUnequipItem(session: Session, msg: Record<string, unknown>): Promise<void> {
+    if (!this.requireAuth(session)) return;
+    const characterId = session.characterId;
+    if (characterId === null || this.deps.unequipItem === undefined) {
+      this.sendError(session, "INTERNAL_ERROR", "Equipment service is unavailable", "unequip_item");
+      return;
+    }
+    const result = this.deps.unequipItem(characterId, typeof msg.slot === "string" ? msg.slot : "");
+    if (!result.ok) {
+      this.sendError(session, result.reason, "Equipment change rejected", "unequip_item");
+      return;
+    }
+    await this.refreshSessionStats(session);
+    this.sendInventoryState(session, result.inventory, result.message);
+  }
+
+  private async refreshSessionStats(session: Session): Promise<void> {
+    if (session.characterId === null || session.zoneId === null) return;
+    const player = this.zones.get(session.zoneId, session.characterId);
+    if (player === null || this.deps.loadCharacter === undefined) return;
+    const refreshed = await this.deps.loadCharacter(session.characterId);
+    if (refreshed === null) return;
+    player.attack = refreshed.attack;
+    player.defense = refreshed.defense;
+    player.speed = refreshed.speed;
+    player.critChance = refreshed.critChance;
+    player.critMultiplier = refreshed.critMultiplier;
+  }
+
+  private sendInventoryState(session: Session, inventory: InventoryState, message?: string): void {
+    session.socket.send({
+      type: "inventory_updated",
+      items: inventory.items,
+      equipment: inventory.equipment,
+      slotCount: inventory.slotCount,
+      stats: inventory.stats,
+      stamps: inventory.stamps,
+      ...(message === undefined ? {} : { message }),
+    });
   }
 
   private async handleAcceptQuest(session: Session, msg: Record<string, unknown>): Promise<void> {

@@ -59,6 +59,7 @@ import {
 } from "../../server/src/models/Character.ts";
 import { getCharacterClasses } from "../../server/src/models/CharacterClass.ts";
 import { getZoneByKey } from "../../server/src/models/Zone.ts";
+import { equipItem, getInventoryState, unequipItem } from "../../server/src/models/Equipment.ts";
 
 afterEach(async () => {
   await closeDb(); // next test reopens a fresh in-memory database
@@ -81,7 +82,7 @@ describe("SQLite persistence layer", () => {
       "cat-mage",
       "fox-archer",
     ]);
-    expect((getDb().prepare("SELECT COUNT(*) AS count FROM item_definitions").get() as { count: number }).count).toBe(31);
+    expect((getDb().prepare("SELECT COUNT(*) AS count FROM item_definitions").get() as { count: number }).count).toBe(37);
     expect((getDb().prepare("SELECT COUNT(*) AS count FROM skill_definitions").get() as { count: number }).count).toBe(9);
     expect((getDb().prepare("SELECT COUNT(*) AS count FROM monster_definitions").get() as { count: number }).count).toBe(5);
   });
@@ -174,6 +175,51 @@ describe("SQLite persistence layer", () => {
     if (unlocked.ok) expect(unlocked.profile.skills.entries[0].unlocked).toBe(true);
     expect((await unlockSkill(created.character.id, "bear-iron-hide"))).toEqual({ ok: false, reason: "ALREADY_UNLOCKED" });
     expect((await unlockSkill(created.character.id, "cat-arcane-focus"))).toEqual({ ok: false, reason: "WRONG_CLASS" });
+  });
+
+  it("validates owned gear, applies courier effects, and audits equipment transactions", async () => {
+    await runMigrations();
+    const account = await findOrCreateAccountByAshatId({ ashatUserId: "u-equipment", username: "equipment", displayName: "Equipment", role: "Member" });
+    const cls = (await getCharacterClasses())[0];
+    const created = await createCharacter({ accountId: account.id, name: "Equipment", classId: cls.id, appearance: {}, cls });
+    expect(created.ok).toBe(true);
+    if (!created.ok) return;
+
+    await grantInventoryItems(created.character.id, [
+      { itemKey: "item-courier-satchel", quantity: 1 },
+      { itemKey: "item-training-blade", quantity: 1 },
+      { itemKey: "item-trail-boots", quantity: 1 },
+    ]);
+    const before = getInventoryState(created.character.id);
+    const satchel = before.items.find((item) => item.itemKey === "item-courier-satchel");
+    const blade = before.items.find((item) => item.itemKey === "item-training-blade");
+    const boots = before.items.find((item) => item.itemKey === "item-trail-boots");
+    expect(satchel?.slot).not.toBeNull();
+    expect(blade?.slot).not.toBeNull();
+    expect(boots?.slot).not.toBeNull();
+    expect(equipItem(created.character.id, 999999)).toEqual({ ok: false, reason: "ITEM_NOT_OWNED" });
+
+    const bagResult = equipItem(created.character.id, satchel!.itemInstanceId, "courier-bag");
+    expect(bagResult.ok).toBe(true);
+    if (!bagResult.ok) return;
+    expect(bagResult.inventory.slotCount).toBe(18);
+    expect(bagResult.inventory.stats.parcelCapacity).toBe(6);
+    expect(bagResult.inventory.stats.fragileProtection).toBe(1);
+
+    const bladeResult = equipItem(created.character.id, blade!.itemInstanceId);
+    expect(bladeResult.ok).toBe(true);
+    if (!bladeResult.ok) return;
+    expect(bladeResult.inventory.stats.attack).toBe(cls.base_stats.attack + 3);
+    expect(bladeResult.inventory.equipment.map((item) => item.slot)).toEqual(expect.arrayContaining(["courier-bag", "weapon"]));
+
+    const bootResult = equipItem(created.character.id, boots!.itemInstanceId);
+    expect(bootResult.ok).toBe(true);
+    if (!bootResult.ok) return;
+    expect(bootResult.inventory.stats.speed).toBeCloseTo(cls.base_stats.speed * 1.1);
+
+    const unequipped = unequipItem(created.character.id, "weapon");
+    expect(unequipped.ok).toBe(true);
+    expect((getDb().prepare("SELECT COUNT(*) AS count FROM audit_economy_events WHERE character_id = ? AND event_type IN ('equip_item', 'unequip_item')").get(created.character.id) as { count: number }).count).toBeGreaterThanOrEqual(4);
   });
 
   it("returns the class key for a WS session and persists position updates", async () => {

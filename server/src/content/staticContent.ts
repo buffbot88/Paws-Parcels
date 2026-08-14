@@ -16,6 +16,11 @@ type StaticItem = {
   icon: string;
   rarity?: string;
   value?: number;
+  equipmentSlot?: string;
+  stats?: Record<string, number>;
+  courierEffects?: Record<string, number>;
+  requiredClass?: string;
+  requiredLevel?: number;
 };
 
 /**
@@ -104,16 +109,23 @@ function syncZones(): void {
 function syncItems(): void {
   const db = getDb();
   const statement = db.prepare(`INSERT INTO item_definitions
-    (key, name, description, category, max_stack, icon, rarity, value)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+    (key, name, description, category, max_stack, icon, base_stats, rarity, value,
+     equipment_slot, equipment_stats, courier_effects, required_class, required_level)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     ON CONFLICT(key) DO UPDATE SET
       name = excluded.name,
       description = excluded.description,
       category = excluded.category,
       max_stack = excluded.max_stack,
       icon = excluded.icon,
+      base_stats = excluded.base_stats,
       rarity = excluded.rarity,
-      value = excluded.value`);
+      value = excluded.value,
+      equipment_slot = excluded.equipment_slot,
+      equipment_stats = excluded.equipment_stats,
+      courier_effects = excluded.courier_effects,
+      required_class = excluded.required_class,
+      required_level = excluded.required_level`);
   for (const item of itemsJson.items as StaticItem[]) {
     statement.run(
       item.id,
@@ -122,8 +134,14 @@ function syncItems(): void {
       item.category,
       item.maxStack,
       item.icon,
+      JSON.stringify(item.stats ?? {}),
       item.rarity ?? "common",
       item.value ?? 0,
+      item.equipmentSlot ?? null,
+      JSON.stringify(item.stats ?? {}),
+      JSON.stringify(item.courierEffects ?? {}),
+      item.requiredClass ?? null,
+      item.requiredLevel ?? 1,
     );
   }
 }

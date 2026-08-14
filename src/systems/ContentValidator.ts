@@ -15,7 +15,8 @@ const ZONE_DIMS: Record<ZoneId, { w: number; h: number }> = {
   "zone-clover-village": { w: 75, h: 75 },
 };
 
-const CATEGORIES: readonly ItemCategory[] = ["resource", "gift", "delivery", "quest", "cosmetic", "material"];
+const CATEGORIES: readonly ItemCategory[] = ["resource", "gift", "delivery", "quest", "cosmetic", "material", "equipment"];
+const EQUIPMENT_SLOTS = ["head", "body", "weapon", "accessory", "boots", "courier-bag"] as const;
 const QUEST_TYPES: readonly QuestType[] = ["delivery", "gathering", "errand"];
 
 /**
@@ -86,6 +87,21 @@ export function validateContent(data: ContentData): ValidationResult {
       for (const fav of item.favoriteBy) {
         if (!npcIds.has(fav)) fail(`item ${item.id}: favoriteBy references unknown npc "${fav}"`);
       }
+    }
+    if (item.category === "equipment") {
+      if (item.equipmentSlot === undefined || !EQUIPMENT_SLOTS.includes(item.equipmentSlot)) {
+        fail(`item ${item.id}: equipment must specify a valid equipmentSlot`);
+      }
+      for (const [label, values] of [["stats", item.stats], ["courierEffects", item.courierEffects]] as const) {
+        if (values !== undefined && Object.values(values).some((value) => typeof value !== "number" || !Number.isFinite(value) || value < 0)) {
+          fail(`item ${item.id}: ${label} values must be finite non-negative numbers`);
+        }
+      }
+      if (item.requiredLevel !== undefined && (!Number.isInteger(item.requiredLevel) || item.requiredLevel < 1)) {
+        fail(`item ${item.id}: requiredLevel must be a positive integer`);
+      }
+    } else if (item.equipmentSlot !== undefined || item.stats !== undefined || item.courierEffects !== undefined) {
+      fail(`item ${item.id}: equipment metadata requires category equipment`);
     }
   }
 

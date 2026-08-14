@@ -241,6 +241,11 @@ export class OverworldScene extends Phaser.Scene {
       // sheet so inventory reflects the authoritative grant immediately.
       CharacterProfilePanel.instance?.refresh();
     };
+    this.network.onInventoryUpdated = () => {
+      // Equip, unequip, move, and quest/loot grants all arrive as authoritative
+      // snapshots. Keep the open courier ledger in sync with the server.
+      CharacterProfilePanel.instance?.refresh();
+    };
 
     // Remember the arrival tile so spawning on a transition never re-triggers.
     this.lastTileX = spawn.x;

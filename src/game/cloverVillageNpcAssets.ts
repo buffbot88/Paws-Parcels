@@ -13,15 +13,15 @@ const npcFolders: Readonly<Record<CloverNpcArt, "Artist" | "Astrologer" | "Citiz
 
 const idleFrames: Readonly<Record<CloverNpcArt, AssetGlob>> = {
   artist: import.meta.glob(
-    "../data/maps/CloverVillage/NPC/Artist/PNG/Front/PNG Sequences/Idle/*.png",
+    "../../reference/assets/maps/CloverVillage/NPC/Artist/PNG/Front/PNG Sequences/Idle/*.png",
     { eager: true, query: "?url", import: "default" },
   ) as AssetGlob,
   astrologer: import.meta.glob(
-    "../data/maps/CloverVillage/NPC/Astrologer/PNG/Front/PNG Sequences/Idle/*.png",
+    "../../reference/assets/maps/CloverVillage/NPC/Astrologer/PNG/Front/PNG Sequences/Idle/*.png",
     { eager: true, query: "?url", import: "default" },
   ) as AssetGlob,
   citizen: import.meta.glob(
-    "../data/maps/CloverVillage/NPC/Citizen/PNG/Front/PNG Sequences/Idle/*.png",
+    "../../reference/assets/maps/CloverVillage/NPC/Citizen/PNG/Front/PNG Sequences/Idle/*.png",
     { eager: true, query: "?url", import: "default" },
   ) as AssetGlob,
 };

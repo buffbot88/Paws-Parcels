@@ -50,7 +50,7 @@ Collision: post office building walls, pond water, garden bushes (decorative), b
 
 The old `zone-bramble-patch` map was removed. The Phase 3 open-world monster map is
 **Happy Valley** (`zone-happy-valley`), seeded from the Happy Valley art pack
-(`src/data/maps/HappyValley/`). Full tile sketch lands with the map JSON in Phase 3
+(`reference/assets/maps/HappyValley/`). Full tile sketch lands with the map JSON in Phase 3
 (see `design/monsters.md` for the critter family).
 
 ## Content placement rules

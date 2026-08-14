@@ -37,6 +37,7 @@ Config lives under `ai` in `server_config.json` (see `server_config.example.json
 | `npm run typecheck` | TypeScript check (`tsc --noEmit`) |
 | `npm test` | Run Vitest unit tests |
 | `npm run validate` | Validate `src/data` content integrity |
+| `npm run assets:inventory` | Rebuild the tracked asset inventory from the local ignored reference archive |
 | `npm run visual:review -- --image scripts/tiles-review.png` | Ask the local 450M VL for a dry-run 2.5D visual direction report |
 | `npm run visual:latest` | Find the newest complete `paws-visual-*.png`/`.json` capture pair, review it, and archive the report under `reports/` |
 | `npm run visual:history` | Compare archived Visual Director reports and write recurring issues/trends to `reports/visual-history.json` |
@@ -51,7 +52,8 @@ Config lives under `ai` in `server_config.json` (see `server_config.example.json
 ## Project structure (client)
 
 ```
-public/            Static assets (favicon; art lands here in Phase 7)
+public/            Static web assets (favicon, OIDC callback, client config)
+reference/assets/  Local ignored art archive; see `design/assets/README.md`
 src/
   data/            Content JSON (npcs, items, quests, upgrades, dialogue) + maps/
   entities/        Player, NPC (placeholder blobs + name tags)
@@ -62,7 +64,7 @@ src/
   ui/              DialoguePanel (DOM overlay)
   types/           Typed data models matching src/data schemas
 tests/             Vitest suites (content, map, systems)
-scripts/           validate-content.ts CLI (content + maps + NPC placement)
+scripts/           Content validation and asset-inventory CLIs
 design/            Locked decisions, world map, NPC cards, architecture, DB schema, protocol, classes, etc.
 server/            Node/TS game server (HTTP + WebSocket, SQLite persistence, migrations)
 ```

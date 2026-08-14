@@ -31,67 +31,67 @@ type AssetGlob = Record<string, string>;
  */
 const sourceAssets: Readonly<Record<string, AssetGlob>> = {
   ground: import.meta.glob(
-    "../data/maps/CloverVillage/Map/PNG/land/land_1.png",
+    "../../reference/assets/maps/CloverVillage/Map/PNG/land/land_1.png",
     { eager: true, query: "?url", import: "default" },
   ) as AssetGlob,
   road: import.meta.glob(
-    "../data/maps/CloverVillage/Map/PNG/road/road_5.png",
+    "../../reference/assets/maps/CloverVillage/Map/PNG/road/road_5.png",
     { eager: true, query: "?url", import: "default" },
   ) as AssetGlob,
   greeneryAlt: import.meta.glob(
-    "../data/maps/CloverVillage/Map/PNG/decor/greenery_2.png",
+    "../../reference/assets/maps/CloverVillage/Map/PNG/decor/greenery_2.png",
     { eager: true, query: "?url", import: "default" },
   ) as AssetGlob,
   greeneryThird: import.meta.glob(
-    "../data/maps/CloverVillage/Map/PNG/decor/greenery_3.png",
+    "../../reference/assets/maps/CloverVillage/Map/PNG/decor/greenery_3.png",
     { eager: true, query: "?url", import: "default" },
   ) as AssetGlob,
   stonesAlt: import.meta.glob(
-    "../data/maps/CloverVillage/Map/PNG/decor/stones_2.png",
+    "../../reference/assets/maps/CloverVillage/Map/PNG/decor/stones_2.png",
     { eager: true, query: "?url", import: "default" },
   ) as AssetGlob,
   stonesThird: import.meta.glob(
-    "../data/maps/CloverVillage/Map/PNG/decor/stones_3.png",
+    "../../reference/assets/maps/CloverVillage/Map/PNG/decor/stones_3.png",
     { eager: true, query: "?url", import: "default" },
   ) as AssetGlob,
   postOffice: import.meta.glob(
-    "../data/maps/CloverVillage/Map/PNG/buildings/building_1/building_1.png",
+    "../../reference/assets/maps/CloverVillage/Map/PNG/buildings/building_1/building_1.png",
     { eager: true, query: "?url", import: "default" },
   ) as AssetGlob,
   shop: import.meta.glob(
-    "../data/maps/CloverVillage/Map/PNG/buildings/building_4/building_1.png",
+    "../../reference/assets/maps/CloverVillage/Map/PNG/buildings/building_4/building_1.png",
     { eager: true, query: "?url", import: "default" },
   ) as AssetGlob,
   cafe: import.meta.glob(
-    "../data/maps/CloverVillage/Map/PNG/buildings/building_10/building_1.png",
+    "../../reference/assets/maps/CloverVillage/Map/PNG/buildings/building_10/building_1.png",
     { eager: true, query: "?url", import: "default" },
   ) as AssetGlob,
   florist: import.meta.glob(
-    "../data/maps/CloverVillage/Map/PNG/buildings/building_12/building_1.png",
+    "../../reference/assets/maps/CloverVillage/Map/PNG/buildings/building_12/building_1.png",
     { eager: true, query: "?url", import: "default" },
   ) as AssetGlob,
   cottageNorthWest: import.meta.glob(
-    "../data/maps/CloverVillage/Map/PNG/buildings/building_5/building_1.png",
+    "../../reference/assets/maps/CloverVillage/Map/PNG/buildings/building_5/building_1.png",
     { eager: true, query: "?url", import: "default" },
   ) as AssetGlob,
   cottageNorthEast: import.meta.glob(
-    "../data/maps/CloverVillage/Map/PNG/buildings/building_14/building_1.png",
+    "../../reference/assets/maps/CloverVillage/Map/PNG/buildings/building_14/building_1.png",
     { eager: true, query: "?url", import: "default" },
   ) as AssetGlob,
   tree: import.meta.glob(
-    "../data/maps/CloverVillage/Map/PNG/decor/tree_1.png",
+    "../../reference/assets/maps/CloverVillage/Map/PNG/decor/tree_1.png",
     { eager: true, query: "?url", import: "default" },
   ) as AssetGlob,
   treeAlt: import.meta.glob(
-    "../data/maps/CloverVillage/Map/PNG/decor/tree_2.png",
+    "../../reference/assets/maps/CloverVillage/Map/PNG/decor/tree_2.png",
     { eager: true, query: "?url", import: "default" },
   ) as AssetGlob,
   greenery: import.meta.glob(
-    "../data/maps/CloverVillage/Map/PNG/decor/greenery_1.png",
+    "../../reference/assets/maps/CloverVillage/Map/PNG/decor/greenery_1.png",
     { eager: true, query: "?url", import: "default" },
   ) as AssetGlob,
   stones: import.meta.glob(
-    "../data/maps/CloverVillage/Map/PNG/decor/stones_1.png",
+    "../../reference/assets/maps/CloverVillage/Map/PNG/decor/stones_1.png",
     { eager: true, query: "?url", import: "default" },
   ) as AssetGlob,
 };

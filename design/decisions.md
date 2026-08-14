@@ -186,7 +186,7 @@
   Whispering Pines / Sunlit Clearing IDs stay reserved. The first dungeon is a
   new instanced zone.
 - **Reason:** The village was rebuilt around the new Clover Village art pack
-  (`src/data/maps/CloverVillage/`); the old placeholder maps no longer matched.
+  (`reference/assets/maps/CloverVillage/`); the old placeholder maps no longer matched.
 - **Consequences:** All five cozy NPCs live in the hub for now (placeholders until
   Phase 7 art); zone transitions become server-validated join/leave as more zones
   land.

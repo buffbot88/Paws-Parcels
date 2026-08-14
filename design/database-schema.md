@@ -112,12 +112,12 @@ What is actually in a character's inventory.
 
 ## 9. equipment
 
-Equipped gear per character (slots: head, body, weapon, accessory).
+Equipped gear per character (slots: head, body, weapon, accessory, boots, courier-bag).
 
 - **PK:** `character_id, slot`
 - **FK:** `character_id → characters.id`,
   `item_instance_id → inventory_items.id` (the equipped instance)
-- **Columns:** `slot` (`head`/`body`/`weapon`/`accessory`), `equipped_at`
+- **Columns:** `slot` (`head`/`body`/`weapon`/`accessory`/`boots`/`courier-bag`), `equipped_at`
 - **Ownership:** character-level; server-validated (owned item, valid slot).
 - **Indexes:** `UNIQUE(character_id, slot)`, `UNIQUE(item_instance_id)`
 - **Type:** player-state
@@ -129,8 +129,10 @@ Static catalog of items (deliveries, materials, gear, cosmetics, currency items)
 - **PK:** `id`
 - **FK:** — (static); `recipe_result` references recipes implicitly via crafting docs
 - **Columns:** `key` (`item-…` kebab-case), `name`, `description`, `category`
-  (`resource`/`gear`/`delivery`/`quest`/`cosmetic`/`material`), `max_stack`,
-  `icon`, `base_stats` (JSON for gear), `rarity`, `value` (Stamps sell price)
+  (`resource`/`gift`/`delivery`/`quest`/`cosmetic`/`material`/`equipment`), `max_stack`,
+  `icon`, `base_stats` (JSON for gear), `equipment_slot`, `equipment_stats`,
+  `courier_effects`, `required_class`, `required_level`, `rarity`, `value`
+  (Stamps sell price)
 - **Ownership:** repository content in `src/data/items.json`.
 - **Indexes:** `UNIQUE(key)`, `INDEX(category)`
 - **Type:** runtime lookup cache; synchronized from JSON at server boot

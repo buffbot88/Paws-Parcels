@@ -9,6 +9,7 @@ import {
   type NetSnapshotMeta,
   type NetQuestSnapshot,
   type NetQuestInventoryItem,
+  type NetInventoryState,
   type NetStatus,
 } from "../net/GameSocket.ts";
 import { RemotePlayer } from "../entities/RemotePlayer.ts";
@@ -92,7 +93,7 @@ export class NetworkSystem {
   onQuestState: ((quests: NetQuestSnapshot[]) => void) | null = null;
   onQuestUpdated: ((payload: { action: string; quest: NetQuestSnapshot; quests: NetQuestSnapshot[]; inventory: NetQuestInventoryItem[]; stamps: number; xp: number; message: string }) => void) | null = null;
   onQuestNotice: ((message: string) => void) | null = null;
-  onInventoryUpdated: ((items: NetQuestInventoryItem[], stamps: number) => void) | null = null;
+  onInventoryUpdated: ((items: NetQuestInventoryItem[], stamps: number, state?: NetInventoryState) => void) | null = null;
   /** Called only after the server confirms this courier's attack hit a monster. */
   onAttackConfirmed: (() => void) | null = null;
   /** Server-authoritative tile for this courier (from zone_state) — scene snaps to it. */
@@ -184,6 +185,26 @@ export class NetworkSystem {
   /** Search an authored quest objective at a map object. */
   searchQuest(objectId: string): void {
     this.socket?.searchQuest(objectId);
+  }
+
+  /** Move an owned inventory item through the authoritative server. */
+  moveInventoryItem(itemInstanceId: number, targetSlot: number): void {
+    this.socket?.moveInventoryItem(itemInstanceId, targetSlot);
+  }
+
+  /** Equip an owned JSON-defined gear item. */
+  equipItem(itemInstanceId: number, slot?: string): void {
+    this.socket?.equipItem(itemInstanceId, slot);
+  }
+
+  /** Unequip a gear slot. */
+  unequipItem(slot: string): void {
+    this.socket?.unequipItem(slot);
+  }
+
+  /** Request the complete server inventory snapshot. */
+  requestInventory(): void {
+    this.socket?.requestInventory();
   }
 
   /** Send a same-zone chat message through the authenticated socket. */
@@ -396,7 +417,7 @@ export class NetworkSystem {
     socket.callbacks.onQuestState = (quests) => this.onQuestState?.(quests);
     socket.callbacks.onQuestUpdated = (payload) => this.onQuestUpdated?.(payload);
     socket.callbacks.onQuestNotice = (message) => this.onQuestNotice?.(message);
-    socket.callbacks.onInventoryUpdated = (items, stamps) => this.onInventoryUpdated?.(items, stamps);
+    socket.callbacks.onInventoryUpdated = (items, stamps, state) => this.onInventoryUpdated?.(items, stamps, state);
     socket.callbacks.onCombatEvent = (event) => this.handleCombatEvent(event);
     socket.callbacks.onRespawn = (info) => this.handleRespawn(info);
     socket.callbacks.onLoot = (sourceId, items) => this.onLoot?.(sourceId, items);

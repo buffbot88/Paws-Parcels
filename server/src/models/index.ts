@@ -28,3 +28,16 @@ export {
 } from "./CharacterClass.ts";
 export { type ZoneRow, getZoneByKey } from "./Zone.ts";
 export { type RefreshToken, type TokenPair } from "./Session.ts";
+export {
+  type EquipmentStats,
+  type InventoryItemSnapshot,
+  type EquipmentSnapshot,
+  type InventoryState,
+  type EquipmentMutationResult,
+  getInventoryState,
+  getDerivedEquipmentStats,
+  getEffectiveSlotCount,
+  moveInventoryItem,
+  equipItem,
+  unequipItem,
+} from "./Equipment.ts";

@@ -1,5 +1,6 @@
 import questsJson from "../../../src/data/quests.json" with { type: "json" };
 import { getDb } from "../db/connection.ts";
+import { getEffectiveSlotCount, getInventoryState } from "./Equipment.ts";
 
 type SqlRow = Record<string, unknown>;
 
@@ -294,6 +295,10 @@ export function resetFragileDeliveriesOnDefeat(characterId: number): string[] {
     for (const row of rows) {
       const quest = findQuestContent(String(row.quest_key));
       if (quest?.breaksOnDefeat !== true) continue;
+      // A courier bag with fragileProtection keeps the bound parcel intact
+      // through defeat; the protection is an authored gear effect, not a
+      // client-side exception.
+      if (getInventoryState(characterId).stats.fragileProtection > 0) continue;
       deleteBoundParcel(characterId, quest.id);
       db.prepare(`UPDATE character_quest_progress
         SET state = 'available', progress = ?, accepted_at = NULL, delivered_item_id = NULL
@@ -489,7 +494,7 @@ function getFriendshipLevel(characterId: number, npcId: string): number {
 /** Add an unlocked or quest-bound item to the first free inventory slot. */
 function insertInventoryItem(characterId: number, itemDefinitionId: number, quantity: number, meta: Record<string, unknown>): boolean {
   const db = getDb();
-  const slotCount = Number((db.prepare("SELECT slot_count FROM inventories WHERE character_id = ?").get(characterId) as SqlRow | undefined)?.slot_count ?? 0);
+  const slotCount = getEffectiveSlotCount(characterId);
   const used = new Set((db.prepare("SELECT slot FROM inventory_items WHERE character_id = ? AND slot IS NOT NULL").all(characterId) as SqlRow[]).map((row) => Number(row.slot)));
   let slot: number | null = null;
   for (let candidate = 0; candidate < slotCount; candidate += 1) {

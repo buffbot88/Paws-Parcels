@@ -10,9 +10,10 @@ coverage/
 # Commit server_config.example.json instead; copy it locally and fill in secrets.
 server_config.json
 
-# src/data: game-data JSON (content + maps) is committed; the large art packs
-# (CloverVillage/HappyValley/VoidDesert/OtherAssets/Classes PNGs, EPS, AI) are
-# imported locally and added manually when needed — never by plain `git add .`.
+# Runtime game-data JSON is committed. Large local art packs are kept in the
+# ignored reference archive and are never added by plain `git add .`.
+/reference/assets/
+
 src/data/*
 !src/data/*.json
 !src/data/maps/

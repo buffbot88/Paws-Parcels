@@ -39,6 +39,7 @@ import {
   resetFragileDeliveriesOnDefeat,
   searchQuest,
 } from "./models/Quest.ts";
+import { getInventoryState, moveInventoryItem, equipItem, unequipItem } from "./models/Equipment.ts";
 
 async function main(): Promise<void> {
 
@@ -160,6 +161,10 @@ async function main(): Promise<void> {
     searchQuest,
     getQuestInventory,
     resetFragileDeliveriesOnDefeat,
+    getInventoryState,
+    moveInventoryItem,
+    equipItem,
+    unequipItem,
     monsterBrain,
   });
 
