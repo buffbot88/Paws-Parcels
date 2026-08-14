@@ -67,11 +67,16 @@ export interface GameServerDeps {
   monsterBrain?: MonsterBrain | null;
   /** Server-side NPC tile lookup used to validate interaction range. */
   getNpcPosition?: (npcId: string, zoneId: string) => { x: number; y: number } | null;
-  /** Phase 4A quest state and mutations; omitted in isolated combat tests. */
+  /** Quest state and mutations; omitted in isolated combat tests. */
   getQuestState?: (characterId: number) => Promise<QuestSnapshot[]>;
   acceptQuest?: (characterId: number, questId: string) => Promise<QuestMutationResult>;
   completeDelivery?: (characterId: number, targetNpcId: string) => Promise<QuestMutationResult>;
+  searchQuest?: (characterId: number, objectId: string) => Promise<QuestMutationResult>;
   getQuestInventory?: (characterId: number) => QuestInventoryItem[];
+  /** Server-side map-object tile lookup used to validate search interactions. */
+  getObjectPosition?: (objectId: string, zoneId: string) => { x: number; y: number } | null;
+  /** Reset fragile tutorial parcels when a courier is defeated. */
+  resetFragileDeliveriesOnDefeat?: (characterId: number) => string[];
   tickMs?: number;
   graceMs?: number;
   tilesPerSecond?: number;
@@ -278,6 +283,9 @@ export class GameServer {
       case "accept_quest":
         await this.handleAcceptQuest(session, msg);
         return;
+      case "search_quest":
+        await this.handleSearchQuest(session, msg);
+        return;
       case "zone_chat":
         this.handleZoneChat(session, msg);
         return;
@@ -445,6 +453,29 @@ export class GameServer {
     session.socket.send({ type: "npc_interaction", npcId: targetId, quests });
   }
 
+  private async handleSearchQuest(session: Session, msg: Record<string, unknown>): Promise<void> {
+    if (!this.requireAuth(session)) return;
+    const characterId = session.characterId;
+    const zoneId = session.zoneId;
+    const objectId = typeof msg.objectId === "string" ? msg.objectId : "";
+    if (characterId === null || zoneId === null || objectId === "" || this.deps.searchQuest === undefined) {
+      this.sendError(session, "QUEST_NOT_ACTIVE", "No searchable quest objective is active", "search_quest");
+      return;
+    }
+    const player = this.zones.get(zoneId, characterId);
+    const object = this.deps.getObjectPosition?.(objectId, zoneId);
+    if (player === null || object === null || object === undefined || tileDistance(player.pos, object) > 2) {
+      this.sendError(session, "OUT_OF_RANGE", "Search location is out of range", "search_quest");
+      return;
+    }
+    const result = await this.deps.searchQuest(characterId, objectId);
+    if (!result.ok) {
+      this.sendError(session, result.reason, "Quest objective cannot be searched", "search_quest");
+      return;
+    }
+    this.sendQuestMutation(session, result, "searched");
+  }
+
   private async handleAcceptQuest(session: Session, msg: Record<string, unknown>): Promise<void> {
     if (!this.requireAuth(session)) return;
     const characterId = session.characterId;
@@ -470,7 +501,7 @@ export class GameServer {
     this.sendQuestMutation(session, result, "accepted");
   }
 
-  private sendQuestMutation(session: Session, result: Extract<QuestMutationResult, { ok: true }>, action: "accepted" | "delivery"): void {
+  private sendQuestMutation(session: Session, result: Extract<QuestMutationResult, { ok: true }>, action: "accepted" | "delivery" | "searched"): void {
     session.socket.send({
       type: "quest_updated",
       action,
@@ -714,6 +745,13 @@ export class GameServer {
    * (design/combat.md §3 — no item/XP loss). Persist HP best-effort.
    */
   private defeatPlayer(zoneId: string, player: ZonePlayer, now: number): void {
+    const resetFragile = this.deps.resetFragileDeliveriesOnDefeat?.(player.characterId) ?? [];
+    if (resetFragile.length > 0) {
+      this.findSession(player.characterId)?.socket.send({
+        type: "quest_notice",
+        message: "The fragile parcel was damaged when you were defeated. Return to its sender to accept the route again.",
+      });
+    }
     const safeZone = DEFAULT_SAFE_ZONE;
     const zone = this.deps.getZoneData(safeZone);
     if (zone === null) {

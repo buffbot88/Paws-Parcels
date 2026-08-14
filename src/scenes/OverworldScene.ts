@@ -31,8 +31,10 @@ import {
 import type { VisualSceneMetadata } from "../types/VisualSceneMetadata.ts";
 import npcsJson from "../data/npcs.json" with { type: "json" };
 import dialogueJson from "../data/dialogue.json" with { type: "json" };
+import questsJson from "../data/quests.json" with { type: "json" };
 import type { NPC as NPCDefinition } from "../types/NPCtypes.ts";
 import type { DialogueSet } from "../types/DialogueTypes.ts";
+import type { QuestDefinition } from "../types/QuestTypes.ts";
 import { worldDepth } from "../game/WorldDepth.ts";
 
 export interface OverworldSceneData {
@@ -42,6 +44,7 @@ export interface OverworldSceneData {
 
 const NPCS = npcsJson.npcs as NPCDefinition[];
 const DIALOGUE = dialogueJson.dialogue as DialogueSet[];
+const QUESTS = questsJson.quests as QuestDefinition[];
 /** One DOM panel for the whole app — scenes come and go, the overlay persists. */
 export const dialoguePanel = new DialoguePanel();
 /** Client-side attack-pickup radius (tiles); the server enforces the real range. */
@@ -210,8 +213,12 @@ export class OverworldScene extends Phaser.Scene {
       this.questTracker.setQuests(payload.quests);
       this.questTracker.setOffer(null);
       this.questTracker.showMessage(payload.message);
+      if (payload.action === "accepted" || payload.action === "delivery") {
+        this.showQuestMilestoneDialogue(payload.quest.questId, payload.action);
+      }
       CharacterProfilePanel.instance?.refresh();
     };
+    this.network.onQuestNotice = (message) => this.questTracker.showMessage(message);
     this.network.onStatus = (status, detail) => {
       this.minimap.setServerStatus(status, detail);
       this.chatBox.setEnabled(status === "joined");
@@ -608,6 +615,18 @@ export class OverworldScene extends Phaser.Scene {
     return Math.hypot(worldX - focused.x, worldY - focused.y) < TILE_SIZE * 1.6;
   }
 
+  private showQuestMilestoneDialogue(questId: string, action: string): void {
+    const quest = QUESTS.find((entry) => entry.id === questId);
+    const script = action === "accepted" ? quest?.acceptanceDialogue : quest?.completionDialogue;
+    if (script === undefined || script.lines.length === 0) return;
+    const speaker = NPCS.find((npc) => npc.id === script.speakerId)?.name ?? "Village resident";
+    if (dialoguePanel.isOpen()) {
+      for (const line of script.lines) dialoguePanel.appendLine(line);
+      return;
+    }
+    dialoguePanel.open({ speaker, lines: script.lines }, () => undefined);
+  }
+
   private startInteraction(target: InteractionTarget): void {
     if (target.kind === "npc") {
       const set = selectDialogueSet(DIALOGUE, target.npcId ?? "", 0);
@@ -622,6 +641,8 @@ export class OverworldScene extends Phaser.Scene {
       void this.requestAiNpcLine(target.npcId ?? "");
     } else {
       dialoguePanel.open({ speaker: target.label, lines: target.lines ?? [] }, () => undefined);
+      const active = this.questTracker.getActiveQuest();
+      if (active?.searchObjectId === target.id) this.network.searchQuest(target.id);
     }
   }
 

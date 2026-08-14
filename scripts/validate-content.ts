@@ -7,15 +7,15 @@
 import { readFileSync, existsSync } from "node:fs";
 import { resolve, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
-import { validateContent } from "../src/systems/ContentValidator.ts";
-import type { ContentData } from "../src/types/ContentData.ts";
+import { validateContent, validateStaticContent } from "../src/systems/ContentValidator.ts";
+import type { ContentData, StaticContentData } from "../src/types/ContentData.ts";
 import { validateAllMaps, validateNpcPlacement } from "../src/systems/MapValidator.ts";
 import { MAPS } from "../src/game/Maps.ts";
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const dataDir = resolve(root, "src", "data");
 
-function load<K extends keyof ContentData>(name: string, key: K): ContentData[K] {
+function load(name: string, key: string): any {
   const path = resolve(dataDir, name);
   if (!existsSync(path)) {
     console.error(`Missing data file: ${name}`);
@@ -38,11 +38,19 @@ const data: ContentData = {
 };
 
 const result = validateContent(data);
+const staticData: StaticContentData = {
+  classes: load("classes.json", "classes"),
+  skills: load("skills.json", "skills"),
+  zones: load("zones.json", "zones"),
+  monsters: load("monsters.json", "monsters"),
+};
+const staticResult = validateStaticContent(staticData, new Set(data.items.map((item) => item.id)));
 for (const w of result.warnings) console.warn(`  ! ${w}`);
 
-if (!result.ok) {
-  console.error(`Content validation FAILED (${result.errors.length} error${result.errors.length > 1 ? "s" : ""}):`);
-  for (const e of result.errors) console.error(`  ✗ ${e}`);
+if (!result.ok || !staticResult.ok) {
+  const errors = [...result.errors, ...staticResult.errors];
+  console.error(`Content validation FAILED (${errors.length} error${errors.length > 1 ? "s" : ""}):`);
+  for (const e of errors) console.error(`  ✗ ${e}`);
   process.exit(1);
 }
 
@@ -65,5 +73,5 @@ const interactableCount = Object.values(MAPS).reduce(
   0,
 );
 console.log(
-  `Content validation PASSED — ${data.npcs.length} npcs, ${data.items.length} items, ${data.quests.length} quests, ${data.upgrades.length} upgrades, ${data.dialogue.length} dialogue sets; ${Object.keys(MAPS).length} zone(s) mapped, ${interactableCount} interactable(s).`
+  `Content validation PASSED — ${data.npcs.length} npcs, ${data.items.length} items, ${data.quests.length} quests, ${data.upgrades.length} upgrades, ${data.dialogue.length} dialogue sets; ${staticData.classes.length} classes, ${staticData.skills.length} skills, ${staticData.monsters.length} monsters, ${staticData.zones.length} zones; ${Object.keys(MAPS).length} zone(s) mapped, ${interactableCount} interactable(s).`
 );

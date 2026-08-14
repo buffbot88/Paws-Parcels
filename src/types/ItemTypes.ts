@@ -1,4 +1,4 @@
-export type ItemCategory = "resource" | "gift" | "delivery" | "quest" | "cosmetic";
+export type ItemCategory = "resource" | "gift" | "delivery" | "quest" | "cosmetic" | "material";
 
 export interface ItemDefinition {
   id: string;
@@ -8,4 +8,6 @@ export interface ItemDefinition {
   maxStack: number;
   icon: string;
   favoriteBy?: string[];
+  rarity?: string;
+  value?: number;
 }

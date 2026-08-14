@@ -3,7 +3,7 @@ import { getDb } from "../db/connection.ts";
 /** A row object as returned by node:sqlite (null | number | bigint | string). */
 type SqlRow = Record<string, unknown>;
 
-/** Class template row from the `character_classes` table (seeded content). */
+/** Class template row from the JSON-synchronized `character_classes` lookup table. */
 export interface CharacterClassRow {
   id: number;
   key: string;
@@ -19,7 +19,7 @@ export interface CharacterClassRow {
 }
 
 /**
- * List the playable class catalog (order: insertion — warrior, mage, archer).
+ * List the playable class catalog from the JSON-synchronized lookup table.
  * Used by the character-creation screen and by createCharacter validation.
  */
 export async function getCharacterClasses(): Promise<CharacterClassRow[]> {

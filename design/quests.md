@@ -2,7 +2,7 @@
 
 > Companion docs: [`BuildPlan.md`](../BuildPlan.md), [`decisions.md`](decisions.md),
 > [`monsters.md`](monsters.md), [`database-schema.md`](database-schema.md).
-> Status: 🟡 Phase 4A — Clover Village tutorial foundation implemented.
+> Status: ✅ Phase 4B — Clover Village tutorial loop and optional side-quest slice implemented; parcel conditions, friendship, and rewards are server-authoritative.
 
 ---
 
@@ -84,18 +84,49 @@ parcel carrying, and delivery completion.
 | Position | Quest | Type | Route | Reward |
 |---|---|---|---|---|
 | 1 | `quest-village-welcome` | Delivery | Pip → Biscuit | 5 Stamps, 15 XP, +1 Biscuit rep |
-| 2 | `quest-fresh-bread-biscuit` | Delivery | Pip → Biscuit | 8 Stamps, 20 XP, +1 Biscuit rep |
-| 3 | `quest-flower-note-maple` | Delivery | Biscuit → Maple | 10 Stamps, 25 XP, +1 Maple rep |
-| 4 | `quest-moon-note-lumi` | Delivery | Maple → Lumi | 12 Stamps, 30 XP, +1 Lumi rep |
-| 5 | `quest-garden-greeting-moss` | Delivery | Lumi → Moss | 15 Stamps, 40 XP, +1 Moss rep |
+| 2 | `quest-fresh-bread-biscuit` | Delivery | Biscuit → Maple | Normal parcel; 8 Stamps, 20 XP, +1 Biscuit rep |
+| 3 | `quest-flower-note-maple` | Delivery | Maple → Lumi | Fragile parcel; 10 Stamps, 25 XP, +1 Maple rep |
+| 4 | `quest-moon-note-lumi` | Delivery | Lumi → Moss | Urgent parcel; 12 Stamps, 30 XP, +1 Lumi rep |
+| 5 | `quest-garden-greeting-moss` | Delivery | Moss → Pip | Final normal parcel; 25 Stamps, 60 XP, +2 Pip rep; promotes Trainee → Courier |
+
+Quest definitions are authored in [`src/data/quests.json`](../src/data/quests.json),
+which is the single source of truth for titles, routes, rewards, prerequisites, parcel
+conditions, and rank unlocks. SQLite stores only per-character quest progress.
 
 Quest-bound parcels are created by the server when a quest is accepted, marked
-locked in the inventory stack metadata, and removed only after the server validates
+locked in the inventory stack metadata, and carry a tutorial `parcel_condition` of
+`normal`, `fragile`, or `urgent`.
+
+- `normal`: no additional handling rule.
+- `fragile`: the parcel is reset and must be collected again if the courier is defeated.
+- `urgent`: the JSON-defined time limit is shown in the tracker; expiration removes the
+  parcel and returns the route to `available` for a retry.
+
+They are removed only after the server validates
 the active quest, recipient, and bound item. The existing Happy Valley gathering
 and combat quests remain follow-up content rather than onboarding requirements.
 
-## 7. Follow-up village content
+## 7. Phase 4B — Village side quests
 
-Optional local errands can follow the tutorial: Moss's lost pebble, Pip's missing
-letter opener, Biscuit's herb request, Maple's picnic delivery, and Lumi's lost
-notebook. These should be added after the core circuit is playable and tested.
+After the five-step circuit is complete, the server exposes the optional `phase: "4B"`
+content from `src/data/quests.json`. Side quests are not inserted into SQLite as
+content; SQLite stores only each character's state.
+
+| Quest | Lesson | Completion |
+|---|---|---|
+| Moss's Lost Pebble | Search an authored village location | Find the pebble at the rabbit burrows, then return it to Moss |
+| Pip's Missing Letter Opener | Search an authored village location | Find it behind the post counter, then return it to Pip |
+| Biscuit's Ingredient Run | Gather a quantity at a route location | Search the blueberry bushes in Happy Valley, then return to Biscuit |
+| Maple's Picnic Delivery | Carry a normal parcel | Deliver Biscuit's basket to Maple |
+| Lumi's Lost Notebook | Search an authored village location | Find it at the pond edge, then return it to Lumi |
+
+Errand and gathering quests do not create locked parcels. The client sends a
+`search_quest` intent when the courier interacts with the quest's authored search
+object; the server validates the zone, range, active quest, and object ID before
+creating the objective item. The final NPC interaction consumes that item and
+awards Stamps, XP, and friendship.
+
+Personal story rewards are friendship-gated and include Pip's Courier Cap, Maple's
+Flower Crown, Biscuit's Golden Honey, Lumi's Moonlit Seed, and Moss's Garden Key.
+Cosmetic and keepsake items are granted as normal unlocked inventory items and are
+audited like every other item transaction.

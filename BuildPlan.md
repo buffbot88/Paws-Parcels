@@ -65,7 +65,7 @@ inventory + equipment · crafting station + small recipe set · WebSocket sync f
 ```
 
 - The browser **never** connects to SQLite directly (see [`design/architecture.md`](design/architecture.md)).
-- HTTP for login/register, character list/create, static content, health checks.
+- HTTP for login/register, character list/create, JSON-backed content, health checks.
 - WebSocket for all gameplay: zone join/leave, movement, interaction, combat, quests,
   inventory, dungeon sessions.
 - Both channels are authenticated: WS carries a session token; HTTP carries JWT
@@ -185,7 +185,11 @@ See [`design/crafting.md`](design/crafting.md). Summary:
 ## 14. SQLite Persistence
 
 - SQLite is the only persistence layer for **player state** (accounts, characters,
-  stats, inventory, quests, friendships, dungeon runs, economy audit).
+  stats, inventory, quest progress, friendships, dungeon runs, economy audit).
+- Static game content — quests, parcels, items, classes, monsters, loot tables, zones,
+  skills, recipes, and dialogue — is authored in versioned `src/data/*.json` files.
+- The server synchronizes JSON catalogs into relational lookup caches at boot; SQL migrations
+  define schema and player-state compatibility only, never catalog values.
 - **localStorage is limited to non-authoritative client settings** (audio, UI,
   controls) — never gameplay state.
 - All queries server-side; credentials in server env/secrets only.
@@ -281,15 +285,23 @@ See [`design/crafting.md`](design/crafting.md). Summary:
 - [x] Add basic attacks (cooldown-gated, server-computed)
 - [x] Add damage validation + monster respawn + player respawn
 
-### Phase 4 — Quest Chains and Deliveries — 🟡 in progress
+### Phase 4 — Quest Chains and Deliveries — ✅ built (4A + 4B slice)
 - [x] Scope the first chain to Clover Village as a safe tutorial
 - [x] Seed the five-step Clover Village Courier Circuit
 - [x] Add server-created, quest-bound tutorial parcels
+- [x] Add normal, fragile, and urgent parcel conditions to the tutorial
+- [x] Add JSON-authored acceptance/completion dialogue and Courier graduation scene
+- [x] Add urgent deadlines with retry-on-expiration behavior
+- [x] Add fragile parcel reset-on-defeat behavior
 - [x] Add persisted quest state, delivery validation, and Stamp/XP/reputation rewards
+- [x] Add final-circuit Courier rank promotion
 - [x] Add WebSocket quest acceptance, NPC interaction, and quest updates
 - [x] Add a client tutorial tracker and delivery feedback
-- [ ] Add richer NPC quest dialogue and optional local side quests
-- [ ] Expand quest content outward into Happy Valley after the tutorial is stable
+- [x] Add richer NPC quest dialogue and optional local side quests
+- [x] Add the first quest objective in Happy Valley (Biscuit's blueberry run)
+- [x] Migrate items, classes, monsters, loot tables, zones, and skills to JSON-authoritative catalogs
+- [x] Synchronize static JSON into runtime lookup tables without hardcoded SQL seeds
+- [ ] Expand broader quest content outward into Happy Valley after the side-quest slice is stable
 
 ### Phase 5 — Inventory and Equipment
 

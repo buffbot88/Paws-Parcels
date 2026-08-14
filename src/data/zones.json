@@ -1,0 +1,26 @@
+{
+  "zones": [
+    {
+      "key": "zone-clover-village",
+      "displayName": "Clover Village",
+      "kind": "village",
+      "mapDataId": "clover-village",
+      "widthTiles": 75,
+      "heightTiles": 75,
+      "defaultSpawn": { "x": 37, "y": 38 },
+      "maxPlayers": 32,
+      "isSafe": true
+    },
+    {
+      "key": "zone-happy-valley",
+      "displayName": "Happy Valley",
+      "kind": "outdoor",
+      "mapDataId": "happy-valley",
+      "widthTiles": 40,
+      "heightTiles": 26,
+      "defaultSpawn": { "x": 20, "y": 1 },
+      "maxPlayers": 32,
+      "isSafe": false
+    }
+  ]
+}

@@ -38,12 +38,17 @@
   range, quest prerequisites, item ownership, delivery targets.
 - Compute combat outcomes and broadcast `combat_event`.
 - Maintain per-zone player presence and broadcast `player_snapshot` at the tick rate.
+- Load static game content from versioned `src/data/*.json` files; do not hand-author quest routes or parcel definitions in migrations.
 - Persist progression to SQLite (via migrations, transactions, and audit events).
 - Run the server tick/update loop (see §7).
 
 ### SQLite
-- Persists accounts, sessions, characters, stats, inventory, quests, friendships,
-  zones, dungeon runs, monster state (where persistent), and audit/economy events.
+- Persists accounts, sessions, characters, stats, inventory, quest progress, friendships,
+  dungeon runs, monster state (where persistent), and audit/economy events.
+- Static definitions (items, quests, parcel rules, classes, monsters, loot tables, zones,
+  skills, recipes, and dialogue) are authored in versioned JSON content files.
+- The server materializes JSON catalogs into relational lookup tables at boot for foreign
+  keys and efficient queries; those tables are caches, not content-authoring surfaces.
 - Serves as the **single writer** for player state; no other process writes.
 - Owns schema migrations (versioned, run by the server at boot/deploy).
 - Never exposed to clients; credentials only in server env/secrets.
@@ -73,7 +78,7 @@ HTTP is for auth, character management, and content. All real-time gameplay is W
 - Server responsibilities on the socket:
   - Authenticate the handshake token; reject invalid/expired tokens.
   - Join/leave zone management; broadcast presence.
-  - Receive intents (`move_intent`, `attack`, `interact`, `accept_quest`, `equip_item`),
+  - Receive intents (`move_intent`, `attack`, `interact`, `accept_quest`, `search_quest`, `equip_item`),
     validate, apply, and broadcast authoritative results.
   - Push `zone_state`, `player_snapshot`, `combat_event`, `quest_updated`,
     `inventory_updated`, `loot_received`, `error` to the affected clients.

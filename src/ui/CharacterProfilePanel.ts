@@ -8,6 +8,7 @@ export interface CharacterProfileData {
     level: number;
     experience: number;
     stamps: number;
+    courierRank: string;
     hp: number;
     maxHp: number;
     resource: number;
@@ -202,7 +203,7 @@ export class CharacterProfilePanel {
     const className = document.createElement("strong");
     className.textContent = profile.class.name;
     const role = document.createElement("span");
-    role.textContent = `${profile.class.role} · Level ${profile.character.level}`;
+    role.textContent = `${profile.class.role} · Level ${profile.character.level} · ${profile.character.courierRank}`;
     copy.append(className, role);
     hero.append(avatar, copy);
     content.appendChild(hero);

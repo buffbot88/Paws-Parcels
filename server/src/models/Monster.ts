@@ -10,7 +10,7 @@ export interface MonsterLootEntry {
   quantity: number;
 }
 
-/** Static monster template from the `monster_definitions` table. */
+/** Monster template from the JSON-synchronized `monster_definitions` lookup table. */
 export interface MonsterDefinitionRow {
   id: number;
   key: string;

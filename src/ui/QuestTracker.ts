@@ -10,6 +10,7 @@ export class QuestTracker {
   private quests: NetQuestSnapshot[] = [];
   private offeredQuestId: string | null = null;
   private readonly onAccept: (questId: string) => void;
+  private readonly countdownTimer: number;
 
   constructor(onAccept: (questId: string) => void) {
     this.onAccept = onAccept;
@@ -38,6 +39,9 @@ export class QuestTracker {
     this.objective = objective;
     this.action = action;
     this.status = status;
+    this.countdownTimer = window.setInterval(() => {
+      if (this.quests.some((quest) => quest.state === "active" && quest.deadlineAt !== null)) this.render();
+    }, 1000);
     this.render();
   }
 
@@ -55,6 +59,10 @@ export class QuestTracker {
     this.render();
   }
 
+  getActiveQuest(): NetQuestSnapshot | undefined {
+    return this.quests.find((quest) => quest.state === "active");
+  }
+
   showMessage(message: string): void {
     this.status.textContent = message;
     this.status.classList.add("quest-tracker__status--notice");
@@ -62,6 +70,7 @@ export class QuestTracker {
   }
 
   destroy(): void {
+    window.clearInterval(this.countdownTimer);
     this.root.remove();
   }
 
@@ -69,26 +78,45 @@ export class QuestTracker {
     const active = this.quests.find((quest) => quest.state === "active");
     const available = this.quests.find((quest) => quest.state === "available");
     const next = active ?? available;
-    const completed = this.quests.filter((quest) => quest.state === "completed").length;
+    const tutorial = this.quests.filter((quest) => !quest.sideQuest);
+    const tutorialCompleted = tutorial.filter((quest) => quest.state === "completed").length;
+    const sideCompleted = this.quests.filter((quest) => quest.sideQuest && quest.state === "completed").length;
     this.root.hidden = next === undefined && this.quests.length === 0;
-    this.title.textContent = next?.title ?? (completed >= 5 ? "Village tutorial complete" : "Explore Clover Village");
-    this.objective.textContent = next?.description ?? "Meet the village couriers and learn the local routes.";
+    this.title.textContent = next?.title ?? (tutorialCompleted >= 5 ? "Clover Village routes" : "Explore Clover Village");
+    this.objective.textContent = next === undefined
+      ? "Meet village friends to unlock errands, stories, and keepsakes."
+      : `${next.description}${next.state === "active" && next.type === "delivery" ? ` · Parcel: ${parcelConditionLabel(next.parcelCondition)}` : ""}`;
     this.status.classList.remove("quest-tracker__status--notice");
     if (active !== undefined) {
-      this.status.textContent = `Delivery ${active.progress}/${active.requiredQuantity} · ${completed}/5 completed`;
+      const deadline = active.deadlineAt === null ? "" : ` · ${formatDeadline(active.deadlineAt)}`;
+      const objective = active.searchObjectId !== null && active.progress === 0 ? ` · Search: ${active.findAt ?? "the marked location"}` : "";
+      this.status.textContent = `${active.type === "delivery" ? "Delivery" : "Objective"} ${active.progress}/${active.requiredQuantity} · Circuit ${tutorialCompleted}/5 · Side quests ${sideCompleted}${deadline}${objective}`;
       this.action.hidden = true;
     } else if (available !== undefined) {
       this.status.textContent = this.offeredQuestId === available.questId
-        ? `New route ready · ${completed}/5 completed`
-        : `Speak with ${available.giverId.replace("npc-", "")} to accept · ${completed}/5 completed`;
-      this.action.textContent = "Accept route";
+        ? `New ${available.sideQuest ? "side quest" : "route"} ready · Circuit ${tutorialCompleted}/5`
+        : `Speak with ${available.giverId.replace("npc-", "")} to accept · Circuit ${tutorialCompleted}/5`;
+      this.action.textContent = available.sideQuest ? "Accept side quest" : "Accept route";
       this.action.hidden = this.offeredQuestId !== available.questId;
-    } else if (completed >= 5) {
-      this.status.textContent = "You know the village route. The wider forest awaits.";
+    } else if (tutorialCompleted >= 5) {
+      this.status.textContent = `Circuit complete · ${sideCompleted} side quest${sideCompleted === 1 ? "" : "s"} completed`;
       this.action.hidden = true;
     } else {
-      this.status.textContent = `${completed}/5 routes completed · speak with a village friend`;
+      this.status.textContent = `${tutorialCompleted}/5 routes completed · speak with a village friend`;
       this.action.hidden = true;
     }
   }
+}
+
+function formatDeadline(deadlineAt: number): string {
+  const remaining = Math.max(0, Math.ceil((deadlineAt - Date.now()) / 1000));
+  return `Urgent: ${remaining}s remaining`;
+}
+
+function parcelConditionLabel(condition: NetQuestSnapshot["parcelCondition"]): string {
+  return condition === "fragile"
+    ? "Fragile — handle with care"
+    : condition === "urgent"
+      ? "Urgent — keep moving"
+      : "Normal";
 }

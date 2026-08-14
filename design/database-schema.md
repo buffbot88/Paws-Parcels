@@ -4,7 +4,9 @@
 > [`architecture.md`](architecture.md).
 > Conventions: snake_case names, `INTEGER PRIMARY KEY AUTOINCREMENT` PKs, `created_at` /
 > `updated_at` on player-state tables, `TEXT` for JSON/enum columns. **SQLite is only ever
-> accessed by the server.** This is a design — exact DDL lands with Phase 1 migrations.
+> accessed by the server.** Static gameplay content is authored in `src/data/*.json`; SQLite
+> stores player state, ownership, and audit records rather than hand-authored quest routes
+> or dialogue. This is a design — exact DDL lands with Phase 1 migrations.
 
 ## Conventions per entity
 
@@ -61,11 +63,20 @@ Static class templates (Bear Warrior / Cat Mage / Fox Archer).
 - **Columns:** `key` (`bear-warrior`, `cat-mage`, `fox-archer`), `display_name`,
   `animal`, `role`, `primary_resource` (`stamina`/`mana`/`focus`), `base_stats`
   (JSON: hp, attack, defense, speed, crit), `description`
-- **Ownership:** content.
+- **Ownership:** repository content in `src/data/classes.json`.
 - **Indexes:** `UNIQUE(key)`
-- **Type:** content (seeded, immutable after release)
+- **Type:** runtime lookup cache; synchronized from JSON at server boot
 
-## 5. character_stats
+## 5. skill_definitions and character_skills
+
+Skill definitions are authored in `src/data/skills.json` and synchronized into the
+runtime lookup table at server boot. `character_skills` remains player-owned unlock
+state; the server validates class, level, prerequisite, and skill-point requirements.
+
+- `skill_definitions`: JSON-backed lookup cache keyed by `skill_key`.
+- `character_skills`: player-state rows keyed by `character_id, skill_key`.
+
+## 6. character_stats
 
 Derived or stored stats for a character (base from class + gear + level).
 
@@ -77,7 +88,7 @@ Derived or stored stats for a character (base from class + gear + level).
 - **Indexes:** `PRIMARY KEY(character_id)`
 - **Type:** player-state
 
-## 6. inventories
+## 7. inventories
 
 One inventory per character.
 
@@ -87,7 +98,7 @@ One inventory per character.
 - **Ownership:** character-level.
 - **Type:** player-state
 
-## 7. inventory_items
+## 8. inventory_items
 
 What is actually in a character's inventory.
 
@@ -99,7 +110,7 @@ What is actually in a character's inventory.
 - **Indexes:** `INDEX(character_id, slot)`, `INDEX(character_id, item_definition_id)`
 - **Type:** player-state
 
-## 8. equipment
+## 9. equipment
 
 Equipped gear per character (slots: head, body, weapon, accessory).
 
@@ -111,7 +122,7 @@ Equipped gear per character (slots: head, body, weapon, accessory).
 - **Indexes:** `UNIQUE(character_id, slot)`, `UNIQUE(item_instance_id)`
 - **Type:** player-state
 
-## 9. item_definitions
+## 10. item_definitions
 
 Static catalog of items (deliveries, materials, gear, cosmetics, currency items).
 
@@ -120,51 +131,38 @@ Static catalog of items (deliveries, materials, gear, cosmetics, currency items)
 - **Columns:** `key` (`item-…` kebab-case), `name`, `description`, `category`
   (`resource`/`gear`/`delivery`/`quest`/`cosmetic`/`material`), `max_stack`,
   `icon`, `base_stats` (JSON for gear), `rarity`, `value` (Stamps sell price)
-- **Ownership:** content.
+- **Ownership:** repository content in `src/data/items.json`.
 - **Indexes:** `UNIQUE(key)`, `INDEX(category)`
-- **Type:** content
+- **Type:** runtime lookup cache; synchronized from JSON at server boot
 
-## 10. quest_definitions
+## 11. Quest content (JSON)
 
-Static quest catalog, including chain structure.
+Quest definitions are authored in [`src/data/quests.json`](../src/data/quests.json),
+including titles, routes, parcel types, prerequisites, rewards, and unlocks. The server
+loads and validates this content at runtime; it is not hand-authored in SQLite.
 
-- **PK:** `id`
-- **FK:** `giver_npc_id → npcs.id`, `delivery_target_npc_id → npcs.id` (nullable)
-- **Columns:** `key` (`quest-…`), `title`, `description`, `type`
-  (`delivery`/`combat`/`gathering`/`chain`), `required_item_definition_id`
-  (nullable — the parcel/letter), `required_quantity`, `stamp_reward`, `xp_reward`,
-  `reputation_reward_npc_id`, `reputation_reward_points`, `next_quest_id`
-  (chain pointer), `chain_position`, `min_level`
-- **Ownership:** content.
-- **Indexes:** `UNIQUE(key)`, `INDEX(required_item_definition_id)`, `INDEX(next_quest_id)`
-- **Type:** content
+- **Content key:** `id` (`quest-…`)
+- **Important fields:** `giverId`, `targetId`, `requiredItemId`, `parcelCondition`,
+  `stampReward`, `xpReward`, `reputationPoints`, `chainPosition`, `prerequisiteIds`
+- **Ownership:** repository content, versioned with the client.
+- **Type:** content (JSON)
 
-## 11. quest_prerequisites
+## 12. character_quest_progress
 
-Many-to-many prerequisites for quests (quest gates + reputation gates).
+Per-character quest state machine keyed by the stable JSON quest id.
 
-- **PK:** `quest_id, prerequisite_kind, prerequisite_id`
-- **FK:** `quest_id → quest_definitions.id`; `prerequisite_id` points to a quest
-  definition (kind=`quest`) or a reputation level (kind=`reputation`)
-- **Columns:** `kind` (`quest`/`reputation`/`item`), `min_value` (e.g. quest completed =
-  1, reputation level ≥ N)
-- **Ownership:** content.
-- **Indexes:** `INDEX(quest_id)`
-- **Type:** content
-
-## 12. character_quests
-
-Per-character quest state machine.
-
-- **PK:** `character_id, quest_id`
-- **FK:** `character_id → characters.id`, `quest_id → quest_definitions.id`
+- **PK:** `character_id, quest_key`
+- **FK:** `character_id → characters.id`; `quest_key` resolves against JSON content
 - **Columns:** `state` (`locked`/`available`/`active`/`completed`), `progress` (JSON),
   `delivered_item_id` (nullable), `accepted_at`, `completed_at`
 - **Ownership:** character-level; transitions server-validated only.
-- **Indexes:** `INDEX(character_id, state)`, `UNIQUE(character_id, quest_id)`
+- **Indexes:** `INDEX(character_id, state)`, `UNIQUE(character_id, quest_key)`
 - **Type:** player-state
 
-## 13. friendships (reputation)
+The legacy `quest_definitions`, `quest_prerequisites`, and `character_quests` tables are
+retained only for migration compatibility and are no longer populated or read by gameplay.
+
+## 14. friendships (reputation)
 
 Per-character reputation with NPCs (0–4 levels, thresholds 3/7/12/18).
 
@@ -175,20 +173,20 @@ Per-character reputation with NPCs (0–4 levels, thresholds 3/7/12/18).
 - **Indexes:** `UNIQUE(character_id, npc_id)`
 - **Type:** player-state
 
-## 14. zones
+## 15. zones
 
-Static zone catalog + shared-world instance config.
+Static zone catalog + shared-world instance config. Authored in `src/data/zones.json`; the table is a runtime lookup cache for foreign keys and APIs.
 
 - **PK:** `id`
 - **FK:** — (static)
 - **Columns:** `key` (`zone-…`), `display_name`, `kind` (`village`/`outdoor`/`dungeon`),
   `map_data_id`, `width_tiles`, `height_tiles`, `default_spawn_x`, `default_spawn_y`,
   `max_players`, `is_safe` (no monsters — true for the village)
-- **Ownership:** content (map data); runtime population is server-memory.
+- **Ownership:** repository content in `src/data/zones.json`; runtime population is server-memory.
 - **Indexes:** `UNIQUE(key)`
-- **Type:** content
+- **Type:** runtime lookup cache; synchronized from JSON at server boot
 
-## 15. dungeon_runs
+## 16. dungeon_runs
 
 Instance lifecycle for dungeon zones.
 
@@ -201,9 +199,9 @@ Instance lifecycle for dungeon zones.
 - **Indexes:** `INDEX(zone_id, state)`, `INDEX(owner_character_id)`
 - **Type:** player-state
 
-## 16. monsters (monster_definitions)
+## 17. monsters (monster_definitions)
 
-Static monster catalog.
+Static monster catalog with JSON-authored loot tables (`src/data/monsters.json`).
 
 - **PK:** `id`
 - **FK:** `zone_id → zones.id` (spawn zone; **never the safe village**),
@@ -212,11 +210,11 @@ Static monster catalog.
   `max_hp`, `attack`, `defense`, `speed`, `aggro_behavior`
   (`passive`/`aggro-range`/`patrol`), `attack_behavior` (`melee`/`ranged`/`spit`),
   `loot_table` (JSON: item key → drop chance), `respawn_seconds`, `experience_reward`
-- **Ownership:** content; spawn/respawn state is server-memory with DB checkpoint.
+- **Ownership:** repository content in `src/data/monsters.json`; spawn/respawn state is server-memory with DB checkpoint.
 - **Indexes:** `UNIQUE(key)`, `INDEX(zone_id)`
-- **Type:** content (spawn state: server-memory)
+- **Type:** runtime lookup cache (spawn state: server-memory)
 
-## 17. audit_economy_events
+## 18. audit_economy_events
 
 Append-only ledger for every economy mutation (anti-cheat + tuning).
 
@@ -232,7 +230,7 @@ Append-only ledger for every economy mutation (anti-cheat + tuning).
 
 ---
 
-## 18. Relationships (summary)
+## 19. Relationships (summary)
 
 ```text
 accounts 1─N sessions/refresh_tokens
@@ -240,8 +238,7 @@ accounts 1─N characters N─1 character_classes
 characters 1─1 character_stats
 characters 1─1 inventories 1─N inventory_items N─1 item_definitions
 characters 1─N equipment (slot) 1─1 inventory_items
-characters 1─N character_quests N─1 quest_definitions
-quest_definitions 1─N quest_prerequisites (self/NPC gates)
+characters 1─N character_quest_progress N─1 JSON quest content
 characters 1─N friendships N─1 npcs (reputation)
 zones 1─N monsters (spawn zones; village excluded)
 zones 1─N dungeon_runs N─1 characters (owner)

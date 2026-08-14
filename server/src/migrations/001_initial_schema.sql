@@ -33,7 +33,7 @@ CREATE TABLE refresh_tokens (
 CREATE INDEX idx_refresh_tokens_account ON refresh_tokens(account_id);
 CREATE INDEX idx_refresh_tokens_expires ON refresh_tokens(expires_at);
 
--- 3. character_classes (static content — seeded)
+-- 3. character_classes (JSON content materialized as a runtime lookup table)
 CREATE TABLE character_classes (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   `key` VARCHAR(50) NOT NULL UNIQUE,
@@ -94,7 +94,7 @@ CREATE TABLE inventories (
   updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
--- 7. item_definitions (static content — seeded later)
+-- 7. item_definitions (JSON content materialized as a runtime lookup table)
 CREATE TABLE item_definitions (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   `key` VARCHAR(100) NOT NULL UNIQUE,
@@ -131,7 +131,7 @@ CREATE TABLE equipment (
   PRIMARY KEY (character_id, slot)
 );
 
--- 10. quest_definitions (static content — seeded later)
+-- 10. quest_definitions (legacy compatibility table; JSON quests are authoritative)
 CREATE TABLE quest_definitions (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   `key` VARCHAR(100) NOT NULL UNIQUE,
@@ -185,7 +185,7 @@ CREATE TABLE friendships (
   PRIMARY KEY (character_id, npc_id)
 );
 
--- 14. zones (static content — seeded)
+-- 14. zones (JSON content materialized as a runtime lookup table)
 CREATE TABLE zones (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   `key` VARCHAR(50) NOT NULL UNIQUE,
@@ -214,7 +214,7 @@ CREATE TABLE dungeon_runs (
 CREATE INDEX idx_dungeon_runs_zone ON dungeon_runs(zone_id, state);
 CREATE INDEX idx_dungeon_runs_owner ON dungeon_runs(owner_character_id);
 
--- 16. monster_definitions (static content — seeded later)
+-- 16. monster_definitions (JSON content materialized as a runtime lookup table)
 CREATE TABLE monster_definitions (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   `key` VARCHAR(100) NOT NULL UNIQUE,

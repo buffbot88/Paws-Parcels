@@ -1,0 +1,104 @@
+{
+  "monsters": [
+    {
+      "key": "monster-wild-boar",
+      "displayName": "Wild Boar",
+      "zoneKey": "zone-happy-valley",
+      "familyId": "happy-valley",
+      "levelMin": 2,
+      "levelMax": 3,
+      "maxHp": 55,
+      "attack": 9,
+      "defense": 6,
+      "speed": 120.0,
+      "aggroBehavior": "aggro",
+      "attackBehavior": "melee",
+      "lootTable": [
+        { "key": "item-boar-hide", "chance": 0.6, "quantity": 1 },
+        { "key": "item-boar-tusk", "chance": 0.2, "quantity": 1 }
+      ],
+      "respawnSeconds": 30,
+      "experienceReward": 20
+    },
+    {
+      "key": "monster-valley-fox",
+      "displayName": "Valley Fox",
+      "zoneKey": "zone-happy-valley",
+      "familyId": "happy-valley",
+      "levelMin": 2,
+      "levelMax": 2,
+      "maxHp": 32,
+      "attack": 8,
+      "defense": 3,
+      "speed": 160.0,
+      "aggroBehavior": "aggro",
+      "attackBehavior": "melee",
+      "lootTable": [
+        { "key": "item-fox-pelt", "chance": 0.5, "quantity": 1 },
+        { "key": "item-sharp-claw", "chance": 0.3, "quantity": 1 }
+      ],
+      "respawnSeconds": 35,
+      "experienceReward": 15
+    },
+    {
+      "key": "monster-meadow-hare",
+      "displayName": "Meadow Hare",
+      "zoneKey": "zone-happy-valley",
+      "familyId": "happy-valley",
+      "levelMin": 1,
+      "levelMax": 1,
+      "maxHp": 20,
+      "attack": 4,
+      "defense": 2,
+      "speed": 140.0,
+      "aggroBehavior": "passive",
+      "attackBehavior": "melee",
+      "lootTable": [
+        { "key": "item-hare-fur", "chance": 0.5, "quantity": 1 },
+        { "key": "item-lucky-foot", "chance": 0.1, "quantity": 1 }
+      ],
+      "respawnSeconds": 20,
+      "experienceReward": 8
+    },
+    {
+      "key": "monster-forest-deer",
+      "displayName": "Forest Deer",
+      "zoneKey": "zone-happy-valley",
+      "familyId": "happy-valley",
+      "levelMin": 1,
+      "levelMax": 2,
+      "maxHp": 45,
+      "attack": 5,
+      "defense": 4,
+      "speed": 170.0,
+      "aggroBehavior": "passive",
+      "attackBehavior": "melee",
+      "lootTable": [
+        { "key": "item-deer-antler", "chance": 0.4, "quantity": 1 },
+        { "key": "item-deer-hide", "chance": 0.5, "quantity": 1 }
+      ],
+      "respawnSeconds": 40,
+      "experienceReward": 12
+    },
+    {
+      "key": "monster-black-grouse",
+      "displayName": "Black Grouse",
+      "zoneKey": "zone-happy-valley",
+      "familyId": "happy-valley",
+      "levelMin": 2,
+      "levelMax": 2,
+      "maxHp": 30,
+      "attack": 7,
+      "defense": 3,
+      "speed": 150.0,
+      "aggroBehavior": "aggro",
+      "attackBehavior": "ranged",
+      "lootTable": [
+        { "key": "item-grouse-feather", "chance": 0.6, "quantity": 1 },
+        { "key": "item-grouse-plume", "chance": 0.2, "quantity": 1 }
+      ],
+      "respawnSeconds": 45,
+      "experienceReward": 15
+    }
+  ]
+}

@@ -67,6 +67,16 @@
       "lines": [
         "Mossy Pond — where the grouse roost and the deer drink at dusk."
       ]
+    },
+    {
+      "id": "object-valley-blueberries",
+      "kind": "sign",
+      "label": "Blueberry Bushes",
+      "x": 31,
+      "y": 5,
+      "lines": [
+        "A sunny patch of blueberry bushes is heavy with ripe fruit."
+      ]
     }
   ],
   "monsterSpawns": [

@@ -3,6 +3,7 @@ import type { ItemDefinition } from "./ItemTypes.ts";
 import type { QuestDefinition } from "./QuestTypes.ts";
 import type { UpgradeDefinition } from "./UpgradeTypes.ts";
 import type { DialogueSet } from "./DialogueTypes.ts";
+import type { ClassContent, MonsterContent, SkillContent, ZoneContent } from "./StaticContentTypes.ts";
 
 export interface ContentData {
   npcs: NPC[];
@@ -10,4 +11,11 @@ export interface ContentData {
   quests: QuestDefinition[];
   upgrades: UpgradeDefinition[];
   dialogue: DialogueSet[];
+}
+
+export interface StaticContentData {
+  classes: ClassContent[];
+  skills: SkillContent[];
+  zones: ZoneContent[];
+  monsters: MonsterContent[];
 }

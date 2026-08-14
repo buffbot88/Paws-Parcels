@@ -6,6 +6,8 @@ import type { ItemDefinition } from "../../src/types/ItemTypes.ts";
 import type { QuestDefinition } from "../../src/types/QuestTypes.ts";
 import type { UpgradeDefinition } from "../../src/types/UpgradeTypes.ts";
 import type { DialogueSet } from "../../src/types/DialogueTypes.ts";
+import type { StaticContentData } from "../../src/types/ContentData.ts";
+import { validateStaticContent } from "../../src/systems/ContentValidator.ts";
 
 // ---- Compile-time schema conformance (the JSON must satisfy the interfaces) ----
 // TS widens string literals when importing JSON, so we widen the interface unions
@@ -22,6 +24,10 @@ import itemsJson from "../../src/data/items.json";
 import questsJson from "../../src/data/quests.json";
 import upgradesJson from "../../src/data/upgrades.json";
 import dialogueJson from "../../src/data/dialogue.json";
+import classesJson from "../../src/data/classes.json";
+import skillsJson from "../../src/data/skills.json";
+import zonesJson from "../../src/data/zones.json";
+import monstersJson from "../../src/data/monsters.json";
 
 npcsJson satisfies { npcs: Widen<NPC>[] };
 itemsJson satisfies { items: Widen<ItemDefinition>[] };
@@ -70,10 +76,24 @@ describe("shipped content", () => {
   it("has the expected MVP content counts", () => {
     const data = realContent();
     expect(data.npcs).toHaveLength(5);
-    expect(data.items).toHaveLength(21);
+    expect(data.items).toHaveLength(31);
     expect(data.quests).toHaveLength(23);
     expect(data.upgrades).toHaveLength(3);
     expect(data.dialogue).toHaveLength(6);
+  });
+});
+
+describe("static catalogs", () => {
+  it("validates JSON classes, skills, zones, monsters, and loot tables", () => {
+    const staticData: StaticContentData = {
+      classes: classesJson.classes as StaticContentData["classes"],
+      skills: skillsJson.skills as StaticContentData["skills"],
+      zones: zonesJson.zones as StaticContentData["zones"],
+      monsters: monstersJson.monsters as StaticContentData["monsters"],
+    };
+    const result = validateStaticContent(staticData, new Set(realContent().items.map((item) => item.id)));
+    expect(result.ok).toBe(true);
+    expect(result.errors).toEqual([]);
   });
 });
 

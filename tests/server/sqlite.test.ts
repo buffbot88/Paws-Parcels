@@ -45,7 +45,7 @@ vi.mock("../../server/src/config/index.ts", () => ({
 }));
 
 import { runMigrations } from "../../server/src/db/migrate.ts";
-import { closeDb } from "../../server/src/db/connection.ts";
+import { closeDb, getDb } from "../../server/src/db/connection.ts";
 import { findOrCreateAccountByAshatId } from "../../server/src/models/Account.ts";
 import {
   createCharacter,
@@ -81,6 +81,9 @@ describe("SQLite persistence layer", () => {
       "cat-mage",
       "fox-archer",
     ]);
+    expect((getDb().prepare("SELECT COUNT(*) AS count FROM item_definitions").get() as { count: number }).count).toBe(31);
+    expect((getDb().prepare("SELECT COUNT(*) AS count FROM skill_definitions").get() as { count: number }).count).toBe(9);
+    expect((getDb().prepare("SELECT COUNT(*) AS count FROM monster_definitions").get() as { count: number }).count).toBe(5);
   });
 
   it("is idempotent — re-running migrations applies nothing new", async () => {

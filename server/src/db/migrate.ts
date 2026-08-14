@@ -4,6 +4,7 @@ import { fileURLToPath } from "node:url";
 import { getDb, closeDb } from "./connection.ts";
 import { splitStatements } from "./sql.ts";
 import { logger } from "../middleware/logger.ts";
+import { syncStaticContent } from "../content/staticContent.ts";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 // migrate.ts lives in server/src/db; the SQL files live one level up in
@@ -68,6 +69,9 @@ export async function runMigrations(): Promise<void> {
     }
   }
 
+  // SQL migrations define schema and player-state compatibility only. Static
+  // catalogs are synchronized from src/data/*.json after the schema exists.
+  syncStaticContent();
   logger.info("All migrations applied");
 }
 

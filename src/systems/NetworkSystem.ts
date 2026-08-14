@@ -91,6 +91,7 @@ export class NetworkSystem {
   onNpcInteraction: ((npcId: string, quests: NetQuestSnapshot[]) => void) | null = null;
   onQuestState: ((quests: NetQuestSnapshot[]) => void) | null = null;
   onQuestUpdated: ((payload: { action: string; quest: NetQuestSnapshot; quests: NetQuestSnapshot[]; inventory: NetQuestInventoryItem[]; stamps: number; xp: number; message: string }) => void) | null = null;
+  onQuestNotice: ((message: string) => void) | null = null;
   onInventoryUpdated: ((items: NetQuestInventoryItem[], stamps: number) => void) | null = null;
   /** Called only after the server confirms this courier's attack hit a monster. */
   onAttackConfirmed: (() => void) | null = null;
@@ -178,6 +179,11 @@ export class NetworkSystem {
   /** Accept a quest offered by an NPC. */
   acceptQuest(questId: string): void {
     this.socket?.acceptQuest(questId);
+  }
+
+  /** Search an authored quest objective at a map object. */
+  searchQuest(objectId: string): void {
+    this.socket?.searchQuest(objectId);
   }
 
   /** Send a same-zone chat message through the authenticated socket. */
@@ -318,6 +324,7 @@ export class NetworkSystem {
     this.onNpcInteraction = null;
     this.onQuestState = null;
     this.onQuestUpdated = null;
+    this.onQuestNotice = null;
     this.onInventoryUpdated = null;
     this.onSelfPosition = null;
     this.selfPosition = null;
@@ -388,6 +395,7 @@ export class NetworkSystem {
     socket.callbacks.onNpcInteraction = (npcId, quests) => this.onNpcInteraction?.(npcId, quests);
     socket.callbacks.onQuestState = (quests) => this.onQuestState?.(quests);
     socket.callbacks.onQuestUpdated = (payload) => this.onQuestUpdated?.(payload);
+    socket.callbacks.onQuestNotice = (message) => this.onQuestNotice?.(message);
     socket.callbacks.onInventoryUpdated = (items, stamps) => this.onInventoryUpdated?.(items, stamps);
     socket.callbacks.onCombatEvent = (event) => this.handleCombatEvent(event);
     socket.callbacks.onRespawn = (info) => this.handleRespawn(info);

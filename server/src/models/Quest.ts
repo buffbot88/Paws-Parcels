@@ -1,6 +1,44 @@
+import questsJson from "../../../src/data/quests.json" with { type: "json" };
 import { getDb } from "../db/connection.ts";
 
 type SqlRow = Record<string, unknown>;
+
+type ParcelCondition = "normal" | "fragile" | "urgent";
+
+type QuestContent = {
+  id: string;
+  phase?: "4B";
+  title: string;
+  description: string;
+  type: string;
+  giverId: string;
+  targetId?: string;
+  requiredItemId?: string;
+  requiredQuantity?: number;
+  findAt?: string;
+  searchObjectId?: string;
+  rewardItemId?: string;
+  requiresFriendship?: { npcId: string; level: number };
+  stampReward: number;
+  xpReward?: number;
+  friendshipNpcId?: string;
+  friendshipReward?: number;
+  reputationPoints?: number;
+  chainPosition?: number;
+  prerequisiteIds?: string[];
+  courierRankReward?: string;
+  timeLimitSeconds?: number;
+  breaksOnDefeat?: boolean;
+  parcelCondition?: ParcelCondition;
+};
+
+const CONTENT_QUESTS: QuestContent[] = (questsJson.quests as QuestContent[])
+  .filter((quest) => (quest.chainPosition ?? 0) > 0 || quest.phase === "4B");
+const TUTORIAL_QUESTS: QuestContent[] = CONTENT_QUESTS
+  .filter((quest) => (quest.chainPosition ?? 0) > 0)
+  .sort((left, right) => (left.chainPosition ?? 0) - (right.chainPosition ?? 0));
+const SIDE_QUESTS: QuestContent[] = CONTENT_QUESTS
+  .filter((quest) => (quest.chainPosition ?? 0) === 0);
 
 export type QuestState = "locked" | "available" | "active" | "completed";
 
@@ -20,6 +58,13 @@ export interface QuestSnapshot {
   reputationNpcId: string | null;
   reputationPoints: number;
   chainPosition: number;
+  parcelCondition: ParcelCondition;
+  deadlineAt: number | null;
+  sideQuest: boolean;
+  findAt: string | null;
+  searchObjectId: string | null;
+  rewardItemId: string | null;
+  friendshipGate: { npcId: string; level: number } | null;
 }
 
 export interface QuestInventoryItem {
@@ -34,55 +79,46 @@ export type QuestMutationResult =
   | { ok: true; quest: QuestSnapshot; quests: QuestSnapshot[]; inventory: QuestInventoryItem[]; stamps: number; xp: number; message: string }
   | { ok: false; reason: "QUEST_NOT_AVAILABLE" | "QUEST_PREREQUISITES_NOT_MET" | "QUEST_ALREADY_ACTIVE" | "QUEST_ALREADY_COMPLETE" | "INVENTORY_FULL" | "QUEST_NOT_ACTIVE" | "QUEST_ITEM_MISSING" | "WRONG_DELIVERY_TARGET" };
 
-/** Return the ordered tutorial chain and make its initial state available. */
+/** Return the JSON-defined tutorial chain and make its initial state available. */
 export async function getQuestState(characterId: number): Promise<QuestSnapshot[]> {
-  const db = getDb();
   ensureCharacterQuestRows(characterId);
+  expireUrgentDeliveries(characterId);
   refreshAvailableStates(characterId);
-  const rows = db.prepare(`
-    SELECT q.key, q.title, q.description, q.type, q.giver_npc_id, q.delivery_target_npc_id,
-           i.key AS required_item_key, q.required_quantity, cq.state, cq.progress,
-           q.stamp_reward, q.xp_reward, q.reputation_reward_npc_id,
-           q.reputation_reward_points, q.chain_position
-      FROM quest_definitions q
-      LEFT JOIN character_quests cq ON cq.quest_id = q.id AND cq.character_id = ?
-      LEFT JOIN item_definitions i ON i.id = q.required_item_definition_id
-     WHERE q.chain_position > 0
-     ORDER BY q.chain_position ASC`).all(characterId) as SqlRow[];
-  return rows.map(rowToQuest);
+  const rows = getDb().prepare(`
+    SELECT quest_key, state, progress, accepted_at
+      FROM character_quest_progress
+     WHERE character_id = ?`).all(characterId) as SqlRow[];
+  const byKey = new Map(rows.map((row) => [String(row.quest_key), row]));
+  return [...TUTORIAL_QUESTS, ...SIDE_QUESTS].map((quest) => rowToQuest(quest, byKey.get(quest.id)));
 }
 
-/** Accept a currently available tutorial quest and create its locked parcel. */
+/** Accept a JSON-defined tutorial quest and create its locked parcel. */
 export async function acceptQuest(characterId: number, questId: string): Promise<QuestMutationResult> {
-  const db = getDb();
   ensureCharacterQuestRows(characterId);
+  expireUrgentDeliveries(characterId);
   refreshAvailableStates(characterId);
-  const quest = findQuest(characterId, questId);
-  if (quest === null) return { ok: false, reason: "QUEST_NOT_AVAILABLE" };
-  if (quest.state === "active") return { ok: false, reason: "QUEST_ALREADY_ACTIVE" };
-  if (quest.state === "completed") return { ok: false, reason: "QUEST_ALREADY_COMPLETE" };
-  const anotherActive = db.prepare("SELECT 1 FROM character_quests WHERE character_id = ? AND state = 'active' LIMIT 1").get(characterId);
-  if (anotherActive !== undefined) return { ok: false, reason: "QUEST_ALREADY_ACTIVE" };
-  if (quest.state !== "available") return { ok: false, reason: "QUEST_PREREQUISITES_NOT_MET" };
-
-  const item = db.prepare(`SELECT id, max_stack FROM item_definitions WHERE id = ?`).get(Number(quest.required_item_definition_id)) as SqlRow | undefined;
-  if (item === undefined) return { ok: false, reason: "INVENTORY_FULL" };
-  const slotCount = Number((db.prepare("SELECT slot_count FROM inventories WHERE character_id = ?").get(characterId) as SqlRow | undefined)?.slot_count ?? 0);
-  const used = new Set((db.prepare("SELECT slot FROM inventory_items WHERE character_id = ? AND slot IS NOT NULL").all(characterId) as SqlRow[]).map((row) => Number(row.slot)));
-  let slot: number | null = null;
-  for (let candidate = 0; candidate < slotCount; candidate += 1) {
-    if (!used.has(candidate)) { slot = candidate; break; }
+  const quest = findQuestContent(questId);
+  const state = quest === null ? null : getQuestProgress(characterId, quest.id);
+  if (quest === null || state === null) return { ok: false, reason: "QUEST_NOT_AVAILABLE" };
+  if (state.state === "active") return { ok: false, reason: "QUEST_ALREADY_ACTIVE" };
+  if (state.state === "completed") return { ok: false, reason: "QUEST_ALREADY_COMPLETE" };
+  if (getDb().prepare("SELECT 1 FROM character_quest_progress WHERE character_id = ? AND state = 'active' LIMIT 1").get(characterId) !== undefined) {
+    return { ok: false, reason: "QUEST_ALREADY_ACTIVE" };
   }
-  if (slot === null) return { ok: false, reason: "INVENTORY_FULL" };
+  if (state.state !== "available") return { ok: false, reason: "QUEST_PREREQUISITES_NOT_MET" };
 
+  const db = getDb();
   db.exec("BEGIN");
   try {
-    db.prepare(`INSERT INTO inventory_items
-      (character_id, item_definition_id, slot, quantity, stack_meta)
-      VALUES (?, ?, ?, 1, ?)`)
-      .run(characterId, Number(item.id), slot, JSON.stringify({ questId, locked: true }));
-    db.prepare("UPDATE character_quests SET state = 'active', progress = ?, accepted_at = ? WHERE character_id = ? AND quest_id = ?")
-      .run(JSON.stringify({ delivered: 0 }) as string, new Date().toISOString(), characterId, Number(quest.quest_id));
+    if (quest.type === "delivery") {
+      const item = db.prepare("SELECT id FROM item_definitions WHERE key = ? LIMIT 1").get(quest.requiredItemId ?? "") as SqlRow | undefined;
+      if (item === undefined || !insertInventoryItem(characterId, Number(item.id), 1, { questId: quest.id, locked: true, condition: quest.parcelCondition ?? "normal" })) {
+        db.exec("ROLLBACK");
+        return { ok: false, reason: item === undefined ? "QUEST_ITEM_MISSING" : "INVENTORY_FULL" };
+      }
+    }
+    db.prepare("UPDATE character_quest_progress SET state = 'active', progress = ?, accepted_at = ? WHERE character_id = ? AND quest_key = ?")
+      .run(JSON.stringify({ delivered: 0, found: 0 }), new Date().toISOString(), characterId, quest.id);
     db.exec("COMMIT");
   } catch (err) {
     try { db.exec("ROLLBACK"); } catch { /* preserve original error */ }
@@ -90,7 +126,7 @@ export async function acceptQuest(characterId: number, questId: string): Promise
   }
 
   const quests = await getQuestState(characterId);
-  const updated = quests.find((entry) => entry.questId === questId) ?? questSnapshotFromRow(quest);
+  const updated = quests.find((entry) => entry.questId === quest.id) as QuestSnapshot;
   return {
     ok: true,
     quest: updated,
@@ -102,36 +138,42 @@ export async function acceptQuest(characterId: number, questId: string): Promise
   };
 }
 
-/** Complete the active delivery for the NPC the character is interacting with. */
+/** Complete the active JSON-defined delivery for the NPC being interacted with. */
 export async function completeDelivery(characterId: number, targetNpcId: string): Promise<QuestMutationResult> {
-  const db = getDb();
   ensureCharacterQuestRows(characterId);
-  const active = db.prepare(`
-    SELECT q.id AS quest_id, q.key, q.title, q.description, q.type, q.giver_npc_id,
-           q.delivery_target_npc_id, q.required_item_definition_id, q.required_quantity,
-           q.stamp_reward, q.xp_reward, q.reputation_reward_npc_id,
-           q.reputation_reward_points, q.chain_position, cq.state
-      FROM quest_definitions q JOIN character_quests cq ON cq.quest_id = q.id
-     WHERE cq.character_id = ? AND cq.state = 'active' AND q.delivery_target_npc_id = ?
-     ORDER BY q.chain_position ASC LIMIT 1`).get(characterId, targetNpcId) as SqlRow | undefined;
-  if (active === undefined) {
-    const hasActive = db.prepare(`SELECT 1 FROM quest_definitions q JOIN character_quests cq ON cq.quest_id = q.id WHERE cq.character_id = ? AND cq.state = 'active'`).get(characterId) !== undefined;
-    return { ok: false, reason: hasActive ? "WRONG_DELIVERY_TARGET" : "QUEST_NOT_ACTIVE" };
+  expireUrgentDeliveries(characterId);
+  const activeRows = getDb().prepare(`
+    SELECT quest_key, state, accepted_at
+      FROM character_quest_progress
+     WHERE character_id = ? AND state = 'active'
+     ORDER BY quest_key ASC`).all(characterId) as SqlRow[];
+  const activeEntry = activeRows
+    .map((row) => ({ quest: findQuestContent(String(row.quest_key)), state: row }))
+    .find((entry) => entry.quest?.targetId === targetNpcId);
+  if (activeEntry?.quest == null) {
+    return { ok: false, reason: activeRows.length > 0 ? "WRONG_DELIVERY_TARGET" : "QUEST_NOT_ACTIVE" };
   }
-
-  const item = (db.prepare(`SELECT id, quantity, stack_meta FROM inventory_items
-    WHERE character_id = ? AND item_definition_id = ? ORDER BY id ASC`)
-    .all(characterId, Number(active.required_item_definition_id)) as SqlRow[])
-    .find((candidate) =>
-      Number(candidate.quantity) >= Number(active.required_quantity ?? 1) &&
-      isQuestBound(candidate.stack_meta, String(active.key)),
-    );
-  if (item === undefined) return { ok: false, reason: "QUEST_ITEM_MISSING" };
+  const active = activeEntry.quest;
+  const requiredQuantity = Math.max(1, active.requiredQuantity ?? 1);
+  const itemDefinition = active.requiredItemId === undefined
+    ? undefined
+    : getDb().prepare("SELECT id FROM item_definitions WHERE key = ? LIMIT 1").get(active.requiredItemId) as SqlRow | undefined;
+  if (active.requiredItemId !== undefined && itemDefinition === undefined) return { ok: false, reason: "QUEST_ITEM_MISSING" };
+  const item = itemDefinition === undefined
+    ? undefined
+    : (getDb().prepare(`SELECT id, quantity, stack_meta FROM inventory_items
+      WHERE character_id = ? AND item_definition_id = ? ORDER BY id ASC`)
+      .all(characterId, Number(itemDefinition.id)) as SqlRow[])
+      .find((candidate) =>
+        Number(candidate.quantity) >= requiredQuantity &&
+        (active.type === "delivery" ? isQuestBound(candidate.stack_meta, active.id) : !isLocked(candidate.stack_meta)),
+      );
+  if (active.requiredItemId !== undefined && item === undefined) return { ok: false, reason: "QUEST_ITEM_MISSING" };
 
   const oldStamps = getStamps(characterId);
   const oldXp = getExperience(characterId);
-  const nextXp = oldXp + Math.max(0, Number(active.xp_reward ?? 0));
-  const levelRow = db.prepare("SELECT level, skill_points FROM characters WHERE id = ?").get(characterId) as SqlRow | undefined;
+  const nextXp = oldXp + Math.max(0, active.xpReward ?? 0);
+  const levelRow = getDb().prepare("SELECT level, skill_points FROM characters WHERE id = ?").get(characterId) as SqlRow | undefined;
   let level = Number(levelRow?.level ?? 1);
   let skillPoints = Number(levelRow?.skill_points ?? 0);
   let threshold = level * 100;
@@ -140,30 +182,49 @@ export async function completeDelivery(characterId: number, targetNpcId: string)
     skillPoints += 1;
     threshold = level * 100;
   }
-  const newStamps = oldStamps + Math.max(0, Number(active.stamp_reward ?? 0));
+  const newStamps = oldStamps + Math.max(0, active.stampReward);
+  const rankReward = active.courierRankReward ?? null;
+  const reputationNpcId = active.friendshipNpcId ?? null;
+  const reputationPoints = Math.max(0, active.reputationPoints ?? active.friendshipReward ?? 0);
 
+  const db = getDb();
   db.exec("BEGIN");
   try {
-    const quantity = Number(item.quantity) - Number(active.required_quantity ?? 1);
-    if (quantity > 0) db.prepare("UPDATE inventory_items SET quantity = ? WHERE id = ?").run(quantity, Number(item.id));
-    else db.prepare("DELETE FROM inventory_items WHERE id = ?").run(Number(item.id));
-    db.prepare(`UPDATE character_quests SET state = 'completed', progress = ?, delivered_item_id = ?, completed_at = ?
-      WHERE character_id = ? AND quest_id = ?`).run(JSON.stringify({ delivered: Number(active.required_quantity ?? 1) }), Number(item.id), new Date().toISOString(), characterId, Number(active.quest_id));
-    db.prepare("UPDATE characters SET stamps = ?, experience = ?, level = ?, skill_points = ?, updated_at = ? WHERE id = ?")
-      .run(newStamps, nextXp, level, skillPoints, new Date().toISOString(), characterId);
-    if (active.reputation_reward_npc_id !== null && active.reputation_reward_npc_id !== undefined) {
-      const npcId = String(active.reputation_reward_npc_id);
-      const points = Math.max(0, Number(active.reputation_reward_points ?? 0));
-      const current = db.prepare("SELECT points FROM friendships WHERE character_id = ? AND npc_id = ?").get(characterId, npcId) as SqlRow | undefined;
-      const nextPoints = Number(current?.points ?? 0) + points;
+    if (item !== undefined) {
+      const quantity = Number(item.quantity) - requiredQuantity;
+      if (quantity > 0) db.prepare("UPDATE inventory_items SET quantity = ? WHERE id = ?").run(quantity, Number(item.id));
+      else db.prepare("DELETE FROM inventory_items WHERE id = ?").run(Number(item.id));
+    }
+    let rewardItemDefinitionId: number | null = null;
+    if (active.rewardItemId !== undefined) {
+      const reward = db.prepare("SELECT id FROM item_definitions WHERE key = ? LIMIT 1").get(active.rewardItemId) as SqlRow | undefined;
+      if (reward === undefined || !insertInventoryItem(characterId, Number(reward.id), 1, { questReward: active.id })) {
+        db.exec("ROLLBACK");
+        return { ok: false, reason: reward === undefined ? "QUEST_ITEM_MISSING" : "INVENTORY_FULL" };
+      }
+      rewardItemDefinitionId = Number(reward.id);
+    }
+    db.prepare(`UPDATE character_quest_progress SET state = 'completed', progress = ?, delivered_item_id = ?, completed_at = ?
+      WHERE character_id = ? AND quest_key = ?`).run(JSON.stringify({ delivered: requiredQuantity }), item === undefined ? null : Number(item.id), new Date().toISOString(), characterId, active.id);
+    db.prepare("UPDATE characters SET stamps = ?, experience = ?, level = ?, skill_points = ?, courier_rank = COALESCE(?, courier_rank), updated_at = ? WHERE id = ?")
+      .run(newStamps, nextXp, level, skillPoints, rankReward, new Date().toISOString(), characterId);
+    if (reputationNpcId !== null && reputationPoints > 0) {
+      const current = db.prepare("SELECT points FROM friendships WHERE character_id = ? AND npc_id = ?").get(characterId, reputationNpcId) as SqlRow | undefined;
+      const nextPoints = Number(current?.points ?? 0) + reputationPoints;
       db.prepare(`INSERT INTO friendships (character_id, npc_id, level, points) VALUES (?, ?, ?, ?)
         ON CONFLICT(character_id, npc_id) DO UPDATE SET level = excluded.level, points = excluded.points, updated_at = CURRENT_TIMESTAMP`)
-        .run(characterId, npcId, friendshipLevel(nextPoints), nextPoints);
+        .run(characterId, reputationNpcId, friendshipLevel(nextPoints), nextPoints);
     }
-    db.prepare("INSERT INTO audit_economy_events (character_id, event_type, item_definition_id, quantity, balance_after, reason) VALUES (?, 'item_remove', ?, ?, ?, ?)")
-      .run(characterId, Number(active.required_item_definition_id), -Number(active.required_quantity ?? 1), newStamps, `quest_delivery:${String(active.key)}`);
+    if (itemDefinition !== undefined && item !== undefined) {
+      db.prepare("INSERT INTO audit_economy_events (character_id, event_type, item_definition_id, quantity, balance_after, reason) VALUES (?, 'item_remove', ?, ?, ?, ?)")
+        .run(characterId, Number(itemDefinition.id), -requiredQuantity, newStamps, `quest_${active.type}:${active.id}`);
+    }
+    if (rewardItemDefinitionId !== null) {
+      db.prepare("INSERT INTO audit_economy_events (character_id, event_type, item_definition_id, quantity, balance_after, reason) VALUES (?, 'item_grant', ?, ?, ?, ?)")
+        .run(characterId, rewardItemDefinitionId, 1, newStamps, `quest_reward_item:${active.id}`);
+    }
     db.prepare("INSERT INTO audit_economy_events (character_id, event_type, quantity, balance_after, reason) VALUES (?, 'quest_reward', ?, ?, ?)")
-      .run(characterId, Number(active.stamp_reward ?? 0), newStamps, String(active.key));
+      .run(characterId, active.stampReward, newStamps, active.id);
     db.exec("COMMIT");
   } catch (err) {
     try { db.exec("ROLLBACK"); } catch { /* preserve original error */ }
@@ -171,16 +232,81 @@ export async function completeDelivery(characterId: number, targetNpcId: string)
   }
 
   const quests = await getQuestState(characterId);
-  const completed = quests.find((entry) => entry.questId === String(active.key));
+  const completed = quests.find((entry) => entry.questId === active.id) as QuestSnapshot;
   return {
     ok: true,
-    quest: completed ?? questSnapshotFromRow(active),
+    quest: completed,
     quests,
     inventory: getQuestInventory(characterId),
     stamps: newStamps,
     xp: nextXp,
-    message: `Delivery complete: ${String(active.title)}`,
+    message: rankReward !== null
+      ? `Delivery complete: ${active.title} — you are now an official ${rankReward}!`
+      : `Delivery complete: ${active.title}`,
   };
+}
+
+/** Search an authored map object for the active errand/gathering objective. */
+export async function searchQuest(characterId: number, objectId: string): Promise<QuestMutationResult> {
+  ensureCharacterQuestRows(characterId);
+  const activeRows = getDb().prepare(`SELECT quest_key FROM character_quest_progress WHERE character_id = ? AND state = 'active'`).all(characterId) as SqlRow[];
+  const active = activeRows.map((row) => findQuestContent(String(row.quest_key))).find((quest) => quest?.searchObjectId === objectId);
+  if (active === undefined || active === null) return { ok: false, reason: "QUEST_NOT_ACTIVE" };
+  const progress = getQuestProgress(characterId, active.id);
+  if (progress !== null && hasFoundObjective(progress.progress)) return { ok: false, reason: "QUEST_ALREADY_ACTIVE" };
+  if (active.requiredItemId === undefined) return { ok: false, reason: "QUEST_ITEM_MISSING" };
+  const item = getDb().prepare("SELECT id FROM item_definitions WHERE key = ? LIMIT 1").get(active.requiredItemId) as SqlRow | undefined;
+  if (item === undefined) return { ok: false, reason: "QUEST_ITEM_MISSING" };
+  const db = getDb();
+  db.exec("BEGIN");
+  try {
+    if (!insertInventoryItem(characterId, Number(item.id), Math.max(1, active.requiredQuantity ?? 1), { questId: active.id, foundAt: active.findAt ?? objectId })) {
+      db.exec("ROLLBACK");
+      return { ok: false, reason: "INVENTORY_FULL" };
+    }
+    db.prepare("UPDATE character_quest_progress SET progress = ? WHERE character_id = ? AND quest_key = ?")
+      .run(JSON.stringify({ delivered: 0, found: Math.max(1, active.requiredQuantity ?? 1) }), characterId, active.id);
+    db.exec("COMMIT");
+  } catch (err) {
+    try { db.exec("ROLLBACK"); } catch { /* preserve original error */ }
+    throw err;
+  }
+  const quests = await getQuestState(characterId);
+  const updated = quests.find((quest) => quest.questId === active.id) as QuestSnapshot;
+  return {
+    ok: true,
+    quest: updated,
+    quests,
+    inventory: getQuestInventory(characterId),
+    stamps: getStamps(characterId),
+    xp: getExperience(characterId),
+    message: `Found ${active.title} objective at ${active.findAt ?? objectId}. Return it to ${active.targetId?.replace("npc-", "") ?? "the quest giver"}.`,
+  };
+}
+
+/** Reset fragile routes after a defeat without penalizing the courier's main progression. */
+export function resetFragileDeliveriesOnDefeat(characterId: number): string[] {
+  const db = getDb();
+  const rows = db.prepare("SELECT quest_key FROM character_quest_progress WHERE character_id = ? AND state = 'active'").all(characterId) as SqlRow[];
+  const reset: string[] = [];
+  db.exec("BEGIN");
+  try {
+    for (const row of rows) {
+      const quest = findQuestContent(String(row.quest_key));
+      if (quest?.breaksOnDefeat !== true) continue;
+      deleteBoundParcel(characterId, quest.id);
+      db.prepare(`UPDATE character_quest_progress
+        SET state = 'available', progress = ?, accepted_at = NULL, delivered_item_id = NULL
+        WHERE character_id = ? AND quest_key = ?`)
+        .run(JSON.stringify({ delivered: 0, resetReason: "defeat" }), characterId, quest.id);
+      reset.push(quest.id);
+    }
+    db.exec("COMMIT");
+  } catch (err) {
+    try { db.exec("ROLLBACK"); } catch { /* preserve original error */ }
+    throw err;
+  }
+  return reset;
 }
 
 export function getQuestInventory(characterId: number): QuestInventoryItem[] {
@@ -196,56 +322,115 @@ export function getQuestInventory(characterId: number): QuestInventoryItem[] {
   }));
 }
 
+function expireUrgentDeliveries(characterId: number): void {
+  const db = getDb();
+  const rows = db.prepare("SELECT quest_key, accepted_at FROM character_quest_progress WHERE character_id = ? AND state = 'active'").all(characterId) as SqlRow[];
+  const expired = rows.filter((row) => {
+    const quest = findQuestContent(String(row.quest_key));
+    const acceptedAt = typeof row.accepted_at === "string" ? acceptedAtMs(row.accepted_at) : 0;
+    return quest?.timeLimitSeconds !== undefined && acceptedAt > 0 && Date.now() >= acceptedAt + quest.timeLimitSeconds * 1000;
+  });
+  if (expired.length === 0) return;
+  db.exec("BEGIN");
+  try {
+    for (const row of expired) {
+      const questId = String(row.quest_key);
+      deleteBoundParcel(characterId, questId);
+      db.prepare(`UPDATE character_quest_progress
+        SET state = 'available', progress = ?, accepted_at = NULL, delivered_item_id = NULL
+        WHERE character_id = ? AND quest_key = ?`)
+        .run(JSON.stringify({ delivered: 0, resetReason: "expired" }), characterId, questId);
+    }
+    db.exec("COMMIT");
+  } catch (err) {
+    try { db.exec("ROLLBACK"); } catch { /* preserve original error */ }
+    throw err;
+  }
+}
+
+function deleteBoundParcel(characterId: number, questId: string): void {
+  const db = getDb();
+  const items = db.prepare("SELECT id, stack_meta FROM inventory_items WHERE character_id = ?").all(characterId) as SqlRow[];
+  for (const item of items) {
+    if (isQuestBound(item.stack_meta, questId)) {
+      db.prepare("DELETE FROM inventory_items WHERE id = ?").run(Number(item.id));
+    }
+  }
+}
+
+function acceptedAtMs(raw: string): number {
+  const parsed = Date.parse(raw);
+  return Number.isFinite(parsed) ? parsed : 0;
+}
+
 function ensureCharacterQuestRows(characterId: number): void {
   const db = getDb();
-  db.prepare(`INSERT OR IGNORE INTO character_quests (character_id, quest_id, state, progress)
-    SELECT ?, id, 'locked', ? FROM quest_definitions WHERE chain_position > 0`).run(characterId, JSON.stringify({ delivered: 0 }));
+  const insert = db.prepare(`INSERT OR IGNORE INTO character_quest_progress
+    (character_id, quest_key, state, progress) VALUES (?, ?, 'locked', ?)`);
+  for (const quest of CONTENT_QUESTS) {
+    insert.run(characterId, quest.id, JSON.stringify({ delivered: 0, found: 0 }));
+  }
 }
 
 function refreshAvailableStates(characterId: number): void {
   const db = getDb();
-  db.prepare(`UPDATE character_quests SET state = 'available'
-    WHERE character_id = ? AND state = 'locked'
-      AND NOT EXISTS (
-        SELECT 1 FROM quest_prerequisites p
-        LEFT JOIN character_quests done ON done.character_id = character_quests.character_id
-          AND done.quest_id = p.prerequisite_id AND done.state = 'completed'
-        WHERE p.quest_id = character_quests.quest_id AND p.prerequisite_kind = 'quest' AND done.quest_id IS NULL
-      )`).run(characterId);
+  const rows = db.prepare("SELECT quest_key, state FROM character_quest_progress WHERE character_id = ?").all(characterId) as SqlRow[];
+  const states = new Map(rows.map((row) => [String(row.quest_key), normalizeState(row.state)]));
+  const tutorialComplete = TUTORIAL_QUESTS.every((quest) => states.get(quest.id) === "completed");
+  const update = db.prepare("UPDATE character_quest_progress SET state = 'available' WHERE character_id = ? AND quest_key = ? AND state = 'locked'");
+  for (const quest of CONTENT_QUESTS) {
+    if (states.get(quest.id) !== "locked") continue;
+    const prerequisitesMet = (quest.prerequisiteIds ?? []).every((id) => states.get(id) === "completed");
+    const tutorialGateMet = (quest.chainPosition ?? 0) > 0 || tutorialComplete;
+    const friendshipGate = quest.requiresFriendship;
+    const friendshipMet = friendshipGate === undefined || getFriendshipLevel(characterId, friendshipGate.npcId) >= friendshipGate.level;
+    if (prerequisitesMet && tutorialGateMet && friendshipMet) {
+      update.run(characterId, quest.id);
+      states.set(quest.id, "available");
+    }
+  }
 }
 
-function findQuest(characterId: number, questId: string): SqlRow | null {
-  const row = getDb().prepare(`SELECT q.id AS quest_id, q.key, q.title, q.description, q.type,
-      q.giver_npc_id, q.delivery_target_npc_id, q.required_item_definition_id,
-      q.required_quantity, q.stamp_reward, q.xp_reward, q.reputation_reward_npc_id,
-      q.reputation_reward_points, q.chain_position, cq.state
-    FROM quest_definitions q JOIN character_quests cq ON cq.quest_id = q.id
-   WHERE cq.character_id = ? AND q.key = ? LIMIT 1`).get(characterId, questId) as SqlRow | undefined;
+function findQuestContent(questId: string): QuestContent | null {
+  return CONTENT_QUESTS.find((quest) => quest.id === questId) ?? null;
+}
+
+function getQuestProgress(characterId: number, questKey: string): SqlRow | null {
+  const row = getDb().prepare("SELECT quest_key, state, progress FROM character_quest_progress WHERE character_id = ? AND quest_key = ? LIMIT 1").get(characterId, questKey) as SqlRow | undefined;
   return row ?? null;
 }
 
-function rowToQuest(row: SqlRow): QuestSnapshot {
+function rowToQuest(quest: QuestContent, row: SqlRow | undefined): QuestSnapshot {
   return {
-    questId: String(row.key ?? ""),
-    title: String(row.title ?? ""),
-    description: String(row.description ?? ""),
-    type: String(row.type ?? "delivery"),
-    giverId: String(row.giver_npc_id ?? ""),
-    targetId: row.delivery_target_npc_id === null ? null : String(row.delivery_target_npc_id ?? ""),
-    requiredItemId: row.required_item_key === null ? null : String(row.required_item_key ?? ""),
-    requiredQuantity: Number(row.required_quantity ?? 1),
-    state: normalizeState(row.state),
-    progress: parseProgress(row.progress),
-    stampReward: Number(row.stamp_reward ?? 0),
-    xpReward: Number(row.xp_reward ?? 0),
-    reputationNpcId: row.reputation_reward_npc_id === null ? null : String(row.reputation_reward_npc_id ?? ""),
-    reputationPoints: Number(row.reputation_reward_points ?? 0),
-    chainPosition: Number(row.chain_position ?? 0),
+    questId: quest.id,
+    title: quest.title,
+    description: quest.description,
+    type: quest.type,
+    giverId: quest.giverId,
+    targetId: quest.targetId ?? null,
+    requiredItemId: quest.requiredItemId ?? null,
+    requiredQuantity: Math.max(1, quest.requiredQuantity ?? 1),
+    state: normalizeState(row?.state),
+    progress: parseProgress(row?.progress),
+    stampReward: quest.stampReward,
+    xpReward: Math.max(0, quest.xpReward ?? 0),
+    reputationNpcId: quest.friendshipNpcId ?? null,
+    reputationPoints: Math.max(0, quest.reputationPoints ?? quest.friendshipReward ?? 0),
+    chainPosition: quest.chainPosition ?? 0,
+    parcelCondition: normalizeParcelCondition(quest.parcelCondition),
+    deadlineAt: quest.timeLimitSeconds !== undefined && typeof row?.accepted_at === "string"
+      ? acceptedAtMs(row.accepted_at) + quest.timeLimitSeconds * 1000
+      : null,
+    sideQuest: (quest.chainPosition ?? 0) === 0,
+    findAt: quest.findAt ?? null,
+    searchObjectId: quest.searchObjectId ?? null,
+    rewardItemId: quest.rewardItemId ?? null,
+    friendshipGate: quest.requiresFriendship ?? null,
   };
 }
 
-function questSnapshotFromRow(row: SqlRow): QuestSnapshot {
-  return rowToQuest({ ...row, required_item_key: null, progress: JSON.stringify({ delivered: 0 }) });
+function normalizeParcelCondition(raw: unknown): ParcelCondition {
+  return raw === "fragile" || raw === "urgent" ? raw : "normal";
 }
 
 function normalizeState(raw: unknown): QuestState {
@@ -254,7 +439,15 @@ function normalizeState(raw: unknown): QuestState {
 
 function parseProgress(raw: unknown): number {
   if (typeof raw !== "string") return 0;
-  try { return Number((JSON.parse(raw) as { delivered?: unknown }).delivered ?? 0); } catch { return 0; }
+  try {
+    const parsed = JSON.parse(raw) as { delivered?: unknown; found?: unknown };
+    return Number(parsed.delivered ?? parsed.found ?? 0);
+  } catch { return 0; }
+}
+
+function hasFoundObjective(raw: unknown): boolean {
+  if (typeof raw !== "string") return false;
+  try { return Number((JSON.parse(raw) as { found?: unknown }).found ?? 0) > 0; } catch { return false; }
 }
 
 function isLocked(raw: unknown): boolean {
@@ -286,4 +479,25 @@ function getStamps(characterId: number): number {
 function getExperience(characterId: number): number {
   const row = getDb().prepare("SELECT experience FROM characters WHERE id = ?").get(characterId) as SqlRow | undefined;
   return Number(row?.experience ?? 0);
+}
+
+function getFriendshipLevel(characterId: number, npcId: string): number {
+  const row = getDb().prepare("SELECT level FROM friendships WHERE character_id = ? AND npc_id = ?").get(characterId, npcId) as SqlRow | undefined;
+  return Number(row?.level ?? 0);
+}
+
+/** Add an unlocked or quest-bound item to the first free inventory slot. */
+function insertInventoryItem(characterId: number, itemDefinitionId: number, quantity: number, meta: Record<string, unknown>): boolean {
+  const db = getDb();
+  const slotCount = Number((db.prepare("SELECT slot_count FROM inventories WHERE character_id = ?").get(characterId) as SqlRow | undefined)?.slot_count ?? 0);
+  const used = new Set((db.prepare("SELECT slot FROM inventory_items WHERE character_id = ? AND slot IS NOT NULL").all(characterId) as SqlRow[]).map((row) => Number(row.slot)));
+  let slot: number | null = null;
+  for (let candidate = 0; candidate < slotCount; candidate += 1) {
+    if (!used.has(candidate)) { slot = candidate; break; }
+  }
+  if (slot === null) return false;
+  db.prepare(`INSERT INTO inventory_items
+    (character_id, item_definition_id, slot, quantity, stack_meta)
+    VALUES (?, ?, ?, ?, ?)`).run(characterId, itemDefinitionId, slot, Math.max(1, quantity), JSON.stringify(meta));
+  return true;
 }

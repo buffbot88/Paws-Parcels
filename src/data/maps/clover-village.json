@@ -147,6 +147,36 @@
    "lines": [
     "Welcome to Clover Village! Letters, parcels, and very organized hedgehogs."
    ]
+  },
+  {
+   "id": "object-post-counter",
+   "kind": "counter",
+   "label": "Counter Corner",
+   "x": 27,
+   "y": 30,
+   "lines": [
+    "A brass glint catches your eye behind the counter."
+   ]
+  },
+  {
+   "id": "object-rabbit-burrows",
+   "kind": "sign",
+   "label": "Rabbit Burrows",
+   "x": 12,
+   "y": 17,
+   "lines": [
+    "The rabbits are watching you very carefully. Something shiny may be tucked nearby."
+   ]
+  },
+  {
+   "id": "object-pond-edge",
+   "kind": "sign",
+   "label": "Pond Edge",
+   "x": 58,
+   "y": 52,
+   "lines": [
+    "The pond laps softly at the bank. A damp notebook could be hiding among the reeds."
+   ]
   }
  ]
 }

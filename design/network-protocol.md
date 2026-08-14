@@ -92,6 +92,19 @@ processes each message independently.
 - **Validation:** target NPC must exist in the current zone and be within 2 tiles.
 - **Behavior:** the server attempts to complete an active delivery at that NPC; if no delivery completes, it returns the current quest offers/state for the NPC.
 
+### search_quest
+```json
+{
+  "type": "search_quest",
+  "objectId": "object-rabbit-burrows"
+}
+```
+- **Validation:** The active quest must name this search object; the object must belong to the
+  current zone and be within 2 tiles. The server creates the objective item and updates
+  progress only after both checks pass.
+- **Expected response:** `quest_updated` with `action: "searched"` plus `inventory_updated`.
+- **Failure cases:** no active objective, wrong object, out of range, inventory full.
+
 ### accept_quest
 ```json
 {
@@ -297,8 +310,18 @@ processes each message independently.
   "message": "Quest accepted: Welcome to Clover Village"
 }
 ```
-- **Payload:** a server-validated quest transition. `action` is `accepted` or `delivery`.
+- **Payload:** a server-validated quest transition. `action` is `accepted`, `searched`, or `delivery`. Side-quest snapshots include the search object, friendship gate, and reward item metadata.
 - **Client action:** update the tutorial tracker and authoritative parcel state.
+
+### quest_notice
+```json
+{
+  "type": "quest_notice",
+  "message": "The fragile parcel was damaged when you were defeated. Return to its sender to accept the route again."
+}
+```
+- **Payload:** server-authored tutorial feedback that does not change the quest schema.
+- **Client action:** show the notice in the quest tracker.
 
 ### inventory_updated
 ```json

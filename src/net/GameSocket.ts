@@ -91,6 +91,13 @@ export interface NetQuestSnapshot {
   reputationNpcId: string | null;
   reputationPoints: number;
   chainPosition: number;
+  parcelCondition: "normal" | "fragile" | "urgent";
+  deadlineAt: number | null;
+  sideQuest: boolean;
+  findAt: string | null;
+  searchObjectId: string | null;
+  rewardItemId: string | null;
+  friendshipGate: { npcId: string; level: number } | null;
 }
 
 export interface NetQuestInventoryItem {
@@ -129,6 +136,7 @@ export interface GameSocketCallbacks {
   onNpcInteraction?: (npcId: string, quests: NetQuestSnapshot[]) => void;
   onQuestState?: (quests: NetQuestSnapshot[]) => void;
   onQuestUpdated?: (payload: { action: string; quest: NetQuestSnapshot; quests: NetQuestSnapshot[]; inventory: NetQuestInventoryItem[]; stamps: number; xp: number; message: string }) => void;
+  onQuestNotice?: (message: string) => void;
   onInventoryUpdated?: (items: NetQuestInventoryItem[], stamps: number) => void;
   onError?: (code: string, message: string) => void;
 }
@@ -348,6 +356,13 @@ export class GameSocket {
     this.ws.send(encodeMessage({ type: "interact", targetId, kind: "npc" }));
   }
 
+  /** Search a server-authored quest objective at a map object. */
+  searchQuest(objectId: string): void {
+    if (this.ws === null || !this.authenticated || this.joinedZoneId === null) return;
+    if (this.ws.readyState !== WS_READY_OPEN) return;
+    this.ws.send(encodeMessage({ type: "search_quest", objectId }));
+  }
+
   /** Accept a server-offered quest; prerequisites and parcel creation are authoritative. */
   acceptQuest(questId: string): void {
     if (this.ws === null || !this.authenticated || this.joinedZoneId === null) return;
@@ -446,6 +461,9 @@ export class GameSocket {
         }
         break;
       }
+      case "quest_notice":
+        if (typeof msg.message === "string" && msg.message !== "") this.callbacks.onQuestNotice?.(msg.message);
+        break;
       case "inventory_updated":
         this.callbacks.onInventoryUpdated?.(normalizeQuestInventory(msg.items), Number(msg.stamps ?? 0));
         break;
@@ -621,6 +639,8 @@ function normalizeQuests(raw: unknown): NetQuestSnapshot[] {
   return raw.map((entry) => {
     const q = entry as Record<string, unknown>;
     const state: NetQuestState = q.state === "available" || q.state === "active" || q.state === "completed" ? q.state : "locked";
+    const parcelCondition: NetQuestSnapshot["parcelCondition"] =
+      q.parcelCondition === "fragile" || q.parcelCondition === "urgent" ? q.parcelCondition : "normal";
     return {
       questId: String(q.questId ?? ""),
       title: String(q.title ?? ""),
@@ -637,6 +657,18 @@ function normalizeQuests(raw: unknown): NetQuestSnapshot[] {
       reputationNpcId: q.reputationNpcId === null ? null : String(q.reputationNpcId ?? ""),
       reputationPoints: Number(q.reputationPoints ?? 0),
       chainPosition: Number(q.chainPosition ?? 0),
+      parcelCondition,
+      deadlineAt: q.deadlineAt === null || q.deadlineAt === undefined ? null : Number(q.deadlineAt),
+      sideQuest: q.sideQuest === true,
+      findAt: q.findAt === null ? null : String(q.findAt ?? ""),
+      searchObjectId: q.searchObjectId === null ? null : String(q.searchObjectId ?? ""),
+      rewardItemId: q.rewardItemId === null ? null : String(q.rewardItemId ?? ""),
+      friendshipGate: q.friendshipGate && typeof q.friendshipGate === "object"
+        ? {
+            npcId: String((q.friendshipGate as Record<string, unknown>).npcId ?? ""),
+            level: Number((q.friendshipGate as Record<string, unknown>).level ?? 0),
+          }
+        : null,
     };
   }).filter((q) => q.questId !== "");
 }

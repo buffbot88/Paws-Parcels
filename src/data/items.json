@@ -20,6 +20,16 @@
     { "id": "item-cozy-scarf", "name": "Cozy Scarf", "description": "A soft scarf in warm autumn colors.", "category": "cosmetic", "maxStack": 1, "icon": "cosmetic-scarf" },
     { "id": "item-flower-crown", "name": "Flower Crown", "description": "A crown of woven wildflowers.", "category": "cosmetic", "maxStack": 1, "icon": "cosmetic-crown" },
     { "id": "item-courier-cap", "name": "Courier Cap", "description": "A smart cap with a little paw badge. Only the forest's best couriers wear one.", "category": "cosmetic", "maxStack": 1, "icon": "cosmetic-cap" },
-    { "id": "item-golden-honey", "name": "Golden Honey", "description": "Biscuit's secret honey, so rare he only shares it with his dearest friends.", "category": "gift", "maxStack": 1, "icon": "gift-golden-honey" }
+    { "id": "item-golden-honey", "name": "Golden Honey", "description": "Biscuit's secret honey, so rare he only shares it with his dearest friends.", "category": "gift", "maxStack": 1, "icon": "gift-golden-honey" },
+    { "id": "item-boar-hide", "name": "Boar Hide", "description": "A tough hide from a Wild Boar — good for leathercraft.", "category": "material", "maxStack": 20, "icon": "material-hide", "value": 5 },
+    { "id": "item-boar-tusk", "name": "Boar Tusk", "description": "A chipped tusk. Sturdy enough for a blade.", "category": "material", "maxStack": 20, "icon": "material-tusk", "value": 8 },
+    { "id": "item-fox-pelt", "name": "Fox Pelt", "description": "A soft, warm pelt with a reddish sheen.", "category": "material", "maxStack": 20, "icon": "material-pelt", "value": 6 },
+    { "id": "item-sharp-claw", "name": "Sharp Claw", "description": "A curved claw from a Valley Fox.", "category": "material", "maxStack": 20, "icon": "material-claw", "value": 7 },
+    { "id": "item-hare-fur", "name": "Hare Fur", "description": "Fluffy white fur from a Meadow Hare.", "category": "material", "maxStack": 20, "icon": "material-fur", "value": 4 },
+    { "id": "item-lucky-foot", "name": "Lucky Foot", "description": "A tiny hare foot. Legend says it brings good luck.", "category": "material", "maxStack": 5, "icon": "material-foot", "rarity": "uncommon", "value": 12 },
+    { "id": "item-deer-antler", "name": "Deer Antler", "description": "A smooth antler shed by a Forest Deer.", "category": "material", "maxStack": 10, "icon": "material-antler", "rarity": "uncommon", "value": 10 },
+    { "id": "item-deer-hide", "name": "Deer Hide", "description": "A supple hide from a Forest Deer.", "category": "material", "maxStack": 20, "icon": "material-hide", "value": 6 },
+    { "id": "item-grouse-feather", "name": "Grouse Feather", "description": "A mottled feather from a Black Grouse.", "category": "material", "maxStack": 20, "icon": "material-feather", "value": 5 },
+    { "id": "item-grouse-plume", "name": "Grouse Plume", "description": "An iridescent plume — prized by crafters.", "category": "material", "maxStack": 10, "icon": "material-plume", "rarity": "uncommon", "value": 9 }
   ]
 }

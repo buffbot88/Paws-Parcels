@@ -1,15 +1,8 @@
 import { describe, expect, it } from "vitest";
-import { readFileSync } from "node:fs";
-import { dirname, resolve } from "node:path";
-import { fileURLToPath } from "node:url";
+import zonesJson from "../../src/data/zones.json" with { type: "json" };
 import { loadZoneData } from "../../server/src/ws/zoneData.ts";
 import { MAPS } from "../../src/game/Maps.ts";
 import { TILES } from "../../src/game/Tiles.ts";
-
-const SEED_SQL = resolve(
-  dirname(fileURLToPath(import.meta.url)),
-  "../../server/src/migrations/002_seed_zones.sql",
-);
 
 describe("loadZoneData — real map files", () => {
   it("loads every shipped zone with the map's dimensions", () => {
@@ -54,22 +47,17 @@ describe("loadZoneData — real map files", () => {
   });
 });
 
-describe("zones seed vs client map registry", () => {
-  it("every zone seeded in 002_seed_zones.sql exists in the client MAPS registry", () => {
-    const sql = readFileSync(SEED_SQL, "utf8");
-    const seededKeys = [...sql.matchAll(/'zone-[a-z0-9-]+'/g)].map((m) =>
-      m[0].slice(1, -1),
-    );
-    expect(seededKeys.length).toBeGreaterThan(0);
-    for (const key of seededKeys) {
-      expect(MAPS[key], `seed zone "${key}"`).toBeDefined();
+describe("JSON zone catalog vs client map registry", () => {
+  it("every JSON zone exists in the client MAPS registry", () => {
+    expect(zonesJson.zones.length).toBeGreaterThan(0);
+    for (const zone of zonesJson.zones) {
+      expect(MAPS[zone.key], `catalog zone "${zone.key}"`).toBeDefined();
     }
   });
 
-  it("every client MAPS zone has a seed row (server can hand out spawns for it)", () => {
-    const sql = readFileSync(SEED_SQL, "utf8");
+  it("every client MAPS zone has JSON metadata", () => {
     for (const key of Object.keys(MAPS)) {
-      expect(sql, `MAPS zone "${key}"`).toContain(`'${key}'`);
+      expect(zonesJson.zones.some((zone) => zone.key === key), `MAPS zone "${key}"`).toBe(true);
     }
   });
 });

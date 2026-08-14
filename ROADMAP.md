@@ -28,7 +28,7 @@ server app, SQLite migrations, health check, ASHAT Hub OIDC auth, account + char
 data models, character list/create/classes endpoints), Phase 2 (**Multiplayer
 Village** — WebSocket presence + movement sync, courier desk), and Phase 3 (**Classes
 and Combat** — Happy Valley open-world monster map, server-authoritative combat loop)
-are complete. Next up: **Phase 4A — Clover Village Tutorial Quest Chain**, followed by optional village side quests before expanding into Happy Valley progression.
+are complete. Next up: **Phase 5 — Inventory and Courier Equipment**. Phase 4A's tutorial circuit and the Phase 4B village side-quest slice are now implemented before broader Happy Valley progression.
 
 ---
 
@@ -102,7 +102,7 @@ Goal: first monster map, basic combat, class system.
 - **Happy Valley** open-world map (`src/data/maps/happy-valley.json`,
   `zone-happy-valley`, 40×26 outdoor, `is_safe 0`) with a south transition out of
   Clover Village; monsters are forbidden in the safe hub
-- **Monster family seeded** (migration `004_happy_valley_seeds.sql`): Wild Boar
+- **Monster family authored in JSON** (`src/data/monsters.json` + `items.json`): Wild Boar
   (aggro melee), Valley Fox (aggro melee), Meadow Hare (passive), Forest Deer
   (passive), Black Grouse (aggro ranged) + 10 monster-material loot items
 - **Server-authoritative combat** (`server/src/ws/combat.ts` + `monsterStore.ts`):
@@ -119,12 +119,20 @@ Goal: first monster map, basic combat, class system.
 
 ### Phase 4A — Clover Village Tutorial Quest Chain
 Goal: teach movement, interaction, quest acceptance, parcel carrying, and local deliveries entirely inside the safe hub.
-- Five-step `Clover Village Courier Circuit` from Pip → Biscuit → Maple → Lumi → Moss
-- Server-bound parcels, ordered prerequisites, persisted progress, Stamp/XP/reputation rewards
+- Five-step `Clover Village Courier Circuit`: Pip → Biscuit → Maple → Lumi → Moss → Pip
+- Server-bound parcels with normal, fragile, and urgent tutorial conditions
+- JSON-authored acceptance/completion dialogue and Courier graduation scene
+- Urgent deadlines with retry-on-expiration and fragile reset-on-defeat behavior
+- Ordered prerequisites, persisted progress, Stamp/XP/reputation rewards
+- Final delivery promotes the character from Trainee to Courier
 - Client tutorial tracker and server-confirmed delivery feedback
 
-### Phase 4B — Village Side Quests
+### Phase 4B — Village Side Quests ✅
 Goal: add optional local errands and friendship-gated stories before opening broader progression.
+- Five optional errands and deliveries after the Courier Circuit
+- Server-validated search objectives in Clover Village and Happy Valley
+- Friendship-gated personal stories with cosmetic and keepsake rewards
+- JSON-authored content with persisted per-character quest/friendship state
 
 ### Phase 5 — Inventory and Equipment
 Goal: server-authoritative inventory + equipment with gear stats.
@@ -148,9 +156,10 @@ Summary of phases:
 - **Phase 1:** Online Foundation — ✅ built (server, SQLite, OIDC auth, characters)
 - **Phase 2:** Multiplayer Village — ✅ complete (WS presence + movement sync, character create/select, periodic position persistence)
 - **Phase 3:** Classes and Combat — ✅ complete (Happy Valley monsters, server-authoritative combat, respawn)
-- **Phase 4A:** Clover Village Tutorial Quest Chain — 🟡 in progress
-- **Phase 4B:** Village Side Quests — ⬜ planned
-- **Phase 5:** Inventory and Equipment
+- **Phase 4A:** Clover Village Tutorial Quest Chain — ✅ complete
+- **Phase 4B:** Village Side Quests — ✅ complete (initial slice)
+- **JSON content migration:** Items, classes, monsters, loot tables, zones, and skills — ✅ complete
+- **Phase 5:** Inventory and Equipment — ⏭ next
 - **Phase 6:** First Dungeon and Crafting
 - **Phase 7:** 2.5D Presentation and Content
 - **Phase 8:** Testing and Online Release

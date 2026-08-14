@@ -1,0 +1,37 @@
+{
+  "classes": [
+    {
+      "key": "bear-warrior",
+      "displayName": "Bear Warrior",
+      "animal": "bear",
+      "role": "Melee Tank / Damage",
+      "primaryResource": "stamina",
+      "resourceMax": 100,
+      "resourceRegenPerSec": 5.0,
+      "baseStats": { "hp": 120, "attack": 10, "defense": 8, "speed": 150, "critChance": 2, "critMultiplier": 1.5 },
+      "description": "A sturdy melee fighter who soaks up damage and protects allies."
+    },
+    {
+      "key": "cat-mage",
+      "displayName": "Cat Mage",
+      "animal": "cat",
+      "role": "Ranged Magic Burst",
+      "primaryResource": "mana",
+      "resourceMax": 120,
+      "resourceRegenPerSec": 10.0,
+      "baseStats": { "hp": 70, "attack": 14, "defense": 4, "speed": 170, "critChance": 5, "critMultiplier": 2.0 },
+      "description": "A nimble spellcaster who unleashes powerful arcane bursts from a distance."
+    },
+    {
+      "key": "fox-archer",
+      "displayName": "Fox Archer",
+      "animal": "fox",
+      "role": "Ranged Sustained DPS",
+      "primaryResource": "focus",
+      "resourceMax": 100,
+      "resourceRegenPerSec": 8.0,
+      "baseStats": { "hp": 85, "attack": 11, "defense": 5, "speed": 190, "critChance": 10, "critMultiplier": 1.8 },
+      "description": "A quick-witted ranged fighter who delivers steady damage from afar."
+    }
+  ]
+}

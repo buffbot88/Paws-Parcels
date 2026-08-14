@@ -156,7 +156,7 @@ export async function getCharacterWithClass(characterId: number): Promise<Charac
 export async function getCharacterProfile(characterId: number): Promise<CharacterProfile | null> {
   const db = getDb();
   const row = db.prepare(`SELECT c.id, c.account_id, c.class_id, c.name, c.appearance, c.zone_id, c.pos_x, c.pos_y,
-      c.level, c.experience, c.stamps, c.hp, c.max_hp, c.resource_current, c.skill_points,
+      c.level, c.experience, c.stamps, c.courier_rank, c.hp, c.max_hp, c.resource_current, c.skill_points,
       cc.\`key\` AS class_key, cc.display_name AS class_name, cc.animal, cc.role, cc.primary_resource,
       cc.resource_max, cc.description AS class_description,
       cs.attack, cs.defense, cs.speed, cs.crit_chance, cs.crit_multiplier,
@@ -176,7 +176,7 @@ export async function getCharacterProfile(characterId: number): Promise<Characte
     if (row[key] !== null && row[key] !== undefined) stats[key] = Number(row[key]);
   }
   return {
-    character: { id: Number(row.id), name: String(row.name ?? ""), classId: Number(row.class_id), level: Number(row.level ?? 1), experience: Number(row.experience ?? 0), stamps: Number(row.stamps ?? 0), hp: Number(row.hp ?? 0), maxHp: Number(row.max_hp ?? 0), resource: Number(row.resource_current ?? 0), zoneId: String(row.zone_id ?? ""), pos: { x: Number(row.pos_x ?? 0), y: Number(row.pos_y ?? 0) }, appearance: parseJsonObject(row.appearance) },
+    character: { id: Number(row.id), name: String(row.name ?? ""), classId: Number(row.class_id), level: Number(row.level ?? 1), experience: Number(row.experience ?? 0), stamps: Number(row.stamps ?? 0), courierRank: String(row.courier_rank ?? "Trainee"), hp: Number(row.hp ?? 0), maxHp: Number(row.max_hp ?? 0), resource: Number(row.resource_current ?? 0), zoneId: String(row.zone_id ?? ""), pos: { x: Number(row.pos_x ?? 0), y: Number(row.pos_y ?? 0) }, appearance: parseJsonObject(row.appearance) },
     class: { key: String(row.class_key ?? ""), name: String(row.class_name ?? ""), animal: String(row.animal ?? ""), role: String(row.role ?? ""), primaryResource: String(row.primary_resource ?? ""), resourceMax: Number(row.resource_max ?? 0), description: String(row.class_description ?? "") },
     stats,
     inventory: { slotCount: Number((db.prepare("SELECT slot_count FROM inventories WHERE character_id = ?").get(characterId) as SqlRow | undefined)?.slot_count ?? 12), items: inv.filter((item) => item.instance_id !== null).map((item) => ({ instanceId: Number(item.instance_id), slot: item.slot === null ? null : Number(item.slot), quantity: Number(item.quantity ?? 1), key: String(item.key ?? ""), name: String(item.name ?? "Unknown parcel"), description: String(item.description ?? ""), category: String(item.category ?? ""), rarity: String(item.rarity ?? "common"), icon: item.icon === null ? null : String(item.icon) })) },

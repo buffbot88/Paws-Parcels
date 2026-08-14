@@ -2,6 +2,7 @@ import type { ContentData } from "../types/ContentData.ts";
 import type { ItemCategory } from "../types/ItemTypes.ts";
 import type { QuestType } from "../types/QuestTypes.ts";
 import type { ZoneId } from "../types/NPCtypes.ts";
+import type { StaticContentData } from "../types/ContentData.ts";
 
 export interface ValidationResult {
   errors: string[];
@@ -14,7 +15,7 @@ const ZONE_DIMS: Record<ZoneId, { w: number; h: number }> = {
   "zone-clover-village": { w: 75, h: 75 },
 };
 
-const CATEGORIES: readonly ItemCategory[] = ["resource", "gift", "delivery", "quest", "cosmetic"];
+const CATEGORIES: readonly ItemCategory[] = ["resource", "gift", "delivery", "quest", "cosmetic", "material"];
 const QUEST_TYPES: readonly QuestType[] = ["delivery", "gathering", "errand"];
 
 /**
@@ -93,6 +94,31 @@ export function validateContent(data: ContentData): ValidationResult {
     if (!QUEST_TYPES.includes(q.type)) fail(`quest ${q.id}: unknown type "${q.type}"`);
     if (!npcIds.has(q.giverId)) fail(`quest ${q.id}: giverId "${q.giverId}" is not a known npc`);
     if (q.targetId && !npcIds.has(q.targetId)) fail(`quest ${q.id}: targetId "${q.targetId}" is not a known npc`);
+    if (q.parcelCondition !== undefined && !["normal", "fragile", "urgent"].includes(q.parcelCondition)) {
+      fail(`quest ${q.id}: parcelCondition must be normal, fragile, or urgent`);
+    }
+    if (q.timeLimitSeconds !== undefined && (!Number.isFinite(q.timeLimitSeconds) || q.timeLimitSeconds <= 0)) {
+      fail(`quest ${q.id}: timeLimitSeconds must be positive`);
+    }
+    if (q.breaksOnDefeat !== undefined && typeof q.breaksOnDefeat !== "boolean") {
+      fail(`quest ${q.id}: breaksOnDefeat must be boolean`);
+    }
+    if (q.timeLimitSeconds !== undefined && q.parcelCondition !== "urgent") {
+      fail(`quest ${q.id}: timeLimitSeconds requires an urgent parcelCondition`);
+    }
+    if (q.breaksOnDefeat === true && q.parcelCondition !== "fragile") {
+      fail(`quest ${q.id}: breaksOnDefeat requires a fragile parcelCondition`);
+    }
+    for (const prerequisiteId of q.prerequisiteIds ?? []) {
+      if (!questIds.has(prerequisiteId)) fail(`quest ${q.id}: prerequisiteIds references unknown quest "${prerequisiteId}"`);
+    }
+    for (const script of [q.acceptanceDialogue, q.completionDialogue]) {
+      if (script === undefined) continue;
+      if (!npcIds.has(script.speakerId)) fail(`quest ${q.id}: dialogue speakerId "${script.speakerId}" is not a known npc`);
+      if (!Array.isArray(script.lines) || script.lines.length === 0 || script.lines.some((line) => typeof line !== "string" || line.trim() === "")) {
+        fail(`quest ${q.id}: quest dialogue must contain non-empty lines`);
+      }
+    }
     if (q.requiredItemId && !itemIds.has(q.requiredItemId)) {
       fail(`quest ${q.id}: requiredItemId "${q.requiredItemId}" is not a known item`);
     }
@@ -104,6 +130,8 @@ export function validateContent(data: ContentData): ValidationResult {
       fail(`quest ${q.id}: errand with requiredItemId must specify findAt (lost-item recovery location)`);
     }
     if (q.findAt && typeof q.findAt !== "string") fail(`quest ${q.id}: findAt must be a string`);
+    if (q.searchObjectId !== undefined && typeof q.searchObjectId !== "string") fail(`quest ${q.id}: searchObjectId must be a string`);
+    if (q.findAt && !q.searchObjectId) fail(`quest ${q.id}: findAt requires searchObjectId`);
     // Daily quests must never be blocked by a friendship gate (impossible-combination risk).
     if (q.daily && q.requiresFriendship) {
       fail(`quest ${q.id}: daily quest cannot have requiresFriendship (would generate impossible dailies)`);
@@ -189,6 +217,38 @@ export function validateContent(data: ContentData): ValidationResult {
   }
 
   return { errors, warnings, ok: errors.length === 0 };
+}
+
+/** Validate the server-loaded catalogs that are not part of the NPC/quest bundle. */
+export function validateStaticContent(data: StaticContentData, itemIds: ReadonlySet<string>): ValidationResult {
+  const errors: string[] = [];
+  const fail = (message: string) => errors.push(message);
+  const classKeys = assertUniqueIds(data.classes.map((entry) => entry.key), "classes.json", fail);
+  const skillKeys = assertUniqueIds(data.skills.map((entry) => entry.skillKey), "skills.json", fail);
+  const zoneKeys = assertUniqueIds(data.zones.map((entry) => entry.key), "zones.json", fail);
+  const monsterKeys = assertUniqueIds(data.monsters.map((entry) => entry.key), "monsters.json", fail);
+  for (const cls of data.classes) {
+    if (cls.resourceMax <= 0 || cls.resourceRegenPerSec < 0) fail(`class ${cls.key}: resource values are invalid`);
+    if (cls.baseStats.hp <= 0 || cls.baseStats.attack < 0 || cls.baseStats.defense < 0) fail(`class ${cls.key}: base stats are invalid`);
+  }
+  for (const skill of data.skills) {
+    if (!classKeys.has(skill.classKey)) fail(`skill ${skill.skillKey}: unknown class "${skill.classKey}"`);
+    if (skill.cost <= 0 || skill.requiredLevel < 1) fail(`skill ${skill.skillKey}: cost/requiredLevel are invalid`);
+    if (skill.prerequisiteKey !== null && !skillKeys.has(skill.prerequisiteKey)) fail(`skill ${skill.skillKey}: unknown prerequisite "${skill.prerequisiteKey}"`);
+  }
+  for (const zone of data.zones) {
+    if (zone.widthTiles <= 0 || zone.heightTiles <= 0 || zone.maxPlayers <= 0) fail(`zone ${zone.key}: dimensions/capacity are invalid`);
+    if (!Number.isInteger(zone.defaultSpawn.x) || !Number.isInteger(zone.defaultSpawn.y)) fail(`zone ${zone.key}: defaultSpawn must be integer coordinates`);
+  }
+  for (const monster of data.monsters) {
+    if (!zoneKeys.has(monster.zoneKey)) fail(`monster ${monster.key}: unknown zone "${monster.zoneKey}"`);
+    if (monster.levelMin < 1 || monster.levelMax < monster.levelMin || monster.maxHp <= 0) fail(`monster ${monster.key}: level/HP values are invalid`);
+    for (const loot of monster.lootTable) {
+      if (!itemIds.has(loot.key)) fail(`monster ${monster.key}: loot references unknown item "${loot.key}"`);
+      if (loot.chance < 0 || loot.chance > 1 || loot.quantity < 1) fail(`monster ${monster.key}: loot entry "${loot.key}" has invalid chance/quantity`);
+    }
+  }
+  return { errors, warnings: [], ok: errors.length === 0 };
 }
 
 function assertUniqueIds(ids: string[], file: string, fail: (msg: string) => void): Set<string> {

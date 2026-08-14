@@ -1,0 +1,13 @@
+{
+  "skills": [
+    { "skillKey": "bear-iron-hide", "classKey": "bear-warrior", "name": "Iron Hide", "description": "Brace yourself and reduce incoming harm.", "cost": 1, "requiredLevel": 1, "prerequisiteKey": null },
+    { "skillKey": "bear-ground-pound", "classKey": "bear-warrior", "name": "Ground Pound", "description": "A heavy shockwave that disrupts nearby foes.", "cost": 1, "requiredLevel": 2, "prerequisiteKey": "bear-iron-hide" },
+    { "skillKey": "bear-guardian-roar", "classKey": "bear-warrior", "name": "Guardian Roar", "description": "Protect nearby couriers with a rallying roar.", "cost": 2, "requiredLevel": 4, "prerequisiteKey": "bear-ground-pound" },
+    { "skillKey": "cat-arcane-focus", "classKey": "cat-mage", "name": "Arcane Focus", "description": "Gather power to make magical attacks more reliable.", "cost": 1, "requiredLevel": 1, "prerequisiteKey": null },
+    { "skillKey": "cat-starfall", "classKey": "cat-mage", "name": "Starfall", "description": "Call a bright burst down on a distant target.", "cost": 1, "requiredLevel": 2, "prerequisiteKey": "cat-arcane-focus" },
+    { "skillKey": "cat-mana-veil", "classKey": "cat-mage", "name": "Mana Veil", "description": "Wrap yourself in a shimmering defensive ward.", "cost": 2, "requiredLevel": 4, "prerequisiteKey": "cat-starfall" },
+    { "skillKey": "fox-quick-shot", "classKey": "fox-archer", "name": "Quick Shot", "description": "Loose a fast, precise parcel-arrow.", "cost": 1, "requiredLevel": 1, "prerequisiteKey": null },
+    { "skillKey": "fox-trick-step", "classKey": "fox-archer", "name": "Trick Step", "description": "Slip nimbly out of danger.", "cost": 1, "requiredLevel": 2, "prerequisiteKey": "fox-quick-shot" },
+    { "skillKey": "fox-keen-eye", "classKey": "fox-archer", "name": "Keen Eye", "description": "Improve critical hit consistency.", "cost": 2, "requiredLevel": 4, "prerequisiteKey": "fox-trick-step" }
+  ]
+}

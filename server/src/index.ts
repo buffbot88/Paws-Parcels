@@ -1,6 +1,8 @@
 import { createServer, type IncomingMessage, type ServerResponse } from "node:http";
 import { existsSync } from "node:fs";
 import npcsJson from "../../src/data/npcs.json" with { type: "json" };
+import cloverVillageMap from "../../src/data/maps/clover-village.json" with { type: "json" };
+import happyValleyMap from "../../src/data/maps/happy-valley.json" with { type: "json" };
 // Side-effect: config is validated and loaded at module import — any bad
 // server_config.json fails fast before main() runs.
 import { server as serverConfig, ai as aiConfig } from "./config/index.ts";
@@ -34,6 +36,8 @@ import {
   acceptQuest,
   completeDelivery,
   getQuestInventory,
+  resetFragileDeliveriesOnDefeat,
+  searchQuest,
 } from "./models/Quest.ts";
 
 async function main(): Promise<void> {
@@ -145,10 +149,17 @@ async function main(): Promise<void> {
       const npc = npcsJson.npcs.find((entry) => entry.id === npcId && entry.homeZone === zoneId);
       return npc === undefined ? null : npc.homeTile;
     },
+    getObjectPosition: (objectId, zoneId) => {
+      const map = zoneId === "zone-clover-village" ? cloverVillageMap : zoneId === "zone-happy-valley" ? happyValleyMap : null;
+      const object = map?.interactables.find((entry) => entry.id === objectId);
+      return object === undefined ? null : { x: object.x, y: object.y };
+    },
     getQuestState,
     acceptQuest,
     completeDelivery,
+    searchQuest,
     getQuestInventory,
+    resetFragileDeliveriesOnDefeat,
     monsterBrain,
   });
 

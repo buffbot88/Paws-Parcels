@@ -5,8 +5,15 @@ export interface FriendshipGate {
   level: number;
 }
 
+export interface QuestDialogue {
+  speakerId: string;
+  lines: string[];
+}
+
 export interface QuestDefinition {
   id: string;
+  /** Release slice that exposes optional content to the live quest catalog. */
+  phase?: "4B";
   title: string;
   description: string;
   type: QuestType;
@@ -16,9 +23,26 @@ export interface QuestDefinition {
   additionalStops?: string[];
   requiredItemId?: string;
   requiredQuantity?: number;
+  /** Tutorial parcel handling lesson; expanded parcel rules arrive later. */
+  parcelCondition?: "normal" | "fragile" | "urgent";
+  /** Server-authoritative tutorial reward and chain metadata. */
+  xpReward?: number;
+  reputationPoints?: number;
+  chainPosition?: number;
+  prerequisiteIds?: string[];
+  courierRankReward?: string;
+  /** Optional tutorial dialogue shown when the route is accepted or completed. */
+  acceptanceDialogue?: QuestDialogue;
+  completionDialogue?: QuestDialogue;
+  /** Urgent routes expire after this many seconds and become available again. */
+  timeLimitSeconds?: number;
+  /** Fragile routes lose their parcel if the courier is defeated. */
+  breaksOnDefeat?: boolean;
   /** Lost-item recovery location, required for errands with a requiredItemId. */
   findAt?: string;
-  /** Item granted on completion (friendship/L4 reward quests). */
+  /** Map object that can be searched while the quest is active. */
+  searchObjectId?: string;
+  /** Item granted on completion (friendship reward quests). */
   rewardItemId?: string;
   stampReward: number;
   friendshipReward?: number;

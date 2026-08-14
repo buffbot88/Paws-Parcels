@@ -3,7 +3,7 @@ import { getDb } from "../db/connection.ts";
 /** A row object as returned by node:sqlite (null | number | bigint | string). */
 type SqlRow = Record<string, unknown>;
 
-/** Zone row as stored in the `zones` table (seeded content). */
+/** Zone row from the JSON-synchronized `zones` lookup table. */
 export interface ZoneRow {
   id: number;
   key: string;
@@ -20,7 +20,7 @@ export interface ZoneRow {
 
 /**
  * Look up a zone by its stable key (e.g. "zone-clover-village"). The zones
- * table is the authoritative source for a zone's default spawn — character
+ * table is the runtime lookup cache for the JSON zone catalog. Character
  * creation and future zone-metadata endpoints read from here rather than
  * duplicating coordinates.
  */
