@@ -1,0 +1,31 @@
+# Asset Catalog
+
+This folder contains the local visual review website for the ignored art archive.
+
+## Open it
+
+Start the Vite development server from the repository root:
+
+```bash
+npm run dev
+```
+
+Then open:
+
+```text
+http://localhost:5173/Asset%20Catalog/
+```
+
+The site loads the tracked metadata from `design/assets/asset-inventory.json` and resolves image previews from the local ignored archive at `reference/assets/`. The source art is intentionally not copied into this folder or committed to Git.
+
+## Review workflow
+
+- Use category buttons to narrow the archive.
+- Search paths and filenames instead of guessing from memory.
+- Filter `Needs classification` to inspect the 18 unnamed Clover Village decor assets.
+- Filter `Not yet cataloged` to inspect the Happy Valley NPC and Void Desert monster packs.
+- Open any card for a larger preview and metadata.
+- Save suggested classifications and notes locally in browser storage.
+- Use **Export review notes** to download `asset-review-notes.json` for a later catalog update.
+
+The review controls are advisory only. They do not modify source assets, runtime imports, map data, or tracked catalogs.

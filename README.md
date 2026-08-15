@@ -38,6 +38,7 @@ Config lives under `ai` in `server_config.json` (see `server_config.example.json
 | `npm test` | Run Vitest unit tests |
 | `npm run validate` | Validate `src/data` content integrity |
 | `npm run assets:inventory` | Rebuild the tracked asset inventory from the local ignored reference archive |
+| `http://localhost:5173/Asset%20Catalog/` | Open the browsable visual Asset Catalog after `npm run dev` |
 | `npm run visual:review -- --image scripts/tiles-review.png` | Ask the local 450M VL for a dry-run 2.5D visual direction report |
 | `npm run visual:latest` | Find the newest complete `paws-visual-*.png`/`.json` capture pair, review it, and archive the report under `reports/` |
 | `npm run visual:history` | Compare archived Visual Director reports and write recurring issues/trends to `reports/visual-history.json` |
@@ -56,6 +57,7 @@ The current Alpha workflow keeps `server/data/paws-and-parcels.sqlite` in the re
 ```
 public/            Static web assets (favicon, OIDC callback, client config)
 reference/assets/  Local ignored art archive; see `design/assets/README.md`
+Asset Catalog/     Browsable local image catalog and classification review site
 src/
   data/            Content JSON (npcs, items, quests, upgrades, dialogue) + maps/
   entities/        Player, NPC (placeholder blobs + name tags)

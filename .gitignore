@@ -5,6 +5,8 @@ coverage/
 *.log
 .DS_Store
 /.freebuff
+deploy/
+oraclehost_id_rsa
 
 # Unified server config — contains real DB password and JWT secret.
 # Commit server_config.example.json instead; copy it locally and fill in secrets.

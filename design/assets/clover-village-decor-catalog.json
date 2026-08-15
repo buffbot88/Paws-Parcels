@@ -1,0 +1,154 @@
+{
+  "schemaVersion": 1,
+  "catalogId": "clover-village-decor-assets",
+  "generatedAt": "2026-08-14",
+  "scope": "Greenery, trees, stones, decor, and environmental prop assets for Clover Village cataloging only",
+  "policy": {
+    "sourceAssets": "Local and ignored; do not move, rename, or commit source art.",
+    "catalog": "Tracked metadata only; entries do not make assets runtime-used.",
+    "runtime": "No runtime imports, placement, scale, or selection was changed by this pass.",
+    "visualStatus": "Source grouping and current code assignments are recorded; unnamed variants remain pending visual review."
+  },
+  "primaryCloverVillageDecorSet": {
+    "directory": "reference/assets/maps/CloverVillage/Map/PNG/decor",
+    "assetClass": "Transparent greenery, stone, tree, and unnamed decor overlays",
+    "fileCount": 32,
+    "groups": [
+      {
+        "group": "decor",
+        "filePattern": "decor_{n}.png",
+        "fileNumbers": { "first": 1, "last": 18, "count": 18 },
+        "dimensionsByFile": {
+          "decor_1.png": [62, 263], "decor_2.png": [244, 142], "decor_3.png": [86, 86], "decor_4.png": [157, 189], "decor_5.png": [106, 90], "decor_6.png": [151, 79], "decor_7.png": [155, 299], "decor_8.png": [233, 219], "decor_9.png": [229, 203], "decor_10.png": [200, 111], "decor_11.png": [81, 49], "decor_12.png": [333, 93], "decor_13.png": [306, 72], "decor_14.png": [265, 171], "decor_15.png": [219, 145], "decor_16.png": [94, 146], "decor_17.png": [78, 99], "decor_18.png": [80, 122]
+        },
+        "runtimeStatus": "reference-only",
+        "reviewFields": ["visual-role", "garden-or-village-prop", "scale-band", "district-fit", "duplicate-or-variant"]
+      },
+      {
+        "group": "greenery",
+        "filePattern": "greenery_{n}.png",
+        "fileNumbers": { "first": 1, "last": 5, "count": 5 },
+        "dimensionsByFile": {
+          "greenery_1.png": [81, 203], "greenery_2.png": [177, 155], "greenery_3.png": [172, 159], "greenery_4.png": [111, 148], "greenery_5.png": [78, 97]
+        },
+        "runtimeStatus": { "runtimeUsed": ["greenery_1.png", "greenery_2.png", "greenery_3.png"], "referenceOnly": ["greenery_4.png", "greenery_5.png"] },
+        "runtimeTextureKeys": { "greenery_1.png": "clover-village-greenery", "greenery_2.png": "clover-village-greenery-alt", "greenery_3.png": "clover-village-greenery-third" },
+        "reviewFields": ["bush-or-shrub-role", "scale-band", "district-fit", "door-and-path-clearance"]
+      },
+      {
+        "group": "stones",
+        "filePattern": "stones_{n}.png",
+        "fileNumbers": { "first": 1, "last": 7, "count": 7 },
+        "dimensionsByFile": {
+          "stones_1.png": [103, 86], "stones_2.png": [115, 106], "stones_3.png": [146, 117], "stones_4.png": [207, 93], "stones_5.png": [131, 139], "stones_6.png": [66, 52], "stones_7.png": [101, 83]
+        },
+        "runtimeStatus": { "runtimeUsed": ["stones_1.png", "stones_2.png", "stones_3.png"], "referenceOnly": ["stones_4.png", "stones_5.png", "stones_6.png", "stones_7.png"] },
+        "runtimeTextureKeys": { "stones_1.png": "clover-village-stones", "stones_2.png": "clover-village-stones-alt", "stones_3.png": "clover-village-stones-third" },
+        "reviewFields": ["stone-cluster-role", "scale-band", "path-edge-use", "pond-edge-use", "district-fit"]
+      },
+      {
+        "group": "trees",
+        "filePattern": "tree_{n}.png",
+        "fileNumbers": { "first": 1, "last": 2, "count": 2 },
+        "dimensionsByFile": { "tree_1.png": [355, 620], "tree_2.png": [317, 543] },
+        "runtimeStatus": { "runtimeUsed": ["tree_1.png", "tree_2.png"], "referenceOnly": [] },
+        "runtimeTextureKeys": { "tree_1.png": "clover-village-tree", "tree_2.png": "clover-village-tree-alt" },
+        "reviewFields": ["silhouette", "scale-band", "forest-boundary-use", "landmark-framing"]
+      }
+    ],
+    "runtimePlacements": {
+      "trees": [
+        { "file": "tree_1.png", "tile": [8, 16], "scale": 0.27 },
+        { "file": "tree_2.png", "tile": [66, 21], "scale": 0.29 },
+        { "file": "tree_1.png", "tile": [12, 64], "scale": 0.25 },
+        { "file": "tree_2.png", "tile": [64, 64], "scale": 0.25 }
+      ],
+      "greenery": [
+        { "file": "greenery_1.png", "tile": [19, 27], "scale": 0.42 },
+        { "file": "greenery_2.png", "tile": [24, 33], "scale": 0.34 },
+        { "file": "greenery_3.png", "tile": [51, 33], "scale": 0.36 },
+        { "file": "greenery_1.png", "tile": [61, 35], "scale": 0.42 },
+        { "file": "greenery_2.png", "tile": [24, 45], "scale": 0.32 },
+        { "file": "greenery_3.png", "tile": [51, 45], "scale": 0.32 },
+        { "file": "greenery_2.png", "tile": [16, 52], "scale": 0.36 },
+        { "file": "greenery_3.png", "tile": [60, 52], "scale": 0.36 }
+      ],
+      "stones": [
+        { "file": "stones_1.png", "tile": [34, 22], "scale": 0.55, "depthOffset": 0.01 },
+        { "file": "stones_2.png", "tile": [22, 40], "scale": 0.34, "depthOffset": 0.01 },
+        { "file": "stones_3.png", "tile": [47, 39], "scale": 0.32, "depthOffset": 0.01 }
+      ]
+    }
+  },
+  "happyValleyEnvironmentalPropReferences": {
+    "pngDirectory": "reference/assets/maps/HappyValley/Map/PNG",
+    "epsDirectory": "reference/assets/maps/HappyValley/Map/EPS",
+    "assetClass": "named environmental props with PNG and EPS counterparts",
+    "runtimeStatus": "reference-only",
+    "filenameRule": "PNG and EPS names use Top-Down Simple Summer_Prop - <name> with the same <name>; Tree Large preserves the source pack's lowercase prop marker.",
+    "fileCount": { "png": 33, "eps": 33 },
+    "groups": {
+      "vegetation": [
+        { "name": "Bushes Large", "pngDimensions": [240, 140] },
+        { "name": "Bushes Medium", "pngDimensions": [180, 140] },
+        { "name": "Bushes Small", "pngDimensions": [140, 120] },
+        { "name": "Tree Large", "pngDimensions": [400, 480] },
+        { "name": "Tree Medium", "pngDimensions": [360, 400] },
+        { "name": "Tree Small", "pngDimensions": [240, 280] },
+        { "name": "Tree Stump Short", "pngDimensions": [120, 100] },
+        { "name": "Tree Stump Tall", "pngDimensions": [160, 140] }
+      ],
+      "rocks": [
+        { "name": "Rock 01", "pngDimensions": [120, 100] },
+        { "name": "Rock 02", "pngDimensions": [100, 60] },
+        { "name": "Rock 03", "pngDimensions": [100, 60] },
+        { "name": "Rock 04", "pngDimensions": [60, 60] },
+        { "name": "Rock 05", "pngDimensions": [60, 60] }
+      ],
+      "villageAndRouteProps": [
+        { "name": "Blue Banner", "pngDimensions": [160, 240] },
+        { "name": "Red Banner", "pngDimensions": [160, 240] },
+        { "name": "Flag", "pngDimensions": [100, 160] },
+        { "name": "Campfire", "pngDimensions": [200, 160] },
+        { "name": "Tent", "pngDimensions": [300, 280] },
+        { "name": "Treasure Chest", "pngDimensions": [200, 160] },
+        { "name": "Wooden Barrel", "pngDimensions": [120, 140] },
+        { "name": "Wooden Cart", "pngDimensions": [320, 160] },
+        { "name": "Wooden Bridge Horizontal", "pngDimensions": [480, 320] },
+        { "name": "Wooden Bridge Vertical", "pngDimensions": [240, 320] },
+        { "name": "Wooden Fence Horizontal", "pngDimensions": [220, 80] },
+        { "name": "Wooden Fence Vertical", "pngDimensions": [80, 220] },
+        { "name": "Windmill", "pngDimensions": [720, 720] }
+      ],
+      "largeStructuresForOtherCatalogs": [
+        { "name": "Castle Round", "pngDimensions": [320, 480] },
+        { "name": "Castle Square", "pngDimensions": [360, 400] },
+        { "name": "Magic Stone Tower", "pngDimensions": [240, 400] },
+        { "name": "Watchtower Short", "pngDimensions": [240, 260] },
+        { "name": "Watchtower Tall", "pngDimensions": [260, 340] },
+        { "name": "House", "pngDimensions": [480, 640] },
+        { "name": "Well", "pngDimensions": [200, 200] }
+      ]
+    },
+    "filenameRule": "PNG and EPS names use Top-Down Simple Summer_Prop - <name> with the same <name>."
+  },
+  "excludedDecorSets": [
+    {
+      "directory": "reference/assets/maps/VoidDesert/Map/PNG",
+      "groups": { "decor": 8, "greenery": 10, "stones": 12, "trees": 12 },
+      "fileCount": 42,
+      "runtimeStatus": "reference-only",
+      "CloverVillageStatus": "excluded",
+      "reason": "Desert-specific decor retained separately from Clover Village cataloging."
+    }
+  ],
+  "catalogSummary": {
+    "cloverVillagePngFiles": 32,
+    "cloverVillageRuntimeUsedFiles": 8,
+    "happyValleyPngReferences": 33,
+    "happyValleyEpsReferences": 33,
+    "excludedVoidDesertFiles": 42,
+    "totalCatalogedSourceFiles": 140,
+    "nextStep": "Visually review unnamed Clover Village decor_1–decor_18 and unused greenery/stones before assigning them to village districts."
+  }
+}

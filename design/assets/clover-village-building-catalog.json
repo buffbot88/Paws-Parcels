@@ -1,0 +1,118 @@
+{
+  "schemaVersion": 1,
+  "catalogId": "clover-village-building-assets",
+  "generatedAt": "2026-08-14",
+  "scope": "Building and structure art assets for Clover Village cataloging only",
+  "policy": {
+    "sourceAssets": "Local and ignored; do not move, rename, or commit source art.",
+    "catalog": "Tracked metadata only; entries do not make assets runtime-used.",
+    "runtime": "No runtime imports, map placement, scale, or building selection was changed by this pass.",
+    "visualStatus": "Family grouping and current code assignments are recorded; unused variants still require visual review."
+  },
+  "primaryCloverVillageBuildingSet": {
+    "directory": "reference/assets/maps/CloverVillage/Map/PNG/buildings",
+    "assetClass": "18 building families with transparent PNG components and variants",
+    "familyCount": 18,
+    "fileCount": 118,
+    "familyNumberRange": { "first": 1, "last": 18 },
+    "families": [
+      { "family": "building_1", "variantCount": 10, "variantFiles": "building_1.png through building_10.png", "primaryDimensions": [476, 672], "runtimeAssignment": "post office", "runtimeUsed": true },
+      { "family": "building_2", "variantCount": 4, "variantFiles": "building_1.png through building_4.png", "primaryDimensions": [347, 423], "runtimeAssignment": null, "runtimeUsed": false },
+      { "family": "building_3", "variantCount": 4, "variantFiles": "building_1.png through building_4.png", "primaryDimensions": [404, 410], "runtimeAssignment": null, "runtimeUsed": false },
+      { "family": "building_4", "variantCount": 1, "variantFiles": "building_1.png", "primaryDimensions": [595, 612], "runtimeAssignment": "shop", "runtimeUsed": true },
+      { "family": "building_5", "variantCount": 6, "variantFiles": "building_1.png through building_6.png", "primaryDimensions": [695, 598], "runtimeAssignment": "north-west cottage", "runtimeUsed": true },
+      { "family": "building_6", "variantCount": 7, "variantFiles": "building_1.png through building_7.png", "primaryDimensions": [515, 757], "runtimeAssignment": null, "runtimeUsed": false },
+      { "family": "building_7", "variantCount": 6, "variantFiles": "building_1.png through building_6.png", "primaryDimensions": [515, 675], "runtimeAssignment": null, "runtimeUsed": false },
+      { "family": "building_8", "variantCount": 7, "variantFiles": "building_1.png through building_7.png", "primaryDimensions": [811, 688], "runtimeAssignment": null, "runtimeUsed": false },
+      { "family": "building_9", "variantCount": 6, "variantFiles": "building_1.png through building_6.png", "primaryDimensions": [627, 558], "runtimeAssignment": null, "runtimeUsed": false },
+      { "family": "building_10", "variantCount": 9, "variantFiles": "building_1.png through building_9.png", "primaryDimensions": [516, 603], "runtimeAssignment": "cafe", "runtimeUsed": true },
+      { "family": "building_11", "variantCount": 5, "variantFiles": "building_1.png through building_5.png", "primaryDimensions": [477, 506], "runtimeAssignment": null, "runtimeUsed": false },
+      { "family": "building_12", "variantCount": 8, "variantFiles": "building_1.png through building_8.png", "primaryDimensions": [326, 874], "runtimeAssignment": "florist", "runtimeUsed": true },
+      { "family": "building_13", "variantCount": 8, "variantFiles": "building_1.png through building_8.png", "primaryDimensions": [481, 518], "runtimeAssignment": null, "runtimeUsed": false },
+      { "family": "building_14", "variantCount": 7, "variantFiles": "building_1.png through building_7.png", "primaryDimensions": [626, 751], "runtimeAssignment": "north-east cottage", "runtimeUsed": true },
+      { "family": "building_15", "variantCount": 6, "variantFiles": "building_1.png through building_6.png", "primaryDimensions": [553, 517], "runtimeAssignment": null, "runtimeUsed": false },
+      { "family": "building_16", "variantCount": 8, "variantFiles": "building_1.png through building_8.png", "primaryDimensions": [492, 557], "runtimeAssignment": null, "runtimeUsed": false },
+      { "family": "building_17", "variantCount": 11, "variantFiles": "building_1.png through building_11.png", "primaryDimensions": [843, 766], "runtimeAssignment": null, "runtimeUsed": false },
+      { "family": "building_18", "variantCount": 5, "variantFiles": "building_1.png through building_5.png", "primaryDimensions": [532, 523], "runtimeAssignment": null, "runtimeUsed": false }
+    ],
+    "runtimeAssignments": [
+      {
+        "role": "post office",
+        "source": "reference/assets/maps/CloverVillage/Map/PNG/buildings/building_1/building_1.png",
+        "dimensions": [476, 672],
+        "textureKey": "clover-village-building-post-office",
+        "placement": { "tileX": 29, "baseTileY": 31, "scale": 0.5 }
+      },
+      {
+        "role": "shop",
+        "source": "reference/assets/maps/CloverVillage/Map/PNG/buildings/building_4/building_1.png",
+        "dimensions": [595, 612],
+        "textureKey": "clover-village-building-shop",
+        "placement": { "tileX": 45, "baseTileY": 31, "scale": 0.4 }
+      },
+      {
+        "role": "north-west cottage",
+        "source": "reference/assets/maps/CloverVillage/Map/PNG/buildings/building_5/building_1.png",
+        "dimensions": [695, 598],
+        "textureKey": "clover-village-building-cottage-north-west",
+        "placement": { "tileX": 20, "baseTileY": 47, "scale": 0.22 }
+      },
+      {
+        "role": "cafe",
+        "source": "reference/assets/maps/CloverVillage/Map/PNG/buildings/building_10/building_1.png",
+        "dimensions": [516, 603],
+        "textureKey": "clover-village-building-cafe",
+        "placement": { "tileX": 20, "baseTileY": 35, "scale": 0.28 }
+      },
+      {
+        "role": "florist",
+        "source": "reference/assets/maps/CloverVillage/Map/PNG/buildings/building_12/building_1.png",
+        "dimensions": [326, 874],
+        "textureKey": "clover-village-building-florist",
+        "placement": { "tileX": 56, "baseTileY": 35, "scale": 0.28 }
+      },
+      {
+        "role": "north-east cottage",
+        "source": "reference/assets/maps/CloverVillage/Map/PNG/buildings/building_14/building_1.png",
+        "dimensions": [626, 751],
+        "textureKey": "clover-village-building-cottage-north-east",
+        "placement": { "tileX": 56, "baseTileY": 47, "scale": 0.18 }
+      }
+    ],
+    "unusedFamilyReviewFields": ["silhouette", "building-role", "facade-versus-component", "roof-and-wall-style", "door-placement", "scale-band", "duplicate-or-variant", "Clover Village district fit"]
+  },
+  "happyValleyStructureReferences": {
+    "pngDirectory": "reference/assets/maps/HappyValley/Map/PNG",
+    "epsDirectory": "reference/assets/maps/HappyValley/Map/EPS",
+    "assetClass": "named outdoor structures with PNG and EPS counterparts",
+    "runtimeStatus": "reference-only",
+    "files": [
+      { "name": "Top-Down Simple Summer_Prop - House", "png": "Top-Down Simple Summer_Prop - House.png", "eps": "Top-Down Simple Summer_Prop - House.eps", "pngDimensions": [480, 640] },
+      { "name": "Top-Down Simple Summer_Prop - Magic Stone Tower", "png": "Top-Down Simple Summer_Prop - Magic Stone Tower.png", "eps": "Top-Down Simple Summer_Prop - Magic Stone Tower.eps", "pngDimensions": [240, 400] },
+      { "name": "Top-Down Simple Summer_Prop - Watchtower Short", "png": "Top-Down Simple Summer_Prop - Watchtower Short.png", "eps": "Top-Down Simple Summer_Prop - Watchtower Short.eps", "pngDimensions": [240, 260] },
+      { "name": "Top-Down Simple Summer_Prop - Watchtower Tall", "png": "Top-Down Simple Summer_Prop - Watchtower Tall.png", "eps": "Top-Down Simple Summer_Prop - Watchtower Tall.eps", "pngDimensions": [260, 340] },
+      { "name": "Top-Down Simple Summer_Prop - Well", "png": "Top-Down Simple Summer_Prop - Well.png", "eps": "Top-Down Simple Summer_Prop - Well.eps", "pngDimensions": [200, 200] }
+    ],
+    "CloverVillageStatus": "comparison-only; do not mix into the primary village set until visual style and scale are reviewed"
+  },
+  "excludedStructureSets": [
+    {
+      "directory": "reference/assets/maps/VoidDesert/Map/PNG",
+      "filePattern": "building_1.png through building_5.png",
+      "count": 5,
+      "runtimeStatus": "reference-only",
+      "CloverVillageStatus": "excluded",
+      "reason": "Desert-specific building references; retained separately from Clover Village cataloging."
+    }
+  ],
+  "catalogSummary": {
+    "cloverVillageFamilies": 18,
+    "cloverVillagePngFiles": 118,
+    "currentRuntimeBuildingAssignments": 6,
+    "happyValleyPngReferences": 5,
+    "happyValleyEpsReferences": 5,
+    "excludedVoidDesertBuildings": 5,
+    "totalCatalogedSourceFiles": 133,
+    "nextStep": "Visually review the Clover Village family contact sheet and assign unused families to named roles only after visual confirmation."
+  }
+}

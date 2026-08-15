@@ -1,0 +1,290 @@
+{
+  "schemaVersion": 1,
+  "catalogId": "clover-village-combat-effects",
+  "generatedAt": "2026-08-14",
+  "scope": "Combat effect, projectile, spell, slash, and monster attack visual assets that may support Clover Village-compatible gameplay",
+  "policy": {
+    "sourceAssets": "Local and ignored under reference/assets; do not move, rename, or commit source art.",
+    "catalog": "Tracked metadata only; catalog entries do not make assets runtime-used.",
+    "runtime": "This pass changes no runtime imports, animation definitions, combat behavior, or art selection.",
+    "visualStatus": "Family names and technical structure are recorded from source paths; final visual-role decisions remain review work."
+  },
+  "runtimeSelection": {
+    "source": "src/game/classAssets.ts",
+    "selectedFamilies": [
+      {
+        "classKey": "fox-archer",
+        "family": "Fire Arrow",
+        "directory": "reference/assets/Classes/Archer/AttackEffects/Fire Arrow/PNG",
+        "frameCount": 8,
+        "runtimeFrames": 8,
+        "frameRate": 18,
+        "assetKeyPattern": "courier-effect-fox-archer-{frame}",
+        "status": "runtime-used"
+      },
+      {
+        "classKey": "cat-mage",
+        "family": "Fire Ball",
+        "directory": "reference/assets/Classes/Mage/AttackEffects/Fire Ball/PNG",
+        "frameCount": 8,
+        "runtimeFrames": 8,
+        "frameRate": 18,
+        "assetKeyPattern": "courier-effect-cat-mage-{frame}",
+        "status": "runtime-used"
+      },
+      {
+        "classKey": "bear-warrior",
+        "family": "Slash 1",
+        "directory": "reference/assets/Classes/Warrior/AttackEffects/PNG/1",
+        "frameCount": 10,
+        "runtimeFrames": 10,
+        "frameRate": 18,
+        "assetKeyPattern": "courier-effect-bear-warrior-{frame}",
+        "status": "runtime-used"
+      }
+    ],
+    "runtimeBehavior": "The selected effect animation is spawned at the confirmed monster position and destroyed after one non-looping playback.",
+    "runtimeTotals": {
+      "selectedFamilies": 3,
+      "selectedPngFrames": 26,
+      "selectedSourcePngBytes": "not recorded; source archive remains ignored"
+    }
+  },
+  "playableClassEffectFamilies": {
+    "directory": "reference/assets/Classes",
+    "statusMeaning": {
+      "runtime-used": "Matched by the current explicit import.meta.glob rule.",
+      "reference-only": "Available in the local pack but not currently queued by the client.",
+      "excluded": "Recorded for boundary clarity and not a Clover Village selection candidate."
+    },
+    "classes": [
+      {
+        "classKey": "fox-archer",
+        "folder": "Archer",
+        "families": [
+          {
+            "family": "Fire Arrow",
+            "directory": "reference/assets/Classes/Archer/AttackEffects/Fire Arrow",
+            "pngDirectory": "reference/assets/Classes/Archer/AttackEffects/Fire Arrow/PNG",
+            "frameCount": 8,
+            "pngDimensions": [600, 320],
+            "sourceFormats": { "png": 8, "eps": 8, "ai": 1, "gifPreview": 1 },
+            "visualRole": "fire projectile / arrow sequence",
+            "status": "runtime-used"
+          },
+          {
+            "family": "Water Arrow",
+            "directory": "reference/assets/Classes/Archer/AttackEffects/Water Arrow",
+            "pngDirectory": "reference/assets/Classes/Archer/AttackEffects/Water Arrow/PNG",
+            "frameCount": 8,
+            "pngDimensions": [480, 360],
+            "sourceFormats": { "png": 8, "eps": 8, "ai": 1, "gifPreview": 1 },
+            "visualRole": "water projectile / arrow sequence",
+            "status": "reference-only",
+            "selectionNote": "Potential future alternate archer effect; requires visual and gameplay review."
+          }
+        ],
+        "sourceFileTotal": 38,
+        "pngTotal": 16
+      },
+      {
+        "classKey": "cat-mage",
+        "folder": "Mage",
+        "families": [
+          {
+            "family": "Fire Ball",
+            "directory": "reference/assets/Classes/Mage/AttackEffects/Fire Ball",
+            "pngDirectory": "reference/assets/Classes/Mage/AttackEffects/Fire Ball/PNG",
+            "frameCount": 8,
+            "pngDimensions": [640, 640],
+            "sourceFormats": { "png": 8, "eps": 8, "ai": 1, "gifPreview": 1 },
+            "visualRole": "fire ball projectile / burst sequence",
+            "status": "runtime-used"
+          },
+          {
+            "family": "Fire Spell",
+            "directory": "reference/assets/Classes/Mage/AttackEffects/Fire Spell",
+            "pngDirectory": "reference/assets/Classes/Mage/AttackEffects/Fire Spell/PNG",
+            "frameCount": 8,
+            "pngDimensions": [640, 360],
+            "sourceFormats": { "png": 8, "eps": 8, "ai": 1, "gifPreview": 1 },
+            "visualRole": "wide fire spell / casting effect",
+            "status": "reference-only",
+            "selectionNote": "Potential future area or cast effect; requires visual and gameplay review."
+          },
+          {
+            "family": "Water Ball",
+            "directory": "reference/assets/Classes/Mage/AttackEffects/Water Ball",
+            "pngDirectory": "reference/assets/Classes/Mage/AttackEffects/Water Ball/PNG",
+            "frameCount": 12,
+            "pngDimensions": [640, 640],
+            "sourceFormats": { "png": 12, "eps": 12, "ai": 1, "gifPreview": 1 },
+            "visualRole": "water ball projectile / burst sequence",
+            "status": "reference-only",
+            "selectionNote": "Potential future alternate mage effect; requires visual and gameplay review."
+          },
+          {
+            "family": "Water Spell",
+            "directory": "reference/assets/Classes/Mage/AttackEffects/Water Spell",
+            "pngDirectory": "reference/assets/Classes/Mage/AttackEffects/Water Spell/PNG",
+            "frameCount": 8,
+            "pngDimensions": [640, 360],
+            "sourceFormats": { "png": 8, "eps": 8, "ai": 1, "gifPreview": 1 },
+            "visualRole": "wide water spell / casting effect",
+            "status": "reference-only",
+            "selectionNote": "Potential future alternate mage effect; requires visual and gameplay review."
+          }
+        ],
+        "sourceFileTotal": 84,
+        "pngTotal": 36
+      },
+      {
+        "classKey": "bear-warrior",
+        "folder": "Warrior",
+        "families": [
+          {
+            "family": "Slash 1",
+            "directory": "reference/assets/Classes/Warrior/AttackEffects/PNG/1",
+            "pngDirectory": "reference/assets/Classes/Warrior/AttackEffects/PNG/1",
+            "frameCount": 10,
+            "pngDimensions": [496, 496],
+            "sourceFormats": { "png": 10, "eps": 10 },
+            "visualRole": "melee slash / impact sequence",
+            "status": "runtime-used"
+          },
+          {
+            "family": "Slash 2",
+            "directory": "reference/assets/Classes/Warrior/AttackEffects/PNG/2",
+            "pngDirectory": "reference/assets/Classes/Warrior/AttackEffects/PNG/2",
+            "frameCount": 5,
+            "pngDimensions": [496, 496],
+            "sourceFormats": { "png": 5, "eps": 5 },
+            "visualRole": "alternate melee slash / impact sequence",
+            "status": "reference-only"
+          },
+          {
+            "family": "Slash 3",
+            "directory": "reference/assets/Classes/Warrior/AttackEffects/PNG/3",
+            "pngDirectory": "reference/assets/Classes/Warrior/AttackEffects/PNG/3",
+            "frameCount": 10,
+            "pngDimensions": [496, 496],
+            "sourceFormats": { "png": 10, "eps": 10 },
+            "visualRole": "alternate melee slash / impact sequence",
+            "status": "reference-only"
+          },
+          {
+            "family": "Slash 4",
+            "directory": "reference/assets/Classes/Warrior/AttackEffects/PNG/4",
+            "pngDirectory": "reference/assets/Classes/Warrior/AttackEffects/PNG/4",
+            "frameCount": 8,
+            "pngDimensions": [496, 496],
+            "sourceFormats": { "png": 8, "eps": 8 },
+            "visualRole": "alternate melee slash / impact sequence",
+            "status": "reference-only"
+          },
+          {
+            "family": "Slash 5",
+            "directory": "reference/assets/Classes/Warrior/AttackEffects/PNG/5",
+            "pngDirectory": "reference/assets/Classes/Warrior/AttackEffects/PNG/5",
+            "frameCount": 8,
+            "pngDimensions": [496, 496],
+            "sourceFormats": { "png": 8, "eps": 8 },
+            "visualRole": "alternate melee slash / impact sequence",
+            "status": "reference-only"
+          },
+          {
+            "family": "Slash 6",
+            "directory": "reference/assets/Classes/Warrior/AttackEffects/PNG/6",
+            "pngDirectory": "reference/assets/Classes/Warrior/AttackEffects/PNG/6",
+            "frameCount": 10,
+            "pngDimensions": [496, 496],
+            "sourceFormats": { "png": 10, "eps": 10 },
+            "visualRole": "alternate melee slash / impact sequence",
+            "status": "reference-only"
+          },
+          {
+            "family": "Slash 7",
+            "directory": "reference/assets/Classes/Warrior/AttackEffects/PNG/7",
+            "pngDirectory": "reference/assets/Classes/Warrior/AttackEffects/PNG/7",
+            "frameCount": 10,
+            "pngDimensions": [496, 496],
+            "sourceFormats": { "png": 10, "eps": 10 },
+            "visualRole": "alternate melee slash / impact sequence",
+            "status": "reference-only"
+          },
+          {
+            "family": "Slash 8",
+            "directory": "reference/assets/Classes/Warrior/AttackEffects/PNG/8",
+            "pngDirectory": "reference/assets/Classes/Warrior/AttackEffects/PNG/8",
+            "frameCount": 10,
+            "pngDimensions": [496, 496],
+            "sourceFormats": { "png": 10, "eps": 10 },
+            "visualRole": "alternate melee slash / impact sequence",
+            "status": "reference-only"
+          },
+          {
+            "family": "Slash 9",
+            "directory": "reference/assets/Classes/Warrior/AttackEffects/PNG/9",
+            "pngDirectory": "reference/assets/Classes/Warrior/AttackEffects/PNG/9",
+            "frameCount": 8,
+            "pngDimensions": [496, 496],
+            "sourceFormats": { "png": 8, "eps": 8 },
+            "visualRole": "alternate melee slash / impact sequence",
+            "status": "reference-only"
+          },
+          {
+            "family": "Slash 10",
+            "directory": "reference/assets/Classes/Warrior/AttackEffects/PNG/10",
+            "pngDirectory": "reference/assets/Classes/Warrior/AttackEffects/PNG/10",
+            "frameCount": 8,
+            "pngDimensions": [496, 496],
+            "sourceFormats": { "png": 8, "eps": 8 },
+            "visualRole": "alternate melee slash / impact sequence",
+            "status": "reference-only"
+          }
+        ],
+        "sourceFileTotal": 175,
+        "pngTotal": 87,
+        "sourceLayout": "PNG/1..10 and matching EPS/Slash_sprite_effects_FX_{family}_{frame}.eps; one shared AI source."
+      }
+    ],
+    "totals": {
+      "families": 16,
+      "sourceFiles": 297,
+      "pngFrames": 139,
+      "runtimePngFrames": 26,
+      "referenceOnlyPngFrames": 113
+    }
+  },
+  "comparisonCombatAssets": {
+    "happyValley": {
+      "directory": "reference/assets/maps/HappyValley/Mob",
+      "purpose": "Reference-only monster attack and combat animation material; not selected for Clover Village runtime.",
+      "identifiedAttackAssets": [
+        { "mob": "Boar", "formats": ["ASEPRITE", "PNG", "Tiled"], "directions": ["front", "back", "left", "right"], "status": "reference-only" }
+      ],
+      "note": "Happy Valley mob packs also contain idle, walk, run, hurt, and death sequences; those are outside this effects-only catalog and should be cataloged with monster assets."
+    },
+    "voidDesert": {
+      "directory": "reference/assets/maps/VoidDesert/Mob",
+      "purpose": "Excluded comparison material; do not use for Clover Village art selection.",
+      "identifiedAttackFamilies": ["Assassin", "Chief Goblin", "Female Goblin", "Male Goblin", "Robber", "Thug"],
+      "status": "excluded",
+      "reason": "Different biome, character style, and encounter set."
+    }
+  },
+  "reviewChecklist": [
+    "Compare projectile and slash silhouettes at the 48px Clover Village tile scale.",
+    "Check transparent padding and origin alignment before choosing alternate families.",
+    "Check whether effects read clearly against Clover Village grass, path, and building colors.",
+    "Choose separate cast, travel, hit, and defeat effects only after the combat event model supports those stages.",
+    "Keep source formats and previews in the ignored archive; only tracked metadata belongs in this catalog."
+  ],
+  "catalogSummary": {
+    "classEffectFamilies": 16,
+    "classEffectSourceFiles": 297,
+    "classEffectPngFrames": 139,
+    "runtimeSelectedPngFrames": 26,
+    "nextStep": "Visually compare the 13 reference-only class effect families, then catalog monster idle, hurt, death, and attack packs as a separate category."
+  }
+}

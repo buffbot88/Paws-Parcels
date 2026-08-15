@@ -1,0 +1,245 @@
+{
+  "pack": "CloverVillage",
+  "family": "earthen_vine_path",
+  "status": "INCOMPLETE AUTOTILE KIT",
+  "comparison": {
+    "cloverVillagePathColor": [
+      189,
+      131,
+      101
+    ],
+    "voidDesertPathColor": [
+      176,
+      133,
+      84
+    ],
+    "colorDistance": 32,
+    "sameVisualFamily": true,
+    "note": "VoidDesert road kit shares the same earthen path color family — tiles are visually compatible for cross-pack recovery."
+  },
+  "cloverVillage": {
+    "tileCount": 13,
+    "roles": {
+      "road_1.png": "outer-corner-se",
+      "road_2.png": "edge-s",
+      "road_3.png": "outer-corner-sw",
+      "road_4.png": "inner-corner-w",
+      "road_5.png": "center",
+      "road_6.png": "edge-w",
+      "road_7.png": "edge-n",
+      "road_8.png": "edge-n",
+      "road_9.png": "outer-corner-nw",
+      "road_10.png": "outer-corner-nw",
+      "road_11.png": "center-variant",
+      "road_12.png": "outer-corner-sw",
+      "road_13.png": "outer-corner-se"
+    },
+    "census": {
+      "outer-corner-se": [
+        "road_1.png",
+        "road_13.png"
+      ],
+      "edge-s": [
+        "road_2.png"
+      ],
+      "outer-corner-sw": [
+        "road_3.png",
+        "road_12.png"
+      ],
+      "inner-corner-w": [
+        "road_4.png"
+      ],
+      "center": [
+        "road_5.png"
+      ],
+      "edge-w": [
+        "road_6.png"
+      ],
+      "edge-n": [
+        "road_7.png",
+        "road_8.png"
+      ],
+      "outer-corner-nw": [
+        "road_9.png",
+        "road_10.png"
+      ],
+      "center-variant": [
+        "road_11.png"
+      ]
+    },
+    "missingRoles": [
+      "edge-e",
+      "outer-corner-ne",
+      "inner-corner-n",
+      "inner-corner-e",
+      "inner-corner-s"
+    ],
+    "duplicateCandidates": [
+      {
+        "a": "road_7.png",
+        "b": "road_8.png",
+        "identical": false,
+        "diffPercent": "46.9"
+      },
+      {
+        "a": "road_1.png",
+        "b": "road_13.png",
+        "identical": false,
+        "diffPercent": "78.9"
+      },
+      {
+        "a": "road_3.png",
+        "b": "road_12.png",
+        "identical": false,
+        "diffPercent": "87.7"
+      },
+      {
+        "a": "road_9.png",
+        "b": "road_10.png",
+        "identical": false,
+        "diffPercent": "86.9"
+      }
+    ]
+  },
+  "voidDesert": {
+    "tileCount": 26,
+    "roles": {
+      "road_1.png": "outer-corner-se",
+      "road_2.png": "inner-corner-n",
+      "road_3.png": "outer-corner-sw",
+      "road_4.png": "inner-corner-w",
+      "road_5.png": "center",
+      "road_6.png": "inner-corner-e",
+      "road_7.png": "outer-corner-ne",
+      "road_8.png": "inner-corner-s",
+      "road_9.png": "outer-corner-nw",
+      "road_10.png": "center-variant",
+      "road_11.png": "center-variant",
+      "road_12.png": "center-variant",
+      "road_13.png": "center-variant",
+      "road_14.png": "outer-corner-se",
+      "road_15.png": "inner-corner-n",
+      "road_16.png": "outer-corner-sw",
+      "road_17.png": "inner-corner-w",
+      "road_18.png": "center-variant",
+      "road_19.png": "inner-corner-e",
+      "road_20.png": "edge-n",
+      "road_21.png": "inner-corner-s",
+      "road_22.png": "outer-corner-nw",
+      "road_23.png": "center-variant",
+      "road_24.png": "center-variant",
+      "road_25.png": "center-variant",
+      "road_26.png": "center-variant"
+    },
+    "census": {
+      "outer-corner-se": [
+        "road_1.png",
+        "road_14.png"
+      ],
+      "inner-corner-n": [
+        "road_2.png",
+        "road_15.png"
+      ],
+      "outer-corner-sw": [
+        "road_3.png",
+        "road_16.png"
+      ],
+      "inner-corner-w": [
+        "road_4.png",
+        "road_17.png"
+      ],
+      "center": [
+        "road_5.png"
+      ],
+      "inner-corner-e": [
+        "road_6.png",
+        "road_19.png"
+      ],
+      "outer-corner-ne": [
+        "road_7.png"
+      ],
+      "inner-corner-s": [
+        "road_8.png",
+        "road_21.png"
+      ],
+      "outer-corner-nw": [
+        "road_9.png",
+        "road_22.png"
+      ],
+      "center-variant": [
+        "road_10.png",
+        "road_11.png",
+        "road_12.png",
+        "road_13.png",
+        "road_18.png",
+        "road_23.png",
+        "road_24.png",
+        "road_25.png",
+        "road_26.png"
+      ],
+      "edge-n": [
+        "road_20.png"
+      ]
+    }
+  },
+  "recoveryCandidates": {
+    "edge-e": [],
+    "outer-corner-ne": [
+      {
+        "file": "road_7.png",
+        "source": "VoidDesert",
+        "sourcePath": "reference/assets/maps/VoidDesert/Map/PNG/road_7.png",
+        "url": "https://pawsandparcels.agpstudios.org/reference/assets/maps/VoidDesert/Map/PNG/road_7.png"
+      }
+    ],
+    "inner-corner-n": [
+      {
+        "file": "road_2.png",
+        "source": "VoidDesert",
+        "sourcePath": "reference/assets/maps/VoidDesert/Map/PNG/road_2.png",
+        "url": "https://pawsandparcels.agpstudios.org/reference/assets/maps/VoidDesert/Map/PNG/road_2.png"
+      },
+      {
+        "file": "road_15.png",
+        "source": "VoidDesert",
+        "sourcePath": "reference/assets/maps/VoidDesert/Map/PNG/road_15.png",
+        "url": "https://pawsandparcels.agpstudios.org/reference/assets/maps/VoidDesert/Map/PNG/road_15.png"
+      }
+    ],
+    "inner-corner-e": [
+      {
+        "file": "road_6.png",
+        "source": "VoidDesert",
+        "sourcePath": "reference/assets/maps/VoidDesert/Map/PNG/road_6.png",
+        "url": "https://pawsandparcels.agpstudios.org/reference/assets/maps/VoidDesert/Map/PNG/road_6.png"
+      },
+      {
+        "file": "road_19.png",
+        "source": "VoidDesert",
+        "sourcePath": "reference/assets/maps/VoidDesert/Map/PNG/road_19.png",
+        "url": "https://pawsandparcels.agpstudios.org/reference/assets/maps/VoidDesert/Map/PNG/road_19.png"
+      }
+    ],
+    "inner-corner-s": [
+      {
+        "file": "road_8.png",
+        "source": "VoidDesert",
+        "sourcePath": "reference/assets/maps/VoidDesert/Map/PNG/road_8.png",
+        "url": "https://pawsandparcels.agpstudios.org/reference/assets/maps/VoidDesert/Map/PNG/road_8.png"
+      },
+      {
+        "file": "road_21.png",
+        "source": "VoidDesert",
+        "sourcePath": "reference/assets/maps/VoidDesert/Map/PNG/road_21.png",
+        "url": "https://pawsandparcels.agpstudios.org/reference/assets/maps/VoidDesert/Map/PNG/road_21.png"
+      }
+    ]
+  },
+  "recoverableRoleCount": 4,
+  "stillMissingRoles": [
+    "edge-e"
+  ],
+  "crossPackPixelIdentical": [],
+  "verdict": "PARTIAL RECOVERY — same visual family; 4/5 missing roles recoverable. Still absent: Edge — East",
+  "note": "Source paths remain untouched — this is catalog-level comparison only. Copying VoidDesert tiles into the CloverVillage runtime is a game-content decision and must not happen until reviewed. Candidate canonical names should use the candidate_ prefix (e.g. road_earthen_vine_candidate_edge_n_a) until the recovered kit is confirmed side-by-side."
+}

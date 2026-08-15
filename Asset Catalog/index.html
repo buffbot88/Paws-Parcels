@@ -1,0 +1,190 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Paws &amp; Parcels — Asset Catalog</title>
+  <link rel="stylesheet" href="./styles.css" />
+</head>
+<body>
+  <header class="site-header">
+    <div>
+      <p class="eyebrow">Paws &amp; Parcels · visual reference archive</p>
+      <h1>Asset Catalog</h1>
+      <p class="subtitle">Browse the local art archive by pack, category, runtime status, and review state. Images remain in <code>reference/assets/</code>; this site only reads and annotates them.</p>
+    </div>
+    <div class="header-actions">
+      <button id="export-review" class="button button-primary" type="button">Export review notes</button>
+      <button id="clear-review" class="button button-quiet" type="button">Clear local review</button>
+    </div>
+  </header>
+
+  <section id="audit-progress" class="audit-progress" hidden>
+    <div class="audit-progress-head">
+      <h2>Audit progress</h2>
+      <span class="audit-progress-summary"></span>
+    </div>
+    <div class="audit-progress-bars"></div>
+  </section>
+
+  <main class="layout">
+    <aside class="sidebar" aria-label="Catalog controls">
+      <section class="panel summary-panel">
+        <h2>Archive summary</h2>
+        <dl id="summary"></dl>
+      </section>
+
+      <section class="panel audit-panel">
+        <h2>Audit status</h2>
+        <div id="audit-status"></div>
+      </section>
+
+      <section class="panel">
+        <label class="field-label" for="search">Search filenames and paths</label>
+        <input id="search" class="text-input" type="search" placeholder="e.g. mailbox, building_7, fox" autocomplete="off" />
+        <div class="field-row">
+          <div>
+            <label class="field-label" for="status">Asset status</label>
+            <select id="status" class="select-input">
+              <option value="all">All statuses</option>
+              <option value="runtime-used">Runtime-used</option>
+              <option value="reference-only">Reference-only</option>
+            </select>
+          </div>
+          <div>
+            <label class="field-label" for="review">Review state</label>
+            <select id="review" class="select-input">
+              <option value="all">All review states</option>
+              <option value="cataloged">Cataloged</option>
+              <option value="reviewed">Reviewed</option>
+              <option value="unclassified">Needs classification</option>
+              <option value="uncataloged">Not yet cataloged</option>
+              <option value="excluded-reference">Excluded reference</option>
+              <option value="source-format">Source format</option>
+            </select>
+          </div>
+        </div>
+        <div class="field-row">
+          <div>
+            <label class="field-label" for="role">Asset role</label>
+            <select id="role" class="select-input">
+              <option value="all">All roles</option>
+              <option value="complete">Placeable complete</option>
+              <option value="component">Component</option>
+              <option value="prop">Prop</option>
+              <option value="variant">Variant</option>
+            </select>
+          </div>
+          <div>
+            <label class="field-label" for="world">World role</label>
+            <select id="world" class="select-input">
+              <option value="all">All worlds</option>
+              <option value="CLOVER_SAFE">Clover Safe</option>
+              <option value="PVE_1_20">PvE 1–20</option>
+              <option value="SHARED_1_20">Shared</option>
+              <option value="FUTURE">Future</option>
+              <option value="UNASSIGNED">Unassigned</option>
+            </select>
+          </div>
+        </div>
+        <div class="field-row">
+          <div>
+            <label class="field-label" for="structure">Structure type</label>
+            <select id="structure" class="select-input">
+              <option value="all">All types</option>
+              <option value="residence">Residence</option>
+              <option value="commercial">Commercial</option>
+              <option value="utility">Utility</option>
+              <option value="shelter">Shelter</option>
+              <option value="stall">Stall</option>
+              <option value="landmark">Landmark</option>
+              <option value="special">Special</option>
+              <option value="building">Building</option>
+            </select>
+          </div>
+        </div>
+      </section>
+
+      <section class="panel">
+        <h2>Categories</h2>
+        <nav id="categories" class="category-list" aria-label="Asset categories"></nav>
+      </section>
+
+      <section class="panel catalog-links">
+        <h2>Existing catalogs</h2>
+        <div id="catalog-links"></div>
+      </section>
+    </aside>
+
+    <section class="catalog-content" aria-live="polite">
+      <div class="toolbar">
+        <div>
+          <h2 id="results-title">All assets</h2>
+          <p id="results-meta" class="results-meta">Loading inventory…</p>
+        </div>
+        <div class="toolbar-controls">
+          <label class="field-label" for="page-size">Cards per page</label>
+          <select id="page-size" class="select-input select-small">
+            <option value="48">48</option>
+            <option value="96" selected>96</option>
+            <option value="192">192</option>
+          </select>
+        </div>
+      </div>
+
+      <div id="review-banner" class="review-banner" hidden></div>
+      <div id="asset-grid" class="asset-grid"></div>
+      <div id="empty-state" class="empty-state" hidden>
+        <h2>No assets match those filters</h2>
+        <p>Try a broader search, another category, or clear the filters.</p>
+      </div>
+      <nav id="pagination" class="pagination" aria-label="Asset catalog pages"></nav>
+    </section>
+  </main>
+
+  <dialog id="asset-dialog" class="asset-dialog">
+    <button id="close-dialog" class="dialog-close" type="button" aria-label="Close asset detail">×</button>
+    <div id="dialog-content"></div>
+  </dialog>
+
+  <template id="asset-card-template">
+    <article class="asset-card">
+      <button class="asset-preview" type="button">
+        <img loading="lazy" />
+        <span class="preview-label">Open detail</span>
+      </button>
+      <div class="asset-card-body">
+        <div class="asset-title-row">
+          <h3 class="asset-name"></h3>
+          <span class="asset-extension"></span>
+        </div>
+        <p class="asset-path"></p>
+        <div class="badge-row"></div>
+        <dl class="asset-meta"></dl>
+        <label class="field-label review-label">Suggested classification
+          <select class="review-select select-input">
+            <option value="">Unreviewed</option>
+            <option value="confirmed">Confirmed</option>
+            <option value="character">Character / NPC</option>
+            <option value="building">Building / structure</option>
+            <option value="ground">Ground / terrain</option>
+            <option value="road">Road / path</option>
+            <option value="prop">Environmental prop</option>
+            <option value="effect">Effect / combat</option>
+            <option value="ui">UI / interface</option>
+            <option value="source">Source document</option>
+            <option value="exclude">Exclude from game</option>
+            <option value="unknown">Unknown / needs discussion</option>
+          </select>
+        </label>
+        <label class="field-label note-label">Review note
+          <textarea class="review-note" rows="2" placeholder="What does this asset appear to be? Why?"></textarea>
+        </label>
+        <button class="button button-save" type="button">Save review</button>
+      </div>
+    </article>
+  </template>
+
+  <script type="module" src="./catalog.js"></script>
+</body>
+</html>

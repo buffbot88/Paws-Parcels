@@ -1,0 +1,227 @@
+{
+  "schemaVersion": 1,
+  "catalogId": "clover-village-road-assets",
+  "generatedAt": "2026-08-14",
+  "sourceOfTruth": "reference/assets/maps/CloverVillage/Map/PNG/road",
+  "scope": "Road and path art selection for Clover Village only",
+  "policy": {
+    "sourceAssets": "Local and ignored; do not move, rename, or commit source art.",
+    "catalog": "Tracked metadata and review notes; this file does not make an asset runtime-used.",
+    "runtimeChanges": "Require a separate deliberate art-selection change after visual review."
+  },
+  "runtimeSnapshot": {
+    "currentRoadAsset": "reference/assets/maps/CloverVillage/Map/PNG/road/road_5.png",
+    "currentRoadAssetStatus": "runtime-used",
+    "currentMapSurface": "The ASCII map and procedural tile renderer remain authoritative for walkability and collision."
+  },
+  "primaryCloverVillageRoadSet": {
+    "directory": "reference/assets/maps/CloverVillage/Map/PNG/road",
+    "assetClass": "transparent road pieces and opaque surface set pieces",
+    "tiles": [
+      {
+        "id": "clover-road-01",
+        "file": "road_1.png",
+        "dimensions": [64, 64],
+        "edgeConnections": ["east", "south"],
+        "alphaEdgeSignature": { "north": 0.00, "east": 0.75, "south": 1.00, "west": 0.06 },
+        "topologyHint": "south-east corner or bend",
+        "confidence": "medium",
+        "runtimeUsed": false
+      },
+      {
+        "id": "clover-road-02",
+        "file": "road_2.png",
+        "dimensions": [64, 64],
+        "edgeConnections": ["east", "south", "west"],
+        "alphaEdgeSignature": { "north": 0.00, "east": 0.65, "south": 1.00, "west": 0.73 },
+        "topologyHint": "south-facing T junction",
+        "confidence": "medium",
+        "runtimeUsed": false
+      },
+      {
+        "id": "clover-road-03",
+        "file": "road_3.png",
+        "dimensions": [64, 64],
+        "edgeConnections": ["south", "west"],
+        "alphaEdgeSignature": { "north": 0.00, "east": 0.00, "south": 1.00, "west": 0.70 },
+        "topologyHint": "south-west corner or bend",
+        "confidence": "medium",
+        "runtimeUsed": false
+      },
+      {
+        "id": "clover-road-04",
+        "file": "road_4.png",
+        "dimensions": [64, 64],
+        "edgeConnections": ["north", "east", "south"],
+        "alphaEdgeSignature": { "north": 1.00, "east": 1.00, "south": 1.00, "west": 0.27 },
+        "topologyHint": "north-east-south T junction",
+        "confidence": "medium",
+        "runtimeUsed": false
+      },
+      {
+        "id": "clover-road-05",
+        "file": "road_5.png",
+        "dimensions": [64, 64],
+        "edgeConnections": ["north", "east", "south", "west"],
+        "alphaEdgeSignature": { "north": 1.00, "east": 1.00, "south": 1.00, "west": 1.00 },
+        "topologyHint": "four-edge connector or full road tile",
+        "confidence": "high",
+        "runtimeUsed": true
+      },
+      {
+        "id": "clover-road-06",
+        "file": "road_6.png",
+        "dimensions": [64, 64],
+        "edgeConnections": ["north", "south", "west"],
+        "alphaEdgeSignature": { "north": 1.00, "east": 0.00, "south": 1.00, "west": 1.00 },
+        "topologyHint": "north-west-south T junction",
+        "confidence": "medium",
+        "runtimeUsed": false
+      },
+      {
+        "id": "clover-road-07",
+        "file": "road_7.png",
+        "dimensions": [64, 64],
+        "edgeConnections": ["north", "east"],
+        "alphaEdgeSignature": { "north": 1.00, "east": 0.65, "south": 0.00, "west": 0.00 },
+        "topologyHint": "north-east corner or bend",
+        "confidence": "medium",
+        "runtimeUsed": false
+      },
+      {
+        "id": "clover-road-08",
+        "file": "road_8.png",
+        "dimensions": [64, 64],
+        "edgeConnections": ["north", "east", "west"],
+        "alphaEdgeSignature": { "north": 1.00, "east": 0.75, "south": 0.00, "west": 0.78 },
+        "topologyHint": "north-facing T junction",
+        "confidence": "medium",
+        "runtimeUsed": false
+      },
+      {
+        "id": "clover-road-09",
+        "file": "road_9.png",
+        "dimensions": [64, 64],
+        "edgeConnections": ["north", "west"],
+        "alphaEdgeSignature": { "north": 1.00, "east": 0.00, "south": 0.00, "west": 0.74 },
+        "topologyHint": "north-west corner or bend",
+        "confidence": "medium",
+        "runtimeUsed": false
+      },
+      {
+        "id": "clover-road-10",
+        "file": "road_10.png",
+        "dimensions": [64, 64],
+        "edgeConnections": ["north", "east", "south", "west"],
+        "alphaEdgeSignature": { "north": 1.00, "east": 0.80, "south": 1.00, "west": 1.00 },
+        "topologyHint": "four-edge connector variant",
+        "confidence": "high",
+        "runtimeUsed": false
+      },
+      {
+        "id": "clover-road-11",
+        "file": "road_11.png",
+        "dimensions": [64, 64],
+        "edgeConnections": ["north", "east", "south", "west"],
+        "alphaEdgeSignature": { "north": 1.00, "east": 1.00, "south": 1.00, "west": 0.90 },
+        "topologyHint": "four-edge connector variant",
+        "confidence": "high",
+        "runtimeUsed": false
+      },
+      {
+        "id": "clover-road-12",
+        "file": "road_12.png",
+        "dimensions": [64, 64],
+        "edgeConnections": ["north", "east", "south", "west"],
+        "alphaEdgeSignature": { "north": 1.00, "east": 0.83, "south": 1.00, "west": 1.00 },
+        "topologyHint": "four-edge connector variant",
+        "confidence": "high",
+        "runtimeUsed": false
+      },
+      {
+        "id": "clover-road-13",
+        "file": "road_13.png",
+        "dimensions": [64, 64],
+        "edgeConnections": ["north", "east", "south", "west"],
+        "alphaEdgeSignature": { "north": 1.00, "east": 1.00, "south": 1.00, "west": 0.79 },
+        "topologyHint": "four-edge connector variant",
+        "confidence": "high",
+        "runtimeUsed": false
+      }
+    ],
+    "largeSetPieces": [
+      {
+        "id": "clover-road-14",
+        "file": "road_14.png",
+        "dimensions": [256, 256],
+        "alphaEdgeSignature": { "north": 1.00, "east": 1.00, "south": 1.00, "west": 1.00 },
+        "assetClass": "opaque large surface piece",
+        "topology": "not inferred from alpha; requires visual placement review",
+        "runtimeUsed": false
+      },
+      {
+        "id": "clover-road-15",
+        "file": "road_15.png",
+        "dimensions": [256, 256],
+        "alphaEdgeSignature": { "north": 1.00, "east": 1.00, "south": 1.00, "west": 1.00 },
+        "assetClass": "opaque large surface piece",
+        "topology": "not inferred from alpha; requires visual placement review",
+        "runtimeUsed": false
+      },
+      {
+        "id": "clover-road-16",
+        "file": "road_16.png",
+        "dimensions": [256, 256],
+        "alphaEdgeSignature": { "north": 1.00, "east": 1.00, "south": 1.00, "west": 1.00 },
+        "assetClass": "opaque large surface piece",
+        "topology": "not inferred from alpha; requires visual placement review",
+        "runtimeUsed": false
+      },
+      {
+        "id": "clover-road-17",
+        "file": "road_17.png",
+        "dimensions": [256, 256],
+        "alphaEdgeSignature": { "north": 1.00, "east": 1.00, "south": 1.00, "west": 1.00 },
+        "assetClass": "opaque large surface piece",
+        "topology": "not inferred from alpha; requires visual placement review",
+        "runtimeUsed": false
+      }
+    ]
+  },
+  "reusablePathCandidates": {
+    "directory": "reference/assets/maps/OtherAssets/Paths",
+    "status": "reference-only; do not mix into the primary Clover Village set until visual style and scale are approved",
+    "files": [
+      { "file": "Ground_grass.png", "dimensions": [272, 496], "role": "grass ground reference" },
+      { "file": "Road1.png", "dimensions": [240, 416], "role": "composite road reference" },
+      { "file": "Road1_grass.png", "dimensions": [240, 416], "role": "road with grass edge variant" },
+      { "file": "Road1_ground.png", "dimensions": [240, 416], "role": "road with ground edge variant" },
+      { "file": "Road2.png", "dimensions": [240, 416], "role": "composite road reference" },
+      { "file": "Road2_grass.png", "dimensions": [240, 416], "role": "road with grass edge variant" },
+      { "file": "Road2_ground.png", "dimensions": [240, 416], "role": "road with ground edge variant" },
+      { "file": "Road3.png", "dimensions": [240, 480], "role": "composite road reference" },
+      { "file": "Road3_grass.png", "dimensions": [240, 480], "role": "road with grass edge variant" },
+      { "file": "Road3_ground.png", "dimensions": [240, 480], "role": "road with ground edge variant" },
+      { "file": "Road4.png", "dimensions": [240, 480], "role": "composite road reference" },
+      { "file": "Road4_grass.png", "dimensions": [240, 480], "role": "road with grass edge variant" },
+      { "file": "Road4_ground.png", "dimensions": [240, 480], "role": "road with ground edge variant" },
+      { "file": "Road5.png", "dimensions": [240, 416], "role": "composite road reference" },
+      { "file": "Road5_grass.png", "dimensions": [240, 416], "role": "road with grass edge variant" },
+      { "file": "Road5_ground.png", "dimensions": [240, 416], "role": "road with ground edge variant" },
+      { "file": "Roads.tmx", "role": "source tilemap metadata" }
+    ]
+  },
+  "excludedFromCloverVillage": [
+    {
+      "directory": "reference/assets/maps/VoidDesert/Map/PNG",
+      "pattern": "road_1.png–road_26.png",
+      "reason": "Desert-specific reference pack; retained locally but not part of the Clover Village road catalog."
+    }
+  ],
+  "selectionStatus": {
+    "primarySurfaceCandidate": "road_5.png",
+    "approvedForRuntime": ["road_5.png"],
+    "needsVisualReview": ["road_1.png", "road_2.png", "road_3.png", "road_4.png", "road_6.png", "road_7.png", "road_8.png", "road_9.png", "road_10.png", "road_11.png", "road_12.png", "road_13.png", "road_14.png", "road_15.png", "road_16.png", "road_17.png"],
+    "nextDecision": "Review the contact sheet and choose whether the runtime surface should remain a single authored texture or become a tile-composed Clover Village road system."
+  }
+}

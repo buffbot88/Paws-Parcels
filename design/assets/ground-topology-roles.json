@@ -1,0 +1,121 @@
+{
+  "pack": "CloverVillage",
+  "category": "ground",
+  "method": "alpha-silhouette analysis (256x256, alpha>=40 solid, 16px bands, quadrant coverage)",
+  "familyPlan": {
+    "clover_grass_base": {
+      "count": 1,
+      "files": [
+        "land_1.png"
+      ],
+      "role": "base-texture"
+    },
+    "clover_grass_patch": {
+      "count": 1,
+      "files": [
+        "land_2.png"
+      ],
+      "role": "patch"
+    },
+    "clover_grass_edge": {
+      "count": 8,
+      "files": [
+        "land_3.png",
+        "land_4.png",
+        "land_5.png",
+        "land_6.png",
+        "land_7.png",
+        "land_8.png",
+        "land_9.png",
+        "land_10.png"
+      ],
+      "role": "edge"
+    },
+    "clover_grass_corner": {
+      "count": 16,
+      "files": [
+        "land_2.png",
+        "land_3.png",
+        "land_4.png",
+        "land_5.png",
+        "land_6.png",
+        "land_7.png",
+        "land_8.png",
+        "land_9.png",
+        "land_11.png",
+        "land_12.png",
+        "land_13.png",
+        "land_14.png",
+        "land_15.png",
+        "land_16.png",
+        "land_17.png",
+        "land_18.png",
+        "land_19.png",
+        "land_20.png",
+        "land_21.png",
+        "land_22.png",
+        "land_23.png",
+        "land_24.png",
+        "land_25.png",
+        "land_26.png"
+      ],
+      "role": "corner/transition"
+    }
+  },
+  "roles": {
+    "land_1.png": "base-texture",
+    "land_2.png": "patch",
+    "land_3.png": "edge-s",
+    "land_4.png": "edge-n",
+    "land_5.png": "edge-w",
+    "land_6.png": "edge-e",
+    "land_7.png": "edge-s",
+    "land_8.png": "edge-n",
+    "land_9.png": "edge-w",
+    "land_10.png": "edge-e",
+    "land_11.png": "outer-corner-se",
+    "land_12.png": "outer-corner-sw",
+    "land_13.png": "outer-corner-sw",
+    "land_14.png": "outer-corner-ne",
+    "land_15.png": "outer-corner-nw",
+    "land_16.png": "outer-corner-ne",
+    "land_17.png": "outer-corner-ne",
+    "land_18.png": "outer-corner-nw",
+    "land_19.png": "compound",
+    "land_20.png": "compound",
+    "land_21.png": "compound",
+    "land_22.png": "compound",
+    "land_23.png": "compound",
+    "land_24.png": "compound",
+    "land_25.png": "compound",
+    "land_26.png": "compound"
+  },
+  "edgeKit": {
+    "land_3.png": "edge-s",
+    "land_4.png": "edge-n",
+    "land_5.png": "edge-w",
+    "land_6.png": "edge-e",
+    "land_7.png": "edge-s",
+    "land_8.png": "edge-n",
+    "land_9.png": "edge-w",
+    "land_10.png": "edge-e"
+  },
+  "cornerKit": {
+    "land_11.png": "outer-corner-se",
+    "land_12.png": "outer-corner-sw",
+    "land_13.png": "outer-corner-sw",
+    "land_14.png": "outer-corner-ne",
+    "land_15.png": "outer-corner-nw",
+    "land_16.png": "outer-corner-ne",
+    "land_17.png": "outer-corner-ne",
+    "land_18.png": "outer-corner-nw",
+    "land_19.png": "compound",
+    "land_20.png": "compound",
+    "land_21.png": "compound",
+    "land_22.png": "compound",
+    "land_23.png": "compound",
+    "land_24.png": "compound",
+    "land_25.png": "compound",
+    "land_26.png": "compound"
+  }
+}

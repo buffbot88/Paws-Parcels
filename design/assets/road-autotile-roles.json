@@ -1,0 +1,179 @@
+{
+  "pack": "CloverVillage",
+  "category": "road",
+  "family": "earthen_vine_path",
+  "method": "pixel edge-signature analysis (64x64 tiles, outer 5px band, corner-skip 8px, color-classified vs road_5 center; open side threshold 0.6)",
+  "pathColor": [
+    178,
+    125,
+    97
+  ],
+  "setConfirmedAsCleanAutotile": false,
+  "confirmedRole": {
+    "center": "road_5.png"
+  },
+  "findings": [
+    "Center / Fill: road_5.png — single candidate",
+    "center-variant: road_11.png — single candidate",
+    "Edge — North: 2 candidate(s) — road_7.png, road_8.png (duplicate role)",
+    "Edge — South: road_2.png — single candidate",
+    "Edge — West: road_6.png — single candidate",
+    "Inner Corner — W: road_4.png — single candidate",
+    "Outer Corner — NW: 2 candidate(s) — road_9.png, road_10.png (duplicate role)",
+    "Outer Corner — SE: 2 candidate(s) — road_1.png, road_13.png (duplicate role)",
+    "Outer Corner — SW: 2 candidate(s) — road_3.png, road_12.png (duplicate role)",
+    "MISSING roles: Inner Corner — E, Outer Corner — NE, Inner Corner — S, Edge — East, Inner Corner — N",
+    "Full 26-tile road kit exists in the archive (VoidDesert has road_1-26); CloverVillage holds only the 13-piece subset. Missing CloverVillage roles likely live in the rest of that kit."
+  ],
+  "tiles": [
+    {
+      "file": "road_1.png",
+      "role": "outer-corner-se",
+      "edgeRatios": {
+        "n": 0,
+        "e": 0.4083333333333333,
+        "s": 0.75,
+        "w": 0
+      }
+    },
+    {
+      "file": "road_2.png",
+      "role": "edge-s",
+      "edgeRatios": {
+        "n": 0,
+        "e": 0.3958333333333333,
+        "s": 0.95,
+        "w": 0.375
+      }
+    },
+    {
+      "file": "road_3.png",
+      "role": "outer-corner-sw",
+      "edgeRatios": {
+        "n": 0,
+        "e": 0,
+        "s": 0.7,
+        "w": 0.37083333333333335
+      }
+    },
+    {
+      "file": "road_4.png",
+      "role": "inner-corner-w",
+      "edgeRatios": {
+        "n": 0.7125,
+        "e": 1,
+        "s": 0.75,
+        "w": 0
+      }
+    },
+    {
+      "file": "road_5.png",
+      "role": "center",
+      "edgeRatios": {
+        "n": 1,
+        "e": 1,
+        "s": 1,
+        "w": 1
+      }
+    },
+    {
+      "file": "road_6.png",
+      "role": "edge-w",
+      "edgeRatios": {
+        "n": 0.7083333333333334,
+        "e": 0,
+        "s": 0.7166666666666667,
+        "w": 1
+      }
+    },
+    {
+      "file": "road_7.png",
+      "role": "edge-n",
+      "edgeRatios": {
+        "n": 0.7041666666666667,
+        "e": 0.375,
+        "s": 0,
+        "w": 0
+      }
+    },
+    {
+      "file": "road_8.png",
+      "role": "edge-n",
+      "edgeRatios": {
+        "n": 0.9833333333333333,
+        "e": 0.4166666666666667,
+        "s": 0,
+        "w": 0.4375
+      }
+    },
+    {
+      "file": "road_9.png",
+      "role": "outer-corner-nw",
+      "edgeRatios": {
+        "n": 0.7,
+        "e": 0,
+        "s": 0,
+        "w": 0.42916666666666664
+      }
+    },
+    {
+      "file": "road_10.png",
+      "role": "outer-corner-nw",
+      "edgeRatios": {
+        "n": 1,
+        "e": 0.4,
+        "s": 0.7166666666666667,
+        "w": 1
+      }
+    },
+    {
+      "file": "road_11.png",
+      "role": "center-variant",
+      "edgeRatios": {
+        "n": 1,
+        "e": 1,
+        "s": 0.7416666666666667,
+        "w": 0.43333333333333335
+      }
+    },
+    {
+      "file": "road_12.png",
+      "role": "outer-corner-sw",
+      "edgeRatios": {
+        "n": 0.7166666666666667,
+        "e": 0.38333333333333336,
+        "s": 1,
+        "w": 1
+      }
+    },
+    {
+      "file": "road_13.png",
+      "role": "outer-corner-se",
+      "edgeRatios": {
+        "n": 0.7333333333333333,
+        "e": 1,
+        "s": 1,
+        "w": 0.3875
+      }
+    }
+  ],
+  "testMap": {
+    "width": 16,
+    "height": 12,
+    "rows": [
+      "................",
+      "..#####.........",
+      "..#...#.........",
+      "..#...#.........",
+      "..#########.....",
+      "..#.......#.....",
+      "..#.......#.....",
+      "..#.......#.....",
+      "..#########.....",
+      "....#######.....",
+      ".......#........",
+      "................"
+    ],
+    "draftRenderMissing": 35
+  }
+}

@@ -1,0 +1,86 @@
+{
+  "taskId": "ROAD-COMPLETION-001",
+  "title": "Clover Village Road Completion Art Task",
+  "status": "open",
+  "created": "2026-08-15",
+  "owner": "Art — production backlog",
+  "summary": "The Earthen Vine Path autotile kit (CloverVillage road_1-13) is missing 5 of the 13 classic autotile roles. Recovery investigation (design/assets/road-kit-recovery.json) proved the full 26-tile VoidDesert kit is a different palette/vegetation family and that edge-east exists in no pack — so no catalog work or archive searching can complete this set. The correct fix is 5 new derived 64x64 tiles made in the Clover visual family, using VoidDesert tiles as topology reference only. See design/assets/asset-reviews.json -> reviews['CloverVillage/road_earthen_vine_path'].artTask for the machine-readable copy of this spec.",
+  "family": {
+    "canonicalFamily": "earthen_vine_path",
+    "displayName": "Earthen Vine Path",
+    "tileSize": "64x64",
+    "worldRole": "SHARED_1_20",
+    "surfaceType": "dirt",
+    "walkable": true,
+    "collision": "none"
+  },
+  "statusModel": {
+    "catalogStatus": "COMPLETE",
+    "topologyStatus": "verified",
+    "kitStatus": "incomplete",
+    "recoveryStatus": "art-required",
+    "runtimeReady": "partial",
+    "artRequired": true
+  },
+  "doNot": [
+    "Do not copy VoidDesert tiles into CloverVillage — palette/vegetation does not match (desert-gold rgb(176,133,84), 0% green grass vs Clover warm rgb(189,131,101), 3.6% green grass).",
+    "Do not overwrite or rename the original CloverVillage road_1-13 assets.",
+    "Do not derive edge-east by pure horizontal mirror of edge-west and stop there — redo the vine/vegetation detail so it does not look mechanically mirrored."
+  ],
+  "deliverable": [
+    {
+      "asset": "road_earthen_vine_outer_corner_ne_01.png",
+      "role": "outer-corner-ne",
+      "visualReference": "Clover Earthen Vine family (grass + warm path palette)",
+      "structuralReference": ["reference/assets/maps/VoidDesert/Map/PNG/road_7.png"],
+      "note": "Outer corner — path occupies NE quadrant, grass fills SW."
+    },
+    {
+      "asset": "road_earthen_vine_inner_corner_n_01.png",
+      "role": "inner-corner-n",
+      "visualReference": "Clover Earthen Vine family",
+      "structuralReference": ["reference/assets/maps/VoidDesert/Map/PNG/road_2.png", "reference/assets/maps/VoidDesert/Map/PNG/road_15.png"],
+      "note": "Inner corner — path surrounds a grass notch opening north."
+    },
+    {
+      "asset": "road_earthen_vine_inner_corner_e_01.png",
+      "role": "inner-corner-e",
+      "visualReference": "Clover Earthen Vine family",
+      "structuralReference": ["reference/assets/maps/VoidDesert/Map/PNG/road_6.png", "reference/assets/maps/VoidDesert/Map/PNG/road_19.png"],
+      "note": "Inner corner — path surrounds a grass notch opening east."
+    },
+    {
+      "asset": "road_earthen_vine_inner_corner_s_01.png",
+      "role": "inner-corner-s",
+      "visualReference": "Clover Earthen Vine family",
+      "structuralReference": ["reference/assets/maps/VoidDesert/Map/PNG/road_8.png", "reference/assets/maps/VoidDesert/Map/PNG/road_21.png"],
+      "note": "Inner corner — path surrounds a grass notch opening south."
+    },
+    {
+      "asset": "road_earthen_vine_edge_e_01.png",
+      "role": "edge-e",
+      "visualReference": "Clover Earthen Vine family (opposite edge: road_6 = edge-w)",
+      "structuralReference": ["derive from Clover edge-w (road/road_6.png) — mirror for geometry, then manual vegetation pass"],
+      "note": "Edge with path filling the tile and a grass band on the east side."
+    }
+  ],
+  "provenance": {
+    "schema": {
+      "type": "derived",
+      "sourcePack": "CloverVillage",
+      "sourceAssets": ["road/road_6.png", "road/road_7.png", "road/road_1.png", "road/road_3.png", "road/road_9.png"],
+      "topologyReference": ["VoidDesert/road_7.png", "VoidDesert/road_2.png", "VoidDesert/road_15.png", "VoidDesert/road_6.png", "VoidDesert/road_19.png", "VoidDesert/road_8.png", "VoidDesert/road_21.png"],
+      "createdFor": "Paws & Parcels",
+      "note": "Derived artwork created from licensed source material — confirm the pack license permits derivative modification before shipping commercially."
+    },
+    "policy": "Every Paws & Parcels-original or derived asset must carry a provenance record distinguishing Source Asset (from the purchased/original pack) from Derived Asset (created for Paws & Parcels from licensed source). Track this from day one — the project is intended to be commercial."
+  },
+  "acceptance": [
+    "All 5 tiles are 64x64 PNGs in the Clover Earthen Vine Path palette (warm path + green grass).",
+    "Each tile matches its role's edge signature: measured open edges agree with the role (verified by the validator: Asset Catalog/analyze-road-autotile.mjs).",
+    "Placing the 13 existing + 5 new tiles in the draft test map renders with ZERO missing-role cells.",
+    "Edge-east does not look like a mechanical mirror of edge-west.",
+    "Variant system ready: existing duplicate roles (edge-n A/B, outer-se A/B, outer-sw A/B, outer-nw A/B) remain available for deterministic seed-based variety."
+  ],
+  "variantNote": "The pixel comparison proved road_7/8, road_1/13, road_3/12, road_9/10 are true variants (46.9-87.7% pixels differ) — do not delete them. Repeated identical tiles make tile-based environments look artificial. The runtime road system should eventually support EDGE_N { variant A, variant B } etc., chosen deterministically from map coordinate/seed — visual variety without affecting collision or topology."
+}

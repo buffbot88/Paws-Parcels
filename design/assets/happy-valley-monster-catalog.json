@@ -1,0 +1,155 @@
+{
+  "schemaVersion": 1,
+  "catalogId": "happy-valley-monster-animations",
+  "generatedAt": "2026-08-14",
+  "scope": "Happy Valley monster and critter animation packs",
+  "sourceDirectory": "reference/assets/maps/HappyValley/Mob",
+  "policy": {
+    "sourceAssets": "Local and ignored under reference/assets; do not move, rename, or commit source art.",
+    "catalog": "Tracked metadata only; entries do not make monster art runtime-used.",
+    "runtime": "No runtime monster rendering or animation selection was changed by this catalog pass.",
+    "visualStatus": "All Happy Valley art is currently reference-only because the client still renders the Monster placeholder entity."
+  },
+  "runtimeStatus": {
+    "gameplayDefinitions": "gameplay-referenced",
+    "gameplaySource": ["src/data/monsters.json", "src/data/maps/happy-valley.json"],
+    "visualSource": "src/entities/Monster.ts",
+    "visualRuntimeStatus": "reference-only",
+    "visualRuntimeReason": "Monster.ts currently renders a tinted placeholder blob; no Happy Valley Mob import.meta.glob or texture mapping exists.",
+    "futureIntegration": "Replace the placeholder with an explicit species animation mapping after visual review and server/client animation-state rules are ready."
+  },
+  "formatConventions": {
+    "directions": ["front", "back", "left", "right"],
+    "directionOrderInPngSheets": "Four 32x32 directional rows; source pack does not label row order in filenames, so preserve the source order until visually confirmed.",
+    "pngFrameSize": [32, 32],
+    "asepriteCanvasSize": [32, 32],
+    "pngSheetLayout": "frameCount columns by 4 directional rows",
+    "asepriteAnimationFrames": "Read from the Aseprite file header; each direction has its own 32x32 animated source.",
+    "pngShadowPolicy": "With_Shadow sheets include the baked ground shadow; Without_shadow sheets do not. Separate species shadow PNGs are static references."
+  },
+  "families": [
+    {
+      "species": "Black grouse",
+      "monsterKey": "monster-black-grouse",
+      "folder": "Black_grouse",
+      "gameplayStatus": "gameplay-referenced",
+      "visualStatus": "reference-only",
+      "behavior": "aggressive ranged",
+      "animations": [
+        { "animation": "Death", "frameCount": 6, "sheetDimensions": [192, 128], "withoutShadow": "reference/assets/maps/HappyValley/Mob/PNG/Without_shadow/Black_grouse/Black_grouse_Death.png", "withShadow": "reference/assets/maps/HappyValley/Mob/PNG/With_Shadow/Black_grouse/Black_grouse_Death_with_shadow.png", "asepriteDirectory": "reference/assets/maps/HappyValley/Mob/ASEPRITE/Black_grouse/Black_grouse_Death" },
+        { "animation": "Flight", "frameCount": 6, "sheetDimensions": [192, 128], "withoutShadow": "reference/assets/maps/HappyValley/Mob/PNG/Without_shadow/Black_grouse/Black_grouse_Flight.png", "withShadow": "reference/assets/maps/HappyValley/Mob/PNG/With_Shadow/Black_grouse/Black_grouse_Flight_with_shadow.png", "asepriteDirectory": "reference/assets/maps/HappyValley/Mob/ASEPRITE/Black_grouse/Black_grouse_Flight" },
+        { "animation": "Hurt", "frameCount": 4, "sheetDimensions": [128, 128], "withoutShadow": "reference/assets/maps/HappyValley/Mob/PNG/Without_shadow/Black_grouse/Black_grouse_Hurt.png", "withShadow": "reference/assets/maps/HappyValley/Mob/PNG/With_Shadow/Black_grouse/Black_grouse_Hurt_with_shadow.png", "asepriteDirectory": "reference/assets/maps/HappyValley/Mob/ASEPRITE/Black_grouse/Black_grouse_Hurt" },
+        { "animation": "Idle", "frameCount": 4, "sheetDimensions": [128, 128], "withoutShadow": "reference/assets/maps/HappyValley/Mob/PNG/Without_shadow/Black_grouse/Black_grouse_Idle.png", "withShadow": "reference/assets/maps/HappyValley/Mob/PNG/With_Shadow/Black_grouse/Black_grouse_Idle_with_shadow.png", "asepriteDirectory": "reference/assets/maps/HappyValley/Mob/ASEPRITE/Black_grouse/Black_grouse_Idle" },
+        { "animation": "Walk", "frameCount": 6, "sheetDimensions": [192, 128], "withoutShadow": "reference/assets/maps/HappyValley/Mob/PNG/Without_shadow/Black_grouse/Black_grouse_Walk.png", "withShadow": "reference/assets/maps/HappyValley/Mob/PNG/With_Shadow/Black_grouse/Black_grouse_Walk_with_shadow.png", "asepriteDirectory": "reference/assets/maps/HappyValley/Mob/ASEPRITE/Black_grouse/Black_grouse_Walk" }
+      ],
+      "shadowAssets": { "withoutShadow": "reference/assets/maps/HappyValley/Mob/PNG/Without_shadow/Black_grouse/Black_grouse_Shadow.png", "dimensions": [64, 32] },
+      "aseprite": { "directionsPerAnimation": 4, "sourceCanvas": [32, 32], "sourceFilePattern": "Black_grouse_{animation}/Black_grouse_{animation}_{Front|Back|left|Right}.aseprite" }
+    },
+    {
+      "species": "Wild boar",
+      "monsterKey": "monster-wild-boar",
+      "folder": "Boar",
+      "gameplayStatus": "gameplay-referenced",
+      "visualStatus": "reference-only",
+      "behavior": "aggressive melee charge",
+      "animations": [
+        { "animation": "Attack", "frameCount": 5, "sheetDimensions": [160, 128], "withoutShadow": "reference/assets/maps/HappyValley/Mob/PNG/Without_shadow/Boar/Boar_Attack.png", "withShadow": "reference/assets/maps/HappyValley/Mob/PNG/With_Shadow/Boar/Boar_Attack_with_shadow.png", "asepriteDirectory": "reference/assets/maps/HappyValley/Mob/ASEPRITE/Boar/Attack" },
+        { "animation": "Death", "frameCount": 6, "sheetDimensions": [192, 128], "withoutShadow": "reference/assets/maps/HappyValley/Mob/PNG/Without_shadow/Boar/Boar_Death.png", "withShadow": "reference/assets/maps/HappyValley/Mob/PNG/With_Shadow/Boar/Boar_Death_with_shadow.png", "asepriteDirectory": "reference/assets/maps/HappyValley/Mob/ASEPRITE/Boar/Death" },
+        { "animation": "Hurt", "frameCount": 4, "sheetDimensions": [128, 128], "withoutShadow": "reference/assets/maps/HappyValley/Mob/PNG/Without_shadow/Boar/Boar_Hurt.png", "withShadow": "reference/assets/maps/HappyValley/Mob/PNG/With_Shadow/Boar/Boar_Hurt_with_shadow.png", "asepriteDirectory": "reference/assets/maps/HappyValley/Mob/ASEPRITE/Boar/Hurt" },
+        { "animation": "Idle", "frameCount": 4, "sheetDimensions": [128, 128], "withoutShadow": "reference/assets/maps/HappyValley/Mob/PNG/Without_shadow/Boar/Boar_Idle.png", "withShadow": "reference/assets/maps/HappyValley/Mob/PNG/With_Shadow/Boar/Boar_Idle_with_shadow.png", "asepriteDirectory": "reference/assets/maps/HappyValley/Mob/ASEPRITE/Boar/Idle" },
+        { "animation": "Run", "frameCount": 5, "sheetDimensions": [160, 128], "withoutShadow": "reference/assets/maps/HappyValley/Mob/PNG/Without_shadow/Boar/Boar_Run.png", "withShadow": "reference/assets/maps/HappyValley/Mob/PNG/With_Shadow/Boar/Boar_Run_with_shadow.png", "asepriteDirectory": "reference/assets/maps/HappyValley/Mob/ASEPRITE/Boar/Run" },
+        { "animation": "Walk", "frameCount": 6, "sheetDimensions": [192, 128], "withoutShadow": "reference/assets/maps/HappyValley/Mob/PNG/Without_shadow/Boar/Boar_Walk.png", "withShadow": "reference/assets/maps/HappyValley/Mob/PNG/With_Shadow/Boar/Boar_Walk_with_shadow.png", "asepriteDirectory": "reference/assets/maps/HappyValley/Mob/ASEPRITE/Boar/Walk" }
+      ],
+      "shadowAssets": { "withoutShadow": "reference/assets/maps/HappyValley/Mob/PNG/Without_shadow/Boar/Boar_shadow.png", "dimensions": [96, 48] },
+      "aseprite": { "directionsPerAnimation": 4, "sourceCanvas": [32, 32], "sourceFilePattern": "{Animation}/{Boar}_{direction}_{Animation}.aseprite; Attack uses {Boar}_{direction}_Attack.aseprite" }
+    },
+    {
+      "species": "Forest deer",
+      "monsterKey": "monster-forest-deer",
+      "folder": "Deer",
+      "gameplayStatus": "gameplay-referenced",
+      "visualStatus": "reference-only",
+      "behavior": "passive fleeing",
+      "animations": [
+        { "animation": "Death", "frameCount": 7, "sheetDimensions": [224, 128], "withoutShadow": "reference/assets/maps/HappyValley/Mob/PNG/Without_shadow/Deer/Deer_Death.png", "withShadow": "reference/assets/maps/HappyValley/Mob/PNG/With_Shadow/Deer/Deer_Death_with_shadow.png", "asepriteDirectory": "reference/assets/maps/HappyValley/Mob/ASEPRITE/Deer/Death" },
+        { "animation": "Hurt", "frameCount": 4, "sheetDimensions": [128, 128], "withoutShadow": "reference/assets/maps/HappyValley/Mob/PNG/Without_shadow/Deer/Deer_Hurt.png", "withShadow": "reference/assets/maps/HappyValley/Mob/PNG/With_Shadow/Deer/Deer_Hurt_with_shadow.png", "asepriteDirectory": "reference/assets/maps/HappyValley/Mob/ASEPRITE/Deer/Hurt" },
+        { "animation": "Idle", "frameCount": 4, "sheetDimensions": [128, 128], "withoutShadow": "reference/assets/maps/HappyValley/Mob/PNG/Without_shadow/Deer/Deer_Idle.png", "withShadow": "reference/assets/maps/HappyValley/Mob/PNG/With_Shadow/Deer/Deer_Idle_with_shadow.png", "asepriteDirectory": "reference/assets/maps/HappyValley/Mob/ASEPRITE/Deer/Idle" },
+        { "animation": "Run", "frameCount": 6, "sheetDimensions": [192, 128], "withoutShadow": "reference/assets/maps/HappyValley/Mob/PNG/Without_shadow/Deer/Deer_Run.png", "withShadow": "reference/assets/maps/HappyValley/Mob/PNG/With_Shadow/Deer/Deer_Run_with_shadow.png", "asepriteDirectory": "reference/assets/maps/HappyValley/Mob/ASEPRITE/Deer/Run" },
+        { "animation": "Walk", "frameCount": 6, "sheetDimensions": [192, 128], "withoutShadow": "reference/assets/maps/HappyValley/Mob/PNG/Without_shadow/Deer/Deer_Walk.png", "withShadow": "reference/assets/maps/HappyValley/Mob/PNG/With_Shadow/Deer/Deer_Walk_with_shadow.png", "asepriteDirectory": "reference/assets/maps/HappyValley/Mob/ASEPRITE/Deer/Walk" }
+      ],
+      "shadowAssets": { "withoutShadow": "reference/assets/maps/HappyValley/Mob/PNG/Without_shadow/Deer/Deer_Shadow.png", "dimensions": [96, 48] },
+      "aseprite": { "directionsPerAnimation": 4, "sourceCanvas": [32, 32], "sourceFilePattern": "{Animation}/Deer_{direction}_{Animation}.aseprite" }
+    },
+    {
+      "species": "Valley fox",
+      "monsterKey": "monster-valley-fox",
+      "folder": "Fox",
+      "gameplayStatus": "gameplay-referenced",
+      "visualStatus": "reference-only",
+      "behavior": "aggressive fast melee",
+      "animations": [
+        { "animation": "Death", "frameCount": 6, "sheetDimensions": [192, 128], "withoutShadow": "reference/assets/maps/HappyValley/Mob/PNG/Without_shadow/Fox/Fox_Death.png", "withShadow": "reference/assets/maps/HappyValley/Mob/PNG/With_Shadow/Fox/Fox_Death_with_shadow.png", "asepriteDirectory": "reference/assets/maps/HappyValley/Mob/ASEPRITE/Fox/Death" },
+        { "animation": "Hurt", "frameCount": 4, "sheetDimensions": [128, 128], "withoutShadow": "reference/assets/maps/HappyValley/Mob/PNG/Without_shadow/Fox/Fox_Hurt.png", "withShadow": "reference/assets/maps/HappyValley/Mob/PNG/With_Shadow/Fox/Fox_Hurt_with_shadow.png", "asepriteDirectory": "reference/assets/maps/HappyValley/Mob/ASEPRITE/Fox/Hurt" },
+        { "animation": "Idle", "frameCount": 4, "sheetDimensions": [128, 128], "withoutShadow": "reference/assets/maps/HappyValley/Mob/PNG/Without_shadow/Fox/Fox_Idle.png", "withShadow": "reference/assets/maps/HappyValley/Mob/PNG/With_Shadow/Fox/Fox_Idle_with_shadow.png", "asepriteDirectory": "reference/assets/maps/HappyValley/Mob/ASEPRITE/Fox/Idle" },
+        { "animation": "Run", "frameCount": 6, "sheetDimensions": [192, 128], "withoutShadow": "reference/assets/maps/HappyValley/Mob/PNG/Without_shadow/Fox/Fox_Run.png", "withShadow": "reference/assets/maps/HappyValley/Mob/PNG/With_Shadow/Fox/Fox_Run_with_shadow.png", "asepriteDirectory": "reference/assets/maps/HappyValley/Mob/ASEPRITE/Fox/Run" },
+        { "animation": "Walk", "frameCount": 6, "sheetDimensions": [192, 128], "withoutShadow": "reference/assets/maps/HappyValley/Mob/PNG/Without_shadow/Fox/Fox_walk.png", "withShadow": "reference/assets/maps/HappyValley/Mob/PNG/With_Shadow/Fox/Fox_walk_with_shadow.png", "asepriteDirectory": "reference/assets/maps/HappyValley/Mob/ASEPRITE/Fox/Walk" }
+      ],
+      "shadowAssets": { "withoutShadow": "reference/assets/maps/HappyValley/Mob/PNG/Without_shadow/Fox/Fox_Shadow.png", "dimensions": [64, 32] },
+      "aseprite": { "directionsPerAnimation": 4, "sourceCanvas": [32, 32], "sourceFilePattern": "{Animation}/Fox_{direction}_{Animation}.aseprite" }
+    },
+    {
+      "species": "Meadow hare",
+      "monsterKey": "monster-meadow-hare",
+      "folder": "Hare",
+      "gameplayStatus": "gameplay-referenced",
+      "visualStatus": "reference-only",
+      "behavior": "passive melee",
+      "animations": [
+        { "animation": "Death", "frameCount": 6, "sheetDimensions": [192, 128], "withoutShadow": "reference/assets/maps/HappyValley/Mob/PNG/Without_shadow/Hare/Hare_Death.png", "withShadow": "reference/assets/maps/HappyValley/Mob/PNG/With_Shadow/Hare/Hare_Death_with_shadow.png", "asepriteDirectory": "reference/assets/maps/HappyValley/Mob/ASEPRITE/Hare/Death" },
+        { "animation": "Hurt", "frameCount": 4, "sheetDimensions": [128, 128], "withoutShadow": "reference/assets/maps/HappyValley/Mob/PNG/Without_shadow/Hare/Hare_Hurt.png", "withShadow": "reference/assets/maps/HappyValley/Mob/PNG/With_Shadow/Hare/Hare_Hurt_with_shadow.png", "asepriteDirectory": "reference/assets/maps/HappyValley/Mob/ASEPRITE/Hare/Hurt" },
+        { "animation": "Idle", "frameCount": 4, "sheetDimensions": [128, 128], "withoutShadow": "reference/assets/maps/HappyValley/Mob/PNG/Without_shadow/Hare/Hare_Idle.png", "withShadow": "reference/assets/maps/HappyValley/Mob/PNG/With_Shadow/Hare/Hare_Idle_with_shadow.png", "asepriteDirectory": "reference/assets/maps/HappyValley/Mob/ASEPRITE/Hare/Idle" },
+        { "animation": "Run", "frameCount": 6, "sheetDimensions": [192, 128], "withoutShadow": "reference/assets/maps/HappyValley/Mob/PNG/Without_shadow/Hare/Hare_Run.png", "withShadow": "reference/assets/maps/HappyValley/Mob/PNG/With_Shadow/Hare/Hare_Run_with_shadow.png", "asepriteDirectory": "reference/assets/maps/HappyValley/Mob/ASEPRITE/Hare/Run" },
+        { "animation": "Walk", "frameCount": 5, "sheetDimensions": [160, 128], "withoutShadow": "reference/assets/maps/HappyValley/Mob/PNG/Without_shadow/Hare/Hare_Walk.png", "withShadow": "reference/assets/maps/HappyValley/Mob/PNG/With_Shadow/Hare/Hare_Walk_with_shadow.png", "asepriteDirectory": "reference/assets/maps/HappyValley/Mob/ASEPRITE/Hare/Walk" }
+      ],
+      "shadowAssets": { "withoutShadow": "reference/assets/maps/HappyValley/Mob/PNG/Without_shadow/Hare/Hare_Shadow.png", "dimensions": [96, 48] },
+      "aseprite": { "directionsPerAnimation": 4, "sourceCanvas": [32, 32], "sourceFilePattern": "{Animation}/Hare_{direction}_{Animation}.aseprite" }
+    }
+  ],
+  "sourcePackSummary": {
+    "species": 5,
+    "animationFamilies": 26,
+    "directionalAnimationSets": 104,
+    "asepriteFiles": 104,
+    "pngAnimationSheetsWithoutShadow": 26,
+    "pngAnimationSheetsWithShadow": 26,
+    "staticShadowPngs": 5,
+    "tiledPngs": 58,
+    "tiledMapFiles": 1,
+    "pngAnimationFramesPerDirection": 134,
+    "asepriteFramesPerDirection": 134,
+    "note": "The 134-frame total counts one directional sequence per family; the four directions make 536 directional frames across the pack."
+  },
+  "tiledReferences": {
+    "directory": "reference/assets/maps/HappyValley/Mob/Tiled",
+    "map": "reference/assets/maps/HappyValley/Mob/Tiled/Animals.tmx",
+    "tileSize": [16, 16],
+    "purpose": "Packed 16px Tiled references and animation timing material; not a current Phaser runtime source.",
+    "animationDurationMs": 150,
+    "directionalRows": 4,
+    "status": "reference-only"
+  },
+  "reviewChecklist": [
+    "Visually confirm the four directional row order in each PNG sheet before implementing a sprite-sheet loader.",
+    "Choose one shadow policy—baked With_Shadow sheet or separate dynamic shadow—not both at once.",
+    "Confirm whether Happy Valley uses 32px source sprites at the current 48px world-tile scale.",
+    "Map server monster state to Idle, Walk/Run, Attack, Hurt, and Death before selecting runtime assets.",
+    "Preserve the current placeholder fallback until the complete mapping is tested in the live Alpha environment."
+  ],
+  "catalogSummary": {
+    "allVisualAssetsRuntimeStatus": "reference-only",
+    "gameplayMonsterFamilies": 5,
+    "animationFamilies": 26,
+    "directions": 4,
+    "nextStep": "Visually review representative Happy Valley sheets, then create a species animation mapping only after row order, shadow treatment, and world scale are confirmed."
+  }
+}

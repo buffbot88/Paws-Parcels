@@ -1,0 +1,84 @@
+{
+  "schemaVersion": 1,
+  "catalogId": "clover-village-ground-assets",
+  "generatedAt": "2026-08-14",
+  "scope": "Ground and terrain texture assets considered for Clover Village cataloging only",
+  "policy": {
+    "sourceAssets": "Local and ignored; do not move, rename, or commit source art.",
+    "catalog": "Tracked metadata only; catalog entries do not make assets runtime-used.",
+    "runtime": "No runtime asset selection or map rendering was changed by this catalog pass.",
+    "visualStatus": "Technical grouping is complete; visual role and style selection remain pending contact-sheet review."
+  },
+  "primaryCloverVillageGroundSet": {
+    "directory": "reference/assets/maps/CloverVillage/Map/PNG/land",
+    "assetClass": "Clover Village land texture set",
+    "filePattern": "land_{n}.png",
+    "fileNumbers": { "first": 1, "last": 26, "count": 26 },
+    "dimensions": [256, 256],
+    "files": [
+      "land_1.png", "land_2.png", "land_3.png", "land_4.png", "land_5.png", "land_6.png", "land_7.png", "land_8.png", "land_9.png",
+      "land_10.png", "land_11.png", "land_12.png", "land_13.png", "land_14.png", "land_15.png", "land_16.png", "land_17.png", "land_18.png", "land_19.png",
+      "land_20.png", "land_21.png", "land_22.png", "land_23.png", "land_24.png", "land_25.png", "land_26.png"
+    ],
+    "runtimeStatus": {
+      "runtimeUsed": ["land_1.png"],
+      "referenceOnly": ["land_2.png", "land_3.png", "land_4.png", "land_5.png", "land_6.png", "land_7.png", "land_8.png", "land_9.png", "land_10.png", "land_11.png", "land_12.png", "land_13.png", "land_14.png", "land_15.png", "land_16.png", "land_17.png", "land_18.png", "land_19.png", "land_20.png", "land_21.png", "land_22.png", "land_23.png", "land_24.png", "land_25.png", "land_26.png"]
+    },
+    "reviewFields": ["base-ground", "grass-density", "path-compatibility", "edge-treatment", "water-or-shore-use", "scale-consistency", "visual-duplicates"]
+  },
+  "happyValleyGroundReferenceSet": {
+    "directory": "reference/assets/maps/HappyValley/Map",
+    "assetClass": "large top-down summer ground reference set",
+    "pngDirectory": "reference/assets/maps/HappyValley/Map/PNG",
+    "epsDirectory": "reference/assets/maps/HappyValley/Map/EPS",
+    "fileStemPattern": "Top-Down Simple Summer_Ground {n}",
+    "fileNumbers": { "first": 1, "last": 56, "count": 56 },
+    "pngDimensions": [256, 256],
+    "pngFiles": "Top-Down Simple Summer_Ground 01.png through Top-Down Simple Summer_Ground 56.png",
+    "epsFiles": "Top-Down Simple Summer_Ground 01.eps through Top-Down Simple Summer_Ground 56.eps",
+    "sourcePairing": "Each PNG has a same-numbered EPS source counterpart.",
+    "runtimeStatus": "reference-only",
+    "cloverVillageStatus": "comparison-only; not selected as Clover Village ground until style, palette, and scale are reviewed",
+    "reviewFields": ["palette-family", "texture-density", "tileability", "shore-or-path compatibility", "scale-consistency", "duplicate families"]
+  },
+  "reusablePathGroundVariants": {
+    "directory": "reference/assets/maps/OtherAssets/Paths",
+    "assetClass": "ground and grass edge variants attached to path composites",
+    "runtimeStatus": "reference-only",
+    "files": [
+      { "file": "Ground_grass.png", "dimensions": [272, 496], "role": "standalone grass-ground reference" },
+      { "file": "Road1_ground.png", "dimensions": [240, 416], "role": "ground-edged Road1 composite" },
+      { "file": "Road1_grass.png", "dimensions": [240, 416], "role": "grass-edged Road1 composite" },
+      { "file": "Road2_ground.png", "dimensions": [240, 416], "role": "ground-edged Road2 composite" },
+      { "file": "Road2_grass.png", "dimensions": [240, 416], "role": "grass-edged Road2 composite" },
+      { "file": "Road3_ground.png", "dimensions": [240, 480], "role": "ground-edged Road3 composite" },
+      { "file": "Road3_grass.png", "dimensions": [240, 480], "role": "grass-edged Road3 composite" },
+      { "file": "Road4_ground.png", "dimensions": [240, 480], "role": "ground-edged Road4 composite" },
+      { "file": "Road4_grass.png", "dimensions": [240, 480], "role": "grass-edged Road4 composite" },
+      { "file": "Road5_ground.png", "dimensions": [240, 416], "role": "ground-edged Road5 composite" },
+      { "file": "Road5_grass.png", "dimensions": [240, 416], "role": "grass-edged Road5 composite" }
+    ],
+    "relationship": "These are path-boundary references, not part of the primary Clover Village land set."
+  },
+  "excludedTerrainSets": [
+    {
+      "directory": "reference/assets/maps/VoidDesert/Map/PNG",
+      "assetClass": "desert land textures",
+      "filePattern": "land_{n}.png",
+      "fileNumbers": { "first": 1, "last": 18, "count": 18 },
+      "dimensions": [256, 256],
+      "runtimeStatus": "reference-only",
+      "cloverVillageStatus": "excluded",
+      "reason": "Retained as a separate desert reference pack; do not mix into Clover Village ground selection."
+    }
+  ],
+  "catalogSummary": {
+    "primaryCloverVillageFiles": 26,
+    "happyValleyPngFiles": 56,
+    "happyValleyEpsSources": 56,
+    "pathGroundVariantFiles": 11,
+    "excludedVoidDesertFiles": 18,
+    "totalCatalogedSourceFiles": 167,
+    "nextStep": "Visually review the Clover Village land_1–land_26 contact sheet, then record visual roles without changing runtime imports."
+  }
+}

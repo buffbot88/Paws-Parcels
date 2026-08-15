@@ -1,0 +1,146 @@
+{
+  "schemaVersion": 1,
+  "catalogId": "clover-village-environmental-props",
+  "generatedAt": "2026-08-14",
+  "scope": "Signs, fences, bridges, carts, lamps, mailboxes, and other small environmental props relevant to Clover Village",
+  "policy": {
+    "sourceAssets": "Local and ignored under reference/assets; do not move, rename, or commit source art.",
+    "catalog": "Tracked metadata only; this catalog does not assign art or change map/runtime behavior.",
+    "runtime": "No runtime imports, map objects, collision, placement, or texture selection were changed.",
+    "classification": "Filename-based categories are not treated as visual truth. Unnamed Clover Village decor remains unclassified until the contact sheet is reviewed."
+  },
+  "importantFinding": {
+    "summary": "The Clover Village source pack contains no named sign, fence, bridge, cart, lamp, mailbox, bench, barrel, crate, or notice-board files.",
+    "qualification": "The pack does contain 18 unnamed decor PNGs that may contain some of these roles; they are recorded as unclassified rather than guessed.",
+    "crossPackCandidates": "Happy Valley contains named fences, bridges, a cart, barrel, banners, and flag. They are reference-only candidates and are not treated as Clover Village assets."
+  },
+  "cloverVillageSourceAvailability": {
+    "directory": "reference/assets/maps/CloverVillage/Map/PNG",
+    "sourceSubdirectories": ["buildings", "decor", "land", "road"],
+    "namedPropFiles": 0,
+    "unclassifiedDecorFiles": {
+      "directory": "reference/assets/maps/CloverVillage/Map/PNG/decor",
+      "filePattern": "decor_{n}.png",
+      "count": 18,
+      "files": [
+        { "file": "decor_1.png", "dimensions": [62, 263] },
+        { "file": "decor_2.png", "dimensions": [244, 142] },
+        { "file": "decor_3.png", "dimensions": [86, 86] },
+        { "file": "decor_4.png", "dimensions": [157, 189] },
+        { "file": "decor_5.png", "dimensions": [106, 90] },
+        { "file": "decor_6.png", "dimensions": [151, 79] },
+        { "file": "decor_7.png", "dimensions": [155, 299] },
+        { "file": "decor_8.png", "dimensions": [233, 219] },
+        { "file": "decor_9.png", "dimensions": [229, 203] },
+        { "file": "decor_10.png", "dimensions": [200, 111] },
+        { "file": "decor_11.png", "dimensions": [81, 49] },
+        { "file": "decor_12.png", "dimensions": [333, 93] },
+        { "file": "decor_13.png", "dimensions": [306, 72] },
+        { "file": "decor_14.png", "dimensions": [265, 171] },
+        { "file": "decor_15.png", "dimensions": [219, 145] },
+        { "file": "decor_16.png", "dimensions": [94, 146] },
+        { "file": "decor_17.png", "dimensions": [78, 99] },
+        { "file": "decor_18.png", "dimensions": [80, 122] }
+      ],
+      "runtimeStatus": "reference-only",
+      "classificationStatus": "unclassified",
+      "reviewFields": ["sign", "fence", "bridge", "cart", "lamp", "mailbox", "bench", "barrel", "crate", "notice-board", "other", "unclear"]
+    },
+    "alreadyCatalogedNamedDecor": {
+      "catalog": "design/assets/clover-village-decor-catalog.json",
+      "files": {
+        "greenery": 5,
+        "stones": 7,
+        "trees": 2
+      },
+      "note": "Greenery, stones, and trees are intentionally not duplicated here as new prop assignments."
+    }
+  },
+  "logicalMapObjects": {
+    "source": "src/data/maps/clover-village.json",
+    "note": "These are gameplay/interactable objects, not proof that matching art exists.",
+    "objects": [
+      { "id": "object-counter", "kind": "counter", "label": "Post Office Counter", "tile": [28, 28], "assetStatus": "no_named_prop_asset" },
+      { "id": "object-quest-board", "kind": "quest-board", "label": "Quest Board", "tile": [32, 38], "assetStatus": "no_named_prop_asset; unclassified_decor_may_be_candidate" },
+      { "id": "object-mailbox", "kind": "mailbox", "label": "Mailbox", "tile": [30, 38], "assetStatus": "no_named_prop_asset; unclassified_decor_may_be_candidate" },
+      { "id": "object-shop", "kind": "shop", "label": "Shop Shelf", "tile": [44, 28], "assetStatus": "building_or_interior_role; no_small_prop_asset" },
+      { "id": "object-welcome-sign", "kind": "sign", "label": "Welcome Sign", "tile": [38, 21], "assetStatus": "no_named_prop_asset; unclassified_decor_may_be_candidate" },
+      { "id": "object-post-counter", "kind": "counter", "label": "Counter Corner", "tile": [27, 30], "assetStatus": "no_named_prop_asset" },
+      { "id": "object-rabbit-burrows", "kind": "sign", "label": "Rabbit Burrows", "tile": [12, 17], "assetStatus": "no_named_prop_asset; unclassified_decor_may_be_candidate" },
+      { "id": "object-pond-edge", "kind": "sign", "label": "Pond Edge", "tile": [58, 52], "assetStatus": "no_named_prop_asset; unclassified_decor_may_be_candidate" }
+    ]
+  },
+  "requestedCategoryStatus": [
+    { "category": "signs", "namedCloverVillageFiles": 0, "unclassifiedCloverVillageCandidates": 18, "namedCrossPackCandidates": 0, "status": "unclassified-review-needed" },
+    { "category": "fences", "namedCloverVillageFiles": 0, "unclassifiedCloverVillageCandidates": 18, "namedCrossPackCandidates": 2, "status": "cross-pack-candidate" },
+    { "category": "bridges", "namedCloverVillageFiles": 0, "unclassifiedCloverVillageCandidates": 18, "namedCrossPackCandidates": 2, "status": "cross-pack-candidate" },
+    { "category": "carts", "namedCloverVillageFiles": 0, "unclassifiedCloverVillageCandidates": 18, "namedCrossPackCandidates": 1, "status": "cross-pack-candidate" },
+    { "category": "lamps", "namedCloverVillageFiles": 0, "unclassifiedCloverVillageCandidates": 18, "namedCrossPackCandidates": 0, "status": "missing-source-art" },
+    { "category": "mailboxes", "namedCloverVillageFiles": 0, "unclassifiedCloverVillageCandidates": 18, "namedCrossPackCandidates": 0, "status": "missing-source-art" },
+    { "category": "benches", "namedCloverVillageFiles": 0, "unclassifiedCloverVillageCandidates": 18, "namedCrossPackCandidates": 0, "status": "missing-source-art" },
+    { "category": "barrels", "namedCloverVillageFiles": 0, "unclassifiedCloverVillageCandidates": 18, "namedCrossPackCandidates": 1, "status": "cross-pack-candidate" },
+    { "category": "crates", "namedCloverVillageFiles": 0, "unclassifiedCloverVillageCandidates": 18, "namedCrossPackCandidates": 0, "status": "missing-source-art" },
+    { "category": "notice-boards", "namedCloverVillageFiles": 0, "unclassifiedCloverVillageCandidates": 18, "namedCrossPackCandidates": 0, "status": "missing-source-art" },
+    { "category": "banners-and-flags", "namedCloverVillageFiles": 0, "unclassifiedCloverVillageCandidates": 18, "namedCrossPackCandidates": 3, "status": "cross-pack-candidate" },
+    { "category": "wells", "namedCloverVillageFiles": 0, "unclassifiedCloverVillageCandidates": 18, "namedCrossPackCandidates": 1, "status": "cross-pack-candidate" }
+  ],
+  "crossPackNamedCandidates": {
+    "directory": "reference/assets/maps/HappyValley/Map/PNG",
+    "sourcePolicy": "Comparison/reference-only; not Clover Village runtime art.",
+    "formatPairs": "Every listed PNG has a matching EPS in reference/assets/maps/HappyValley/Map/EPS.",
+    "candidates": [
+      { "category": "banners-and-flags", "name": "Blue Banner", "png": "reference/assets/maps/HappyValley/Map/PNG/Top-Down Simple Summer_Prop - Blue Banner.png", "eps": "reference/assets/maps/HappyValley/Map/EPS/Top-Down Simple Summer_Prop - Blue Banner.eps", "dimensions": [160, 240], "status": "reference-only" },
+      { "category": "banners-and-flags", "name": "Red Banner", "png": "reference/assets/maps/HappyValley/Map/PNG/Top-Down Simple Summer_Prop - Red Banner.png", "eps": "reference/assets/maps/HappyValley/Map/EPS/Top-Down Simple Summer_Prop - Red Banner.eps", "dimensions": [160, 240], "status": "reference-only" },
+      { "category": "banners-and-flags", "name": "Flag", "png": "reference/assets/maps/HappyValley/Map/PNG/Top-Down Simple Summer_Prop - Flag.png", "eps": "reference/assets/maps/HappyValley/Map/EPS/Top-Down Simple Summer_Prop - Flag.eps", "dimensions": [100, 160], "status": "reference-only" },
+      { "category": "barrels", "name": "Wooden Barrel", "png": "reference/assets/maps/HappyValley/Map/PNG/Top-Down Simple Summer_Prop - Wooden Barrel.png", "eps": "reference/assets/maps/HappyValley/Map/EPS/Top-Down Simple Summer_Prop - Wooden Barrel.eps", "dimensions": [120, 140], "status": "reference-only" },
+      { "category": "bridges", "name": "Wooden Bridge Horizontal", "png": "reference/assets/maps/HappyValley/Map/PNG/Top-Down Simple Summer_Prop - Wooden Bridge Horizontal.png", "eps": "reference/assets/maps/HappyValley/Map/EPS/Top-Down Simple Summer_Prop - Wooden Bridge Horizontal.eps", "dimensions": [480, 320], "orientation": "horizontal", "status": "reference-only" },
+      { "category": "bridges", "name": "Wooden Bridge Vertical", "png": "reference/assets/maps/HappyValley/Map/PNG/Top-Down Simple Summer_Prop - Wooden Bridge Vertical.png", "eps": "reference/assets/maps/HappyValley/Map/EPS/Top-Down Simple Summer_Prop - Wooden Bridge Vertical.eps", "dimensions": [240, 320], "orientation": "vertical", "status": "reference-only" },
+      { "category": "carts", "name": "Wooden Cart", "png": "reference/assets/maps/HappyValley/Map/PNG/Top-Down Simple Summer_Prop - Wooden Cart.png", "eps": "reference/assets/maps/HappyValley/Map/EPS/Top-Down Simple Summer_Prop - Wooden Cart.eps", "dimensions": [320, 160], "status": "reference-only" },
+      { "category": "fences", "name": "Wooden Fence Horizontal", "png": "reference/assets/maps/HappyValley/Map/PNG/Top-Down Simple Summer_Prop - Wooden Fence Horizontal.png", "eps": "reference/assets/maps/HappyValley/Map/EPS/Top-Down Simple Summer_Prop - Wooden Fence Horizontal.eps", "dimensions": [220, 80], "orientation": "horizontal", "status": "reference-only" },
+      { "category": "fences", "name": "Wooden Fence Vertical", "png": "reference/assets/maps/HappyValley/Map/PNG/Top-Down Simple Summer_Prop - Wooden Fence Vertical.png", "eps": "reference/assets/maps/HappyValley/Map/EPS/Top-Down Simple Summer_Prop - Wooden Fence Vertical.eps", "dimensions": [80, 220], "orientation": "vertical", "status": "reference-only" },
+      { "category": "wells", "name": "Well", "png": "reference/assets/maps/HappyValley/Map/PNG/Top-Down Simple Summer_Prop - Well.png", "eps": "reference/assets/maps/HappyValley/Map/EPS/Top-Down Simple Summer_Prop - Well.eps", "dimensions": [200, 200], "status": "reference-only" },
+      { "category": "vegetation", "name": "Bushes Large", "png": "reference/assets/maps/HappyValley/Map/PNG/Top-Down Simple Summer_Prop - Bushes Large.png", "eps": "reference/assets/maps/HappyValley/Map/EPS/Top-Down Simple Summer_Prop - Bushes Large.eps", "dimensions": [240, 140], "status": "reference-only" },
+      { "category": "vegetation", "name": "Bushes Medium", "png": "reference/assets/maps/HappyValley/Map/PNG/Top-Down Simple Summer_Prop - Bushes Medium.png", "eps": "reference/assets/maps/HappyValley/Map/EPS/Top-Down Simple Summer_Prop - Bushes Medium.eps", "dimensions": [180, 140], "status": "reference-only" },
+      { "category": "vegetation", "name": "Bushes Small", "png": "reference/assets/maps/HappyValley/Map/PNG/Top-Down Simple Summer_Prop - Bushes Small.png", "eps": "reference/assets/maps/HappyValley/Map/EPS/Top-Down Simple Summer_Prop - Bushes Small.eps", "dimensions": [140, 120], "status": "reference-only" },
+      { "category": "vegetation", "name": "Tree Large", "png": "reference/assets/maps/HappyValley/Map/PNG/Top-Down Simple Summer_prop - Tree Large.png", "eps": "reference/assets/maps/HappyValley/Map/EPS/Top-Down Simple Summer_prop - Tree Large.eps", "dimensions": [400, 480], "status": "reference-only" },
+      { "category": "vegetation", "name": "Tree Medium", "png": "reference/assets/maps/HappyValley/Map/PNG/Top-Down Simple Summer_Prop - Tree Medium.png", "eps": "reference/assets/maps/HappyValley/Map/EPS/Top-Down Simple Summer_Prop - Tree Medium.eps", "dimensions": [360, 400], "status": "reference-only" },
+      { "category": "vegetation", "name": "Tree Small", "png": "reference/assets/maps/HappyValley/Map/PNG/Top-Down Simple Summer_Prop - Tree Small.png", "eps": "reference/assets/maps/HappyValley/Map/EPS/Top-Down Simple Summer_Prop - Tree Small.eps", "dimensions": [240, 280], "status": "reference-only" },
+      { "category": "vegetation", "name": "Tree Stump Short", "png": "reference/assets/maps/HappyValley/Map/PNG/Top-Down Simple Summer_Prop - Tree Stump Short.png", "eps": "reference/assets/maps/HappyValley/Map/EPS/Top-Down Simple Summer_Prop - Tree Stump Short.eps", "dimensions": [120, 100], "status": "reference-only" },
+      { "category": "vegetation", "name": "Tree Stump Tall", "png": "reference/assets/maps/HappyValley/Map/PNG/Top-Down Simple Summer_Prop - Tree Stump Tall.png", "eps": "reference/assets/maps/HappyValley/Map/EPS/Top-Down Simple Summer_Prop - Tree Stump Tall.eps", "dimensions": [160, 140], "status": "reference-only" },
+      { "category": "rocks", "name": "Rock 01", "png": "reference/assets/maps/HappyValley/Map/PNG/Top-Down Simple Summer_Prop - Rock 01.png", "eps": "reference/assets/maps/HappyValley/Map/EPS/Top-Down Simple Summer_Prop - Rock 01.eps", "dimensions": [120, 100], "status": "reference-only" },
+      { "category": "rocks", "name": "Rock 02", "png": "reference/assets/maps/HappyValley/Map/PNG/Top-Down Simple Summer_Prop - Rock 02.png", "eps": "reference/assets/maps/HappyValley/Map/EPS/Top-Down Simple Summer_Prop - Rock 02.eps", "dimensions": [100, 60], "status": "reference-only" },
+      { "category": "rocks", "name": "Rock 03", "png": "reference/assets/maps/HappyValley/Map/PNG/Top-Down Simple Summer_Prop - Rock 03.png", "eps": "reference/assets/maps/HappyValley/Map/EPS/Top-Down Simple Summer_Prop - Rock 03.eps", "dimensions": [100, 60], "status": "reference-only" },
+      { "category": "rocks", "name": "Rock 04", "png": "reference/assets/maps/HappyValley/Map/PNG/Top-Down Simple Summer_Prop - Rock 04.png", "eps": "reference/assets/maps/HappyValley/Map/EPS/Top-Down Simple Summer_Prop - Rock 04.eps", "dimensions": [60, 60], "status": "reference-only" },
+      { "category": "rocks", "name": "Rock 05", "png": "reference/assets/maps/HappyValley/Map/PNG/Top-Down Simple Summer_Prop - Rock 05.png", "eps": "reference/assets/maps/HappyValley/Map/EPS/Top-Down Simple Summer_Prop - Rock 05.eps", "dimensions": [60, 60], "status": "reference-only" },
+      { "category": "camp-and-activity", "name": "Campfire", "png": "reference/assets/maps/HappyValley/Map/PNG/Top-Down Simple Summer_Prop - Campfire.png", "eps": "reference/assets/maps/HappyValley/Map/EPS/Top-Down Simple Summer_Prop - Campfire.eps", "dimensions": [200, 160], "status": "reference-only" },
+      { "category": "camp-and-activity", "name": "Tent", "png": "reference/assets/maps/HappyValley/Map/PNG/Top-Down Simple Summer_Prop - Tent.png", "eps": "reference/assets/maps/HappyValley/Map/EPS/Top-Down Simple Summer_Prop - Tent.eps", "dimensions": [300, 280], "status": "reference-only" },
+      { "category": "camp-and-activity", "name": "Treasure Chest", "png": "reference/assets/maps/HappyValley/Map/PNG/Top-Down Simple Summer_Prop - Treasure Chest.png", "eps": "reference/assets/maps/HappyValley/Map/EPS/Top-Down Simple Summer_Prop - Treasure Chest.eps", "dimensions": [200, 160], "status": "reference-only" },
+      { "category": "large-structure", "name": "Castle Round", "png": "reference/assets/maps/HappyValley/Map/PNG/Top-Down Simple Summer_Prop - Castle Round.png", "eps": "reference/assets/maps/HappyValley/Map/EPS/Top-Down Simple Summer_Prop - Castle Round.eps", "dimensions": [320, 480], "status": "reference-only", "catalogNote": "Structure candidate; keep in building catalog decisions." },
+      { "category": "large-structure", "name": "Castle Square", "png": "reference/assets/maps/HappyValley/Map/PNG/Top-Down Simple Summer_Prop - Castle Square.png", "eps": "reference/assets/maps/HappyValley/Map/EPS/Top-Down Simple Summer_Prop - Castle Square.eps", "dimensions": [360, 400], "status": "reference-only", "catalogNote": "Structure candidate; keep in building catalog decisions." },
+      { "category": "large-structure", "name": "Magic Stone Tower", "png": "reference/assets/maps/HappyValley/Map/PNG/Top-Down Simple Summer_Prop - Magic Stone Tower.png", "eps": "reference/assets/maps/HappyValley/Map/EPS/Top-Down Simple Summer_Prop - Magic Stone Tower.eps", "dimensions": [240, 400], "status": "reference-only", "catalogNote": "Structure candidate; keep in building catalog decisions." },
+      { "category": "large-structure", "name": "Watchtower Short", "png": "reference/assets/maps/HappyValley/Map/PNG/Top-Down Simple Summer_Prop - Watchtower Short.png", "eps": "reference/assets/maps/HappyValley/Map/EPS/Top-Down Simple Summer_Prop - Watchtower Short.eps", "dimensions": [240, 260], "status": "reference-only", "catalogNote": "Structure candidate; keep in building catalog decisions." },
+      { "category": "large-structure", "name": "Watchtower Tall", "png": "reference/assets/maps/HappyValley/Map/PNG/Top-Down Simple Summer_Prop - Watchtower Tall.png", "eps": "reference/assets/maps/HappyValley/Map/EPS/Top-Down Simple Summer_Prop - Watchtower Tall.eps", "dimensions": [260, 340], "status": "reference-only", "catalogNote": "Structure candidate; keep in building catalog decisions." },
+      { "category": "large-structure", "name": "House", "png": "reference/assets/maps/HappyValley/Map/PNG/Top-Down Simple Summer_Prop - House.png", "eps": "reference/assets/maps/HappyValley/Map/EPS/Top-Down Simple Summer_Prop - House.eps", "dimensions": [480, 640], "status": "reference-only", "catalogNote": "Structure candidate; keep in building catalog decisions." },
+      { "category": "large-structure", "name": "Windmill", "png": "reference/assets/maps/HappyValley/Map/PNG/Top-Down Simple Summer_Prop - Windmill.png", "eps": "reference/assets/maps/HappyValley/Map/EPS/Top-Down Simple Summer_Prop - Windmill.eps", "dimensions": [720, 720], "status": "reference-only", "catalogNote": "Structure candidate; keep in building catalog decisions." }
+    ]
+  },
+  "notFoundByNameSearch": {
+    "searchedTerms": ["sign", "fence", "bridge", "cart", "lamp", "mailbox", "bench", "barrel", "crate", "notice", "lantern", "street light"],
+    "result": "No named Clover Village or OtherAssets prop files matched these terms. This does not classify unnamed decor PNGs."
+  },
+  "reviewChecklist": [
+    "Review decor_1.png through decor_18.png visually and assign only confirmed roles.",
+    "Do not import Happy Valley props into Clover Village solely because the filename matches a requested category.",
+    "Check every candidate against the 48px Clover Village tile scale and existing building style.",
+    "Keep logical interactables separate from their future visual prop assets.",
+    "Create new source art for lamps, mailboxes, benches, crates, signs, and notice boards if the unnamed decor does not contain suitable candidates."
+  ],
+  "catalogSummary": {
+    "namedCloverVillagePropFiles": 0,
+    "unclassifiedCloverVillageDecorFiles": 18,
+    "namedHappyValleyCandidateFiles": 33,
+    "requestedCategories": 12,
+    "runtimePropAssignmentsAdded": 0,
+    "nextStep": "Visually identify the 18 unnamed Clover Village decor assets before assigning any sign, mailbox, fence, bridge, cart, or village-furniture role."
+  }
+}

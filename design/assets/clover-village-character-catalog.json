@@ -1,0 +1,126 @@
+{
+  "schemaVersion": 1,
+  "catalogId": "clover-village-character-assets",
+  "generatedAt": "2026-08-14",
+  "scope": "NPC and playable courier character visual assets for cataloging only",
+  "policy": {
+    "sourceAssets": "Local and ignored; do not move, rename, or commit source art.",
+    "catalog": "Tracked metadata only; entries do not make assets runtime-used.",
+    "runtime": "No runtime imports, character mapping, animation, or art selection was changed by this pass.",
+    "visualStatus": "Sequence and source-pack organization is recorded; visual identity and role assignment remain review work."
+  },
+  "cloverVillageNpcSet": {
+    "directory": "reference/assets/maps/CloverVillage/NPC",
+    "archetypeCount": 3,
+    "archetypes": ["Artist", "Astrologer", "Citizen"],
+    "sourceTotals": {
+      "files": 1378,
+      "png": 1272,
+      "eps": 78,
+      "ai": 12,
+      "scml": 10,
+      "txt": 6
+    },
+    "perArchetypeStructure": {
+      "png": 424,
+      "eps": 26,
+      "ai": 4,
+      "scml": "Artist 3, Astrologer 3, Citizen 4",
+      "txt": 2,
+      "pngDimensions": [700, 700],
+      "sequenceFrameCount": 30
+    },
+    "sequenceLayout": {
+      "Back": ["Greeting", "Idle", "Walk"],
+      "Front": ["Communication", "Greeting", "Idle Blinking", "Idle", "Walk"],
+      "Side": ["Communication", "Greeting", "Idle Blinking", "Idle", "Walk"]
+    },
+    "sequenceInventory": {
+      "perArchetypeBackFrames": 90,
+      "perArchetypeFrontFrames": 150,
+      "perArchetypeSideFrames": 150,
+      "perArchetypeSequencePngTotal": 390,
+      "perArchetypeVectorPartsPng": 32,
+      "perArchetypePopupPng": 2
+    },
+    "runtimeRule": {
+      "pathPattern": "maps/CloverVillage/NPC/{Artist|Astrologer|Citizen}/PNG/Front/PNG Sequences/Idle/*.png",
+      "framesPerArchetype": 30,
+      "runtimeUsedPng": 90,
+      "animation": "front-facing looping idle at 10 FPS",
+      "allOtherNpcFiles": "reference-only"
+    },
+    "npcAssignments": [
+      { "npcId": "npc-pip", "name": "Pip", "species": "Hedgehog", "artPack": "Citizen", "runtimeArtKey": "citizen" },
+      { "npcId": "npc-maple", "name": "Maple", "species": "Deer", "artPack": "Astrologer", "runtimeArtKey": "astrologer" },
+      { "npcId": "npc-biscuit", "name": "Biscuit", "species": "Bear", "artPack": "Artist", "runtimeArtKey": "artist" },
+      { "npcId": "npc-lumi", "name": "Lumi", "species": "Moth", "artPack": "Astrologer", "runtimeArtKey": "astrologer" },
+      { "npcId": "npc-moss", "name": "Moss", "species": "Frog", "artPack": "Artist", "runtimeArtKey": "artist" }
+    ],
+    "reviewFields": ["species-fit", "silhouette", "palette", "front-back-side-consistency", "idle-versus-greeting-readability", "NPC-role-fit", "scale-against-courier"]
+  },
+  "playableClassCharacterSet": {
+    "directory": "reference/assets/Classes",
+    "classCount": 3,
+    "classes": [
+      {
+        "classKey": "bear-warrior",
+        "folder": "Warrior",
+        "sourcePng": 175,
+        "idleRotations": 4,
+        "animationFrames": { "Falling_Back_Death": 28, "Lead_Jab": 12, "Picking_Up": 20, "Walk": 24 },
+        "effectPng": 87,
+        "runtimeUsed": { "idleRotations": 4, "Falling_Back_Death": 28, "Lead_Jab": 12, "Walk": 24, "effectFamily": "AttackEffects/PNG/1", "effectFrames": 10 },
+        "referenceOnly": { "Picking_Up": 20, "effectFrames": 77 }
+      },
+      {
+        "classKey": "cat-mage",
+        "folder": "Mage",
+        "sourcePng": 124,
+        "idleRotations": 4,
+        "animationFrames": { "Falling_Back_Death": 28, "Lead_Jab": 12, "Picking_Up": 20, "Walk": 24 },
+        "effectPng": 36,
+        "runtimeUsed": { "idleRotations": 4, "Falling_Back_Death": 28, "Lead_Jab": 12, "Walk": 24, "effectFamily": "AttackEffects/Fire Ball/PNG", "effectFrames": 8 },
+        "referenceOnly": { "Picking_Up": 20, "effectFrames": 28 }
+      },
+      {
+        "classKey": "fox-archer",
+        "folder": "Archer",
+        "sourcePng": 104,
+        "idleRotations": 4,
+        "animationFrames": { "Falling_Back_Death": 28, "Lead_Jab": 12, "Picking_Up": 20, "Walk": 24 },
+        "effectPng": 16,
+        "runtimeUsed": { "idleRotations": 4, "Falling_Back_Death": 28, "Lead_Jab": 12, "Walk": 24, "effectFamily": "AttackEffects/Fire Arrow/PNG", "effectFrames": 8 },
+        "referenceOnly": { "Picking_Up": 20, "effectFrames": 8 }
+      }
+    ],
+    "sourceTotals": {
+      "files": 564,
+      "png": 403,
+      "eps": 139,
+      "ai": 7,
+      "gif": 6,
+      "json": 3,
+      "extensionless": 6
+    },
+    "runtimeRuleSummary": {
+      "runtimeUsedPng": 230,
+      "idleRotations": 12,
+      "walkFrames": 72,
+      "attackFrames": 36,
+      "deathFrames": 84,
+      "selectedEffectFrames": 26,
+      "referenceOnlyPng": 173,
+      "excludedFromInitialRuntime": ["Picking_Up animations", "unselected effect families"]
+    },
+    "reviewFields": ["species-silhouette", "class-readability", "direction-consistency", "animation-purpose", "combat-effect-fit", "NPC-to-player-scale"]
+  },
+  "catalogSummary": {
+    "cloverVillageNpcSourceFiles": 1378,
+    "cloverVillageNpcRuntimePng": 90,
+    "playableClassSourceFiles": 564,
+    "playableClassRuntimePng": 230,
+    "totalCatalogedSourceFiles": 1942,
+    "nextStep": "Visually review representative NPC archetype frames and class silhouettes before assigning unique character identities or expanding runtime asset selection."
+  }
+}
