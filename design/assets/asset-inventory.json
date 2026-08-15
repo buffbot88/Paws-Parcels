@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "generatedAt": "2026-08-14T20:30:52.865Z",
+  "generatedAt": "2026-08-15T08:08:02.938Z",
   "sourceRoot": "reference/assets",
   "policy": {
     "runtimeUsed": "Files matched by the explicit runtime asset rules in scripts/inventory-assets.mjs.",
@@ -8,12 +8,12 @@
     "ignored": "The source asset archive is local-only and intentionally ignored by Git."
   },
   "summary": {
-    "files": 6407,
-    "bytes": 1728728300,
+    "files": 6553,
+    "bytes": 1828948968,
     "runtimeUsed": 336,
     "runtimeUsedBytes": 14170898,
-    "referenceOnly": 6071,
-    "referenceOnlyBytes": 1714557402
+    "referenceOnly": 6217,
+    "referenceOnlyBytes": 1814778070
   },
   "packs": [
     {
@@ -22,6 +22,13 @@
       "bytes": 186842045,
       "runtimeUsed": 230,
       "referenceOnly": 334
+    },
+    {
+      "pack": "loot",
+      "files": 146,
+      "bytes": 100220668,
+      "runtimeUsed": 0,
+      "referenceOnly": 146
     },
     {
       "pack": "maps",
@@ -5026,6 +5033,1222 @@
       "pack": "Classes",
       "extension": ".json",
       "bytes": 6965,
+      "status": "reference-only"
+    },
+    {
+      "path": "reference/assets/loot/AI/Undead_Loot _Vector_Icons.ai",
+      "pack": "loot",
+      "extension": ".ai",
+      "bytes": 19172782,
+      "status": "reference-only"
+    },
+    {
+      "path": "reference/assets/loot/EPS/Undead_Loot _Vector_Icons-01.eps",
+      "pack": "loot",
+      "extension": ".eps",
+      "bytes": 1866922,
+      "status": "reference-only"
+    },
+    {
+      "path": "reference/assets/loot/EPS/Undead_Loot _Vector_Icons-02.eps",
+      "pack": "loot",
+      "extension": ".eps",
+      "bytes": 1462831,
+      "status": "reference-only"
+    },
+    {
+      "path": "reference/assets/loot/EPS/Undead_Loot _Vector_Icons-03.eps",
+      "pack": "loot",
+      "extension": ".eps",
+      "bytes": 1749914,
+      "status": "reference-only"
+    },
+    {
+      "path": "reference/assets/loot/EPS/Undead_Loot _Vector_Icons-04.eps",
+      "pack": "loot",
+      "extension": ".eps",
+      "bytes": 1785198,
+      "status": "reference-only"
+    },
+    {
+      "path": "reference/assets/loot/EPS/Undead_Loot _Vector_Icons-05.eps",
+      "pack": "loot",
+      "extension": ".eps",
+      "bytes": 1751928,
+      "status": "reference-only"
+    },
+    {
+      "path": "reference/assets/loot/EPS/Undead_Loot _Vector_Icons-06.eps",
+      "pack": "loot",
+      "extension": ".eps",
+      "bytes": 1542442,
+      "status": "reference-only"
+    },
+    {
+      "path": "reference/assets/loot/EPS/Undead_Loot _Vector_Icons-07.eps",
+      "pack": "loot",
+      "extension": ".eps",
+      "bytes": 1806406,
+      "status": "reference-only"
+    },
+    {
+      "path": "reference/assets/loot/EPS/Undead_Loot _Vector_Icons-08.eps",
+      "pack": "loot",
+      "extension": ".eps",
+      "bytes": 1609899,
+      "status": "reference-only"
+    },
+    {
+      "path": "reference/assets/loot/EPS/Undead_Loot _Vector_Icons-09.eps",
+      "pack": "loot",
+      "extension": ".eps",
+      "bytes": 1515953,
+      "status": "reference-only"
+    },
+    {
+      "path": "reference/assets/loot/EPS/Undead_Loot _Vector_Icons-10.eps",
+      "pack": "loot",
+      "extension": ".eps",
+      "bytes": 1625731,
+      "status": "reference-only"
+    },
+    {
+      "path": "reference/assets/loot/EPS/Undead_Loot _Vector_Icons-11.eps",
+      "pack": "loot",
+      "extension": ".eps",
+      "bytes": 1917699,
+      "status": "reference-only"
+    },
+    {
+      "path": "reference/assets/loot/EPS/Undead_Loot _Vector_Icons-12.eps",
+      "pack": "loot",
+      "extension": ".eps",
+      "bytes": 1834185,
+      "status": "reference-only"
+    },
+    {
+      "path": "reference/assets/loot/EPS/Undead_Loot _Vector_Icons-13.eps",
+      "pack": "loot",
+      "extension": ".eps",
+      "bytes": 1699790,
+      "status": "reference-only"
+    },
+    {
+      "path": "reference/assets/loot/EPS/Undead_Loot _Vector_Icons-14.eps",
+      "pack": "loot",
+      "extension": ".eps",
+      "bytes": 1788972,
+      "status": "reference-only"
+    },
+    {
+      "path": "reference/assets/loot/EPS/Undead_Loot _Vector_Icons-15.eps",
+      "pack": "loot",
+      "extension": ".eps",
+      "bytes": 1602204,
+      "status": "reference-only"
+    },
+    {
+      "path": "reference/assets/loot/EPS/Undead_Loot _Vector_Icons-16.eps",
+      "pack": "loot",
+      "extension": ".eps",
+      "bytes": 1657450,
+      "status": "reference-only"
+    },
+    {
+      "path": "reference/assets/loot/EPS/Undead_Loot _Vector_Icons-17.eps",
+      "pack": "loot",
+      "extension": ".eps",
+      "bytes": 1586882,
+      "status": "reference-only"
+    },
+    {
+      "path": "reference/assets/loot/EPS/Undead_Loot _Vector_Icons-18.eps",
+      "pack": "loot",
+      "extension": ".eps",
+      "bytes": 1612285,
+      "status": "reference-only"
+    },
+    {
+      "path": "reference/assets/loot/EPS/Undead_Loot _Vector_Icons-19.eps",
+      "pack": "loot",
+      "extension": ".eps",
+      "bytes": 1493561,
+      "status": "reference-only"
+    },
+    {
+      "path": "reference/assets/loot/EPS/Undead_Loot _Vector_Icons-20.eps",
+      "pack": "loot",
+      "extension": ".eps",
+      "bytes": 1733636,
+      "status": "reference-only"
+    },
+    {
+      "path": "reference/assets/loot/EPS/Undead_Loot _Vector_Icons-21.eps",
+      "pack": "loot",
+      "extension": ".eps",
+      "bytes": 1556287,
+      "status": "reference-only"
+    },
+    {
+      "path": "reference/assets/loot/EPS/Undead_Loot _Vector_Icons-22.eps",
+      "pack": "loot",
+      "extension": ".eps",
+      "bytes": 1601245,
+      "status": "reference-only"
+    },
+    {
+      "path": "reference/assets/loot/EPS/Undead_Loot _Vector_Icons-23.eps",
+      "pack": "loot",
+      "extension": ".eps",
+      "bytes": 1670117,
+      "status": "reference-only"
+    },
+    {
+      "path": "reference/assets/loot/EPS/Undead_Loot _Vector_Icons-24.eps",
+      "pack": "loot",
+      "extension": ".eps",
+      "bytes": 1577563,
+      "status": "reference-only"
+    },
+    {
+      "path": "reference/assets/loot/EPS/Undead_Loot _Vector_Icons-25.eps",
+      "pack": "loot",
+      "extension": ".eps",
+      "bytes": 1788725,
+      "status": "reference-only"
+    },
+    {
+      "path": "reference/assets/loot/EPS/Undead_Loot _Vector_Icons-26.eps",
+      "pack": "loot",
+      "extension": ".eps",
+      "bytes": 1752310,
+      "status": "reference-only"
+    },
+    {
+      "path": "reference/assets/loot/EPS/Undead_Loot _Vector_Icons-27.eps",
+      "pack": "loot",
+      "extension": ".eps",
+      "bytes": 1769152,
+      "status": "reference-only"
+    },
+    {
+      "path": "reference/assets/loot/EPS/Undead_Loot _Vector_Icons-28.eps",
+      "pack": "loot",
+      "extension": ".eps",
+      "bytes": 1540393,
+      "status": "reference-only"
+    },
+    {
+      "path": "reference/assets/loot/EPS/Undead_Loot _Vector_Icons-29.eps",
+      "pack": "loot",
+      "extension": ".eps",
+      "bytes": 1556711,
+      "status": "reference-only"
+    },
+    {
+      "path": "reference/assets/loot/EPS/Undead_Loot _Vector_Icons-30.eps",
+      "pack": "loot",
+      "extension": ".eps",
+      "bytes": 1534956,
+      "status": "reference-only"
+    },
+    {
+      "path": "reference/assets/loot/EPS/Undead_Loot _Vector_Icons-31.eps",
+      "pack": "loot",
+      "extension": ".eps",
+      "bytes": 1468251,
+      "status": "reference-only"
+    },
+    {
+      "path": "reference/assets/loot/EPS/Undead_Loot _Vector_Icons-32.eps",
+      "pack": "loot",
+      "extension": ".eps",
+      "bytes": 1676507,
+      "status": "reference-only"
+    },
+    {
+      "path": "reference/assets/loot/EPS/Undead_Loot _Vector_Icons-33.eps",
+      "pack": "loot",
+      "extension": ".eps",
+      "bytes": 1806843,
+      "status": "reference-only"
+    },
+    {
+      "path": "reference/assets/loot/EPS/Undead_Loot _Vector_Icons-34.eps",
+      "pack": "loot",
+      "extension": ".eps",
+      "bytes": 1600920,
+      "status": "reference-only"
+    },
+    {
+      "path": "reference/assets/loot/EPS/Undead_Loot _Vector_Icons-35.eps",
+      "pack": "loot",
+      "extension": ".eps",
+      "bytes": 1529385,
+      "status": "reference-only"
+    },
+    {
+      "path": "reference/assets/loot/EPS/Undead_Loot _Vector_Icons-36.eps",
+      "pack": "loot",
+      "extension": ".eps",
+      "bytes": 1497347,
+      "status": "reference-only"
+    },
+    {
+      "path": "reference/assets/loot/EPS/Undead_Loot _Vector_Icons-37.eps",
+      "pack": "loot",
+      "extension": ".eps",
+      "bytes": 1646900,
+      "status": "reference-only"
+    },
+    {
+      "path": "reference/assets/loot/EPS/Undead_Loot _Vector_Icons-38.eps",
+      "pack": "loot",
+      "extension": ".eps",
+      "bytes": 1707479,
+      "status": "reference-only"
+    },
+    {
+      "path": "reference/assets/loot/EPS/Undead_Loot _Vector_Icons-39.eps",
+      "pack": "loot",
+      "extension": ".eps",
+      "bytes": 1634509,
+      "status": "reference-only"
+    },
+    {
+      "path": "reference/assets/loot/EPS/Undead_Loot _Vector_Icons-40.eps",
+      "pack": "loot",
+      "extension": ".eps",
+      "bytes": 1666598,
+      "status": "reference-only"
+    },
+    {
+      "path": "reference/assets/loot/EPS/Undead_Loot _Vector_Icons-41.eps",
+      "pack": "loot",
+      "extension": ".eps",
+      "bytes": 1474845,
+      "status": "reference-only"
+    },
+    {
+      "path": "reference/assets/loot/EPS/Undead_Loot _Vector_Icons-42.eps",
+      "pack": "loot",
+      "extension": ".eps",
+      "bytes": 1490120,
+      "status": "reference-only"
+    },
+    {
+      "path": "reference/assets/loot/EPS/Undead_Loot _Vector_Icons-43.eps",
+      "pack": "loot",
+      "extension": ".eps",
+      "bytes": 1554006,
+      "status": "reference-only"
+    },
+    {
+      "path": "reference/assets/loot/EPS/Undead_Loot _Vector_Icons-44.eps",
+      "pack": "loot",
+      "extension": ".eps",
+      "bytes": 1612569,
+      "status": "reference-only"
+    },
+    {
+      "path": "reference/assets/loot/EPS/Undead_Loot _Vector_Icons-45.eps",
+      "pack": "loot",
+      "extension": ".eps",
+      "bytes": 1726661,
+      "status": "reference-only"
+    },
+    {
+      "path": "reference/assets/loot/EPS/Undead_Loot _Vector_Icons-46.eps",
+      "pack": "loot",
+      "extension": ".eps",
+      "bytes": 1645094,
+      "status": "reference-only"
+    },
+    {
+      "path": "reference/assets/loot/EPS/Undead_Loot _Vector_Icons-47.eps",
+      "pack": "loot",
+      "extension": ".eps",
+      "bytes": 1526236,
+      "status": "reference-only"
+    },
+    {
+      "path": "reference/assets/loot/EPS/Undead_Loot _Vector_Icons-48.eps",
+      "pack": "loot",
+      "extension": ".eps",
+      "bytes": 1732714,
+      "status": "reference-only"
+    },
+    {
+      "path": "reference/assets/loot/PNG/bg.png",
+      "pack": "loot",
+      "extension": ".png",
+      "bytes": 3138,
+      "width": 256,
+      "height": 256,
+      "status": "reference-only"
+    },
+    {
+      "path": "reference/assets/loot/PNG/shadow/1.png",
+      "pack": "loot",
+      "extension": ".png",
+      "bytes": 31929,
+      "width": 256,
+      "height": 256,
+      "status": "reference-only"
+    },
+    {
+      "path": "reference/assets/loot/PNG/shadow/10.png",
+      "pack": "loot",
+      "extension": ".png",
+      "bytes": 28196,
+      "width": 256,
+      "height": 256,
+      "status": "reference-only"
+    },
+    {
+      "path": "reference/assets/loot/PNG/shadow/11.png",
+      "pack": "loot",
+      "extension": ".png",
+      "bytes": 32376,
+      "width": 256,
+      "height": 256,
+      "status": "reference-only"
+    },
+    {
+      "path": "reference/assets/loot/PNG/shadow/12.png",
+      "pack": "loot",
+      "extension": ".png",
+      "bytes": 37408,
+      "width": 256,
+      "height": 256,
+      "status": "reference-only"
+    },
+    {
+      "path": "reference/assets/loot/PNG/shadow/13.png",
+      "pack": "loot",
+      "extension": ".png",
+      "bytes": 23617,
+      "width": 256,
+      "height": 256,
+      "status": "reference-only"
+    },
+    {
+      "path": "reference/assets/loot/PNG/shadow/14.png",
+      "pack": "loot",
+      "extension": ".png",
+      "bytes": 33139,
+      "width": 256,
+      "height": 256,
+      "status": "reference-only"
+    },
+    {
+      "path": "reference/assets/loot/PNG/shadow/15.png",
+      "pack": "loot",
+      "extension": ".png",
+      "bytes": 21446,
+      "width": 256,
+      "height": 256,
+      "status": "reference-only"
+    },
+    {
+      "path": "reference/assets/loot/PNG/shadow/16.png",
+      "pack": "loot",
+      "extension": ".png",
+      "bytes": 21983,
+      "width": 256,
+      "height": 256,
+      "status": "reference-only"
+    },
+    {
+      "path": "reference/assets/loot/PNG/shadow/17.png",
+      "pack": "loot",
+      "extension": ".png",
+      "bytes": 17886,
+      "width": 256,
+      "height": 256,
+      "status": "reference-only"
+    },
+    {
+      "path": "reference/assets/loot/PNG/shadow/18.png",
+      "pack": "loot",
+      "extension": ".png",
+      "bytes": 17220,
+      "width": 256,
+      "height": 256,
+      "status": "reference-only"
+    },
+    {
+      "path": "reference/assets/loot/PNG/shadow/19.png",
+      "pack": "loot",
+      "extension": ".png",
+      "bytes": 14903,
+      "width": 256,
+      "height": 256,
+      "status": "reference-only"
+    },
+    {
+      "path": "reference/assets/loot/PNG/shadow/2.png",
+      "pack": "loot",
+      "extension": ".png",
+      "bytes": 15972,
+      "width": 256,
+      "height": 256,
+      "status": "reference-only"
+    },
+    {
+      "path": "reference/assets/loot/PNG/shadow/20.png",
+      "pack": "loot",
+      "extension": ".png",
+      "bytes": 36055,
+      "width": 256,
+      "height": 256,
+      "status": "reference-only"
+    },
+    {
+      "path": "reference/assets/loot/PNG/shadow/21.png",
+      "pack": "loot",
+      "extension": ".png",
+      "bytes": 24594,
+      "width": 256,
+      "height": 256,
+      "status": "reference-only"
+    },
+    {
+      "path": "reference/assets/loot/PNG/shadow/22.png",
+      "pack": "loot",
+      "extension": ".png",
+      "bytes": 20829,
+      "width": 256,
+      "height": 256,
+      "status": "reference-only"
+    },
+    {
+      "path": "reference/assets/loot/PNG/shadow/23.png",
+      "pack": "loot",
+      "extension": ".png",
+      "bytes": 22981,
+      "width": 256,
+      "height": 256,
+      "status": "reference-only"
+    },
+    {
+      "path": "reference/assets/loot/PNG/shadow/24.png",
+      "pack": "loot",
+      "extension": ".png",
+      "bytes": 22449,
+      "width": 256,
+      "height": 256,
+      "status": "reference-only"
+    },
+    {
+      "path": "reference/assets/loot/PNG/shadow/25.png",
+      "pack": "loot",
+      "extension": ".png",
+      "bytes": 28784,
+      "width": 256,
+      "height": 256,
+      "status": "reference-only"
+    },
+    {
+      "path": "reference/assets/loot/PNG/shadow/26.png",
+      "pack": "loot",
+      "extension": ".png",
+      "bytes": 23611,
+      "width": 256,
+      "height": 256,
+      "status": "reference-only"
+    },
+    {
+      "path": "reference/assets/loot/PNG/shadow/27.png",
+      "pack": "loot",
+      "extension": ".png",
+      "bytes": 23821,
+      "width": 256,
+      "height": 256,
+      "status": "reference-only"
+    },
+    {
+      "path": "reference/assets/loot/PNG/shadow/28.png",
+      "pack": "loot",
+      "extension": ".png",
+      "bytes": 17175,
+      "width": 256,
+      "height": 256,
+      "status": "reference-only"
+    },
+    {
+      "path": "reference/assets/loot/PNG/shadow/29.png",
+      "pack": "loot",
+      "extension": ".png",
+      "bytes": 19667,
+      "width": 256,
+      "height": 256,
+      "status": "reference-only"
+    },
+    {
+      "path": "reference/assets/loot/PNG/shadow/3.png",
+      "pack": "loot",
+      "extension": ".png",
+      "bytes": 25290,
+      "width": 256,
+      "height": 256,
+      "status": "reference-only"
+    },
+    {
+      "path": "reference/assets/loot/PNG/shadow/30.png",
+      "pack": "loot",
+      "extension": ".png",
+      "bytes": 11635,
+      "width": 256,
+      "height": 256,
+      "status": "reference-only"
+    },
+    {
+      "path": "reference/assets/loot/PNG/shadow/31.png",
+      "pack": "loot",
+      "extension": ".png",
+      "bytes": 13256,
+      "width": 256,
+      "height": 256,
+      "status": "reference-only"
+    },
+    {
+      "path": "reference/assets/loot/PNG/shadow/32.png",
+      "pack": "loot",
+      "extension": ".png",
+      "bytes": 21714,
+      "width": 256,
+      "height": 256,
+      "status": "reference-only"
+    },
+    {
+      "path": "reference/assets/loot/PNG/shadow/33.png",
+      "pack": "loot",
+      "extension": ".png",
+      "bytes": 30179,
+      "width": 256,
+      "height": 256,
+      "status": "reference-only"
+    },
+    {
+      "path": "reference/assets/loot/PNG/shadow/34.png",
+      "pack": "loot",
+      "extension": ".png",
+      "bytes": 20291,
+      "width": 256,
+      "height": 256,
+      "status": "reference-only"
+    },
+    {
+      "path": "reference/assets/loot/PNG/shadow/35.png",
+      "pack": "loot",
+      "extension": ".png",
+      "bytes": 18459,
+      "width": 256,
+      "height": 256,
+      "status": "reference-only"
+    },
+    {
+      "path": "reference/assets/loot/PNG/shadow/36.png",
+      "pack": "loot",
+      "extension": ".png",
+      "bytes": 12613,
+      "width": 256,
+      "height": 256,
+      "status": "reference-only"
+    },
+    {
+      "path": "reference/assets/loot/PNG/shadow/37.png",
+      "pack": "loot",
+      "extension": ".png",
+      "bytes": 22352,
+      "width": 256,
+      "height": 256,
+      "status": "reference-only"
+    },
+    {
+      "path": "reference/assets/loot/PNG/shadow/38.png",
+      "pack": "loot",
+      "extension": ".png",
+      "bytes": 26634,
+      "width": 256,
+      "height": 256,
+      "status": "reference-only"
+    },
+    {
+      "path": "reference/assets/loot/PNG/shadow/39.png",
+      "pack": "loot",
+      "extension": ".png",
+      "bytes": 21587,
+      "width": 256,
+      "height": 256,
+      "status": "reference-only"
+    },
+    {
+      "path": "reference/assets/loot/PNG/shadow/4.png",
+      "pack": "loot",
+      "extension": ".png",
+      "bytes": 30013,
+      "width": 256,
+      "height": 256,
+      "status": "reference-only"
+    },
+    {
+      "path": "reference/assets/loot/PNG/shadow/40.png",
+      "pack": "loot",
+      "extension": ".png",
+      "bytes": 22997,
+      "width": 256,
+      "height": 256,
+      "status": "reference-only"
+    },
+    {
+      "path": "reference/assets/loot/PNG/shadow/41.png",
+      "pack": "loot",
+      "extension": ".png",
+      "bytes": 7906,
+      "width": 256,
+      "height": 256,
+      "status": "reference-only"
+    },
+    {
+      "path": "reference/assets/loot/PNG/shadow/42.png",
+      "pack": "loot",
+      "extension": ".png",
+      "bytes": 14020,
+      "width": 256,
+      "height": 256,
+      "status": "reference-only"
+    },
+    {
+      "path": "reference/assets/loot/PNG/shadow/43.png",
+      "pack": "loot",
+      "extension": ".png",
+      "bytes": 18805,
+      "width": 256,
+      "height": 256,
+      "status": "reference-only"
+    },
+    {
+      "path": "reference/assets/loot/PNG/shadow/44.png",
+      "pack": "loot",
+      "extension": ".png",
+      "bytes": 21459,
+      "width": 256,
+      "height": 256,
+      "status": "reference-only"
+    },
+    {
+      "path": "reference/assets/loot/PNG/shadow/45.png",
+      "pack": "loot",
+      "extension": ".png",
+      "bytes": 21742,
+      "width": 256,
+      "height": 256,
+      "status": "reference-only"
+    },
+    {
+      "path": "reference/assets/loot/PNG/shadow/46.png",
+      "pack": "loot",
+      "extension": ".png",
+      "bytes": 22485,
+      "width": 256,
+      "height": 256,
+      "status": "reference-only"
+    },
+    {
+      "path": "reference/assets/loot/PNG/shadow/47.png",
+      "pack": "loot",
+      "extension": ".png",
+      "bytes": 12752,
+      "width": 256,
+      "height": 256,
+      "status": "reference-only"
+    },
+    {
+      "path": "reference/assets/loot/PNG/shadow/48.png",
+      "pack": "loot",
+      "extension": ".png",
+      "bytes": 19897,
+      "width": 256,
+      "height": 256,
+      "status": "reference-only"
+    },
+    {
+      "path": "reference/assets/loot/PNG/shadow/5.png",
+      "pack": "loot",
+      "extension": ".png",
+      "bytes": 24090,
+      "width": 256,
+      "height": 256,
+      "status": "reference-only"
+    },
+    {
+      "path": "reference/assets/loot/PNG/shadow/6.png",
+      "pack": "loot",
+      "extension": ".png",
+      "bytes": 17126,
+      "width": 256,
+      "height": 256,
+      "status": "reference-only"
+    },
+    {
+      "path": "reference/assets/loot/PNG/shadow/7.png",
+      "pack": "loot",
+      "extension": ".png",
+      "bytes": 32614,
+      "width": 256,
+      "height": 256,
+      "status": "reference-only"
+    },
+    {
+      "path": "reference/assets/loot/PNG/shadow/8.png",
+      "pack": "loot",
+      "extension": ".png",
+      "bytes": 25408,
+      "width": 256,
+      "height": 256,
+      "status": "reference-only"
+    },
+    {
+      "path": "reference/assets/loot/PNG/shadow/9.png",
+      "pack": "loot",
+      "extension": ".png",
+      "bytes": 14684,
+      "width": 256,
+      "height": 256,
+      "status": "reference-only"
+    },
+    {
+      "path": "reference/assets/loot/PNG/without_shadow/1.png",
+      "pack": "loot",
+      "extension": ".png",
+      "bytes": 30550,
+      "width": 256,
+      "height": 256,
+      "status": "reference-only"
+    },
+    {
+      "path": "reference/assets/loot/PNG/without_shadow/10.png",
+      "pack": "loot",
+      "extension": ".png",
+      "bytes": 26580,
+      "width": 256,
+      "height": 256,
+      "status": "reference-only"
+    },
+    {
+      "path": "reference/assets/loot/PNG/without_shadow/11.png",
+      "pack": "loot",
+      "extension": ".png",
+      "bytes": 30201,
+      "width": 256,
+      "height": 256,
+      "status": "reference-only"
+    },
+    {
+      "path": "reference/assets/loot/PNG/without_shadow/12.png",
+      "pack": "loot",
+      "extension": ".png",
+      "bytes": 35739,
+      "width": 256,
+      "height": 256,
+      "status": "reference-only"
+    },
+    {
+      "path": "reference/assets/loot/PNG/without_shadow/13.png",
+      "pack": "loot",
+      "extension": ".png",
+      "bytes": 22488,
+      "width": 256,
+      "height": 256,
+      "status": "reference-only"
+    },
+    {
+      "path": "reference/assets/loot/PNG/without_shadow/14.png",
+      "pack": "loot",
+      "extension": ".png",
+      "bytes": 31570,
+      "width": 256,
+      "height": 256,
+      "status": "reference-only"
+    },
+    {
+      "path": "reference/assets/loot/PNG/without_shadow/15.png",
+      "pack": "loot",
+      "extension": ".png",
+      "bytes": 19690,
+      "width": 256,
+      "height": 256,
+      "status": "reference-only"
+    },
+    {
+      "path": "reference/assets/loot/PNG/without_shadow/16.png",
+      "pack": "loot",
+      "extension": ".png",
+      "bytes": 20557,
+      "width": 256,
+      "height": 256,
+      "status": "reference-only"
+    },
+    {
+      "path": "reference/assets/loot/PNG/without_shadow/17.png",
+      "pack": "loot",
+      "extension": ".png",
+      "bytes": 16627,
+      "width": 256,
+      "height": 256,
+      "status": "reference-only"
+    },
+    {
+      "path": "reference/assets/loot/PNG/without_shadow/18.png",
+      "pack": "loot",
+      "extension": ".png",
+      "bytes": 14792,
+      "width": 256,
+      "height": 256,
+      "status": "reference-only"
+    },
+    {
+      "path": "reference/assets/loot/PNG/without_shadow/19.png",
+      "pack": "loot",
+      "extension": ".png",
+      "bytes": 13511,
+      "width": 256,
+      "height": 256,
+      "status": "reference-only"
+    },
+    {
+      "path": "reference/assets/loot/PNG/without_shadow/2.png",
+      "pack": "loot",
+      "extension": ".png",
+      "bytes": 14656,
+      "width": 256,
+      "height": 256,
+      "status": "reference-only"
+    },
+    {
+      "path": "reference/assets/loot/PNG/without_shadow/20.png",
+      "pack": "loot",
+      "extension": ".png",
+      "bytes": 34504,
+      "width": 256,
+      "height": 256,
+      "status": "reference-only"
+    },
+    {
+      "path": "reference/assets/loot/PNG/without_shadow/21.png",
+      "pack": "loot",
+      "extension": ".png",
+      "bytes": 23173,
+      "width": 256,
+      "height": 256,
+      "status": "reference-only"
+    },
+    {
+      "path": "reference/assets/loot/PNG/without_shadow/22.png",
+      "pack": "loot",
+      "extension": ".png",
+      "bytes": 19485,
+      "width": 256,
+      "height": 256,
+      "status": "reference-only"
+    },
+    {
+      "path": "reference/assets/loot/PNG/without_shadow/23.png",
+      "pack": "loot",
+      "extension": ".png",
+      "bytes": 21402,
+      "width": 256,
+      "height": 256,
+      "status": "reference-only"
+    },
+    {
+      "path": "reference/assets/loot/PNG/without_shadow/24.png",
+      "pack": "loot",
+      "extension": ".png",
+      "bytes": 21168,
+      "width": 256,
+      "height": 256,
+      "status": "reference-only"
+    },
+    {
+      "path": "reference/assets/loot/PNG/without_shadow/25.png",
+      "pack": "loot",
+      "extension": ".png",
+      "bytes": 27828,
+      "width": 256,
+      "height": 256,
+      "status": "reference-only"
+    },
+    {
+      "path": "reference/assets/loot/PNG/without_shadow/26.png",
+      "pack": "loot",
+      "extension": ".png",
+      "bytes": 21117,
+      "width": 256,
+      "height": 256,
+      "status": "reference-only"
+    },
+    {
+      "path": "reference/assets/loot/PNG/without_shadow/27.png",
+      "pack": "loot",
+      "extension": ".png",
+      "bytes": 21652,
+      "width": 256,
+      "height": 256,
+      "status": "reference-only"
+    },
+    {
+      "path": "reference/assets/loot/PNG/without_shadow/28.png",
+      "pack": "loot",
+      "extension": ".png",
+      "bytes": 16334,
+      "width": 256,
+      "height": 256,
+      "status": "reference-only"
+    },
+    {
+      "path": "reference/assets/loot/PNG/without_shadow/29.png",
+      "pack": "loot",
+      "extension": ".png",
+      "bytes": 18894,
+      "width": 256,
+      "height": 256,
+      "status": "reference-only"
+    },
+    {
+      "path": "reference/assets/loot/PNG/without_shadow/3.png",
+      "pack": "loot",
+      "extension": ".png",
+      "bytes": 24060,
+      "width": 256,
+      "height": 256,
+      "status": "reference-only"
+    },
+    {
+      "path": "reference/assets/loot/PNG/without_shadow/30.png",
+      "pack": "loot",
+      "extension": ".png",
+      "bytes": 9366,
+      "width": 256,
+      "height": 256,
+      "status": "reference-only"
+    },
+    {
+      "path": "reference/assets/loot/PNG/without_shadow/31.png",
+      "pack": "loot",
+      "extension": ".png",
+      "bytes": 12077,
+      "width": 256,
+      "height": 256,
+      "status": "reference-only"
+    },
+    {
+      "path": "reference/assets/loot/PNG/without_shadow/32.png",
+      "pack": "loot",
+      "extension": ".png",
+      "bytes": 19408,
+      "width": 256,
+      "height": 256,
+      "status": "reference-only"
+    },
+    {
+      "path": "reference/assets/loot/PNG/without_shadow/33.png",
+      "pack": "loot",
+      "extension": ".png",
+      "bytes": 28783,
+      "width": 256,
+      "height": 256,
+      "status": "reference-only"
+    },
+    {
+      "path": "reference/assets/loot/PNG/without_shadow/34.png",
+      "pack": "loot",
+      "extension": ".png",
+      "bytes": 19017,
+      "width": 256,
+      "height": 256,
+      "status": "reference-only"
+    },
+    {
+      "path": "reference/assets/loot/PNG/without_shadow/35.png",
+      "pack": "loot",
+      "extension": ".png",
+      "bytes": 17055,
+      "width": 256,
+      "height": 256,
+      "status": "reference-only"
+    },
+    {
+      "path": "reference/assets/loot/PNG/without_shadow/36.png",
+      "pack": "loot",
+      "extension": ".png",
+      "bytes": 11430,
+      "width": 256,
+      "height": 256,
+      "status": "reference-only"
+    },
+    {
+      "path": "reference/assets/loot/PNG/without_shadow/37.png",
+      "pack": "loot",
+      "extension": ".png",
+      "bytes": 20094,
+      "width": 256,
+      "height": 256,
+      "status": "reference-only"
+    },
+    {
+      "path": "reference/assets/loot/PNG/without_shadow/38.png",
+      "pack": "loot",
+      "extension": ".png",
+      "bytes": 24197,
+      "width": 256,
+      "height": 256,
+      "status": "reference-only"
+    },
+    {
+      "path": "reference/assets/loot/PNG/without_shadow/39.png",
+      "pack": "loot",
+      "extension": ".png",
+      "bytes": 20567,
+      "width": 256,
+      "height": 256,
+      "status": "reference-only"
+    },
+    {
+      "path": "reference/assets/loot/PNG/without_shadow/4.png",
+      "pack": "loot",
+      "extension": ".png",
+      "bytes": 28023,
+      "width": 256,
+      "height": 256,
+      "status": "reference-only"
+    },
+    {
+      "path": "reference/assets/loot/PNG/without_shadow/40.png",
+      "pack": "loot",
+      "extension": ".png",
+      "bytes": 21667,
+      "width": 256,
+      "height": 256,
+      "status": "reference-only"
+    },
+    {
+      "path": "reference/assets/loot/PNG/without_shadow/41.png",
+      "pack": "loot",
+      "extension": ".png",
+      "bytes": 7024,
+      "width": 256,
+      "height": 256,
+      "status": "reference-only"
+    },
+    {
+      "path": "reference/assets/loot/PNG/without_shadow/42.png",
+      "pack": "loot",
+      "extension": ".png",
+      "bytes": 13235,
+      "width": 256,
+      "height": 256,
+      "status": "reference-only"
+    },
+    {
+      "path": "reference/assets/loot/PNG/without_shadow/43.png",
+      "pack": "loot",
+      "extension": ".png",
+      "bytes": 17604,
+      "width": 256,
+      "height": 256,
+      "status": "reference-only"
+    },
+    {
+      "path": "reference/assets/loot/PNG/without_shadow/44.png",
+      "pack": "loot",
+      "extension": ".png",
+      "bytes": 20076,
+      "width": 256,
+      "height": 256,
+      "status": "reference-only"
+    },
+    {
+      "path": "reference/assets/loot/PNG/without_shadow/45.png",
+      "pack": "loot",
+      "extension": ".png",
+      "bytes": 20149,
+      "width": 256,
+      "height": 256,
+      "status": "reference-only"
+    },
+    {
+      "path": "reference/assets/loot/PNG/without_shadow/46.png",
+      "pack": "loot",
+      "extension": ".png",
+      "bytes": 20872,
+      "width": 256,
+      "height": 256,
+      "status": "reference-only"
+    },
+    {
+      "path": "reference/assets/loot/PNG/without_shadow/47.png",
+      "pack": "loot",
+      "extension": ".png",
+      "bytes": 10674,
+      "width": 256,
+      "height": 256,
+      "status": "reference-only"
+    },
+    {
+      "path": "reference/assets/loot/PNG/without_shadow/48.png",
+      "pack": "loot",
+      "extension": ".png",
+      "bytes": 18076,
+      "width": 256,
+      "height": 256,
+      "status": "reference-only"
+    },
+    {
+      "path": "reference/assets/loot/PNG/without_shadow/5.png",
+      "pack": "loot",
+      "extension": ".png",
+      "bytes": 21754,
+      "width": 256,
+      "height": 256,
+      "status": "reference-only"
+    },
+    {
+      "path": "reference/assets/loot/PNG/without_shadow/6.png",
+      "pack": "loot",
+      "extension": ".png",
+      "bytes": 15260,
+      "width": 256,
+      "height": 256,
+      "status": "reference-only"
+    },
+    {
+      "path": "reference/assets/loot/PNG/without_shadow/7.png",
+      "pack": "loot",
+      "extension": ".png",
+      "bytes": 29511,
+      "width": 256,
+      "height": 256,
+      "status": "reference-only"
+    },
+    {
+      "path": "reference/assets/loot/PNG/without_shadow/8.png",
+      "pack": "loot",
+      "extension": ".png",
+      "bytes": 24110,
+      "width": 256,
+      "height": 256,
+      "status": "reference-only"
+    },
+    {
+      "path": "reference/assets/loot/PNG/without_shadow/9.png",
+      "pack": "loot",
+      "extension": ".png",
+      "bytes": 13761,
+      "width": 256,
+      "height": 256,
       "status": "reference-only"
     },
     {
