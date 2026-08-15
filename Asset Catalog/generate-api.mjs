@@ -683,10 +683,10 @@ async function build() {
         (s) => `<tr><td>${s.system}</td><td>${statusBadge(s.status)}</td><td class="gap-coverage">${s.coverage}${s.missing ? `<br><span class="gap-missing">missing: ${s.missing}</span>` : ""}</td></tr>`
       )
       .join("");
+    const matrixCols = Object.keys(audit.coverageMatrix[0] ?? {}).filter((k) => k !== "system");
+    const matrixHead = `<tr><th>System</th>${matrixCols.map((c) => `<th>${c === "clover" ? "Clover 1–20" : c === "overall" ? "Launch 1 overall" : c}</th>`).join("")}</tr>`;
     const matrixRows = audit.coverageMatrix
-      .map(
-        (r) => `<tr><td>${r.system}</td><td>${statusBadge(r.clover)}</td><td>${statusBadge(r.happy)}</td><td>${statusBadge(r.void)}</td><td>${statusBadge(r.overall)}</td></tr>`
-      )
+      .map((r) => `<tr><td>${r.system}</td>${matrixCols.map((c) => `<td>${statusBadge(r[c])}</td>`).join("")}</tr>`)
       .join("");
     const launchRows = (audit.launchPlan ?? [])
       .map(
@@ -727,7 +727,7 @@ async function build() {
   <div class="gap-section">
     <h3>Coverage matrix</h3>
     <table class="gap-matrix">
-      <tr><th>System</th><th>Clover 1–20</th><th>Happy 21–40</th><th>Void 41–60</th><th>Overall</th></tr>
+      ${matrixHead}
       ${matrixRows}
     </table>
   </div>
@@ -781,14 +781,14 @@ async function build() {
 
   const gapPanel = `<section class="gap-panel">
   <div class="gap-panel-head">
-    <h2>Level-60 readiness</h2>
+    <h2>Launch-1 readiness (CloverVillage 1–20)</h2>
     <a class="gap-link" href="gap-audit.html">Full gap audit →</a>
   </div>
   <p class="gap-subtitle">${GAP_AUDIT.subtitle}</p>
   <div class="gap-panel-summary">${statusBadge(GAP_AUDIT.overall.status)} ${GAP_AUDIT.overall.label}</div>
   <div class="gap-panel-launch">${gapLaunchRows}</div>
   <div class="gap-panel-matrix">${GAP_AUDIT.coverageMatrix
-    .map((r) => `<div class="gap-panel-row"><span class="gap-panel-system">${r.system}</span>${["clover", "happy", "void", "overall"].map((k) => statusBadge(r[k])).join("")}</div>`)
+    .map((r) => `<div class="gap-panel-row"><span class="gap-panel-system">${r.system}</span>${Object.keys(r).filter((k) => k !== "system").map((k) => statusBadge(r[k])).join("")}</div>`)
     .join("")}</div>
 </section>`;
 
@@ -877,7 +877,7 @@ ${gapAuditPanelHtml(GAP_AUDIT)}
 </body>
 </html>`;
   await writeFile(join(reviewDir, "gap-audit.html"), gapPage, "utf8");
-  console.log("  review/gap-audit.html: Level-60 readiness page");
+  console.log("  review/gap-audit.html: Launch-1 readiness page");
 
   // Per-category review pages
   for (const [packName, packAssets] of Object.entries(byPack)) {
