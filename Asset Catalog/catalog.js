@@ -272,8 +272,8 @@ function renderAuditProgress() {
 }
 
 function gapBadge(status) {
-  const label = status === "ready" ? "READY" : status === "warn" ? "PARTIAL" : "MISSING";
-  const tone = status === "ready" ? "ok" : status === "warn" ? "warn" : "missing";
+  const label = status === "ready" ? "READY" : status === "complete" ? "COMPLETE" : status === "warn" ? "PARTIAL" : "MISSING";
+  const tone = status === "ready" || status === "complete" ? "ok" : status === "warn" ? "warn" : "missing";
   const el = document.createElement("span");
   el.className = `gap-badge ${tone}`;
   el.textContent = label;

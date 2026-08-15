@@ -50,6 +50,7 @@ const AUDIT_STATUS = {
   "VoidDesert|other": { label: "COMPLETE · 8 MAP FAMILIES / 0 UNCLASSIFIED", tone: "ok" },
   "VoidDesert|monster": { label: "COMPLETE · 7 IDENTITIES / 6 FAMILIES / 0 UNCLASSIFIED", tone: "ok" },
   "OtherAssets|path-composite": { label: "COMPLETE · 3 PATH FAMILIES / 0 UNCLASSIFIED", tone: "ok" },
+  "loot|loot": { label: "CLASSIFIED · 48 ICONS / 10 FAMILIES / 0 UNCLASSIFIED", tone: "ok" },
 };
 
 function stableId(filePath) {
@@ -69,8 +70,10 @@ function categoryFromPath(path) {
   if (/Idle\//.test(s)) return "character";
   if (/Paths?\//.test(s)) return "path-composite";
   if (/Greenery|stones|tree/.test(s)) return "nature";
+  if (/^loot\//.test(s)) return "loot";
   return "other";
 }
+
 
 function packFromPath(path) {
   const s = path.replace(/^\/?reference\/assets\//, "");
@@ -219,6 +222,12 @@ function lightweight(asset) {
   if (asset.bodyPart) base.bodyPart = asset.bodyPart;
   if (asset.side) base.side = asset.side;
   if (asset.renderMode) base.renderMode = asset.renderMode;
+  if (asset.lootFamilyType) base.lootFamilyType = asset.lootFamilyType;
+  if (asset.lootRole) base.lootRole = asset.lootRole;
+  if (asset.lootSubtype) base.lootSubtype = asset.lootSubtype;
+  if (asset.lootIconId) base.lootIconId = asset.lootIconId;
+  if (asset.lootConfirmed !== undefined && asset.lootConfirmed !== null) base.lootConfirmed = asset.lootConfirmed;
+  if (asset.iconCount) base.iconCount = asset.iconCount;
   if (asset.placeable !== undefined) base.placeable = asset.placeable;
   if (asset.sourceRole) base.sourceRole = asset.sourceRole;
   if (asset.format) base.format = asset.format;
@@ -276,7 +285,7 @@ async function build() {
     const reviewData = JSON.parse(await readFile(join(root, "design", "assets", "asset-reviews.json"), "utf8"));
     for (const [familyKey, family] of Object.entries(reviewData.reviews ?? {})) {
       for (const [assetPath, review] of Object.entries(family.assets ?? {})) {
-        const merged = { ...review, buildingFamily: family.buildingFamily, canonicalFamily: family.canonicalFamily, suggestedFamilyName: family.suggestedFamilyName, structureType: family.structureType, worldRole: family.worldRole, suitability: family.suitability, collision: family.collision, gameplayRole: family.gameplayRole, recommendedUse: family.recommendedUse, recommendedUses: family.recommendedUses, notes: family.notes, catalogCategory: family.catalogCategory, roadType: family.roadType, terrainRole: review.terrainRole ?? family.terrainRole, tileMode: family.tileMode, decorRole: review.decorRole ?? family.decorRole, placementMode: review.placementMode ?? family.placementMode, topology: review.topology ?? family.topology, variant: review.variant ?? null, collision: review.collision ?? family.collision, depthMode: review.depthMode ?? family.depthMode, density: review.density ?? family.density, anchor: review.anchor ?? family.anchor, npcFamilyType: family.npcFamilyType, npcId: review.npcId ?? null, npcPackage: review.npcPackage ?? null, classId: review.classId ?? family.classId ?? null, classFamilyType: family.classFamilyType ?? null, effect: review.effect ?? null, element: review.element ?? null, effectType: review.effectType ?? null, shape: review.shape ?? null, effectVariant: review.effectVariant ?? null, sourceOf: review.sourceOf ?? null, animation: review.animation ?? null, direction: review.direction ?? null, frame: review.frame ?? null, frameCount: review.frameCount ?? null, bodyPart: review.bodyPart ?? null, side: review.side ?? null, renderMode: review.renderMode ?? null, placeable: review.placeable ?? true, sourceRole: review.sourceRole ?? null, format: review.format ?? null, runtimeEligible: review.runtimeEligible ?? null, uiAsset: review.uiAsset ?? null, sharedVisual: review.sharedVisual ?? null, walkable: family.walkable, envFamilyType: family.envFamilyType, envRole: review.envRole ?? null, treeRole: review.treeRole ?? null, objectRole: review.objectRole ?? null, orientation: review.orientation ?? null, size: review.size ?? null, monsterFamilyType: family.monsterFamilyType, monsterId: review.monsterId ?? null, shadowMode: review.shadowMode ?? null, duplicateOf: review.duplicateOf ?? null, catalogVisible: review.catalogVisible ?? true, hvNpcFamilyType: family.hvNpcFamilyType, natureFamilyType: family.natureFamilyType ?? null, natureRole: review.natureRole ?? null, formationType: review.formationType ?? null, material: review.material ?? null, scaleClass: review.scaleClass ?? null, occlusion: review.occlusion ?? null, treeType: review.treeType ?? null, vdMapFamilyType: family.vdMapFamilyType ?? null, waterType: review.waterType ?? null, vdMonsterFamilyType: family.vdMonsterFamilyType ?? null, monsterType: review.monsterType ?? null, weaponType: review.weaponType ?? null, component: review.component ?? null, propRole: review.propRole ?? null, pathFamilyType: family.pathFamilyType ?? null, pathMaterial: review.pathMaterial ?? null, surfaceContext: review.surfaceContext ?? null, contains: review.contains ?? null, tileExtraction: review.tileExtraction ?? null, tileSource: review.tileSource ?? null, status: family.status, catalogStatus: family.catalogStatus, topologyStatus: family.topologyStatus, kitStatus: family.kitStatus, recoveryStatus: family.recoveryStatus, runtimeReady: family.runtimeReady, artRequired: family.artRequired, artTask: family.artTask, recovery: family.recovery };
+        const merged = { ...review, buildingFamily: family.buildingFamily, canonicalFamily: family.canonicalFamily, suggestedFamilyName: family.suggestedFamilyName, structureType: family.structureType, worldRole: family.worldRole, suitability: family.suitability, collision: family.collision, gameplayRole: family.gameplayRole, recommendedUse: family.recommendedUse, recommendedUses: family.recommendedUses, notes: family.notes, catalogCategory: family.catalogCategory, roadType: family.roadType, terrainRole: review.terrainRole ?? family.terrainRole, tileMode: family.tileMode, decorRole: review.decorRole ?? family.decorRole, placementMode: review.placementMode ?? family.placementMode, topology: review.topology ?? family.topology, variant: review.variant ?? null, collision: review.collision ?? family.collision, depthMode: review.depthMode ?? family.depthMode, density: review.density ?? family.density, anchor: review.anchor ?? family.anchor, npcFamilyType: family.npcFamilyType, npcId: review.npcId ?? null, npcPackage: review.npcPackage ?? null, classId: review.classId ?? family.classId ?? null, classFamilyType: family.classFamilyType ?? null, effect: review.effect ?? null, element: review.element ?? null, effectType: review.effectType ?? null, shape: review.shape ?? null, effectVariant: review.effectVariant ?? null, sourceOf: review.sourceOf ?? null, animation: review.animation ?? null, direction: review.direction ?? null, frame: review.frame ?? null, frameCount: review.frameCount ?? null, bodyPart: review.bodyPart ?? null, side: review.side ?? null, renderMode: review.renderMode ?? null, placeable: review.placeable ?? true, sourceRole: review.sourceRole ?? null, format: review.format ?? null, runtimeEligible: review.runtimeEligible ?? null, uiAsset: review.uiAsset ?? null, sharedVisual: review.sharedVisual ?? null, walkable: family.walkable, envFamilyType: family.envFamilyType, envRole: review.envRole ?? null, treeRole: review.treeRole ?? null, objectRole: review.objectRole ?? null, orientation: review.orientation ?? null, size: review.size ?? null, monsterFamilyType: family.monsterFamilyType, monsterId: review.monsterId ?? null, shadowMode: review.shadowMode ?? null, duplicateOf: review.duplicateOf ?? null, catalogVisible: review.catalogVisible ?? true, hvNpcFamilyType: family.hvNpcFamilyType, natureFamilyType: family.natureFamilyType ?? null, natureRole: review.natureRole ?? null, formationType: review.formationType ?? null, material: review.material ?? null, scaleClass: review.scaleClass ?? null, occlusion: review.occlusion ?? null, treeType: review.treeType ?? null, vdMapFamilyType: family.vdMapFamilyType ?? null, waterType: review.waterType ?? null, vdMonsterFamilyType: family.vdMonsterFamilyType ?? null, monsterType: review.monsterType ?? null, weaponType: review.weaponType ?? null, component: review.component ?? null, propRole: review.propRole ?? null,  pathFamilyType: family.pathFamilyType ?? null, pathMaterial: review.pathMaterial ?? null, surfaceContext: review.surfaceContext ?? null, contains: review.contains ?? null, tileExtraction: review.tileExtraction ?? null, tileSource: review.tileSource ?? null, lootFamilyType: family.canonicalFamily ?? null, lootRole: review.lootRole ?? null, lootSubtype: review.lootSubtype ?? null, lootIconId: review.lootIconId ?? null, renderMode: review.renderMode ?? null, lootConfirmed: review.lootConfirmed ?? null, iconCount: family.iconCount ?? null, status: family.status, catalogStatus: family.catalogStatus, topologyStatus: family.topologyStatus, kitStatus: family.kitStatus, recoveryStatus: family.recoveryStatus, runtimeReady: family.runtimeReady, artRequired: family.artRequired, artTask: family.artTask, recovery: family.recovery };
         // Normalize review runtime status to inventory-style values used by badges/filters
         if (merged.runtimeStatus === "runtime") merged.runtimeStatus = "runtime-used";
         if (merged.runtimeStatus === "reference") merged.runtimeStatus = "reference-only";
@@ -647,9 +656,9 @@ async function build() {
 
   // --- Level-60 readiness gap audit panel (shared by the review index and the
   // dedicated gap-audit page) ---
-  const statusTone = (s) => (s === "ready" ? "ok" : s === "warn" ? "warn" : "missing");
+  const statusTone = (s) => (s === "ready" || s === "complete" ? "ok" : s === "warn" ? "warn" : "missing");
   const statusBadge = (s) => {
-    const label = s === "ready" ? "READY" : s === "warn" ? "PARTIAL" : "MISSING";
+    const label = s === "ready" ? "READY" : s === "complete" ? "COMPLETE" : s === "warn" ? "PARTIAL" : "MISSING";
     return `<span class="gap-badge ${statusTone(s)}">${label}</span>`;
   };
   const gapAuditPanelHtml = (audit) => {
@@ -685,7 +694,9 @@ async function build() {
       )
       .join("");
     const priorityList = audit.priorities
-      .map((p) => `<li><strong>#${p.priority}${p.launch ? ` · Launch ${p.launch}` : ""} — ${p.item}.</strong> ${p.detail}</li>`)
+      .map(
+        (p) => `<li><strong>#${p.priority}${p.launch ? ` · Launch ${p.launch}` : ""} — ${p.item}.</strong> ${p.status ? `${statusBadge(p.status === "in-progress" ? "warn" : p.status)} ` : ""}${p.detail}</li>`
+      )
       .join("");
     return `<div class="gap-audit">
   <div class="gap-head">
@@ -890,8 +901,9 @@ ${gapAuditPanelHtml(GAP_AUDIT)}
       const isPath = catAssets.some((a) => a.pathFamilyType);
       const isNature = catAssets.some((a) => a.natureFamilyType);
       const isVdMap = catAssets.some((a) => a.vdMapFamilyType);
+      const isLoot = catAssets.some((a) => a.lootFamilyType);
       const isSource = catAssets.some((a) => a.assetRole === "authoring-source" || a.assetRole === "documentation");
-      const familyKeyOf = (a) => (a.buildingFamily ? a.buildingFamily : a.vdMapFamilyType ? a.canonicalFamily : a.vdMonsterFamilyType ? a.canonicalFamily : a.pathFamilyType ? a.canonicalFamily : a.envFamilyType ? a.canonicalFamily : a.monsterFamilyType ? a.canonicalFamily : a.natureFamilyType ? a.canonicalFamily : a.npcPackage === "happyvalley" ? a.canonicalFamily : a.roadRole ? a.canonicalFamily : a.terrainRole ? a.canonicalFamily : a.decorRole ? a.canonicalFamily : a.npcId ? a.canonicalFamily : a.classId ? a.canonicalFamily : (a.assetRole === "authoring-source" || a.assetRole === "documentation") ? a.canonicalFamily : null) || familyOf(a.path);
+      const familyKeyOf = (a) => (a.buildingFamily ? a.buildingFamily : a.vdMapFamilyType ? a.canonicalFamily : a.vdMonsterFamilyType ? a.canonicalFamily : a.pathFamilyType ? a.canonicalFamily : a.envFamilyType ? a.canonicalFamily : a.monsterFamilyType ? a.canonicalFamily : a.natureFamilyType ? a.canonicalFamily : a.npcPackage === "happyvalley" ? a.canonicalFamily : a.lootFamilyType ? a.canonicalFamily : a.roadRole ? a.canonicalFamily : a.terrainRole ? a.canonicalFamily : a.decorRole ? a.canonicalFamily : a.npcId ? a.canonicalFamily : a.classId ? a.canonicalFamily : (a.assetRole === "authoring-source" || a.assetRole === "documentation") ? a.canonicalFamily : null) || familyOf(a.path);
       const familyMap = new Map();
       for (const a of catAssets) {
         const f = familyKeyOf(a);
@@ -1050,6 +1062,24 @@ ${gapAuditPanelHtml(GAP_AUDIT)}
         const reviewedCount = catAssets.filter((a) => a.review.status === "reviewed").length;
         summaryBar = `<div class="summary-bar">${catAssets.length} source records · ${pathFams.size} semantic families · ${composite} composite path sheets (${materials.length} materials × ${contexts.length} surface contexts) · ${support} terrain-support sheet · ${source} Tiled source · Runtime: ${runtimeCount} · Reference: ${catAssets.length - runtimeCount} · Reviewed: ${reviewedCount} · 0 other</div>`;
         summaryBar += `<div class="summary-bar env-note">🛤 Precomposed path/road COMPOSITE sheets, not individual tiles — 240x416 / 240x480 are sheet dimensions. 5 materials (blue_cobble, tan_brick, blue_masonry, brown_paver, pale_cobble) × 3 surface contexts (transparent/ground-edge/grass-edge). Sheet shape vocabulary (pad/straight/bend/junction/ring/intersection/platform) extracted via Roads.tmx — NOT exploded into manual tiles. Everything stays reference.</div>`;
+      } else if (isLoot) {
+        const lootFams = new Set(catAssets.filter((a) => a.lootFamilyType !== "loot_source").map((a) => a.lootFamilyType).filter(Boolean));
+        const logicalIcons = new Set(catAssets.map((a) => a.lootIconId).filter(Boolean));
+        const iconCount = logicalIcons.size;
+        const shadowPng = catAssets.filter((a) => a.renderMode === "shadow").length;
+        const plainPng = catAssets.filter((a) => a.renderMode === "without_shadow").length;
+        const epsCount = catAssets.filter((a) => a.assetRole === "authoring-source").length;
+        const masterCount = catAssets.filter((a) => a.assetRole === "authoring-master").length;
+        const supportCount = catAssets.filter((a) => a.assetRole === "background-support").length;
+        const runtimeCount = catAssets.filter((a) => a.runtimeStatus === "runtime-used").length;
+        const reviewedCount = catAssets.filter((a) => a.review.status === "reviewed").length;
+        const famParts = [...lootFams].map((f) => {
+          const famAssets = catAssets.filter((a) => a.lootFamilyType === f);
+          const famName = (famAssets.find((a) => a.lootFamilyType === f)?.suggestedFamilyName ?? f).replace(/\s*\(.*$/, "");
+          return `${new Set(famAssets.map((a) => a.lootIconId).filter(Boolean)).size} ${famName}`;
+        });
+        summaryBar = `<div class="summary-bar">${catAssets.length} source records · ${logicalIcons.size} logical loot icons · ${lootFams.size} semantic families · ${famParts.join(" · ")} · ${shadowPng} shadow PNG + ${plainPng} without-shadow PNG + ${epsCount} EPS sources + ${masterCount} AI master + ${supportCount} support · Runtime: ${runtimeCount} · Reference: ${catAssets.length - runtimeCount} · Reviewed: ${reviewedCount} · 0 unclassified</div>`;
+        summaryBar += `<div class="summary-bar env-note">💀 Undead Loot Vector Icons — the 146 files are 48 logical loot items: shadow/without-shadow PNGs are RENDER VARIANTS of the same icon, EPS files are authoring sources (one per icon). Strong on monster drops, undead materials, quest items, jewelry; weak on class weapons (no bow/staff/sword), chest armor, shields, food. Candidate subtype assignments (icons 31–32, 45–48) marked pending visual pass. Everything stays reference.</div>`;
       } else if (isSource) {
         const sourceFams = new Set(catAssets.map((a) => a.canonicalFamily).filter(Boolean));
         const reviewedCount = catAssets.filter((a) => a.review.status === "reviewed").length;
@@ -1059,14 +1089,38 @@ ${gapAuditPanelHtml(GAP_AUDIT)}
         summaryBar = `<div class="summary-bar">${familiesOnPage.length} families · ${catAssets.length} source assets · ${completes} placeable composite${completes !== 1 ? "s" : ""} · ${components} component${components !== 1 ? "s" : ""} · ${props} prop${props !== 1 ? "s" : ""}${others > 0 ? ` · ${others} other` : ""}</div>`;
       }
       // Filter controls
-      const placeableFilter = (isRoad || isGround || isDecor || isNpc || isHvNpc || isClass || isEnv || isMonster || isVdMonster || isNature || isVdMap || isPath || isSource) ? "" : `
+      const placeableFilter = (isRoad || isGround || isDecor || isNpc || isHvNpc || isClass || isEnv || isMonster || isVdMonster || isNature || isVdMap || isPath || isLoot || isSource) ? "" : `
   <label><input type="checkbox" class="filter-check" data-f="placeable" /> <span>Placeable only</span></label>`;
-      const roleFilter = (isRoad || isGround || isDecor || isNpc || isHvNpc || isClass || isEnv || isMonster || isVdMonster || isNature || isVdMap || isPath || isSource) ? "" : `
+      const roleFilter = (isRoad || isGround || isDecor || isNpc || isHvNpc || isClass || isEnv || isMonster || isVdMonster || isNature || isVdMap || isPath || isLoot || isSource) ? "" : `
   <span class="filter-group">Role
     <label><input type="checkbox" class="filter-check" data-f="role" data-v="complete" /> complete</label>
     <label><input type="checkbox" class="filter-check" data-f="role" data-v="component" /> component</label>
     <label><input type="checkbox" class="filter-check" data-f="role" data-v="prop" /> prop</label>
   </span>`;
+      const lootFilter = isLoot ? `
+  <span class="filter-group">Family
+    <label><input type="checkbox" class="filter-check" data-f="lootfam" data-v="undead_bone" /> undead bone</label>
+    <label><input type="checkbox" class="filter-check" data-f="lootfam" data-v="undead_body_part" /> body parts</label>
+    <label><input type="checkbox" class="filter-check" data-f="lootfam" data-v="undead_organ" /> organs</label>
+    <label><input type="checkbox" class="filter-check" data-f="lootfam" data-v="jewelry" /> jewelry</label>
+    <label><input type="checkbox" class="filter-check" data-f="lootfam" data-v="currency" /> currency</label>
+    <label><input type="checkbox" class="filter-check" data-f="lootfam" data-v="consumable" /> consumables</label>
+    <label><input type="checkbox" class="filter-check" data-f="lootfam" data-v="material" /> materials</label>
+    <label><input type="checkbox" class="filter-check" data-f="lootfam" data-v="quest_item" /> quest items</label>
+    <label><input type="checkbox" class="filter-check" data-f="lootfam" data-v="equipment" /> equipment</label>
+    <label><input type="checkbox" class="filter-check" data-f="lootfam" data-v="loot_source" /> source</label>
+  </span>
+  <span class="filter-group">Render
+    <label><input type="checkbox" class="filter-check" data-f="rendermode" data-v="shadow" /> shadow</label>
+    <label><input type="checkbox" class="filter-check" data-f="rendermode" data-v="without_shadow" /> without shadow</label>
+    <label><input type="checkbox" class="filter-check" data-f="rendermode" data-v="source" /> eps source</label>
+  </span>
+  <span class="filter-group">Role
+    <label><input type="checkbox" class="filter-check" data-f="role" data-v="loot-icon" /> icon</label>
+    <label><input type="checkbox" class="filter-check" data-f="role" data-v="authoring-source" /> source</label>
+    <label><input type="checkbox" class="filter-check" data-f="role" data-v="authoring-master" /> master</label>
+    <label><input type="checkbox" class="filter-check" data-f="role" data-v="background-support" /> support</label>
+  </span>` : "";
       const npcFilter = isNpc ? `
   <span class="filter-group">NPC
     <label><input type="checkbox" class="filter-check" data-f="npc" data-v="artist" /> artist</label>
@@ -1387,7 +1441,7 @@ ${gapAuditPanelHtml(GAP_AUDIT)}
     <label><input type="checkbox" class="filter-check" data-f="topology" data-v="needs-verification" /> needs verification</label>
   </span>` : "";
       const filterBar = `<div class="filter-bar">
-  <span class="filter-label">Filter:</span>${placeableFilter}${roleFilter}${roadFilter}${groundFilter}${decorFilter}${classFilter}${npcFilter}${hvNpcFilter}${envFilter}${monsterFilter}${natureFilter}${vdMapFilter}${vdMonsterFilter}${pathFilter}
+  <span class="filter-label">Filter:</span>${placeableFilter}${roleFilter}${lootFilter}${roadFilter}${groundFilter}${decorFilter}${classFilter}${npcFilter}${hvNpcFilter}${envFilter}${monsterFilter}${natureFilter}${vdMapFilter}${vdMonsterFilter}${pathFilter}
   <span class="filter-group">World
     <label><input type="checkbox" class="filter-check" data-f="world" data-v="CLOVER_SAFE" /> Clover</label>
     <label><input type="checkbox" class="filter-check" data-f="world" data-v="SHARED_1_20" /> Shared</label>
@@ -1518,7 +1572,8 @@ ${isNpc ? buildNpcIdentityStrip(catAssets) : ""}${isHvNpc ? buildHvNpcIdentitySt
           const isClassFam = !!familyReview?.classFamilyType && !isVdMapFam && !isVdMonsterFam && !isPathFam;
           const isMonsterFam = !!familyReview?.monsterFamilyType && !isVdMapFam && !isVdMonsterFam && !isPathFam;
           const isNatureFam = !!familyReview?.natureFamilyType && !isVdMapFam && !isVdMonsterFam && !isPathFam;
-          const isSourceFam = famAssets.some((a) => a.assetRole === "authoring-source" || a.assetRole === "documentation") && !isVdMapFam;
+          const isLootFam = !!familyReview?.lootFamilyType;
+          const isSourceFam = famAssets.some((a) => a.assetRole === "authoring-source" || a.assetRole === "documentation") && !isVdMapFam && !isLootFam;
           const familyLabel = familyReview?.suggestedFamilyName
             ? (familyReview.buildingFamily ? `${family} — ${familyReview.suggestedFamilyName}` : familyReview.suggestedFamilyName)
             : family;
@@ -1663,6 +1718,17 @@ ${isNpc ? buildNpcIdentityStrip(catAssets) : ""}${isHvNpc ? buildHvNpcIdentitySt
             const runtime = famAssets.filter((a) => a.runtimeStatus === "runtime-used").length;
             const variants = famAssets.filter((a) => a.variant).length;
             breakdown = `${famAssets.length} asset${famAssets.length !== 1 ? "s" : ""} · ${variants} semantic variant${variants !== 1 ? "s" : ""} · ${runtime} runtime`;
+          } else if (isLootFam) {
+            const icons = new Set(famAssets.map((a) => a.lootIconId).filter(Boolean)).size;
+            const shadows = famAssets.filter((a) => a.renderMode === "shadow").length;
+            const plains = famAssets.filter((a) => a.renderMode === "without_shadow").length;
+            const eps = famAssets.filter((a) => a.renderMode === "source").length;
+            const parts = [];
+            if (icons) parts.push(`${icons} logical icon${icons !== 1 ? "s" : ""}`);
+            if (shadows) parts.push(`${shadows} shadow PNG`);
+            if (plains) parts.push(`${plains} without-shadow PNG`);
+            if (eps) parts.push(`${eps} EPS source${eps !== 1 ? "s" : ""}`);
+            breakdown = `${famAssets.length} record${famAssets.length !== 1 ? "s" : ""}${parts.length ? " · " + parts.join(" · ") : ""} · 0 runtime`;
           } else if (isSourceFam) {
             breakdown = `${famAssets.length} asset${famAssets.length !== 1 ? "s" : ""} · ${famAssets.filter((a) => a.assetRole === "authoring-source").length} authoring master${famAssets.filter((a) => a.assetRole === "authoring-source").length !== 1 ? "s" : ""} · 0 gameplay`;
           } else if (isClassFam) {
@@ -1814,6 +1880,19 @@ ${isNpc ? buildNpcIdentityStrip(catAssets) : ""}${isHvNpc ? buildHvNpcIdentitySt
             if (familyReview.natureFamilyType === "palm") roadDetails += `<p class="family-details npc-note">🌴 7 palm variants — twin_a and twin_b are genuine variants (different silhouettes), not collapsed. Collision: TRUNK footprint, not the transparent sprite rectangle/canopy.</p>`;
             if (familyReview.natureFamilyType === "desert-tree") roadDetails += `<p class="family-details npc-note">🌳 Non-palm desert trees — broad, baobab (extremely characteristic silhouette), umbrella (conservative, not asserted acacia), dead ×2. Dead handled via treeType: dead, not a 7th family. Collision: trunk.</p>`;
             roadDetails += `<p class="family-details npc-note">🚫 None are tiles — transparent standalone overlays, no tileMode repeat or edge/corner topology. Entire package stays REFERENCE until runtime usage proves otherwise.</p>`;
+          } else if (isLootFam) {
+            const bits = [];
+            if (familyReview.lootFamilyType) bits.push(`Family: <strong>${familyReview.lootFamilyType.replace(/_/g, " ")}</strong>`);
+            const subtypes = [...new Set(famAssets.map((a) => a.lootSubtype).filter(Boolean))];
+            if (subtypes.length) bits.push(`Icons: ${subtypes.join(", ")}`);
+            const unconfirmed = famAssets.filter((a) => a.lootConfirmed === false).length;
+            bits.push(`Render modes: ${[...new Set(famAssets.map((a) => a.renderMode).filter(Boolean))].join(" + ")}`);
+            bits.push(`Runtime: 0`);
+            roadDetails = `<p class="family-details">${bits.join(" · ")}</p>`;
+            if (familyReview.notes) roadDetails += `<p class="family-details npc-note">${familyReview.notes}</p>`;
+            if (unconfirmed) roadDetails += `<p class="family-details npc-note">⚠ ${unconfirmed} record${unconfirmed !== 1 ? "s" : ""} carry candidate subtype assignment${unconfirmed !== 1 ? "s" : ""} (confirmed: false) pending a visual pass.</p>`;
+            if (familyReview.lootFamilyType === "equipment") roadDetails += `<p class="family-details npc-note">⚔ The pack's weak area — helmet/gloves/boot/dagger/broken-arrow only. No class weapons (bow/staff/sword), no chest armor, no shields: the audit's targeted art gap.</p>`;
+            if (familyReview.lootFamilyType === "loot_source") roadDetails += `<p class="family-details npc-note">📦 AI master + bg support — provenance only, not gameplay.</p>`;
           } else if (isVdMapFam) {
             const bits = [];
             if (familyReview.vdMapFamilyType) bits.push(`Type: <strong>${familyReview.vdMapFamilyType === "road" ? "Stone Road Kit" : familyReview.vdMapFamilyType.replace(/-/g, " ")}</strong>`);
@@ -1963,6 +2042,7 @@ ${isNpc ? buildNpcIdentityStrip(catAssets) : ""}${isHvNpc ? buildHvNpcIdentitySt
           const vdMapAttrs = asset.vdMapFamilyType ? ` data-vdmap="${asset.canonicalFamily ?? ""}" data-terrainrole="${asset.terrainRole ?? ""}" data-roadrole="${asset.roadRole ?? ""}" data-variant="${asset.variant ?? ""}" data-collision="${asset.collision ?? ""}"` : "";
           const vdMonsterAttrs = asset.vdMonsterFamilyType ? ` data-monster="${asset.monsterId ?? ""}" data-monstertype="${asset.monsterType ?? ""}" data-animation="${asset.animation ?? ""}" data-direction="${asset.direction ?? ""}"` : "";
           const pathAttrs = asset.pathFamilyType ? ` data-pathfam="${asset.canonicalFamily ?? ""}" data-material="${asset.pathMaterial ?? ""}" data-surfacecontext="${asset.surfaceContext ?? ""}"` : "";
+          const lootAttrs = asset.lootFamilyType ? ` data-lootfam="${asset.lootFamilyType ?? ""}" data-rendermode="${asset.renderMode ?? ""}"` : "";
           const sourceOfNote = asset.sourceOf ? `<span class="topology" title="Authoring source of ${asset.sourceOf}">src → ${asset.sourceOf}</span>` : "";
           const npcRoleBadge = asset.assetRole ? `<span class="npc-role">${asset.assetRole.replace(/-/g, " ")}</span>` : "";
           const effectBadge = asset.effect ? `<span class="candidate-role" title="Effect: ${asset.effect}">${asset.effect.toUpperCase()}</span>` : "";
@@ -2012,7 +2092,12 @@ ${isNpc ? buildNpcIdentityStrip(catAssets) : ""}${isHvNpc ? buildHvNpcIdentitySt
           const pathFamilyBadge = asset.pathFamilyType ? `<span class="decor-role" title="Path family">${asset.pathFamilyType === "composite" ? "path composite" : asset.pathFamilyType.replace(/-/g, " ")}</span>` : "";
           const pathMaterialBadge = asset.pathMaterial ? `<span class="candidate-role" title="Path material">${asset.pathMaterial.replace(/_/g, " ")}</span>` : "";
           const surfaceBadge = asset.surfaceContext ? `<span class="terrain-role">${asset.surfaceContext.replace(/-/g, " ")}</span>` : "";
-          html += `<div class="card" data-role="${asset.assetRole ?? "none"}" data-world="${asset.worldRole ?? "UNASSIGNED"}" data-runtime="${asset.runtimeStatus}"${roadAttrs}${groundAttrs}${decorAttrs}${npcAttrs}${classAttrs}${envAttrs}${monsterAttrs}${natureAttrs}${vdMapAttrs}${vdMonsterAttrs}${pathAttrs}><img loading="lazy" src="${asset.imageUrl}" alt="${asset.filename}"><div class="filename">${asset.filename}${canon}</div><div class="path">${asset.path}</div><div class="meta"><span>${asset.id}</span>${asset.width && asset.height ? `<span>${asset.width}×${asset.height}</span>` : ""}${asset.assetRole ? `<span>${asset.assetRole}</span>` : ""}${roadRoleBadge}${terrainBadge}${terrainRoleBadge}${decorBadge}${envRoleBadge}${monsterBadge}${hvNpcBadge}${vdMapBadge}${vdRoadRoleBadge}${waterBadge}${vdMonsterBadge}${vdMonsterTypeBadge}${weaponBadge}${pathFamilyBadge}${pathMaterialBadge}${surfaceBadge}${natureBadge}${natureRoleBadge}${treeTypeBadge}${formationBadge}${materialBadge}${scaleBadge}${occlusionBadge}${treeRoleBadge}${objRoleBadge}${compBadge}${propBadge}${orientBadge}${sizeBadge}${shadowBadge}${dupOfNote}${sharedVisualBadge}${subtypeBadge}${variantNameBadge}${palmVariantBadge}${npcRoleBadge}${animBadge}${dirBadge}${frameBadge}${effectBadge}${elementBadge}${effectTypeBadge}${effectVariantBadge}${sourceOfNote}${depthBadge}${densityBadge}${variantBadge}${candBadge}${topoBadge}${badgeRuntime(asset.runtimeStatus)}${badgeReview(asset.review.status)}</div></div>
+          const lootFamBadge = asset.lootFamilyType ? `<span class="decor-role" title="Loot family: ${asset.lootFamilyType}">${asset.lootFamilyType.replace(/_/g, " ")}</span>` : "";
+          const lootSubtypeBadge = asset.lootSubtype ? `<span class="subtype-badge" title="Loot subtype: ${asset.lootSubtype}">${asset.lootSubtype.replace(/_/g, " ")}</span>` : "";
+          const renderModeBadge = asset.renderMode ? `<span class="depth-badge" title="Render variant">${asset.renderMode.replace(/_/g, " ")}</span>` : "";
+          const lootIconBadge = asset.lootIconId ? `<span class="variant-badge" title="Logical loot icon">icon ${asset.lootIconId}</span>` : "";
+          const unconfirmedBadge = asset.lootConfirmed === false ? `<span class="topology" title="Candidate assignment pending visual pass">unconfirmed</span>` : "";
+          html += `<div class="card" data-role="${asset.assetRole ?? "none"}" data-world="${asset.worldRole ?? "UNASSIGNED"}" data-runtime="${asset.runtimeStatus}"${roadAttrs}${groundAttrs}${decorAttrs}${npcAttrs}${classAttrs}${envAttrs}${monsterAttrs}${natureAttrs}${vdMapAttrs}${vdMonsterAttrs}${pathAttrs}${lootAttrs}><img loading="lazy" src="${asset.imageUrl}" alt="${asset.filename}"><div class="filename">${asset.filename}${canon}</div><div class="path">${asset.path}</div><div class="meta"><span>${asset.id}</span>${asset.width && asset.height ? `<span>${asset.width}×${asset.height}</span>` : ""}${asset.assetRole ? `<span>${asset.assetRole}</span>` : ""}${roadRoleBadge}${terrainBadge}${terrainRoleBadge}${decorBadge}${envRoleBadge}${monsterBadge}${hvNpcBadge}${vdMapBadge}${vdRoadRoleBadge}${waterBadge}${vdMonsterBadge}${vdMonsterTypeBadge}${weaponBadge}${pathFamilyBadge}${pathMaterialBadge}${surfaceBadge}${natureBadge}${natureRoleBadge}${treeTypeBadge}${formationBadge}${materialBadge}${scaleBadge}${occlusionBadge}${treeRoleBadge}${objRoleBadge}${compBadge}${propBadge}${orientBadge}${sizeBadge}${shadowBadge}${dupOfNote}${sharedVisualBadge}${subtypeBadge}${variantNameBadge}${palmVariantBadge}${npcRoleBadge}${animBadge}${dirBadge}${frameBadge}${effectBadge}${elementBadge}${effectTypeBadge}${effectVariantBadge}${sourceOfNote}${depthBadge}${densityBadge}${variantBadge}${candBadge}${topoBadge}${lootFamBadge}${lootSubtypeBadge}${renderModeBadge}${lootIconBadge}${unconfirmedBadge}${badgeRuntime(asset.runtimeStatus)}${badgeReview(asset.review.status)}</div></div>
 `;
         } else {
           const canon = asset.canonicalName ? `<div class="canonical">${asset.canonicalName}</div>` : "";
@@ -2027,6 +2112,11 @@ ${isNpc ? buildNpcIdentityStrip(catAssets) : ""}${isHvNpc ? buildHvNpcIdentitySt
           const vdMapBadge = asset.vdMapFamilyType ? `<span class="decor-role" title="Map family: ${asset.canonicalFamily}">${asset.vdMapFamilyType === "road" ? "road" : asset.vdMapFamilyType.replace(/-/g, " ")}</span>` : "";
           const vdMonsterAttrs = asset.vdMonsterFamilyType ? ` data-monster="${asset.monsterId ?? ""}" data-monstertype="${asset.monsterType ?? ""}" data-animation="${asset.animation ?? ""}" data-direction="${asset.direction ?? ""}"` : "";
           const pathAttrs = asset.pathFamilyType ? ` data-pathfam="${asset.canonicalFamily ?? ""}"` : "";
+          const lootAttrs = asset.lootFamilyType ? ` data-lootfam="${asset.lootFamilyType ?? ""}" data-rendermode="${asset.renderMode ?? ""}"` : "";
+          const lootFamBadge = asset.lootFamilyType ? `<span class="decor-role" title="Loot family: ${asset.lootFamilyType}">${asset.lootFamilyType.replace(/_/g, " ")}</span>` : "";
+          const lootSubtypeBadge = asset.lootSubtype ? `<span class="subtype-badge" title="Loot subtype: ${asset.lootSubtype}">${asset.lootSubtype.replace(/_/g, " ")}</span>` : "";
+          const renderModeBadge = asset.renderMode ? `<span class="depth-badge" title="Render variant">${asset.renderMode.replace(/_/g, " ")}</span>` : "";
+          const lootIconBadge = asset.lootIconId ? `<span class="variant-badge" title="Logical loot icon">icon ${asset.lootIconId}</span>` : "";
           const vdMonsterBadge = asset.vdMonsterFamilyType && asset.monsterId ? `<span class="decor-role" title="Monster: ${asset.monsterId}">${asset.monsterId.replace(/_/g, " ")}</span>` : "";
           const vdMonsterTypeBadge = asset.monsterType ? `<span class="subtype-badge" title="Monster type">${asset.monsterType.replace(/_/g, " ")}</span>` : "";
           const pathFamilyBadge = asset.pathFamilyType ? `<span class="decor-role" title="Path family">${asset.pathFamilyType === "composite" ? "path composite" : asset.pathFamilyType.replace(/-/g, " ")}</span>` : "";
@@ -2040,7 +2130,7 @@ ${isNpc ? buildNpcIdentityStrip(catAssets) : ""}${isHvNpc ? buildHvNpcIdentitySt
           const compBadge = asset.component ? `<span class="candidate-role">${asset.component}</span>` : "";
           const propBadge = asset.propRole ? `<span class="candidate-role">${asset.propRole}</span>` : "";
           const sharedVisualBadge = asset.sharedVisual ? `<span class="subtype-badge" title="Shared visual — same artwork across NPCs">shared</span>` : "";
-          html += `<div class="card" data-role="${asset.assetRole ?? "none"}" data-world="${asset.worldRole ?? "UNASSIGNED"}" data-runtime="${asset.runtimeStatus}"${envAttrs}${monsterAttrs}${hvNpcAttrs}${vdMapAttrs}${vdMonsterAttrs}${pathAttrs}><div style="height:250px;background:#f0f0f0;display:flex;align-items:center;justify-content:center;color:#666">${asset.extension}</div><div class="filename">${asset.filename}${canon}</div><div class="path">${asset.path}</div><div class="meta"><span>${asset.id}</span><span>${asset.category}</span>${asset.assetRole ? `<span>${asset.assetRole}</span>` : ""}${sourceBadge}${formatBadge}${envRoleBadge}${monsterBadge}${hvNpcBadge}${vdMapBadge}${vdMonsterBadge}${vdMonsterTypeBadge}${pathFamilyBadge}${compBadge}${propBadge}${sharedVisualBadge}${animBadge}${dirBadge}${shadowBadge}${dupOfNote}${sourceOfNote}${eligBadge}${badgeRuntime(asset.runtimeStatus)}${badgeReview(asset.review.status)}</div></div>
+          html += `<div class="card" data-role="${asset.assetRole ?? "none"}" data-world="${asset.worldRole ?? "UNASSIGNED"}" data-runtime="${asset.runtimeStatus}"${envAttrs}${monsterAttrs}${hvNpcAttrs}${vdMapAttrs}${vdMonsterAttrs}${pathAttrs}${lootAttrs}><div style="height:250px;background:#f0f0f0;display:flex;align-items:center;justify-content:center;color:#666">${asset.extension}</div><div class="filename">${asset.filename}${canon}</div><div class="path">${asset.path}</div><div class="meta"><span>${asset.id}</span><span>${asset.category}</span>${asset.assetRole ? `<span>${asset.assetRole}</span>` : ""}${sourceBadge}${formatBadge}${envRoleBadge}${monsterBadge}${hvNpcBadge}${vdMapBadge}${vdMonsterBadge}${vdMonsterTypeBadge}${pathFamilyBadge}${lootFamBadge}${lootSubtypeBadge}${renderModeBadge}${lootIconBadge}${compBadge}${propBadge}${sharedVisualBadge}${animBadge}${dirBadge}${shadowBadge}${dupOfNote}${sourceOfNote}${eligBadge}${badgeRuntime(asset.runtimeStatus)}${badgeReview(asset.review.status)}</div></div>
 `;
         }
         }
@@ -2097,6 +2187,8 @@ ${isNpc ? buildNpcIdentityStrip(catAssets) : ""}${isHvNpc ? buildHvNpcIdentitySt
       if (show && active("vdmap") && !active("vdmap", card.dataset.vdmap)) show = false;
       if (show && active("roadrole") && !active("roadrole", card.dataset.roadrole)) show = false;
       if (show && active("pathfam") && !active("pathfam", card.dataset.pathfam)) show = false;
+      if (show && active("lootfam") && !active("lootfam", card.dataset.lootfam)) show = false;
+      if (show && active("rendermode") && !active("rendermode", card.dataset.rendermode)) show = false;
       if (show && active("material") && !active("material", card.dataset.material)) show = false;
       if (show && active("surfacecontext") && !active("surfacecontext", card.dataset.surfacecontext)) show = false;
       if (show && active("animation") && !active("animation", card.dataset.animation)) show = false;
