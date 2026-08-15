@@ -24,6 +24,12 @@ const root = join(__dirname, "..");
 const deployDir = join(root, "deploy", "asset-catalog");
 const PAGE_SIZE = 50;
 
+// Level-60 production readiness gap audit — what the catalog has vs. what a
+// level 1→60 game loop needs. Lives in design/assets/catalog-gap-audit.json.
+const GAP_AUDIT = JSON.parse(
+  await readFile(join(root, "design", "assets", "catalog-gap-audit.json"), "utf8")
+);
+
 // Audit status for cataloged categories — keeps the review index and the catalog
 // homepage useful at a glance.
 // key = pack + '|' + category. Values: { label, tone } where tone in ok/warn/todo.
@@ -41,6 +47,9 @@ const AUDIT_STATUS = {
   "HappyValley|monster": { label: "COMPLETE · 5 IDENTITIES / 4 FAMILIES / 0 UNCLASSIFIED", tone: "ok" },
   "HappyValley|npc": { label: "COMPLETE · 3 IDENTITIES / 5 FAMILIES / 0 UNCLASSIFIED", tone: "ok" },
   "VoidDesert|nature": { label: "COMPLETE · 6 NATURE FAMILIES / 0 UNCLASSIFIED", tone: "ok" },
+  "VoidDesert|other": { label: "COMPLETE · 8 MAP FAMILIES / 0 UNCLASSIFIED", tone: "ok" },
+  "VoidDesert|monster": { label: "COMPLETE · 7 IDENTITIES / 6 FAMILIES / 0 UNCLASSIFIED", tone: "ok" },
+  "OtherAssets|path-composite": { label: "COMPLETE · 3 PATH FAMILIES / 0 UNCLASSIFIED", tone: "ok" },
 };
 
 function stableId(filePath) {
@@ -235,6 +244,19 @@ function lightweight(asset) {
   if (asset.scaleClass) base.scaleClass = asset.scaleClass;
   if (asset.occlusion !== undefined) base.occlusion = asset.occlusion;
   if (asset.treeType) base.treeType = asset.treeType;
+  if (asset.vdMapFamilyType) base.vdMapFamilyType = asset.vdMapFamilyType;
+  if (asset.waterType) base.waterType = asset.waterType;
+  if (asset.vdMonsterFamilyType) base.vdMonsterFamilyType = asset.vdMonsterFamilyType;
+  if (asset.monsterType) base.monsterType = asset.monsterType;
+  if (asset.weaponType) base.weaponType = asset.weaponType;
+  if (asset.component) base.component = asset.component;
+  if (asset.propRole) base.propRole = asset.propRole;
+  if (asset.pathFamilyType) base.pathFamilyType = asset.pathFamilyType;
+  if (asset.pathMaterial) base.pathMaterial = asset.pathMaterial;
+  if (asset.surfaceContext) base.surfaceContext = asset.surfaceContext;
+  if (asset.contains?.length) base.contains = asset.contains;
+  if (asset.tileExtraction) base.tileExtraction = asset.tileExtraction;
+  if (asset.tileSource) base.tileSource = asset.tileSource;
   return base;
 }
 
@@ -254,7 +276,7 @@ async function build() {
     const reviewData = JSON.parse(await readFile(join(root, "design", "assets", "asset-reviews.json"), "utf8"));
     for (const [familyKey, family] of Object.entries(reviewData.reviews ?? {})) {
       for (const [assetPath, review] of Object.entries(family.assets ?? {})) {
-        const merged = { ...review, buildingFamily: family.buildingFamily, canonicalFamily: family.canonicalFamily, suggestedFamilyName: family.suggestedFamilyName, structureType: family.structureType, worldRole: family.worldRole, suitability: family.suitability, collision: family.collision, gameplayRole: family.gameplayRole, recommendedUse: family.recommendedUse, recommendedUses: family.recommendedUses, notes: family.notes, catalogCategory: family.catalogCategory, roadType: family.roadType, terrainRole: review.terrainRole ?? family.terrainRole, tileMode: family.tileMode, decorRole: review.decorRole ?? family.decorRole, placementMode: review.placementMode ?? family.placementMode, topology: review.topology ?? family.topology, variant: review.variant ?? null, collision: review.collision ?? family.collision, depthMode: review.depthMode ?? family.depthMode, density: review.density ?? family.density, anchor: review.anchor ?? family.anchor, npcFamilyType: family.npcFamilyType, npcId: review.npcId ?? null, npcPackage: review.npcPackage ?? null, classId: review.classId ?? family.classId ?? null, classFamilyType: family.classFamilyType ?? null, effect: review.effect ?? null, element: review.element ?? null, effectType: review.effectType ?? null, shape: review.shape ?? null, effectVariant: review.effectVariant ?? null, sourceOf: review.sourceOf ?? null, animation: review.animation ?? null, direction: review.direction ?? null, frame: review.frame ?? null, frameCount: review.frameCount ?? null, bodyPart: review.bodyPart ?? null, side: review.side ?? null, renderMode: review.renderMode ?? null, placeable: review.placeable ?? true, sourceRole: review.sourceRole ?? null, format: review.format ?? null, runtimeEligible: review.runtimeEligible ?? null, uiAsset: review.uiAsset ?? null, sharedVisual: review.sharedVisual ?? null, walkable: family.walkable, envFamilyType: family.envFamilyType, envRole: review.envRole ?? null, treeRole: review.treeRole ?? null, objectRole: review.objectRole ?? null, orientation: review.orientation ?? null, size: review.size ?? null, monsterFamilyType: family.monsterFamilyType, monsterId: review.monsterId ?? null, shadowMode: review.shadowMode ?? null, duplicateOf: review.duplicateOf ?? null, catalogVisible: review.catalogVisible ?? true, hvNpcFamilyType: family.hvNpcFamilyType, natureFamilyType: family.natureFamilyType ?? null, natureRole: review.natureRole ?? null, formationType: review.formationType ?? null, material: review.material ?? null, scaleClass: review.scaleClass ?? null, occlusion: review.occlusion ?? null, treeType: review.treeType ?? null, status: family.status, catalogStatus: family.catalogStatus, topologyStatus: family.topologyStatus, kitStatus: family.kitStatus, recoveryStatus: family.recoveryStatus, runtimeReady: family.runtimeReady, artRequired: family.artRequired, artTask: family.artTask, recovery: family.recovery };
+        const merged = { ...review, buildingFamily: family.buildingFamily, canonicalFamily: family.canonicalFamily, suggestedFamilyName: family.suggestedFamilyName, structureType: family.structureType, worldRole: family.worldRole, suitability: family.suitability, collision: family.collision, gameplayRole: family.gameplayRole, recommendedUse: family.recommendedUse, recommendedUses: family.recommendedUses, notes: family.notes, catalogCategory: family.catalogCategory, roadType: family.roadType, terrainRole: review.terrainRole ?? family.terrainRole, tileMode: family.tileMode, decorRole: review.decorRole ?? family.decorRole, placementMode: review.placementMode ?? family.placementMode, topology: review.topology ?? family.topology, variant: review.variant ?? null, collision: review.collision ?? family.collision, depthMode: review.depthMode ?? family.depthMode, density: review.density ?? family.density, anchor: review.anchor ?? family.anchor, npcFamilyType: family.npcFamilyType, npcId: review.npcId ?? null, npcPackage: review.npcPackage ?? null, classId: review.classId ?? family.classId ?? null, classFamilyType: family.classFamilyType ?? null, effect: review.effect ?? null, element: review.element ?? null, effectType: review.effectType ?? null, shape: review.shape ?? null, effectVariant: review.effectVariant ?? null, sourceOf: review.sourceOf ?? null, animation: review.animation ?? null, direction: review.direction ?? null, frame: review.frame ?? null, frameCount: review.frameCount ?? null, bodyPart: review.bodyPart ?? null, side: review.side ?? null, renderMode: review.renderMode ?? null, placeable: review.placeable ?? true, sourceRole: review.sourceRole ?? null, format: review.format ?? null, runtimeEligible: review.runtimeEligible ?? null, uiAsset: review.uiAsset ?? null, sharedVisual: review.sharedVisual ?? null, walkable: family.walkable, envFamilyType: family.envFamilyType, envRole: review.envRole ?? null, treeRole: review.treeRole ?? null, objectRole: review.objectRole ?? null, orientation: review.orientation ?? null, size: review.size ?? null, monsterFamilyType: family.monsterFamilyType, monsterId: review.monsterId ?? null, shadowMode: review.shadowMode ?? null, duplicateOf: review.duplicateOf ?? null, catalogVisible: review.catalogVisible ?? true, hvNpcFamilyType: family.hvNpcFamilyType, natureFamilyType: family.natureFamilyType ?? null, natureRole: review.natureRole ?? null, formationType: review.formationType ?? null, material: review.material ?? null, scaleClass: review.scaleClass ?? null, occlusion: review.occlusion ?? null, treeType: review.treeType ?? null, vdMapFamilyType: family.vdMapFamilyType ?? null, waterType: review.waterType ?? null, vdMonsterFamilyType: family.vdMonsterFamilyType ?? null, monsterType: review.monsterType ?? null, weaponType: review.weaponType ?? null, component: review.component ?? null, propRole: review.propRole ?? null, pathFamilyType: family.pathFamilyType ?? null, pathMaterial: review.pathMaterial ?? null, surfaceContext: review.surfaceContext ?? null, contains: review.contains ?? null, tileExtraction: review.tileExtraction ?? null, tileSource: review.tileSource ?? null, status: family.status, catalogStatus: family.catalogStatus, topologyStatus: family.topologyStatus, kitStatus: family.kitStatus, recoveryStatus: family.recoveryStatus, runtimeReady: family.runtimeReady, artRequired: family.artRequired, artTask: family.artTask, recovery: family.recovery };
         // Normalize review runtime status to inventory-style values used by badges/filters
         if (merged.runtimeStatus === "runtime") merged.runtimeStatus = "runtime-used";
         if (merged.runtimeStatus === "reference") merged.runtimeStatus = "reference-only";
@@ -513,6 +535,7 @@ async function build() {
     assetCount: assets.length,
     assets: assets.map(lightweight),
     auditStatus: AUDIT_STATUS,
+    gapAudit: GAP_AUDIT,
   };
   await writeFile(join(apiDir, "assets.js"), `window.ASSETS_DATA = ${JSON.stringify(browsePayload)};\n`, "utf8");
   console.log(`  api/assets.js: ${browsePayload.assets.length} assets (full browse payload)`);
@@ -622,6 +645,142 @@ async function build() {
   </div>
 </section>`;
 
+  // --- Level-60 readiness gap audit panel (shared by the review index and the
+  // dedicated gap-audit page) ---
+  const statusTone = (s) => (s === "ready" ? "ok" : s === "warn" ? "warn" : "missing");
+  const statusBadge = (s) => {
+    const label = s === "ready" ? "READY" : s === "warn" ? "PARTIAL" : "MISSING";
+    return `<span class="gap-badge ${statusTone(s)}">${label}</span>`;
+  };
+  const gapAuditPanelHtml = (audit) => {
+    const worlds = audit.worldTiers
+      .map(
+        (w) => `<div class="gap-world">
+      <h3>${w.world} <span class="gap-tier">Lv ${w.tier}</span> ${statusBadge(w.status)}</h3>
+      <p class="gap-label">${w.label}</p>
+      <table class="gap-systems">
+        ${w.systems
+          .map(
+            (s) => `<tr><td>${s.system}</td><td>${statusBadge(s.status)}</td><td class="gap-coverage">${s.coverage}${s.missing ? `<br><span class="gap-missing">missing: ${s.missing}</span>` : ""}</td></tr>`
+          )
+          .join("")}
+      </table>
+      ${w.note ? `<p class="gap-note">${w.note}</p>` : ""}
+    </div>`
+      )
+      .join("");
+    const shared = audit.sharedSystems
+      .map(
+        (s) => `<tr><td>${s.system}</td><td>${statusBadge(s.status)}</td><td class="gap-coverage">${s.coverage}${s.missing ? `<br><span class="gap-missing">missing: ${s.missing}</span>` : ""}</td></tr>`
+      )
+      .join("");
+    const matrixRows = audit.coverageMatrix
+      .map(
+        (r) => `<tr><td>${r.system}</td><td>${statusBadge(r.clover)}</td><td>${statusBadge(r.happy)}</td><td>${statusBadge(r.void)}</td><td>${statusBadge(r.overall)}</td></tr>`
+      )
+      .join("");
+    const launchRows = (audit.launchPlan ?? [])
+      .map(
+        (l) => `<div class="gap-launch-row ${l.status}"><span class="gap-launch-tier">Launch ${l.tier}</span><strong>${l.world}</strong> <span class="gap-tier">Lv ${l.levels}</span> ${statusBadge(l.status === "current" ? "warn" : "ready")} <span class="gap-launch-label">${l.label}</span><div class="gap-launch-scope">${l.scope}</div></div>`
+      )
+      .join("");
+    const priorityList = audit.priorities
+      .map((p) => `<li><strong>#${p.priority}${p.launch ? ` · Launch ${p.launch}` : ""} — ${p.item}.</strong> ${p.detail}</li>`)
+      .join("");
+    return `<div class="gap-audit">
+  <div class="gap-head">
+    <h2>${audit.title}</h2>
+    <span class="gap-badge ${statusTone(audit.overall.status)}">${audit.overall.label}</span>
+  </div>
+  <p class="gap-subtitle">${audit.subtitle}</p>
+  <p class="gap-note">${audit.overall.note}</p>
+  <div class="gap-section">
+    <h3>Launch plan</h3>
+    ${launchRows}
+  </div>
+  <div class="gap-worlds">${worlds}</div>
+  <div class="gap-section">
+    <h3>Dungeons</h3>
+    <p>${statusBadge(audit.dungeons.status)} ${audit.dungeons.label}</p>
+    <p class="gap-coverage">${audit.dungeons.note}${audit.dungeons.missing ? `<br><span class="gap-missing">missing: ${audit.dungeons.missing}</span>` : ""}</p>
+  </div>
+  <div class="gap-section">
+    <h3>Player classes</h3>
+    <p>${statusBadge(audit.playerClasses.status)} ${audit.playerClasses.label}</p>
+    <p class="gap-coverage">${audit.playerClasses.note}${audit.playerClasses.missing ? `<br><span class="gap-missing">missing: ${audit.playerClasses.missing}</span>` : ""}</p>
+  </div>
+  <div class="gap-section">
+    <h3>Shared systems</h3>
+    <table class="gap-systems">${shared}</table>
+  </div>
+  <div class="gap-section">
+    <h3>Coverage matrix</h3>
+    <table class="gap-matrix">
+      <tr><th>System</th><th>Clover 1–20</th><th>Happy 21–40</th><th>Void 41–60</th><th>Overall</th></tr>
+      ${matrixRows}
+    </table>
+  </div>
+  <div class="gap-section">
+    <h3>Acquisition / creation priorities</h3>
+    <ol>${priorityList}</ol>
+  </div>
+</div>`;
+  };
+
+  const gapAuditStyle = `
+  .gap-audit { background: #fff; border: 1px solid #d9e3d7; border-radius: 10px; padding: 1rem 1.25rem; margin: 1rem 0; }
+  .gap-head { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; flex-wrap: wrap; }
+  .gap-head h2 { margin: 0; font-size: 1.2rem; color: #2e5037; }
+  .gap-subtitle { color: #68766b; font-size: 0.9rem; }
+  .gap-badge { display: inline-block; padding: 0.15rem 0.5rem; border-radius: 999px; font-size: 0.68rem; font-weight: 700; letter-spacing: 0.03em; white-space: nowrap; }
+  .gap-badge.ok { background: #e8f5e9; color: #1b5e20; border: 1px solid #a5d6a7; }
+  .gap-badge.warn { background: #fff3e0; color: #e65100; border: 1px solid #ffcc80; }
+  .gap-badge.missing { background: #fdecea; color: #b71c1c; border: 1px solid #ef9a9a; }
+  .gap-worlds { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1rem; margin: 1rem 0; }
+  .gap-world { border: 1px solid #e3eae1; border-radius: 8px; padding: 0.75rem 1rem; background: #fbfdfb; }
+  .gap-world h3 { margin: 0 0 0.25rem; font-size: 1rem; }
+  .gap-tier { color: #68766b; font-size: 0.75rem; font-weight: 700; }
+  .gap-label { margin: 0 0 0.5rem; color: #2e5037; font-size: 0.82rem; font-weight: 600; }
+  .gap-systems { width: 100%; border-collapse: collapse; font-size: 0.82rem; }
+  .gap-systems td { padding: 0.3rem 0.4rem; border-top: 1px solid #eef2ec; vertical-align: top; }
+  .gap-systems td:first-child { font-weight: 600; color: #263228; white-space: nowrap; }
+  .gap-coverage { color: #4a5a4e; }
+  .gap-missing { color: #b71c1c; }
+  .gap-note { color: #68766b; font-size: 0.85rem; }
+  .gap-launch-row { display: grid; grid-template-columns: 90px 150px 70px auto 1fr; align-items: baseline; gap: 8px; padding: 0.5rem 0; border-top: 1px solid #eef2ec; font-size: 0.88rem; }
+  .gap-launch-row.current { background: #fdf6e9; border-left: 3px solid #e65100; padding-left: 8px; }
+  .gap-launch-row.future { opacity: 0.85; }
+  .gap-launch-tier { font-weight: 800; color: #a36e23; }
+  .gap-launch-label { color: #2e5037; font-weight: 600; }
+  .gap-launch-scope { grid-column: 1 / -1; color: #68766b; font-size: 0.82rem; }
+  .gap-section { margin: 1rem 0 0; padding-top: 0.75rem; border-top: 1px solid #e3eae1; }
+  .gap-section h3 { margin: 0 0 0.5rem; font-size: 1rem; color: #2e5037; }
+  .gap-section ol { margin: 0.5rem 0; padding-left: 1.25rem; }
+  .gap-section li { margin: 0.35rem 0; font-size: 0.9rem; }
+  .gap-matrix { width: 100%; border-collapse: collapse; font-size: 0.8rem; margin-top: 0.5rem; }
+  .gap-matrix th, .gap-matrix td { border: 1px solid #e3eae1; padding: 0.3rem 0.5rem; text-align: left; }
+  .gap-matrix th { background: #f3f7f1; color: #2e5037; }
+  `;
+
+  const gapLaunchRows = (GAP_AUDIT.launchPlan ?? [])
+    .map(
+      (l) => `<div class="gap-launch-row ${l.status}"><span class="gap-launch-tier">Launch ${l.tier}</span><strong>${l.world}</strong> <span class="gap-tier">Lv ${l.levels}</span> ${statusBadge(l.status === "current" ? "warn" : "ready")} <span class="gap-launch-label">${l.label}</span><div class="gap-launch-scope">${l.scope}</div></div>`
+    )
+    .join("");
+
+  const gapPanel = `<section class="gap-panel">
+  <div class="gap-panel-head">
+    <h2>Level-60 readiness</h2>
+    <a class="gap-link" href="gap-audit.html">Full gap audit →</a>
+  </div>
+  <p class="gap-subtitle">${GAP_AUDIT.subtitle}</p>
+  <div class="gap-panel-summary">${statusBadge(GAP_AUDIT.overall.status)} ${GAP_AUDIT.overall.label}</div>
+  <div class="gap-panel-launch">${gapLaunchRows}</div>
+  <div class="gap-panel-matrix">${GAP_AUDIT.coverageMatrix
+    .map((r) => `<div class="gap-panel-row"><span class="gap-panel-system">${r.system}</span>${["clover", "happy", "void", "overall"].map((k) => statusBadge(r[k])).join("")}</div>`)
+    .join("")}</div>
+</section>`;
+
   let reviewIndex = `<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -650,12 +809,22 @@ async function build() {
   .progress-fill { height: 100%; border-radius: 999px; background: linear-gradient(90deg, #6a9e70, #93c39a); }
   .progress-fill.done { background: linear-gradient(90deg, #2e7d32, #66bb6a); }
   .progress-count { text-align: right; font-size: 0.78rem; font-weight: 800; color: #68766b; }
+  .gap-panel { margin-bottom: 1rem; }
+  .gap-panel-head { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; flex-wrap: wrap; }
+  .gap-panel-head h2 { font-size: 1.1rem; margin: 0; }
+  .gap-link { font-size: 0.85rem; color: #456b4e; font-weight: 700; text-decoration: none; }
+  .gap-panel-summary { margin: 0.5rem 0; font-weight: 800; font-size: 0.9rem; color: #2e5037; }
+  .gap-panel-matrix { display: grid; gap: 4px; margin-top: 0.5rem; }
+  .gap-panel-row { display: grid; grid-template-columns: 1fr repeat(4, auto); align-items: center; gap: 8px; font-size: 0.8rem; }
+  .gap-panel-system { color: #263228; font-weight: 600; }
+${gapAuditStyle}
 </style>
 </head>
 <body>
 <h1>Asset Review Pages</h1>
 <p>Per-category visual audit pages. Each category is one page; families are shown whole.</p>
 ${progressStrip}
+${gapPanel}
 <div class="cat-grid">
 `;
 
@@ -677,6 +846,28 @@ ${progressStrip}
   reviewIndex += `</div></body></html>`;
   await writeFile(join(reviewDir, "index.html"), reviewIndex, "utf8");
 
+  // Dedicated Level-60 readiness gap audit page (linked from the review index).
+  const gapPage = `<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>${GAP_AUDIT.title}</title>
+<style>
+  body { font-family: system-ui; max-width: 1080px; margin: 2rem auto; padding: 0 1rem; color: #263228; background: #f3f7f1; }
+  h1 { font-size: 1.4rem; }
+  .back { font-size: 0.85rem; color: #456b4e; font-weight: 700; text-decoration: none; }
+${gapAuditStyle}
+</style>
+</head>
+<body>
+<p><a class="back" href="index.html">← Review index</a></p>
+<h1>${GAP_AUDIT.title}</h1>
+${gapAuditPanelHtml(GAP_AUDIT)}
+</body>
+</html>`;
+  await writeFile(join(reviewDir, "gap-audit.html"), gapPage, "utf8");
+  console.log("  review/gap-audit.html: Level-60 readiness page");
+
   // Per-category review pages
   for (const [packName, packAssets] of Object.entries(byPack)) {
     const packDir = join(reviewDir, packName);
@@ -687,17 +878,20 @@ ${progressStrip}
       byCat[a.category].push(a);
     }
     for (const [cat, catAssets] of Object.entries(byCat)) {
-      const isRoad = catAssets.some((a) => a.roadRole);
-      const isGround = catAssets.some((a) => a.terrainRole);
-      const isDecor = catAssets.some((a) => a.decorRole);
+      const isRoad = catAssets.some((a) => a.roadRole && !a.vdMapFamilyType && !a.vdMonsterFamilyType);
+      const isGround = catAssets.some((a) => a.terrainRole && !a.vdMapFamilyType && !a.vdMonsterFamilyType);
+      const isDecor = catAssets.some((a) => a.decorRole && !a.vdMapFamilyType && !a.vdMonsterFamilyType);
       const isNpc = catAssets.some((a) => a.npcId && a.npcPackage !== "happyvalley");
       const isHvNpc = catAssets.some((a) => a.npcPackage === "happyvalley");
       const isClass = catAssets.some((a) => a.classId);
       const isEnv = catAssets.some((a) => a.envFamilyType);
       const isMonster = catAssets.some((a) => a.monsterFamilyType);
+      const isVdMonster = catAssets.some((a) => a.vdMonsterFamilyType);
+      const isPath = catAssets.some((a) => a.pathFamilyType);
       const isNature = catAssets.some((a) => a.natureFamilyType);
+      const isVdMap = catAssets.some((a) => a.vdMapFamilyType);
       const isSource = catAssets.some((a) => a.assetRole === "authoring-source" || a.assetRole === "documentation");
-      const familyKeyOf = (a) => (a.buildingFamily ? a.buildingFamily : a.envFamilyType ? a.canonicalFamily : a.monsterFamilyType ? a.canonicalFamily : a.natureFamilyType ? a.canonicalFamily : a.npcPackage === "happyvalley" ? a.canonicalFamily : a.roadRole ? a.canonicalFamily : a.terrainRole ? a.canonicalFamily : a.decorRole ? a.canonicalFamily : a.npcId ? a.canonicalFamily : a.classId ? a.canonicalFamily : (a.assetRole === "authoring-source" || a.assetRole === "documentation") ? a.canonicalFamily : null) || familyOf(a.path);
+      const familyKeyOf = (a) => (a.buildingFamily ? a.buildingFamily : a.vdMapFamilyType ? a.canonicalFamily : a.vdMonsterFamilyType ? a.canonicalFamily : a.pathFamilyType ? a.canonicalFamily : a.envFamilyType ? a.canonicalFamily : a.monsterFamilyType ? a.canonicalFamily : a.natureFamilyType ? a.canonicalFamily : a.npcPackage === "happyvalley" ? a.canonicalFamily : a.roadRole ? a.canonicalFamily : a.terrainRole ? a.canonicalFamily : a.decorRole ? a.canonicalFamily : a.npcId ? a.canonicalFamily : a.classId ? a.canonicalFamily : (a.assetRole === "authoring-source" || a.assetRole === "documentation") ? a.canonicalFamily : null) || familyOf(a.path);
       const familyMap = new Map();
       for (const a of catAssets) {
         const f = familyKeyOf(a);
@@ -814,6 +1008,48 @@ ${progressStrip}
         const reviewedCount = catAssets.filter((a) => a.review.status === "reviewed").length;
         summaryBar = `<div class="summary-bar">${catAssets.length} source assets · ${natureFams.size} semantic nature families · ${rockCount} rocks · ${cutCount} cut stone · ${ringCount} stone formation · ${mesaCount} mesa formations · ${palmCount} palms · ${treeCount} desert trees · Runtime: ${runtimeCount} · Reference: ${catAssets.length - runtimeCount} · Reviewed: ${reviewedCount} · 0 unclassified</div>`;
         summaryBar += `<div class="summary-bar env-note">🏜 Clean set of 24 game-ready/reference PNG nature assets — no authoring files or junk records. NOT tiles: transparent standalone overlays/world objects (no tileMode/topology edges). Trees collide on TRUNK footprint (not sprite rect/canopy). Mesas are landmark-scale (occlusion recommended). Everything stays reference.</div>`;
+      } else if (isVdMap) {
+        const vdFams = new Set(catAssets.filter((a) => a.vdMapFamilyType !== "source").map((a) => a.canonicalFamily).filter(Boolean));
+        const groundCount = catAssets.filter((a) => a.canonicalFamily === "voiddesert_ground").length;
+        const roadCount = catAssets.filter((a) => a.canonicalFamily === "voiddesert_stone_road").length;
+        const buildingCount = catAssets.filter((a) => a.canonicalFamily === "voiddesert_building").length;
+        const decorCount = catAssets.filter((a) => a.canonicalFamily === "voiddesert_decor").length;
+        const cactusCount = catAssets.filter((a) => a.canonicalFamily === "voiddesert_cactus").length;
+        const grassCount = catAssets.filter((a) => a.canonicalFamily === "voiddesert_dry_grass").length;
+        const waterCount = catAssets.filter((a) => a.canonicalFamily === "voiddesert_water").length;
+        const previewCount = catAssets.filter((a) => a.canonicalFamily === "voiddesert_preview").length;
+        const sourceCount = catAssets.filter((a) => a.assetRole === "authoring-master" || a.assetRole === "preview").length;
+        const runtimeCount = catAssets.filter((a) => a.runtimeStatus === "runtime-used").length;
+        const reviewedCount = catAssets.filter((a) => a.review.status === "reviewed").length;
+        const roadVariants = [...new Set(catAssets.filter((a) => a.canonicalFamily === "voiddesert_stone_road").map((a) => a.variant).filter(Boolean))].sort();
+        summaryBar = `<div class="summary-bar">${catAssets.length} source records · ${vdFams.size} semantic map families · ${groundCount} ground (sand base + cliff/stairs kit) · ${roadCount} stone roads (13-topology × ${roadVariants.length} variants) · ${buildingCount} buildings · ${decorCount} decor · ${cactusCount} cactus · ${grassCount} dry grass · ${waterCount} oasis · ${previewCount} preview · ${sourceCount} source/support · Runtime: ${runtimeCount} · Reference: ${catAssets.length - runtimeCount} · Reviewed: ${reviewedCount} · 0 unclassified</div>`;
+        summaryBar += `<div class="summary-bar env-note">🏜 Core VoidDesert map/tileset package (complements the nature pack). road_1-13 = topology A, road_14-26 = variant B (1:1 pairing verified by alpha-silhouette). Ground boundary tiles + road inner corners keep needs-verification until a topology pass assigns compass directions — nothing guessed. AI/EPS are formats, not families. Everything stays reference.</div>`;
+      } else if (isVdMonster) {
+        const vdFams = new Set(catAssets.map((a) => a.canonicalFamily).filter(Boolean));
+        const identities = [...new Set(catAssets.map((a) => a.monsterId).filter(Boolean))];
+        const combatFrames = catAssets.filter((a) => a.assetRole === "animation-frame" && a.monsterType === "combat_mob").length;
+        const bossFrames = catAssets.filter((a) => a.assetRole === "animation-frame" && a.monsterType === "boss_npc").length;
+        const sheets = catAssets.filter((a) => a.assetRole === "animation-sheet").length;
+        const components = catAssets.filter((a) => a.assetRole === "character-component" || a.assetRole === "animation-source").length;
+        const weapons = catAssets.filter((a) => a.assetRole === "character-weapon").length;
+        const fx = catAssets.filter((a) => a.assetRole === "combat-effect").length;
+        const ui = catAssets.filter((a) => a.assetRole === "dialogue-ui").length;
+        const src = catAssets.filter((a) => a.assetRole === "authoring-source" || a.assetRole === "authoring-master" || a.assetRole === "system-file").length;
+        const runtimeCount = catAssets.filter((a) => a.runtimeStatus === "runtime-used").length;
+        const reviewedCount = catAssets.filter((a) => a.review.status === "reviewed").length;
+        summaryBar = `<div class="summary-bar">${catAssets.length} source records · ${identities.length} monster identities (${identities.join(", ")}) · ${vdFams.size} semantic families · ${combatFrames} combat-mob frames (6 mobs × 330) + ${bossFrames} boss frames (Warlord × 210) · ${sheets} spritesheets · ${components} components · ${weapons} melee weapons · ${fx} slash FX · ${ui} dialogue UI · ${src} source/support · Runtime: ${runtimeCount} · Reference: ${catAssets.length - runtimeCount} · Reviewed: ${reviewedCount} · 0 unclassified</div>`;
+        summaryBar += `<div class="summary-bar env-note">👹 Largest pack audited: 6 directional combat mobs (480x480, idle/idle_blink/walk/run/attack/hurt × 4 dirs + death) + Warlord (700x700 expressive boss NPC — chagrin/communication/greeting/greeting_2/idle/idle_blink/joy × 30, NOT forced into directional metadata). Slash FX 00-02 are variants of one effect. WeaponType stays melee. Everything stays REFERENCE.</div>`;
+      } else if (isPath) {
+        const pathFams = new Set(catAssets.map((a) => a.canonicalFamily).filter(Boolean));
+        const composite = catAssets.filter((a) => a.canonicalFamily === "shared_path_composite").length;
+        const materials = [...new Set(catAssets.filter((a) => a.pathMaterial).map((a) => a.pathMaterial))].sort();
+        const contexts = [...new Set(catAssets.filter((a) => a.surfaceContext).map((a) => a.surfaceContext))].sort();
+        const support = catAssets.filter((a) => a.canonicalFamily === "shared_path_terrain_support").length;
+        const source = catAssets.filter((a) => a.canonicalFamily === "shared_path_source").length;
+        const runtimeCount = catAssets.filter((a) => a.runtimeStatus === "runtime-used").length;
+        const reviewedCount = catAssets.filter((a) => a.review.status === "reviewed").length;
+        summaryBar = `<div class="summary-bar">${catAssets.length} source records · ${pathFams.size} semantic families · ${composite} composite path sheets (${materials.length} materials × ${contexts.length} surface contexts) · ${support} terrain-support sheet · ${source} Tiled source · Runtime: ${runtimeCount} · Reference: ${catAssets.length - runtimeCount} · Reviewed: ${reviewedCount} · 0 other</div>`;
+        summaryBar += `<div class="summary-bar env-note">🛤 Precomposed path/road COMPOSITE sheets, not individual tiles — 240x416 / 240x480 are sheet dimensions. 5 materials (blue_cobble, tan_brick, blue_masonry, brown_paver, pale_cobble) × 3 surface contexts (transparent/ground-edge/grass-edge). Sheet shape vocabulary (pad/straight/bend/junction/ring/intersection/platform) extracted via Roads.tmx — NOT exploded into manual tiles. Everything stays reference.</div>`;
       } else if (isSource) {
         const sourceFams = new Set(catAssets.map((a) => a.canonicalFamily).filter(Boolean));
         const reviewedCount = catAssets.filter((a) => a.review.status === "reviewed").length;
@@ -823,9 +1059,9 @@ ${progressStrip}
         summaryBar = `<div class="summary-bar">${familiesOnPage.length} families · ${catAssets.length} source assets · ${completes} placeable composite${completes !== 1 ? "s" : ""} · ${components} component${components !== 1 ? "s" : ""} · ${props} prop${props !== 1 ? "s" : ""}${others > 0 ? ` · ${others} other` : ""}</div>`;
       }
       // Filter controls
-      const placeableFilter = (isRoad || isGround || isDecor || isNpc || isHvNpc || isClass || isEnv || isMonster || isNature || isSource) ? "" : `
+      const placeableFilter = (isRoad || isGround || isDecor || isNpc || isHvNpc || isClass || isEnv || isMonster || isVdMonster || isNature || isVdMap || isPath || isSource) ? "" : `
   <label><input type="checkbox" class="filter-check" data-f="placeable" /> <span>Placeable only</span></label>`;
-      const roleFilter = (isRoad || isGround || isDecor || isNpc || isHvNpc || isClass || isEnv || isMonster || isNature || isSource) ? "" : `
+      const roleFilter = (isRoad || isGround || isDecor || isNpc || isHvNpc || isClass || isEnv || isMonster || isVdMonster || isNature || isVdMap || isPath || isSource) ? "" : `
   <span class="filter-group">Role
     <label><input type="checkbox" class="filter-check" data-f="role" data-v="complete" /> complete</label>
     <label><input type="checkbox" class="filter-check" data-f="role" data-v="component" /> component</label>
@@ -964,6 +1200,99 @@ ${progressStrip}
     <label><input type="checkbox" class="filter-check" data-f="collision" data-v="footprint" /> footprint</label>
     <label><input type="checkbox" class="filter-check" data-f="collision" data-v="trunk" /> trunk</label>
   </span>` : "";
+          const vdMapFilter = isVdMap ? `
+  <span class="filter-group">Family
+    <label><input type="checkbox" class="filter-check" data-f="vdmap" data-v="voiddesert_ground" /> ground</label>
+    <label><input type="checkbox" class="filter-check" data-f="vdmap" data-v="voiddesert_stone_road" /> roads</label>
+    <label><input type="checkbox" class="filter-check" data-f="vdmap" data-v="voiddesert_building" /> buildings</label>
+    <label><input type="checkbox" class="filter-check" data-f="vdmap" data-v="voiddesert_decor" /> decor</label>
+    <label><input type="checkbox" class="filter-check" data-f="vdmap" data-v="voiddesert_cactus" /> cactus</label>
+    <label><input type="checkbox" class="filter-check" data-f="vdmap" data-v="voiddesert_dry_grass" /> dry grass</label>
+    <label><input type="checkbox" class="filter-check" data-f="vdmap" data-v="voiddesert_water" /> oasis</label>
+    <label><input type="checkbox" class="filter-check" data-f="vdmap" data-v="voiddesert_preview" /> preview</label>
+    <label><input type="checkbox" class="filter-check" data-f="vdmap" data-v="voiddesert_source" /> source</label>
+  </span>
+  <span class="filter-group">Terrain
+    <label><input type="checkbox" class="filter-check" data-f="terrainrole" data-v="base-texture" /> base</label>
+    <label><input type="checkbox" class="filter-check" data-f="terrainrole" data-v="edge" /> edge</label>
+    <label><input type="checkbox" class="filter-check" data-f="terrainrole" data-v="cliff-face" /> cliff face</label>
+    <label><input type="checkbox" class="filter-check" data-f="terrainrole" data-v="stairs" /> stairs</label>
+    <label><input type="checkbox" class="filter-check" data-f="terrainrole" data-v="transition" /> transition</label>
+  </span>
+  <span class="filter-group">Road
+    <label><input type="checkbox" class="filter-check" data-f="roadrole" data-v="center" /> center</label>
+    <label><input type="checkbox" class="filter-check" data-f="roadrole" data-v="edge" /> edge</label>
+    <label><input type="checkbox" class="filter-check" data-f="roadrole" data-v="outer-corner" /> outer corner</label>
+    <label><input type="checkbox" class="filter-check" data-f="roadrole" data-v="inner-corner" /> inner corner</label>
+  </span>
+  <span class="filter-group">Variant
+    <label><input type="checkbox" class="filter-check" data-f="variant" data-v="a" /> variant a</label>
+    <label><input type="checkbox" class="filter-check" data-f="variant" data-v="b" /> variant b</label>
+  </span>` : "";
+          const vdMonsterFilter = isVdMonster ? `
+  <span class="filter-group">Monster
+    <label><input type="checkbox" class="filter-check" data-f="monster" data-v="assassin" /> assassin</label>
+    <label><input type="checkbox" class="filter-check" data-f="monster" data-v="chief_goblin" /> chief goblin</label>
+    <label><input type="checkbox" class="filter-check" data-f="monster" data-v="female_goblin" /> female goblin</label>
+    <label><input type="checkbox" class="filter-check" data-f="monster" data-v="male_goblin" /> male goblin</label>
+    <label><input type="checkbox" class="filter-check" data-f="monster" data-v="robber" /> robber</label>
+    <label><input type="checkbox" class="filter-check" data-f="monster" data-v="thug" /> thug</label>
+    <label><input type="checkbox" class="filter-check" data-f="monster" data-v="warlord" /> warlord</label>
+  </span>
+  <span class="filter-group">Type
+    <label><input type="checkbox" class="filter-check" data-f="monstertype" data-v="combat_mob" /> combat mob</label>
+    <label><input type="checkbox" class="filter-check" data-f="monstertype" data-v="boss_npc" /> boss npc</label>
+  </span>
+  <span class="filter-group">Role
+    <label><input type="checkbox" class="filter-check" data-f="role" data-v="animation-frame" /> frame</label>
+    <label><input type="checkbox" class="filter-check" data-f="role" data-v="animation-sheet" /> sheet</label>
+    <label><input type="checkbox" class="filter-check" data-f="role" data-v="character-component" /> component</label>
+    <label><input type="checkbox" class="filter-check" data-f="role" data-v="animation-source" /> scml</label>
+    <label><input type="checkbox" class="filter-check" data-f="role" data-v="character-weapon" /> weapon</label>
+    <label><input type="checkbox" class="filter-check" data-f="role" data-v="combat-effect" /> slash fx</label>
+    <label><input type="checkbox" class="filter-check" data-f="role" data-v="dialogue-ui" /> dialogue ui</label>
+    <label><input type="checkbox" class="filter-check" data-f="role" data-v="authoring-source" /> source</label>
+    <label><input type="checkbox" class="filter-check" data-f="role" data-v="authoring-master" /> master</label>
+    <label><input type="checkbox" class="filter-check" data-f="role" data-v="system-file" /> system</label>
+  </span>
+  <span class="filter-group">Animation
+    <label><input type="checkbox" class="filter-check" data-f="animation" data-v="idle" /> idle</label>
+    <label><input type="checkbox" class="filter-check" data-f="animation" data-v="idle_blink" /> idle blink</label>
+    <label><input type="checkbox" class="filter-check" data-f="animation" data-v="walk" /> walk</label>
+    <label><input type="checkbox" class="filter-check" data-f="animation" data-v="run" /> run</label>
+    <label><input type="checkbox" class="filter-check" data-f="animation" data-v="attack" /> attack</label>
+    <label><input type="checkbox" class="filter-check" data-f="animation" data-v="hurt" /> hurt</label>
+    <label><input type="checkbox" class="filter-check" data-f="animation" data-v="death" /> death</label>
+    <label><input type="checkbox" class="filter-check" data-f="animation" data-v="chagrin" /> chagrin</label>
+    <label><input type="checkbox" class="filter-check" data-f="animation" data-v="communication" /> communication</label>
+    <label><input type="checkbox" class="filter-check" data-f="animation" data-v="greeting" /> greeting</label>
+    <label><input type="checkbox" class="filter-check" data-f="animation" data-v="greeting_2" /> greeting 2</label>
+    <label><input type="checkbox" class="filter-check" data-f="animation" data-v="joy" /> joy</label>
+  </span>
+  <span class="filter-group">Direction
+    <label><input type="checkbox" class="filter-check" data-f="direction" data-v="front" /> front</label>
+    <label><input type="checkbox" class="filter-check" data-f="direction" data-v="back" /> back</label>
+    <label><input type="checkbox" class="filter-check" data-f="direction" data-v="left" /> left</label>
+    <label><input type="checkbox" class="filter-check" data-f="direction" data-v="right" /> right</label>
+  </span>` : "";
+          const pathFilter = isPath ? `
+  <span class="filter-group">Family
+    <label><input type="checkbox" class="filter-check" data-f="pathfam" data-v="shared_path_composite" /> composite sheets</label>
+    <label><input type="checkbox" class="filter-check" data-f="pathfam" data-v="shared_path_terrain_support" /> terrain support</label>
+    <label><input type="checkbox" class="filter-check" data-f="pathfam" data-v="shared_path_source" /> tiled source</label>
+  </span>
+  <span class="filter-group">Material
+    <label><input type="checkbox" class="filter-check" data-f="material" data-v="blue_cobble" /> blue cobble</label>
+    <label><input type="checkbox" class="filter-check" data-f="material" data-v="tan_brick" /> tan brick</label>
+    <label><input type="checkbox" class="filter-check" data-f="material" data-v="blue_masonry" /> blue masonry</label>
+    <label><input type="checkbox" class="filter-check" data-f="material" data-v="brown_paver" /> brown paver</label>
+    <label><input type="checkbox" class="filter-check" data-f="material" data-v="pale_cobble" /> pale cobble</label>
+  </span>
+  <span class="filter-group">Surface
+    <label><input type="checkbox" class="filter-check" data-f="surfacecontext" data-v="transparent" /> plain</label>
+    <label><input type="checkbox" class="filter-check" data-f="surfacecontext" data-v="ground-edge" /> ground edge</label>
+    <label><input type="checkbox" class="filter-check" data-f="surfacecontext" data-v="grass-edge" /> grass edge</label>
+  </span>` : "";
           const classFilter = isClass ? `
   <span class="filter-group">Role
     <label><input type="checkbox" class="filter-check" data-f="role" data-v="character-frame" /> idle pose</label>
@@ -1058,7 +1387,7 @@ ${progressStrip}
     <label><input type="checkbox" class="filter-check" data-f="topology" data-v="needs-verification" /> needs verification</label>
   </span>` : "";
       const filterBar = `<div class="filter-bar">
-  <span class="filter-label">Filter:</span>${placeableFilter}${roleFilter}${roadFilter}${groundFilter}${decorFilter}${classFilter}${npcFilter}${hvNpcFilter}${envFilter}${monsterFilter}${natureFilter}
+  <span class="filter-label">Filter:</span>${placeableFilter}${roleFilter}${roadFilter}${groundFilter}${decorFilter}${classFilter}${npcFilter}${hvNpcFilter}${envFilter}${monsterFilter}${natureFilter}${vdMapFilter}${vdMonsterFilter}${pathFilter}
   <span class="filter-group">World
     <label><input type="checkbox" class="filter-check" data-f="world" data-v="CLOVER_SAFE" /> Clover</label>
     <label><input type="checkbox" class="filter-check" data-f="world" data-v="SHARED_1_20" /> Shared</label>
@@ -1177,16 +1506,19 @@ ${isNpc ? buildNpcIdentityStrip(catAssets) : ""}${isHvNpc ? buildHvNpcIdentitySt
           const propCount = famAssets.filter((a) => a.assetRole === "prop").length;
           const otherCount = famAssets.length - completeCount - componentCount - propCount;
           const familyReview = famAssets.find((a) => a.canonicalFamily);
-          const isRoadFam = !!familyReview?.roadType;
-          const isEnvFam = !!familyReview?.envFamilyType;
-          const isGroundFam = !!familyReview?.terrainRole && !isEnvFam;
-          const isDecorFam = !!familyReview?.decorRole && !isEnvFam;
-          const isNpcFam = !!familyReview?.npcFamilyType;
-          const isHvNpcFam = !!familyReview?.hvNpcFamilyType;
-          const isClassFam = !!familyReview?.classFamilyType;
-          const isMonsterFam = !!familyReview?.monsterFamilyType;
-          const isNatureFam = !!familyReview?.natureFamilyType;
-          const isSourceFam = famAssets.some((a) => a.assetRole === "authoring-source" || a.assetRole === "documentation");
+          const isVdMapFam = !!familyReview?.vdMapFamilyType;
+          const isVdMonsterFam = !!familyReview?.vdMonsterFamilyType;
+          const isPathFam = !!familyReview?.pathFamilyType;
+          const isRoadFam = !!familyReview?.roadType && !isVdMapFam && !isVdMonsterFam && !isPathFam;
+          const isEnvFam = !!familyReview?.envFamilyType && !isVdMapFam && !isVdMonsterFam && !isPathFam;
+          const isGroundFam = !!familyReview?.terrainRole && !isEnvFam && !isVdMapFam && !isVdMonsterFam && !isPathFam;
+          const isDecorFam = !!familyReview?.decorRole && !isEnvFam && !isVdMapFam && !isVdMonsterFam && !isPathFam;
+          const isNpcFam = !!familyReview?.npcFamilyType && !isVdMapFam && !isVdMonsterFam && !isPathFam;
+          const isHvNpcFam = !!familyReview?.hvNpcFamilyType && !isVdMapFam && !isVdMonsterFam && !isPathFam;
+          const isClassFam = !!familyReview?.classFamilyType && !isVdMapFam && !isVdMonsterFam && !isPathFam;
+          const isMonsterFam = !!familyReview?.monsterFamilyType && !isVdMapFam && !isVdMonsterFam && !isPathFam;
+          const isNatureFam = !!familyReview?.natureFamilyType && !isVdMapFam && !isVdMonsterFam && !isPathFam;
+          const isSourceFam = famAssets.some((a) => a.assetRole === "authoring-source" || a.assetRole === "documentation") && !isVdMapFam;
           const familyLabel = familyReview?.suggestedFamilyName
             ? (familyReview.buildingFamily ? `${family} — ${familyReview.suggestedFamilyName}` : familyReview.suggestedFamilyName)
             : family;
@@ -1266,6 +1598,67 @@ ${isNpc ? buildNpcIdentityStrip(catAssets) : ""}${isHvNpc ? buildHvNpcIdentitySt
             if (scml) parts.push(`${scml} SCML`);
             if (src) parts.push(`${src} authoring/source`);
             breakdown = `${famAssets.length} asset${famAssets.length !== 1 ? "s" : ""}${parts.length ? " · " + parts.join(" · ") : ""} · ${runtime} runtime`;
+          } else if (isPathFam) {
+            const runtime = famAssets.filter((a) => a.runtimeStatus === "runtime-used").length;
+            const pathType = familyReview.pathFamilyType;
+            if (pathType === "composite") {
+              const materials = [...new Set(famAssets.map((a) => a.pathMaterial).filter(Boolean))].length;
+              const contexts = [...new Set(famAssets.map((a) => a.surfaceContext).filter(Boolean))].length;
+              breakdown = `${famAssets.length} composite sheets · ${materials} materials × ${contexts} surface contexts · tileExtraction required · ${runtime} runtime`;
+            } else if (pathType === "terrain-support") {
+              breakdown = `${famAssets.length} terrain-support sheet · path-edge palette · 0 runtime`;
+            } else if (pathType === "source") {
+              breakdown = `${famAssets.length} Tiled source · 0 gameplay · 0 runtime`;
+            } else {
+              breakdown = `${famAssets.length} asset${famAssets.length !== 1 ? "s" : ""} · ${runtime} runtime`;
+            }
+          } else if (isVdMonsterFam) {
+            const runtime = famAssets.filter((a) => a.runtimeStatus === "runtime-used").length;
+            const vdmType = familyReview.vdMonsterFamilyType;
+            if (vdmType === "animation") {
+              const combatFrames = famAssets.filter((a) => a.assetRole === "animation-frame" && a.monsterType === "combat_mob").length;
+              const bossFrames = famAssets.filter((a) => a.assetRole === "animation-frame" && a.monsterType === "boss_npc").length;
+              const sheets = famAssets.filter((a) => a.assetRole === "animation-sheet").length;
+              const dirs = [...new Set(famAssets.map((a) => a.direction).filter(Boolean))];
+              breakdown = `${famAssets.length} assets · ${combatFrames} combat frames (${dirs.join("/")} dirs) + ${bossFrames} boss frames (no dirs) + ${sheets} sheets · ${runtime} runtime`;
+            } else if (vdmType === "component") {
+              const parts = famAssets.filter((a) => a.assetRole === "character-component").length;
+              const scml = famAssets.filter((a) => a.assetRole === "animation-source").length;
+              const props = famAssets.filter((a) => a.propRole).length;
+              breakdown = `${famAssets.length} assets · ${parts} component PNGs${props ? ` + ${props} props` : ""}${scml ? ` + ${scml} SCML` : ""} · 0 placeable`;
+            } else if (vdmType === "source") {
+              const eps = famAssets.filter((a) => a.assetRole === "authoring-source").length;
+              const ai = famAssets.filter((a) => a.assetRole === "authoring-master").length;
+              const sys = famAssets.filter((a) => a.assetRole === "system-file").length;
+              breakdown = `${famAssets.length} assets · ${eps} EPS + ${ai} AI${sys ? ` + ${sys} system` : ""} · 0 gameplay`;
+            } else if (vdmType === "weapon" || vdmType === "combat-fx" || vdmType === "dialogue-ui") {
+              breakdown = `${famAssets.length} assets · ${famAssets.filter((a) => a.isImage).length} PNG · ${runtime} runtime`;
+            } else {
+              breakdown = `${famAssets.length} assets · ${runtime} runtime`;
+            }
+          } else if (isVdMapFam) {
+            const runtime = famAssets.filter((a) => a.runtimeStatus === "runtime-used").length;
+            const vdType = familyReview.vdMapFamilyType;
+            if (vdType === "ground") {
+              const base = famAssets.filter((a) => a.terrainRole === "base-texture").length;
+              const cliffs = famAssets.filter((a) => a.terrainRole === "cliff-face").length;
+              const stairs = famAssets.filter((a) => a.terrainRole === "stairs" || a.terrainRole === "transition").length;
+              const edges = famAssets.filter((a) => a.terrainRole === "edge").length;
+              breakdown = `${famAssets.length} terrain assets · ${base} sand base + ${cliffs} cliff faces + ${stairs} stair/transition + ${edges} boundary tiles (directions needs-verification) · ${runtime} runtime`;
+            } else if (vdType === "road") {
+              const centers = famAssets.filter((a) => a.roadRole === "center").length;
+              const edges = famAssets.filter((a) => a.roadRole === "edge").length;
+              const outer = famAssets.filter((a) => a.roadRole === "outer-corner").length;
+              const inner = famAssets.filter((a) => a.roadRole === "inner-corner").length;
+              const variants = [...new Set(famAssets.map((a) => a.variant).filter(Boolean))].sort();
+              breakdown = `${famAssets.length} road tiles · 13-topology × ${variants.length} variants (${variants.join("/")}) · ${centers} center / ${edges} edges / ${outer} outer corners / ${inner} inner corners (directions needs-verification) · ${runtime} runtime`;
+            } else if (vdType === "source") {
+              breakdown = `${famAssets.length} master${famAssets.length !== 1 ? "s" : ""} · 0 gameplay · 0 runtime`;
+            } else if (vdType === "preview") {
+              breakdown = `${famAssets.length} reference preview · 0 gameplay · 0 runtime`;
+            } else {
+              breakdown = `${famAssets.length} asset${famAssets.length !== 1 ? "s" : ""} · ${famAssets.filter((a) => a.isImage).length} PNG · ${runtime} runtime`;
+            }
           } else if (isNatureFam) {
             const runtime = famAssets.filter((a) => a.runtimeStatus === "runtime-used").length;
             const variants = famAssets.filter((a) => a.variant).length;
@@ -1421,6 +1814,93 @@ ${isNpc ? buildNpcIdentityStrip(catAssets) : ""}${isHvNpc ? buildHvNpcIdentitySt
             if (familyReview.natureFamilyType === "palm") roadDetails += `<p class="family-details npc-note">🌴 7 palm variants — twin_a and twin_b are genuine variants (different silhouettes), not collapsed. Collision: TRUNK footprint, not the transparent sprite rectangle/canopy.</p>`;
             if (familyReview.natureFamilyType === "desert-tree") roadDetails += `<p class="family-details npc-note">🌳 Non-palm desert trees — broad, baobab (extremely characteristic silhouette), umbrella (conservative, not asserted acacia), dead ×2. Dead handled via treeType: dead, not a 7th family. Collision: trunk.</p>`;
             roadDetails += `<p class="family-details npc-note">🚫 None are tiles — transparent standalone overlays, no tileMode repeat or edge/corner topology. Entire package stays REFERENCE until runtime usage proves otherwise.</p>`;
+          } else if (isVdMapFam) {
+            const bits = [];
+            if (familyReview.vdMapFamilyType) bits.push(`Type: <strong>${familyReview.vdMapFamilyType === "road" ? "Stone Road Kit" : familyReview.vdMapFamilyType.replace(/-/g, " ")}</strong>`);
+            const vdType = familyReview.vdMapFamilyType;
+            if (vdType === "ground") {
+              const base = famAssets.filter((a) => a.terrainRole === "base-texture").length;
+              const cliffs = famAssets.filter((a) => a.terrainRole === "cliff-face").length;
+              const stairs = famAssets.filter((a) => a.terrainRole === "stairs" || a.terrainRole === "transition").length;
+              const edges = famAssets.filter((a) => a.terrainRole === "edge").length;
+              bits.push(`Terrain: ${base} base + ${cliffs} cliff + ${stairs} stair/transition + ${edges} boundary (needs-verification)`);
+            }
+            if (vdType === "road") {
+              const variants = [...new Set(famAssets.map((a) => a.variant).filter(Boolean))].sort();
+              if (variants.length) bits.push(`Variants: ${variants.join(", ")}`);
+              const dirs = [...new Set(famAssets.map((a) => a.direction).filter(Boolean))];
+              if (dirs.length) bits.push(`Directions: ${dirs.join(", ")}`);
+              const topology = [...new Set(famAssets.map((a) => a.topology).filter(Boolean))];
+              if (topology.length) bits.push(`Topology: ${topology.join(", ")}`);
+            }
+            if (vdType === "decor") {
+              const roles = [...new Set(famAssets.map((a) => a.decorRole).filter(Boolean))];
+              if (roles.length) bits.push(`Roles: ${roles.join(", ")}`);
+            }
+            if (vdType === "cactus" || vdType === "dry-grass") {
+              const variants = [...new Set(famAssets.map((a) => a.variant).filter(Boolean))];
+              if (variants.length) bits.push(`Variants: ${variants.join(", ")}`);
+            }
+            if (vdType === "water") bits.push(`Water: ${familyReview.vdMapFamilyType === "water" ? "oasis" : ""}`);
+            if (familyReview.worldRole) bits.push(`World: ${familyReview.worldRole}`);
+            if (familyReview.walkable !== undefined) bits.push(`Walkable: ${familyReview.walkable ? "Yes" : "No"}`);
+            if (familyReview.collision) bits.push(`Collision: ${familyReview.collision} (recommended)`);
+            bits.push(`Placement: ${familyReview.placementMode ?? "manual"}`);
+            roadDetails = `<p class="family-details">${bits.join(" · ")}</p>`;
+            if (vdType === "ground") roadDetails += `<p class="family-details npc-note">🏜 One elevation/cliff system — bg sand base + land_1-18. land_6 base, land_12/14/17 cliff faces, land_13 stairs, land_4/8 stair transitions, 11 boundary tiles (terrainRole edge) with compass directions pending a topology pass — nothing guessed.</p>`;
+            if (vdType === "road") roadDetails += `<p class="family-details npc-note">🛣 road_1-13 = topology A, road_14-26 = variant B (pairing verified 1:1 by identical alpha silhouettes). Outer corners + edges + center verified; the 4 inner corners keep needs-verification for compass direction. Topology and visual variant stay separate fields.</p>`;
+            if (vdType === "building") roadDetails += `<p class="family-details npc-note">🏛 Standalone desert structures — building_3 domed_tower (white dome unmistakable). No tavern/temple/inn/shop inferred from architecture alone. occlusion: true recommended.</p>`;
+            if (vdType === "decor") roadDetails += `<p class="family-details npc-note">🧺 8 distinct props with semantic roles — landmark, camp, sign, timber, boat, bone, fire, vehicle. Pyramid doubles as the tileset-preview landmark.</p>`;
+            if (vdType === "cactus") roadDetails += `<p class="family-details npc-note">🌵 6 upright cacti + 2 round plants. Round plants NOT called melons — no source evidence. collision: none, walkable: true.</p>`;
+            if (vdType === "dry-grass") roadDetails += `<p class="family-details npc-note">🌾 2 dry grass tufts — collision: none, walkable: true (not obstacles just because they're standalone sprites).</p>`;
+            if (vdType === "water") roadDetails += `<p class="family-details npc-note">💧 Oasis confirmed by the full tileset preview (pool among palms and desert vegetation). collision: water, walkable: false.</p>`;
+            if (vdType === "preview") roadDetails += `<p class="family-details npc-note">🖼 Tileset reference preview (3072x2048) — visual source of truth for intended combinations. NOT gameplay: runtimeEligible false.</p>`;
+            if (vdType === "source") roadDetails += `<p class="family-details npc-note">📦 AI/EPS are <strong>formats</strong>, not asset families. Kept for provenance; never runtime-eligible or placeable.</p>`;
+            roadDetails += `<p class="family-details npc-note">🚫 Entire map kit stays REFERENCE until runtime usage proves otherwise.</p>`;
+          } else if (isVdMonsterFam) {
+            const bits = [];
+            if (familyReview.vdMonsterFamilyType) bits.push(`Type: <strong>${familyReview.vdMonsterFamilyType === "animation" ? "Animation Frames + Sheets" : familyReview.vdMonsterFamilyType.replace(/-/g, " ")}</strong>`);
+            const vdmType = familyReview.vdMonsterFamilyType;
+            const mons = [...new Set(famAssets.map((a) => a.monsterId).filter(Boolean))];
+            if (mons.length) bits.push(`Monsters: ${mons.join(", ")}`);
+            const types = [...new Set(famAssets.map((a) => a.monsterType).filter(Boolean))];
+            if (types.length) bits.push(`Types: ${types.join(", ")}`);
+            const anims = [...new Set(famAssets.map((a) => a.animation).filter(Boolean))];
+            if (anims.length) bits.push(`Animations: ${anims.join(", ")}`);
+            const dirs = [...new Set(famAssets.map((a) => a.direction).filter(Boolean))];
+            if (dirs.length) bits.push(`Directions: ${dirs.join(", ")}`);
+            const comps = [...new Set(famAssets.map((a) => a.component).filter(Boolean))];
+            if (comps.length) bits.push(`Components: ${comps.join(", ")}`);
+            const variants = [...new Set(famAssets.map((a) => a.variant).filter(Boolean))];
+            if (variants.length) bits.push(`Variants: ${variants.join(", ")}`);
+            if (familyReview.worldRole) bits.push(`World: ${familyReview.worldRole}`);
+            bits.push(`Runtime-eligible: ${famAssets.some((a) => a.runtimeEligible) ? "yes" : "no"}`);
+            roadDetails = `<p class="family-details">${bits.join(" · ")}</p>`;
+            if (vdmType === "animation") roadDetails += `<p class="family-details npc-note">🎬 6 combat mobs = 480x480 directional frames (idle/idle_blink/walk/run/attack/hurt × front/back/left/right + death) — Walking normalized to walk. Warlord = 700x700 frontal expressive boss (chagrin/communication/greeting/greeting_2/idle/idle_blink/joy × 30) — NOT forced into directional metadata. Spawnable entity resources, placeable false.</p>`;
+            if (vdmType === "component") roadDetails += `<p class="family-details npc-note">🧩 Reusable assembly parts (Body/Head/Face 01-04/Left+Right arm-hand-leg × 4 dirs, 160x160 combat; Body 400x400 + Face_01-09 + limbs + anvil, Warlord) + Animations.scml. Never individually placeable. Parsed deterministically from source naming, not visual guesswork.</p>`;
+            if (vdmType === "weapon") roadDetails += `<p class="family-details npc-note">⚔️ Character melee weapons (front + L View per combat mob; Warlord Swords EPS source). weaponType stays melee — no sword/dagger/club/axe guessed.</p>`;
+            if (vdmType === "combat-fx") roadDetails += `<p class="family-details npc-note">💥 Slash FX 00/01/02 — ONE effect family (effect: slash) with 3 variants, NOT three unrelated families. Spawned combat effects.</p>`;
+            if (vdmType === "dialogue-ui") roadDetails += `<p class="family-details npc-note">💬 Warlord popup_1 (415x376) + popup_2 (767x540) — same dims as Clover/HappyValley bubbles, logically deduped (hash equivalence to confirm; sources kept as aliases).</p>`;
+            if (vdmType === "source") roadDetails += `<p class="family-details npc-note">📦 314 EPS (sourceOf-linked) + 8 AI masters (7 character + 1 Warlord popup) + 10 .DS_Store. AI/EPS are formats, not families. Provenance only.</p>`;
+            roadDetails += `<p class="family-details npc-note">🚫 Entire monster package stays REFERENCE until runtime usage proves otherwise.</p>`;
+          } else if (isPathFam) {
+            const bits = [];
+            if (familyReview.pathFamilyType) bits.push(`Type: <strong>${familyReview.pathFamilyType === "composite" ? "Composite Path Sheets" : familyReview.pathFamilyType.replace(/-/g, " ")}</strong>`);
+            const pathType = familyReview.pathFamilyType;
+            if (pathType === "composite") {
+              const materials = [...new Set(famAssets.map((a) => a.pathMaterial).filter(Boolean))];
+              if (materials.length) bits.push(`Materials: ${materials.join(", ")}`);
+              const contexts = [...new Set(famAssets.map((a) => a.surfaceContext).filter(Boolean))];
+              if (contexts.length) bits.push(`Surface contexts: ${contexts.join(", ")}`);
+            }
+            if (familyReview.worldRole) bits.push(`World: ${familyReview.worldRole}`);
+            bits.push(`Runtime-eligible: ${famAssets.some((a) => a.runtimeEligible) ? "yes" : "no"}`);
+            bits.push(`Placeable: ${famAssets.some((a) => a.placeable) ? "yes" : "no"}`);
+            roadDetails = `<p class="family-details">${bits.join(" · ")}</p>`;
+            if (pathType === "composite") roadDetails += `<p class="family-details npc-note">🛤 Composite sheets (240x416 / 240x480) — NOT individual tiles. Each sheet contains pad/straight/bend/junction/ring/intersection/platform shapes extracted via Roads.tmx (tileExtraction: required, tileSource: tiled). No gameplay labels invented — artwork only establishes material/style.</p>`;
+            if (pathType === "terrain-support") roadDetails += `<p class="family-details npc-note">🌿 Ground_grass.png is NOT a road — path-edge palette for grass/ground fringes (fits the _grass and _ground composite variants). Inference from visual relationship, not an explicit source label.</p>`;
+            if (pathType === "source") roadDetails += `<p class="family-details npc-note">🗺 Roads.tmx — Tiled path-layout definition. Given the repeated sheet layout, this is the strongest candidate for encoding intended tile regions rather than manual chopping. Runtime-eligible only if the runtime actually consumes TMX.</p>`;
+            roadDetails += `<p class="family-details npc-note">🚫 Entire path-composite package stays REFERENCE until runtime usage proves otherwise.</p>`;
           } else if (isSourceFam) {
             const bits = [];
             if (familyReview.sourceRole) bits.push(`Source role: <strong>${familyReview.sourceRole}</strong>`);
@@ -1480,6 +1960,9 @@ ${isNpc ? buildNpcIdentityStrip(catAssets) : ""}${isHvNpc ? buildHvNpcIdentitySt
           const envAttrs = asset.envFamilyType ? ` data-envtype="${asset.envFamilyType}"` : "";
           const monsterAttrs = asset.monsterId ? ` data-monster="${asset.monsterId}" data-animation="${asset.animation ?? ""}" data-direction="${asset.direction ?? ""}" data-shadowmode="${asset.shadowMode ?? ""}"` : "";
           const natureAttrs = asset.natureFamilyType ? ` data-nature="${asset.canonicalFamily ?? ""}" data-naturerole="${asset.natureRole ?? ""}" data-treetype="${asset.treeType ?? ""}" data-collision="${asset.collision ?? ""}"` : "";
+          const vdMapAttrs = asset.vdMapFamilyType ? ` data-vdmap="${asset.canonicalFamily ?? ""}" data-terrainrole="${asset.terrainRole ?? ""}" data-roadrole="${asset.roadRole ?? ""}" data-variant="${asset.variant ?? ""}" data-collision="${asset.collision ?? ""}"` : "";
+          const vdMonsterAttrs = asset.vdMonsterFamilyType ? ` data-monster="${asset.monsterId ?? ""}" data-monstertype="${asset.monsterType ?? ""}" data-animation="${asset.animation ?? ""}" data-direction="${asset.direction ?? ""}"` : "";
+          const pathAttrs = asset.pathFamilyType ? ` data-pathfam="${asset.canonicalFamily ?? ""}" data-material="${asset.pathMaterial ?? ""}" data-surfacecontext="${asset.surfaceContext ?? ""}"` : "";
           const sourceOfNote = asset.sourceOf ? `<span class="topology" title="Authoring source of ${asset.sourceOf}">src → ${asset.sourceOf}</span>` : "";
           const npcRoleBadge = asset.assetRole ? `<span class="npc-role">${asset.assetRole.replace(/-/g, " ")}</span>` : "";
           const effectBadge = asset.effect ? `<span class="candidate-role" title="Effect: ${asset.effect}">${asset.effect.toUpperCase()}</span>` : "";
@@ -1520,7 +2003,16 @@ ${isNpc ? buildNpcIdentityStrip(catAssets) : ""}${isHvNpc ? buildHvNpcIdentitySt
           const materialBadge = asset.material ? `<span class="subtype-badge" title="Material">${asset.material}</span>` : "";
           const scaleBadge = asset.scaleClass ? `<span class="depth-badge" title="Scale class">${asset.scaleClass}</span>` : "";
           const occlusionBadge = asset.occlusion ? `<span class="topology" title="Occlusion recommended">occlusion</span>` : "";
-          html += `<div class="card" data-role="${asset.assetRole ?? "none"}" data-world="${asset.worldRole ?? "UNASSIGNED"}" data-runtime="${asset.runtimeStatus}"${roadAttrs}${groundAttrs}${decorAttrs}${npcAttrs}${classAttrs}${envAttrs}${monsterAttrs}${natureAttrs}><img loading="lazy" src="${asset.imageUrl}" alt="${asset.filename}"><div class="filename">${asset.filename}${canon}</div><div class="path">${asset.path}</div><div class="meta"><span>${asset.id}</span>${asset.width && asset.height ? `<span>${asset.width}×${asset.height}</span>` : ""}${asset.assetRole ? `<span>${asset.assetRole}</span>` : ""}${roadRoleBadge}${terrainBadge}${terrainRoleBadge}${decorBadge}${envRoleBadge}${monsterBadge}${hvNpcBadge}${natureBadge}${natureRoleBadge}${treeTypeBadge}${formationBadge}${materialBadge}${scaleBadge}${occlusionBadge}${treeRoleBadge}${objRoleBadge}${compBadge}${propBadge}${orientBadge}${sizeBadge}${shadowBadge}${dupOfNote}${sharedVisualBadge}${subtypeBadge}${variantNameBadge}${palmVariantBadge}${npcRoleBadge}${animBadge}${dirBadge}${frameBadge}${effectBadge}${elementBadge}${effectTypeBadge}${effectVariantBadge}${sourceOfNote}${depthBadge}${densityBadge}${variantBadge}${candBadge}${topoBadge}${badgeRuntime(asset.runtimeStatus)}${badgeReview(asset.review.status)}</div></div>
+          const vdMapBadge = asset.vdMapFamilyType ? `<span class="decor-role" title="Map family: ${asset.canonicalFamily}">${asset.vdMapFamilyType === "road" ? "road" : asset.vdMapFamilyType.replace(/-/g, " ")}</span>` : "";
+          const vdRoadRoleBadge = asset.roadRole && asset.vdMapFamilyType ? `<span class="road-role">${asset.roadRole.toUpperCase()}${asset.direction ? " " + asset.direction.toUpperCase() : ""}</span>` : "";
+          const waterBadge = asset.waterType ? `<span class="terrain-role">${asset.waterType}</span>` : "";
+          const vdMonsterBadge = asset.vdMonsterFamilyType && asset.monsterId ? `<span class="decor-role" title="Monster: ${asset.monsterId}">${asset.monsterId.replace(/_/g, " ")}</span>` : "";
+          const vdMonsterTypeBadge = asset.monsterType ? `<span class="subtype-badge" title="Monster type">${asset.monsterType.replace(/_/g, " ")}</span>` : "";
+          const weaponBadge = asset.weaponType ? `<span class="candidate-role" title="Weapon type">${asset.weaponType}</span>` : "";
+          const pathFamilyBadge = asset.pathFamilyType ? `<span class="decor-role" title="Path family">${asset.pathFamilyType === "composite" ? "path composite" : asset.pathFamilyType.replace(/-/g, " ")}</span>` : "";
+          const pathMaterialBadge = asset.pathMaterial ? `<span class="candidate-role" title="Path material">${asset.pathMaterial.replace(/_/g, " ")}</span>` : "";
+          const surfaceBadge = asset.surfaceContext ? `<span class="terrain-role">${asset.surfaceContext.replace(/-/g, " ")}</span>` : "";
+          html += `<div class="card" data-role="${asset.assetRole ?? "none"}" data-world="${asset.worldRole ?? "UNASSIGNED"}" data-runtime="${asset.runtimeStatus}"${roadAttrs}${groundAttrs}${decorAttrs}${npcAttrs}${classAttrs}${envAttrs}${monsterAttrs}${natureAttrs}${vdMapAttrs}${vdMonsterAttrs}${pathAttrs}><img loading="lazy" src="${asset.imageUrl}" alt="${asset.filename}"><div class="filename">${asset.filename}${canon}</div><div class="path">${asset.path}</div><div class="meta"><span>${asset.id}</span>${asset.width && asset.height ? `<span>${asset.width}×${asset.height}</span>` : ""}${asset.assetRole ? `<span>${asset.assetRole}</span>` : ""}${roadRoleBadge}${terrainBadge}${terrainRoleBadge}${decorBadge}${envRoleBadge}${monsterBadge}${hvNpcBadge}${vdMapBadge}${vdRoadRoleBadge}${waterBadge}${vdMonsterBadge}${vdMonsterTypeBadge}${weaponBadge}${pathFamilyBadge}${pathMaterialBadge}${surfaceBadge}${natureBadge}${natureRoleBadge}${treeTypeBadge}${formationBadge}${materialBadge}${scaleBadge}${occlusionBadge}${treeRoleBadge}${objRoleBadge}${compBadge}${propBadge}${orientBadge}${sizeBadge}${shadowBadge}${dupOfNote}${sharedVisualBadge}${subtypeBadge}${variantNameBadge}${palmVariantBadge}${npcRoleBadge}${animBadge}${dirBadge}${frameBadge}${effectBadge}${elementBadge}${effectTypeBadge}${effectVariantBadge}${sourceOfNote}${depthBadge}${densityBadge}${variantBadge}${candBadge}${topoBadge}${badgeRuntime(asset.runtimeStatus)}${badgeReview(asset.review.status)}</div></div>
 `;
         } else {
           const canon = asset.canonicalName ? `<div class="canonical">${asset.canonicalName}</div>` : "";
@@ -1531,7 +2023,14 @@ ${isNpc ? buildNpcIdentityStrip(catAssets) : ""}${isHvNpc ? buildHvNpcIdentitySt
           const envRoleBadge = asset.envRole ? `<span class="decor-role">${asset.envRole.replace(/-/g, " ").toUpperCase()}</span>` : "";
           const envAttrs = asset.envFamilyType ? ` data-envtype="${asset.envFamilyType}"` : "";
           const monsterAttrs = asset.monsterId ? ` data-monster="${asset.monsterId}" data-animation="${asset.animation ?? ""}" data-direction="${asset.direction ?? ""}" data-shadowmode="${asset.shadowMode ?? ""}"` : "";
-          const monsterBadge = asset.monsterId ? `<span class="decor-role" title="Monster: ${asset.monsterId}">${asset.monsterId.replace(/_/g, " ")}</span>` : "";
+          const vdMapAttrs = asset.vdMapFamilyType ? ` data-vdmap="${asset.canonicalFamily ?? ""}" data-variant="${asset.variant ?? ""}" data-collision="${asset.collision ?? ""}"` : "";
+          const vdMapBadge = asset.vdMapFamilyType ? `<span class="decor-role" title="Map family: ${asset.canonicalFamily}">${asset.vdMapFamilyType === "road" ? "road" : asset.vdMapFamilyType.replace(/-/g, " ")}</span>` : "";
+          const vdMonsterAttrs = asset.vdMonsterFamilyType ? ` data-monster="${asset.monsterId ?? ""}" data-monstertype="${asset.monsterType ?? ""}" data-animation="${asset.animation ?? ""}" data-direction="${asset.direction ?? ""}"` : "";
+          const pathAttrs = asset.pathFamilyType ? ` data-pathfam="${asset.canonicalFamily ?? ""}"` : "";
+          const vdMonsterBadge = asset.vdMonsterFamilyType && asset.monsterId ? `<span class="decor-role" title="Monster: ${asset.monsterId}">${asset.monsterId.replace(/_/g, " ")}</span>` : "";
+          const vdMonsterTypeBadge = asset.monsterType ? `<span class="subtype-badge" title="Monster type">${asset.monsterType.replace(/_/g, " ")}</span>` : "";
+          const pathFamilyBadge = asset.pathFamilyType ? `<span class="decor-role" title="Path family">${asset.pathFamilyType === "composite" ? "path composite" : asset.pathFamilyType.replace(/-/g, " ")}</span>` : "";
+          const monsterBadge = asset.monsterId && !asset.vdMonsterFamilyType ? `<span class="decor-role" title="Monster: ${asset.monsterId}">${asset.monsterId.replace(/_/g, " ")}</span>` : "";
           const shadowBadge = asset.shadowMode ? `<span class="depth-badge" title="Shadow mode: ${asset.shadowMode}">${asset.shadowMode}</span>` : "";
           const dupOfNote = asset.duplicateOf ? `<span class="topology" title="Duplicate of ${asset.duplicateOf}">dup → ${asset.duplicateOf}</span>` : "";
           const animBadge = asset.animation ? `<span class="anim-badge">${asset.animation.replace(/_/g, " ")}</span>` : "";
@@ -1541,7 +2040,7 @@ ${isNpc ? buildNpcIdentityStrip(catAssets) : ""}${isHvNpc ? buildHvNpcIdentitySt
           const compBadge = asset.component ? `<span class="candidate-role">${asset.component}</span>` : "";
           const propBadge = asset.propRole ? `<span class="candidate-role">${asset.propRole}</span>` : "";
           const sharedVisualBadge = asset.sharedVisual ? `<span class="subtype-badge" title="Shared visual — same artwork across NPCs">shared</span>` : "";
-          html += `<div class="card" data-role="${asset.assetRole ?? "none"}" data-world="${asset.worldRole ?? "UNASSIGNED"}" data-runtime="${asset.runtimeStatus}"${envAttrs}${monsterAttrs}${hvNpcAttrs}><div style="height:250px;background:#f0f0f0;display:flex;align-items:center;justify-content:center;color:#666">${asset.extension}</div><div class="filename">${asset.filename}${canon}</div><div class="path">${asset.path}</div><div class="meta"><span>${asset.id}</span><span>${asset.category}</span>${asset.assetRole ? `<span>${asset.assetRole}</span>` : ""}${sourceBadge}${formatBadge}${envRoleBadge}${monsterBadge}${hvNpcBadge}${compBadge}${propBadge}${sharedVisualBadge}${animBadge}${dirBadge}${shadowBadge}${dupOfNote}${sourceOfNote}${eligBadge}${badgeRuntime(asset.runtimeStatus)}${badgeReview(asset.review.status)}</div></div>
+          html += `<div class="card" data-role="${asset.assetRole ?? "none"}" data-world="${asset.worldRole ?? "UNASSIGNED"}" data-runtime="${asset.runtimeStatus}"${envAttrs}${monsterAttrs}${hvNpcAttrs}${vdMapAttrs}${vdMonsterAttrs}${pathAttrs}><div style="height:250px;background:#f0f0f0;display:flex;align-items:center;justify-content:center;color:#666">${asset.extension}</div><div class="filename">${asset.filename}${canon}</div><div class="path">${asset.path}</div><div class="meta"><span>${asset.id}</span><span>${asset.category}</span>${asset.assetRole ? `<span>${asset.assetRole}</span>` : ""}${sourceBadge}${formatBadge}${envRoleBadge}${monsterBadge}${hvNpcBadge}${vdMapBadge}${vdMonsterBadge}${vdMonsterTypeBadge}${pathFamilyBadge}${compBadge}${propBadge}${sharedVisualBadge}${animBadge}${dirBadge}${shadowBadge}${dupOfNote}${sourceOfNote}${eligBadge}${badgeRuntime(asset.runtimeStatus)}${badgeReview(asset.review.status)}</div></div>
 `;
         }
         }
@@ -1591,9 +2090,15 @@ ${isNpc ? buildNpcIdentityStrip(catAssets) : ""}${isHvNpc ? buildHvNpcIdentitySt
       if (show && active("envtype") && !active("envtype", card.dataset.envtype)) show = false;
       if (show && active("monster") && !active("monster", card.dataset.monster)) show = false;
       if (show && active("shadowmode") && !active("shadowmode", card.dataset.shadowmode)) show = false;
+      if (show && active("monstertype") && !active("monstertype", card.dataset.monstertype)) show = false;
       if (show && active("nature") && !active("nature", card.dataset.nature)) show = false;
       if (show && active("naturerole") && !active("naturerole", card.dataset.naturerole)) show = false;
       if (show && active("treetype") && !active("treetype", card.dataset.treetype)) show = false;
+      if (show && active("vdmap") && !active("vdmap", card.dataset.vdmap)) show = false;
+      if (show && active("roadrole") && !active("roadrole", card.dataset.roadrole)) show = false;
+      if (show && active("pathfam") && !active("pathfam", card.dataset.pathfam)) show = false;
+      if (show && active("material") && !active("material", card.dataset.material)) show = false;
+      if (show && active("surfacecontext") && !active("surfacecontext", card.dataset.surfacecontext)) show = false;
       if (show && active("animation") && !active("animation", card.dataset.animation)) show = false;
       if (show && active("direction") && !active("direction", card.dataset.direction)) show = false;
       if (show && active("effect") && !active("effect", card.dataset.effect)) show = false;

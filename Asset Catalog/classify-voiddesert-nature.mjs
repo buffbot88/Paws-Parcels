@@ -178,9 +178,12 @@ async function main() {
   const inventory = JSON.parse(await readFile(inventoryPath, "utf8"));
   const reviews = JSON.parse(await readFile(reviewsPath, "utf8"));
 
-  // Idempotent: remove previous VoidDesert nature review families.
+  // Idempotent: remove previous VoidDesert NATURE review families only (never touch the
+  // map families owned by classify-voiddesert-other.mjs: ground/stone_road/building/decor/
+  // cactus/dry_grass/water/preview/source).
+  const OWNED = Object.keys(FAMILY_META);
   for (const key of Object.keys(reviews.reviews)) {
-    if (key.startsWith(`${PACK}/voiddesert_`)) delete reviews.reviews[key];
+    if (key.startsWith(`${PACK}/`) && OWNED.includes(key.split("/")[1])) delete reviews.reviews[key];
   }
 
   const files = inventory.files.filter((f) => f.path.startsWith(PREFIX) && /\.png$/i.test(f.path) && /^(stones|tree)_\d+\.png$/i.test(f.path.split("/").pop()));

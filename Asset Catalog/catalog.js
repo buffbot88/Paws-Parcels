@@ -44,6 +44,7 @@ const CATALOG_LINKS = [
 const state = {
   files: [],
   auditStatus: {},
+  gapAudit: null,
   packs: [],
   category: "all",
   search: "",
@@ -67,6 +68,11 @@ const elements = {
   structure: document.querySelector("#structure"),
   categories: document.querySelector("#categories"),
   auditStatus: document.querySelector("#audit-status"),
+  gapAuditSection: document.querySelector("#gap-audit"),
+  gapAuditSubtitle: document.querySelector("#gap-audit-subtitle"),
+  gapAuditSummary: document.querySelector("#gap-audit-summary"),
+  gapAuditLaunch: document.querySelector("#gap-audit-launch"),
+  gapAuditMatrix: document.querySelector("#gap-audit-matrix"),
   catalogLinks: document.querySelector("#catalog-links"),
   resultsTitle: document.querySelector("#results-title"),
   resultsMeta: document.querySelector("#results-meta"),
@@ -265,6 +271,64 @@ function renderAuditProgress() {
   section.hidden = false;
 }
 
+function gapBadge(status) {
+  const label = status === "ready" ? "READY" : status === "warn" ? "PARTIAL" : "MISSING";
+  const tone = status === "ready" ? "ok" : status === "warn" ? "warn" : "missing";
+  const el = document.createElement("span");
+  el.className = `gap-badge ${tone}`;
+  el.textContent = label;
+  return el;
+}
+
+function renderGapAudit() {
+  const section = elements.gapAuditSection;
+  if (!section || !state.gapAudit) return;
+  const audit = state.gapAudit;
+  elements.gapAuditSubtitle.textContent = audit.subtitle;
+  const summary = elements.gapAuditSummary;
+  summary.replaceChildren();
+  const badge = gapBadge(audit.overall.status);
+  const label = document.createElement("span");
+  label.className = "gap-panel-summary";
+  label.textContent = audit.overall.label;
+  summary.append(badge, " ", label);
+  const launch = elements.gapAuditLaunch;
+  launch.replaceChildren();
+  for (const tier of audit.launchPlan ?? []) {
+    const row = document.createElement("div");
+    row.className = `gap-launch-row ${tier.status}`;
+    const tierTag = document.createElement("span");
+    tierTag.className = "gap-launch-tier";
+    tierTag.textContent = `Launch ${tier.tier}`;
+    const name = document.createElement("strong");
+    name.textContent = tier.world;
+    const levels = document.createElement("span");
+    levels.className = "gap-tier";
+    levels.textContent = `Lv ${tier.levels}`;
+    row.append(tierTag, name, levels, gapBadge(tier.status === "current" ? "warn" : "ready"));
+    const scope = document.createElement("div");
+    scope.className = "gap-launch-scope";
+    scope.textContent = `${tier.label} — ${tier.scope}`;
+    row.append(scope);
+    launch.append(row);
+  }
+  const matrix = elements.gapAuditMatrix;
+  matrix.replaceChildren();
+  for (const row of audit.coverageMatrix) {
+    const line = document.createElement("div");
+    line.className = "gap-panel-row";
+    const name = document.createElement("span");
+    name.className = "gap-panel-system";
+    name.textContent = row.system;
+    line.append(name);
+    for (const key of ["clover", "happy", "void", "overall"]) {
+      line.append(gapBadge(row[key]));
+    }
+    matrix.append(line);
+  }
+  section.hidden = false;
+}
+
 function renderAuditStatus() {
   if (!elements.auditStatus) return;
   const entries = Object.entries(state.auditStatus);
@@ -454,8 +518,9 @@ async function boot() {
     }
     state.files = inventory.assets ?? inventory.files ?? [];
     state.auditStatus = inventory.auditStatus ?? {};
+    state.gapAudit = inventory.gapAudit ?? null;
     state.packs = inventory.packs ?? [];
-    renderSummary(); renderAuditProgress(); renderAuditStatus(); renderCatalogLinks(); render();
+    renderSummary(); renderAuditProgress(); renderGapAudit(); renderAuditStatus(); renderCatalogLinks(); render();
   } catch (error) {
     elements.resultsMeta.textContent = `Could not load the inventory: ${error instanceof Error ? error.message : String(error)}`;
   }

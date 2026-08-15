@@ -1,0 +1,107 @@
+{
+  "schemaVersion": 2,
+  "title": "Level-60 Production Readiness Audit",
+  "subtitle": "Tiered launch: the game ships in tiers — Launch 1 = CloverVillage (levels 1–20), Launch 2 = HappyValley (21–40), Launch 3 = VoidDesert (41–60). We are focusing ONLY on Launch 1 (CloverVillage). HappyValley and VoidDesert are cataloged but out of scope until their launch tier.",
+  "generated": "2026-08-15",
+  "launchPlan": [
+    { "tier": 1, "world": "CloverVillage", "levels": "1–20", "status": "current", "label": "FIRST LAUNCH — ACTIVE FOCUS", "scope": "Everything needed to ship levels 1–20. Environment is strong; the blockers are enemies, a boss, dungeon interactables, item/consumable icons, quest content, and UI/audio for this zone only." },
+    { "tier": 2, "world": "HappyValley", "levels": "21–40", "status": "future", "label": "LAUNCH 2 — OUT OF SCOPE", "scope": "Cataloged (map kit, NPCs, monsters). Revisit at that tier: add 2–3 hostile identities + a boss, plus shared systems still missing globally." },
+    { "tier": 3, "world": "VoidDesert", "levels": "41–60", "status": "future", "label": "LAUNCH 3 — OUT OF SCOPE", "scope": "Cataloged (nature, map kit, full monster roster). Revisit at that tier: add NPC/service identities. Its monster pack already covers the tier's progression." }
+  ],
+  "overall": {
+    "status": "warn",
+    "label": "LAUNCH 1 (CLOVERVILLAGE 1–20) · CONTENT IN PROGRESS",
+    "note": "All 16 file categories across 7 packs are audited and classified. For the FIRST LAUNCH specifically: CloverVillage environment, NPCs, and the three playable classes are production-ready. The launch blockers are concentrated: a native enemy roster, a regional boss, dungeon interactables, item/consumable icons, quest content, and zone UI/audio. HappyValley and VoidDesert work is deferred to their launch tiers."
+  },
+  "worldTiers": [
+    {
+      "world": "CloverVillage",
+      "tier": "1–20",
+      "status": "partial",
+      "label": "ENVIRONMENT STRONG · PvE CONTENT MISSING",
+      "systems": [
+        { "system": "Environment", "status": "ready", "coverage": "buildings 18 families · ground 4 · roads 5 · decor 8 · source" },
+        { "system": "NPCs", "status": "ready", "coverage": "Artist · Astrologer · Citizen (3 identities, 5 animation states)" },
+        { "system": "Monsters", "status": "missing", "coverage": "none — no native enemy roster in the catalog", "missing": "4–6 normal enemies (slime/animal/insect-plant/bandit-goblin + stronger regional), 2 elite variants, 1 regional boss" },
+        { "system": "Bosses", "status": "missing", "coverage": "none" }
+      ],
+      "note": "The #1 missing content package in the catalog. Level 1–20 has world and NPC material but no enemies."
+    },
+    {
+      "world": "HappyValley",
+      "tier": "21–40",
+      "status": "partial",
+      "label": "ENVIRONMENT STRONG · PARTIAL PvE",
+      "systems": [
+        { "system": "Environment", "status": "ready", "coverage": "map kit 12 families (56-tile terrain, props/structures)" },
+        { "system": "NPCs", "status": "ready", "coverage": "Blacksmith · Jeweler · Sage (3 identities, 7 expressive states) — equipment/crafting/enchantment anchors" },
+        { "system": "Monsters", "status": "warn", "coverage": "5 wildlife identities (black_grouse, boar, deer, fox, hare) — boar is the only one with attack", "missing": "2–3 hostile identities (humanoid outlaw, corrupted creature, large brute) + 1 regional/dungeon boss. Wildlife alone gets repetitive across 20 levels." },
+        { "system": "Bosses", "status": "missing", "coverage": "none obvious" }
+      ],
+      "note": "Surprisingly close on environment. Needs only 2–3 hostile additions, not another large pack."
+    },
+    {
+      "world": "VoidDesert",
+      "tier": "41–60",
+      "status": "ready",
+      "label": "STRONGEST COMBAT ZONE",
+      "systems": [
+        { "system": "Environment", "status": "ready", "coverage": "nature 6 families · map kit 8 families" },
+        { "system": "Monsters", "status": "ready", "coverage": "7 identities: robber, thug, goblin variants, assassin, chief goblin → natural 41–60 progression; Warlord boss candidate" },
+        { "system": "Bosses", "status": "warn", "coverage": "Warlord (700×700 expressive boss package) is an obvious candidate" },
+        { "system": "NPCs", "status": "missing", "coverage": "no civilian quest hub — Warlord dialogue is not NPC service coverage", "missing": "3 functional NPC identities (merchant, quest/lore, service/crafting) — may reuse existing rigs" }
+      ],
+      "note": "No giant monster package needed. The gap is NPC/service coverage."
+    }
+  ],
+  "dungeons": {
+    "status": "ready",
+    "label": "NO SEPARATE TILESETS NEEDED",
+    "note": "Dungeons remix each world's own environment under darker lighting + concentrated spawns. Same visual family, different layout.",
+    "missing": "Shared dungeon-interaction mini-pack: door/gate (closed/open/locked), lever (off/on), pressure plate (up/pressed), portal/entrance marker, key-object visual. Chest already exists in HappyValley. Later: spikes, floor fire, poison pool, collapsing floor, breakable pots/crates."
+  },
+  "playerClasses": {
+    "status": "ready",
+    "label": "3 CLASSES ENOUGH · ABILITY KITS NEED MAPPING",
+    "note": "Warrior (264 assets), Mage (173), Archer (127) cover a level-60 initial release. Do not add classes. Complete each class's ability vocabulary to level 60 instead — roughly 5–6 active abilities + basic attack (7 combat actions) per class, largely reusing existing effects: Mage already has fire/water ball + spell; Warrior has 10 numbered slash variants; Archer's normal/default arrow projectile is a notable gap.",
+    "missing": "Per-class skill mapping: level-1 basic attack, level-5/10/20/30/45 skills, level-60 ultimate. Archer default arrow projectile asset."
+  },
+  "sharedSystems": [
+    { "system": "Items / equipment", "status": "missing", "coverage": "no item category in the catalog", "missing": "Inventory icons only (no paper-doll art): 6 gear tiers × (weapon/armor/accessory) × 3 classes via icon reuse + rarity treatment" },
+    { "system": "Consumables", "status": "missing", "coverage": "none", "missing": "Health / mana / revive / food — one icon per type, potency via data (Minor/Greater/Superior)" },
+    { "system": "Crafting materials", "status": "missing", "coverage": "none — despite Blacksmith + Jeweler NPCs implying crafting", "missing": "Ore / wood / leather / cloth / gem / herb / monster material, tiered by world (Clover/Valley/Void)" },
+    { "system": "Quest content", "status": "missing", "coverage": "not represented", "missing": "Content database: 5–7 main quests + 10–15 side quests + world activities (kill/gather/deliver/escort/interact/explore/elite hunt) + dungeon quests per zone. XP tuning carries each 20-level band." },
+    { "system": "UI / HUD", "status": "missing", "coverage": "only NPC dialogue bubbles exist", "missing": "System, largely CSS/UI components: health, class resource, ability bar, XP, level, enemy health/name, boss bar, quest tracker, inventory, equipment, loot popup, dialogue, shop, death/respawn, minimap" },
+    { "system": "Audio (music/SFX)", "status": "missing", "coverage": "not represented anywhere", "missing": "Audit needed — no audio assets are indexed" }
+  ],
+  "priorities": [
+    { "priority": 1, "item": "CloverVillage monster pack", "launch": 1, "detail": "~5 normal enemy identities + 2 elites + 1 regional boss. The #1 missing art package for the first launch." },
+    { "priority": 2, "item": "CloverVillage regional boss", "launch": 1, "detail": "One memorable boss for the level 1–20 tier (Happy boss and Warlord belong to their own tiers)." },
+    { "priority": 3, "item": "Shared dungeon interaction mini-pack", "launch": 1, "detail": "door/gate, lever, pressure plate, portal/entrance, key object; reuse the existing chest — needed for any Clover dungeon content." },
+    { "priority": 4, "item": "Item/icon pack (launch-scoped)", "launch": 1, "detail": "Clover-tier weapons, armor, accessories, consumables, materials, quest-item icons — icon reuse + rarity treatment, no paper-doll art." },
+    { "priority": 5, "item": "Complete the three class skill kits (1–20 slice)", "launch": 1, "detail": "Skills through level 20 for Warrior/Mage/Archer, reusing existing effects; full 60 mapping deferred." },
+    { "priority": 6, "item": "Quest / progression content for CloverVillage", "launch": 1, "detail": "5–7 main quests + side quests + world activities + a dungeon, tuned so data carries the player 1→20." },
+    { "priority": 7, "item": "Clover zone UI + audio", "launch": 1, "detail": "HUD/system for the first zone and its music/SFX — minimal, launch-scoped." },
+    { "priority": 8, "item": "VoidDesert NPC/service pack", "launch": 3, "detail": "~3 NPC identities — deferred to Launch 3, not needed for the first launch." },
+    { "priority": 9, "item": "HappyValley hostile + boss identities", "launch": 2, "detail": "2–3 hostiles + a regional boss — deferred to Launch 2." }
+  ],
+  "coverageMatrix": [
+    { "system": "Major environment", "clover": "ready", "happy": "ready", "void": "ready", "overall": "ready" },
+    { "system": "Terrain / paths", "clover": "ready", "happy": "ready", "void": "ready", "overall": "ready" },
+    { "system": "Buildings / structures", "clover": "ready", "happy": "ready", "void": "ready", "overall": "ready" },
+    { "system": "Nature / decor", "clover": "ready", "happy": "ready", "void": "ready", "overall": "ready" },
+    { "system": "NPCs", "clover": "ready", "happy": "ready", "void": "missing", "overall": "warn" },
+    { "system": "Monsters", "clover": "missing", "happy": "warn", "void": "ready", "overall": "warn" },
+    { "system": "Bosses", "clover": "missing", "happy": "missing", "void": "warn", "overall": "warn" },
+    { "system": "Dungeon environments", "clover": "ready", "happy": "ready", "void": "ready", "overall": "ready" },
+    { "system": "Dungeon interactables", "clover": "warn", "happy": "warn", "void": "warn", "overall": "warn" },
+    { "system": "Player classes", "clover": "ready", "happy": "ready", "void": "ready", "overall": "ready" },
+    { "system": "Skill effects", "clover": "warn", "happy": "warn", "void": "warn", "overall": "warn" },
+    { "system": "Equipment / items", "clover": "missing", "happy": "missing", "void": "missing", "overall": "missing" },
+    { "system": "Consumables", "clover": "missing", "happy": "missing", "void": "missing", "overall": "missing" },
+    { "system": "Crafting materials", "clover": "missing", "happy": "missing", "void": "missing", "overall": "missing" },
+    { "system": "Quest content", "clover": "missing", "happy": "missing", "void": "missing", "overall": "missing" },
+    { "system": "UI / HUD", "clover": "missing", "happy": "missing", "void": "missing", "overall": "missing" },
+    { "system": "Audio", "clover": "missing", "happy": "missing", "void": "missing", "overall": "missing" }
+  ]
+}

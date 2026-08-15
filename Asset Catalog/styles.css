@@ -65,6 +65,25 @@ code { font-family: "SFMono-Regular", Consolas, monospace; font-size: .88em; }
 @media (max-width: 560px) {
   .progress-pack { grid-template-columns: 110px 1fr 44px; gap: 8px; }
 }
+.gap-audit-section { max-width: 1800px; margin: 0 auto; padding: 0 clamp(16px, 3vw, 48px); }
+.gap-audit-section .gap-audit-head { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; margin: 18px 0 4px; }
+.gap-audit-section .gap-audit-head h2 { margin: 0; font: 700 1.1rem Georgia, serif; color: var(--ink); }
+.gap-audit-section .gap-panel-summary { font-weight: 800; font-size: .9rem; color: var(--green-dark); }
+.gap-audit-section .gap-panel-matrix { display: grid; gap: 4px; margin-top: 8px; padding: 12px 14px; background: var(--panel); border: 1px solid var(--line); border-radius: 14px; box-shadow: 0 4px 18px #29442a0d; }
+.gap-panel-launch { display: grid; gap: 6px; margin-top: 8px; padding: 12px 14px; background: var(--panel); border: 1px solid var(--line); border-radius: 14px; box-shadow: 0 4px 18px #29442a0d; }
+.gap-panel-launch .gap-launch-row { display: grid; grid-template-columns: 84px 150px 64px auto; align-items: baseline; gap: 8px; font-size: .84rem; }
+.gap-panel-launch .gap-launch-row.current { background: #fdf6e9; border-left: 3px solid #e65100; padding-left: 8px; }
+.gap-launch-tier { font-weight: 800; color: var(--gold); }
+.gap-panel-launch .gap-launch-scope { grid-column: 1 / -1; color: var(--muted); font-size: .78rem; }
+.gap-panel-row { display: grid; grid-template-columns: minmax(140px, 1fr) repeat(4, auto); align-items: center; gap: 8px; font-size: .8rem; }
+.gap-panel-system { color: var(--ink); font-weight: 600; }
+.gap-badge { display: inline-block; padding: 2px 8px; border-radius: 999px; font-size: .62rem; font-weight: 800; letter-spacing: .03em; white-space: nowrap; }
+.gap-badge.ok { color: #1b5e20; background: #e8f5e9; border: 1px solid #a5d6a7; }
+.gap-badge.warn { color: #e65100; background: #fff3e0; border: 1px solid #ffcc80; }
+.gap-badge.missing { color: #b71c1c; background: #fdecea; border: 1px solid #ef9a9a; }
+.gap-link { color: var(--green-dark); font-size: .85rem; font-weight: 700; text-decoration: none; }
+.gap-link:hover { text-decoration: underline; }
+.gap-subtitle { color: var(--muted); font-size: .85rem; margin: 4px 0 8px; }
 .audit-list { display: grid; gap: 8px; margin: 0; }
 .audit-item { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
 .audit-label { color: var(--ink); font-size: .8rem; font-weight: 700; }
