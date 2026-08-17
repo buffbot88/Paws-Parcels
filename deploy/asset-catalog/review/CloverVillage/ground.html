@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>CloverVillage ground — Review</title>
+<style>
+  body { font-family: system-ui; max-width: 1200px; margin: 1rem auto; padding: 0 1rem; color: #263228; background: #f3f7f1; }
+  h1 { font-size: 1.3rem; }
+  nav { margin-bottom: 1rem; }
+  nav a { color: #456b4e; margin-right: 1rem; text-decoration: none; }
+  nav a:hover { text-decoration: underline; }
+  .summary-bar { padding: 0.6rem 1rem; margin-bottom: 0.75rem; background: #dce8da; border: 1px solid #b9cfb5; border-radius: 6px; font-size: 0.9rem; font-weight: 600; color: #2e5037; }
+  .filter-bar { display: flex; flex-wrap: wrap; align-items: center; gap: 0.75rem; padding: 0.5rem 0.75rem; margin-bottom: 0.25rem; background: #fff; border: 1px solid #d9e3d7; border-radius: 6px; font-size: 0.8rem; }
+  .filter-bar .filter-label { font-weight: 600; color: #68766b; }
+  .filter-bar .filter-group { display: inline-flex; align-items: center; gap: 0.4rem; padding: 0.2rem 0.5rem; background: #f0f4ee; border-radius: 4px; }
+  .filter-bar label { display: inline-flex; align-items: center; gap: 0.2rem; cursor: pointer; }
+  .filter-bar button { border: 1px solid #b9cfb5; background: #e8f0e6; border-radius: 4px; padding: 0.2rem 0.6rem; cursor: pointer; font-size: 0.8rem; }
+  .filter-note { min-height: 1rem; margin: 0.25rem 0 0; font-size: 0.8rem; color: #a36e23; }
+  .grid { display: block; }
+  .card { background: #fff; border: 1px solid #d9e3d7; border-radius: 8px; padding: 0.75rem; }
+  .card img { max-width: 100%; max-height: 250px; object-fit: contain; display: block; margin: 0 auto 0.75rem; background: repeating-conic-gradient(#e8ede6 0% 25%, #fff 0% 50%) 50%/16px 16px; border-radius: 4px; }
+  .card .filename { font-weight: 600; font-size: 0.9rem; margin-bottom: 0.25rem; }
+  .card .canonical { font-size: 0.78rem; color: #416f99; font-family: ui-monospace, monospace; margin-top: 0.15rem; }
+  .card .path { font-size: 0.75rem; color: #68766b; word-break: break-all; margin-bottom: 0.5rem; }
+  .card .meta { display: flex; flex-wrap: wrap; gap: 0.5rem; font-size: 0.75rem; }
+  .card .meta span { padding: 0.15rem 0.4rem; border-radius: 4px; background: #f0f4ee; }
+  .card .meta .runtime { background: #e8f5e9; color: #2e7d32; }
+  .card .meta .reference { background: #f5f5f5; color: #666; }
+  .card .meta .confirmed { background: #e3f2fd; color: #1565c0; }
+  .card .meta .unreviewed { background: #fff3e0; color: #e65100; }
+  .card .meta .road-role { background: #ede7f6; color: #4527a0; font-weight: 600; }
+  .card .meta .terrain-role { background: #e0f2f1; color: #00695c; font-weight: 600; }
+  .card .meta .decor-role { background: #fce4ec; color: #ad1457; font-weight: 600; }
+  .card .meta .subtype-badge { background: #f3e5f5; color: #7b1fa2; font-size: 0.7rem; }
+  .card .meta .depth-badge { background: #e3f2fd; color: #1565c0; font-weight: 600; }
+  .card .meta .density-badge { background: #fff3e0; color: #e65100; font-weight: 600; }
+  .card .meta .npc-role { background: #eceff1; color: #37474f; font-weight: 600; }
+  .card .meta .anim-badge { background: #e8f5e9; color: #2e7d32; font-weight: 600; }
+  .card .meta .dir-badge { background: #e3f2fd; color: #1565c0; font-weight: 600; }
+  .card .meta .frame-badge { background: #fce4ec; color: #ad1457; font-weight: 600; }
+  .family-header .npc-note { font-size: 0.75rem; color: #37474f; margin-top: 0.25rem; }
+  .identity-strip { margin-bottom: 1rem; }
+  .identity-heading { font-size: 1rem; color: #2e5037; margin: 0 0 0.5rem; }
+  .identity-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 1rem; }
+  .identity-card { display: flex; gap: 0.75rem; background: #fff; border: 1px solid #b9cfb5; border-left: 4px solid #456b4e; border-radius: 8px; padding: 0.75rem; }
+  .identity-card img { width: 96px; height: 96px; object-fit: contain; background: repeating-conic-gradient(#e8ede6 0% 25%, #fff 0% 50%) 50%/16px 16px; border-radius: 6px; }
+  .identity-name { font-weight: 700; font-size: 1rem; color: #2e5037; }
+  .identity-id { font-size: 0.75rem; color: #416f99; font-family: ui-monospace, monospace; margin: 0.1rem 0 0.3rem; }
+  .identity-desc { font-size: 0.78rem; color: #68766b; }
+  .identity-anims { font-size: 0.72rem; color: #2e7d32; margin-top: 0.35rem; }
+  .card .meta .variant-badge { background: #fff8e1; color: #f57f17; font-weight: 600; }
+  .card .meta .candidate-role { background: #f3e5f5; color: #7b1fa2; font-weight: 600; }
+  .card .meta .topology { background: #fff8e1; color: #f57f17; }
+  .family-header .topology-note { font-size: 0.75rem; color: #00695c; margin-top: 0.25rem; }
+  .family-header .topology-note a { color: #00695c; }
+  .family-header .depth-note { font-size: 0.75rem; color: #6a1b9a; margin-top: 0.25rem; }
+  .family-header .status-badge { font-weight: 600; color: #2e5037; margin-top: 0.35rem; }
+  .family-header .status-badge strong { color: #456b4e; }
+  .family-header .art-required { font-weight: 600; color: #b71c1c; margin-top: 0.25rem; }
+  .family-header .recovery-note { font-size: 0.75rem; color: #5d4037; margin-top: 0.3rem; line-height: 1.45; }
+  .art-task { margin-top: 0.5rem; background: #fff8f0; border: 1px solid #e6c9a8; border-radius: 6px; padding: 0.6rem 0.8rem; font-size: 0.8rem; }
+  .art-task h4 { margin: 0 0 0.35rem; font-size: 0.82rem; color: #a36e23; }
+  .art-task ul { margin: 0; padding-left: 1.1rem; }
+  .art-task li { margin: 0.2rem 0; }
+  .art-task .tt { font-family: ui-monospace, monospace; color: #416f99; }
+  .family-header .family-details { font-size: 0.8rem; color: #2e5037; margin-top: 0.35rem; }
+  .family-header .family-details strong { color: #456b4e; }
+  .family { margin-top: 1.25rem; }
+  .family-toggle { display: flex; align-items: center; gap: 0.5rem; width: 100%; text-align: left; background: #e8f0e6; border: 1px solid #b9cfb5; border-left: 4px solid #456b4e; border-radius: 6px 6px 0 0; padding: 0.65rem 1rem; cursor: pointer; font: inherit; }
+  .family-toggle:hover { background: #dce8da; }
+  .family-caret { color: #456b4e; font-size: 0.9rem; }
+  .family-title { font-weight: 700; font-size: 1.05rem; color: #2e5037; }
+  .family-header { padding: 0.6rem 1rem; background: #f2f6f0; border: 1px solid #d9e3d7; border-top: none; }
+  .family-header p { margin: 0; font-size: 0.8rem; color: #68766b; }
+  .family-header .world-role { font-weight: 600; color: #416f99; }
+  .family-header .structure-type { font-weight: 600; color: #2e5037; }
+  .family-header .suitability { font-weight: 600; color: #a36e23; }
+  .family-header .family-uses { font-size: 0.75rem; color: #68766b; margin-top: 0.25rem; }
+  .family-assets { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 1rem; padding: 1rem; background: #fbfdfa; border: 1px solid #d9e3d7; border-top: none; border-radius: 0 0 6px 6px; }
+</style>
+</head>
+<body>
+<nav><a href="../index.html">← All Categories</a></nav>
+<h1>CloverVillage / ground — 26 assets</h1>
+<div class="summary-bar">26 source assets · 4 terrain families · 1 seamless base texture · 1 irregular patch · 8 edge tiles · 16 corner/transition tiles · Runtime: 1 · Reference: 25 · Reviewed: 26</div>
+<div class="filter-bar">
+  <span class="filter-label">Filter:</span>
+  <span class="filter-group">Family
+    <label><input type="checkbox" class="filter-check" data-f="lootfam" data-v="undead_bone" /> undead bone</label>
+    <label><input type="checkbox" class="filter-check" data-f="lootfam" data-v="undead_body_part" /> body parts</label>
+    <label><input type="checkbox" class="filter-check" data-f="lootfam" data-v="undead_organ" /> organs</label>
+    <label><input type="checkbox" class="filter-check" data-f="lootfam" data-v="jewelry" /> jewelry</label>
+    <label><input type="checkbox" class="filter-check" data-f="lootfam" data-v="currency" /> currency</label>
+    <label><input type="checkbox" class="filter-check" data-f="lootfam" data-v="consumable" /> consumables</label>
+    <label><input type="checkbox" class="filter-check" data-f="lootfam" data-v="material" /> materials</label>
+    <label><input type="checkbox" class="filter-check" data-f="lootfam" data-v="quest_item" /> quest items</label>
+    <label><input type="checkbox" class="filter-check" data-f="lootfam" data-v="equipment" /> equipment</label>
+    <label><input type="checkbox" class="filter-check" data-f="lootfam" data-v="loot_source" /> source</label>
+  </span>
+  <span class="filter-group">Render
+    <label><input type="checkbox" class="filter-check" data-f="rendermode" data-v="shadow" /> shadow</label>
+    <label><input type="checkbox" class="filter-check" data-f="rendermode" data-v="without_shadow" /> without shadow</label>
+    <label><input type="checkbox" class="filter-check" data-f="rendermode" data-v="source" /> eps source</label>
+  </span>
+  <span class="filter-group">Role
+    <label><input type="checkbox" class="filter-check" data-f="role" data-v="loot-icon" /> icon</label>
+    <label><input type="checkbox" class="filter-check" data-f="role" data-v="authoring-source" /> source</label>
+    <label><input type="checkbox" class="filter-check" data-f="role" data-v="authoring-master" /> master</label>
+    <label><input type="checkbox" class="filter-check" data-f="role" data-v="background-support" /> support</label>
+  </span>
+  <span class="filter-group">Terrain role
+    <label><input type="checkbox" class="filter-check" data-f="terrainrole" data-v="base-texture" /> base</label>
+    <label><input type="checkbox" class="filter-check" data-f="terrainrole" data-v="patch" /> patch</label>
+    <label><input type="checkbox" class="filter-check" data-f="terrainrole" data-v="edge" /> edge</label>
+    <label><input type="checkbox" class="filter-check" data-f="terrainrole" data-v="outer-corner" /> outer corner</label>
+    <label><input type="checkbox" class="filter-check" data-f="terrainrole" data-v="compound-corner" /> compound corner</label>
+    <label><input type="checkbox" class="filter-check" data-f="terrainrole" data-v="hard-corner" /> hard corner</label>
+  </span>
+  <span class="filter-group">Tile mode
+    <label><input type="checkbox" class="filter-check" data-f="tilemode" data-v="repeat" /> repeat</label>
+    <label><input type="checkbox" class="filter-check" data-f="tilemode" data-v="manual" /> manual</label>
+  </span>
+  <span class="filter-group">Variant
+    <label><input type="checkbox" class="filter-check" data-f="variant" data-v="a" /> variant a</label>
+    <label><input type="checkbox" class="filter-check" data-f="variant" data-v="b" /> variant b</label>
+  </span>
+  <span class="filter-group">World
+    <label><input type="checkbox" class="filter-check" data-f="world" data-v="CLOVER_SAFE" /> Clover</label>
+    <label><input type="checkbox" class="filter-check" data-f="world" data-v="SHARED_1_20" /> Shared</label>
+    <label><input type="checkbox" class="filter-check" data-f="world" data-v="PVE_1_20" /> PvE</label>
+    <label><input type="checkbox" class="filter-check" data-f="world" data-v="FUTURE" /> Future</label>
+  </span>
+  <span class="filter-group">Status
+    <label><input type="checkbox" class="filter-check" data-f="runtime" data-v="runtime-used" /> runtime</label>
+    <label><input type="checkbox" class="filter-check" data-f="runtime" data-v="reference-only" /> reference</label>
+  </span>
+  <button type="button" id="filter-clear">Clear</button>
+</div>
+<p id="filter-note" class="filter-note"></p>
+
+
+<div class="grid">
+<section class="family" data-family="clover_grass_base"><button type="button" class="family-toggle" aria-expanded="true"><span class="family-caret">▾</span><span class="family-title">Clover Grass (Base)</span></button><div class="family-header"><h2>Clover Grass (Base)</h2><p>1 asset · 1 unique role · <span class="world-role">CLOVER_SAFE</span></p><p class="family-details">Role: <strong>base-texture</strong> · Tile mode: repeat · World: CLOVER_SAFE · Walkable: Yes · Collision: none · Topology: Verified</p><p class="family-details topology-note">🔍 Verified by alpha-silhouette analysis — preview: <a href="../terrain/index.html">Terrain Topology Preview</a></p></div><div class="family-assets">
+<div class="card" data-role="base-texture" data-world="CLOVER_SAFE" data-runtime="runtime-used" data-terrainrole="base-texture" data-tilemode="repeat" data-variant="" data-lootfam="clover_grass_base" data-rendermode=""><img loading="lazy" src="https://pawsandparcels.agpstudios.org/reference/assets/maps/CloverVillage/Map/PNG/land/land_1.png" alt="land_1.png"><div class="filename">land_1.png<div class="canonical">ground_clover_grass_base_01</div></div><div class="path">reference/assets/maps/CloverVillage/Map/PNG/land/land_1.png</div><div class="meta"><span>d135e444843f</span><span>256×256</span><span>base-texture</span><span class="terrain-role">BASE TEXTURE</span><span class="terrain-role">BASE TEXTURE</span><span class="npc-role">base texture</span><span class="decor-role" title="Loot family: clover_grass_base">clover grass base</span><span class="runtime">Runtime</span><span class="confirmed">Reviewed</span></div></div>
+</div></section><section class="family" data-family="clover_grass_edge"><button type="button" class="family-toggle" aria-expanded="true"><span class="family-caret">▾</span><span class="family-title">Clover Grass Edge Kit</span></button><div class="family-header"><h2>Clover Grass Edge Kit</h2><p>8 assets · 0 unique roles + 8 variants · <span class="world-role">CLOVER_SAFE</span></p><p class="family-details">Role: <strong>edge</strong> · Tile mode: manual · World: CLOVER_SAFE · Walkable: Yes · Collision: none · Topology: Verified</p><p class="family-details topology-note">🔍 Verified by alpha-silhouette analysis — preview: <a href="../terrain/index.html">Terrain Topology Preview</a></p></div><div class="family-assets">
+<div class="card" data-role="edge" data-world="CLOVER_SAFE" data-runtime="reference-only" data-terrainrole="edge" data-tilemode="manual" data-variant="a" data-lootfam="clover_grass_edge" data-rendermode=""><img loading="lazy" src="https://pawsandparcels.agpstudios.org/reference/assets/maps/CloverVillage/Map/PNG/land/land_3.png" alt="land_3.png"><div class="filename">land_3.png<div class="canonical">ground_clover_grass_edge_s_a</div></div><div class="path">reference/assets/maps/CloverVillage/Map/PNG/land/land_3.png</div><div class="meta"><span>5b5ecf1a1f5d</span><span>256×256</span><span>edge</span><span class="terrain-role">EDGE</span><span class="terrain-role">EDGE</span><span class="npc-role">edge</span><span class="variant-badge">VARIANT A</span><span class="decor-role" title="Loot family: clover_grass_edge">clover grass edge</span><span class="reference">Reference</span><span class="confirmed">Reviewed</span></div></div>
+<div class="card" data-role="edge" data-world="CLOVER_SAFE" data-runtime="reference-only" data-terrainrole="edge" data-tilemode="manual" data-variant="a" data-lootfam="clover_grass_edge" data-rendermode=""><img loading="lazy" src="https://pawsandparcels.agpstudios.org/reference/assets/maps/CloverVillage/Map/PNG/land/land_4.png" alt="land_4.png"><div class="filename">land_4.png<div class="canonical">ground_clover_grass_edge_n_a</div></div><div class="path">reference/assets/maps/CloverVillage/Map/PNG/land/land_4.png</div><div class="meta"><span>1ff7a1d89c1b</span><span>256×256</span><span>edge</span><span class="terrain-role">EDGE</span><span class="terrain-role">EDGE</span><span class="npc-role">edge</span><span class="variant-badge">VARIANT A</span><span class="decor-role" title="Loot family: clover_grass_edge">clover grass edge</span><span class="reference">Reference</span><span class="confirmed">Reviewed</span></div></div>
+<div class="card" data-role="edge" data-world="CLOVER_SAFE" data-runtime="reference-only" data-terrainrole="edge" data-tilemode="manual" data-variant="a" data-lootfam="clover_grass_edge" data-rendermode=""><img loading="lazy" src="https://pawsandparcels.agpstudios.org/reference/assets/maps/CloverVillage/Map/PNG/land/land_5.png" alt="land_5.png"><div class="filename">land_5.png<div class="canonical">ground_clover_grass_edge_w_a</div></div><div class="path">reference/assets/maps/CloverVillage/Map/PNG/land/land_5.png</div><div class="meta"><span>600f31111bfd</span><span>256×256</span><span>edge</span><span class="terrain-role">EDGE</span><span class="terrain-role">EDGE</span><span class="npc-role">edge</span><span class="variant-badge">VARIANT A</span><span class="decor-role" title="Loot family: clover_grass_edge">clover grass edge</span><span class="reference">Reference</span><span class="confirmed">Reviewed</span></div></div>
+<div class="card" data-role="edge" data-world="CLOVER_SAFE" data-runtime="reference-only" data-terrainrole="edge" data-tilemode="manual" data-variant="a" data-lootfam="clover_grass_edge" data-rendermode=""><img loading="lazy" src="https://pawsandparcels.agpstudios.org/reference/assets/maps/CloverVillage/Map/PNG/land/land_6.png" alt="land_6.png"><div class="filename">land_6.png<div class="canonical">ground_clover_grass_edge_e_a</div></div><div class="path">reference/assets/maps/CloverVillage/Map/PNG/land/land_6.png</div><div class="meta"><span>c89a3d45f1a6</span><span>256×256</span><span>edge</span><span class="terrain-role">EDGE</span><span class="terrain-role">EDGE</span><span class="npc-role">edge</span><span class="variant-badge">VARIANT A</span><span class="decor-role" title="Loot family: clover_grass_edge">clover grass edge</span><span class="reference">Reference</span><span class="confirmed">Reviewed</span></div></div>
+<div class="card" data-role="edge" data-world="CLOVER_SAFE" data-runtime="reference-only" data-terrainrole="edge" data-tilemode="manual" data-variant="b" data-lootfam="clover_grass_edge" data-rendermode=""><img loading="lazy" src="https://pawsandparcels.agpstudios.org/reference/assets/maps/CloverVillage/Map/PNG/land/land_7.png" alt="land_7.png"><div class="filename">land_7.png<div class="canonical">ground_clover_grass_edge_s_b</div></div><div class="path">reference/assets/maps/CloverVillage/Map/PNG/land/land_7.png</div><div class="meta"><span>44d3da96b17e</span><span>256×256</span><span>edge</span><span class="terrain-role">EDGE</span><span class="terrain-role">EDGE</span><span class="npc-role">edge</span><span class="variant-badge">VARIANT B</span><span class="decor-role" title="Loot family: clover_grass_edge">clover grass edge</span><span class="reference">Reference</span><span class="confirmed">Reviewed</span></div></div>
+<div class="card" data-role="edge" data-world="CLOVER_SAFE" data-runtime="reference-only" data-terrainrole="edge" data-tilemode="manual" data-variant="b" data-lootfam="clover_grass_edge" data-rendermode=""><img loading="lazy" src="https://pawsandparcels.agpstudios.org/reference/assets/maps/CloverVillage/Map/PNG/land/land_8.png" alt="land_8.png"><div class="filename">land_8.png<div class="canonical">ground_clover_grass_edge_n_b</div></div><div class="path">reference/assets/maps/CloverVillage/Map/PNG/land/land_8.png</div><div class="meta"><span>8f2dfdb40612</span><span>256×256</span><span>edge</span><span class="terrain-role">EDGE</span><span class="terrain-role">EDGE</span><span class="npc-role">edge</span><span class="variant-badge">VARIANT B</span><span class="decor-role" title="Loot family: clover_grass_edge">clover grass edge</span><span class="reference">Reference</span><span class="confirmed">Reviewed</span></div></div>
+<div class="card" data-role="edge" data-world="CLOVER_SAFE" data-runtime="reference-only" data-terrainrole="edge" data-tilemode="manual" data-variant="b" data-lootfam="clover_grass_edge" data-rendermode=""><img loading="lazy" src="https://pawsandparcels.agpstudios.org/reference/assets/maps/CloverVillage/Map/PNG/land/land_9.png" alt="land_9.png"><div class="filename">land_9.png<div class="canonical">ground_clover_grass_edge_w_b</div></div><div class="path">reference/assets/maps/CloverVillage/Map/PNG/land/land_9.png</div><div class="meta"><span>8a2402533c70</span><span>256×256</span><span>edge</span><span class="terrain-role">EDGE</span><span class="terrain-role">EDGE</span><span class="npc-role">edge</span><span class="variant-badge">VARIANT B</span><span class="decor-role" title="Loot family: clover_grass_edge">clover grass edge</span><span class="reference">Reference</span><span class="confirmed">Reviewed</span></div></div>
+<div class="card" data-role="edge" data-world="CLOVER_SAFE" data-runtime="reference-only" data-terrainrole="edge" data-tilemode="manual" data-variant="b" data-lootfam="clover_grass_edge" data-rendermode=""><img loading="lazy" src="https://pawsandparcels.agpstudios.org/reference/assets/maps/CloverVillage/Map/PNG/land/land_10.png" alt="land_10.png"><div class="filename">land_10.png<div class="canonical">ground_clover_grass_edge_e_b</div></div><div class="path">reference/assets/maps/CloverVillage/Map/PNG/land/land_10.png</div><div class="meta"><span>7539b441f41c</span><span>256×256</span><span>edge</span><span class="terrain-role">EDGE</span><span class="terrain-role">EDGE</span><span class="npc-role">edge</span><span class="variant-badge">VARIANT B</span><span class="decor-role" title="Loot family: clover_grass_edge">clover grass edge</span><span class="reference">Reference</span><span class="confirmed">Reviewed</span></div></div>
+</div></section><section class="family" data-family="clover_grass_corner"><button type="button" class="family-toggle" aria-expanded="true"><span class="family-caret">▾</span><span class="family-title">Clover Grass Corner / Transition Kit</span></button><div class="family-header"><h2>Clover Grass Corner / Transition Kit</h2><p>16 assets · 16 unique roles · <span class="world-role">CLOVER_SAFE</span></p><p class="family-details">Role: <strong>outer-corner</strong> · Tile mode: manual · World: CLOVER_SAFE · Walkable: Yes · Collision: none · Topology: Verified</p><p class="family-details topology-note">🔍 Verified by alpha-silhouette analysis — preview: <a href="../terrain/index.html">Terrain Topology Preview</a></p></div><div class="family-assets">
+<div class="card" data-role="outer-corner" data-world="CLOVER_SAFE" data-runtime="reference-only" data-terrainrole="outer-corner" data-tilemode="manual" data-variant="" data-lootfam="clover_grass_corner" data-rendermode=""><img loading="lazy" src="https://pawsandparcels.agpstudios.org/reference/assets/maps/CloverVillage/Map/PNG/land/land_11.png" alt="land_11.png"><div class="filename">land_11.png<div class="canonical">ground_clover_grass_outer_corner_se_01</div></div><div class="path">reference/assets/maps/CloverVillage/Map/PNG/land/land_11.png</div><div class="meta"><span>989a009e680b</span><span>256×256</span><span>outer-corner</span><span class="terrain-role">OUTER CORNER</span><span class="terrain-role">OUTER CORNER</span><span class="npc-role">outer corner</span><span class="decor-role" title="Loot family: clover_grass_corner">clover grass corner</span><span class="reference">Reference</span><span class="confirmed">Reviewed</span></div></div>
+<div class="card" data-role="edge" data-world="CLOVER_SAFE" data-runtime="reference-only" data-terrainrole="edge" data-tilemode="manual" data-variant="" data-lootfam="clover_grass_corner" data-rendermode=""><img loading="lazy" src="https://pawsandparcels.agpstudios.org/reference/assets/maps/CloverVillage/Map/PNG/land/land_12.png" alt="land_12.png"><div class="filename">land_12.png<div class="canonical">ground_clover_grass_edge_s_01</div></div><div class="path">reference/assets/maps/CloverVillage/Map/PNG/land/land_12.png</div><div class="meta"><span>c899936523c5</span><span>256×256</span><span>edge</span><span class="terrain-role">EDGE</span><span class="terrain-role">EDGE</span><span class="npc-role">edge</span><span class="decor-role" title="Loot family: clover_grass_corner">clover grass corner</span><span class="reference">Reference</span><span class="confirmed">Reviewed</span></div></div>
+<div class="card" data-role="outer-corner" data-world="CLOVER_SAFE" data-runtime="reference-only" data-terrainrole="outer-corner" data-tilemode="manual" data-variant="" data-lootfam="clover_grass_corner" data-rendermode=""><img loading="lazy" src="https://pawsandparcels.agpstudios.org/reference/assets/maps/CloverVillage/Map/PNG/land/land_13.png" alt="land_13.png"><div class="filename">land_13.png<div class="canonical">ground_clover_grass_outer_corner_sw_01</div></div><div class="path">reference/assets/maps/CloverVillage/Map/PNG/land/land_13.png</div><div class="meta"><span>31e098407c80</span><span>256×256</span><span>outer-corner</span><span class="terrain-role">OUTER CORNER</span><span class="terrain-role">OUTER CORNER</span><span class="npc-role">outer corner</span><span class="decor-role" title="Loot family: clover_grass_corner">clover grass corner</span><span class="reference">Reference</span><span class="confirmed">Reviewed</span></div></div>
+<div class="card" data-role="edge" data-world="CLOVER_SAFE" data-runtime="reference-only" data-terrainrole="edge" data-tilemode="manual" data-variant="" data-lootfam="clover_grass_corner" data-rendermode=""><img loading="lazy" src="https://pawsandparcels.agpstudios.org/reference/assets/maps/CloverVillage/Map/PNG/land/land_14.png" alt="land_14.png"><div class="filename">land_14.png<div class="canonical">ground_clover_grass_edge_e_01</div></div><div class="path">reference/assets/maps/CloverVillage/Map/PNG/land/land_14.png</div><div class="meta"><span>94846f9bf7ff</span><span>256×256</span><span>edge</span><span class="terrain-role">EDGE</span><span class="terrain-role">EDGE</span><span class="npc-role">edge</span><span class="decor-role" title="Loot family: clover_grass_corner">clover grass corner</span><span class="reference">Reference</span><span class="confirmed">Reviewed</span></div></div>
+<div class="card" data-role="edge" data-world="CLOVER_SAFE" data-runtime="reference-only" data-terrainrole="edge" data-tilemode="manual" data-variant="" data-lootfam="clover_grass_corner" data-rendermode=""><img loading="lazy" src="https://pawsandparcels.agpstudios.org/reference/assets/maps/CloverVillage/Map/PNG/land/land_15.png" alt="land_15.png"><div class="filename">land_15.png<div class="canonical">ground_clover_grass_edge_w_01</div></div><div class="path">reference/assets/maps/CloverVillage/Map/PNG/land/land_15.png</div><div class="meta"><span>0c36fbf297b8</span><span>256×256</span><span>edge</span><span class="terrain-role">EDGE</span><span class="terrain-role">EDGE</span><span class="npc-role">edge</span><span class="decor-role" title="Loot family: clover_grass_corner">clover grass corner</span><span class="reference">Reference</span><span class="confirmed">Reviewed</span></div></div>
+<div class="card" data-role="outer-corner" data-world="CLOVER_SAFE" data-runtime="reference-only" data-terrainrole="outer-corner" data-tilemode="manual" data-variant="" data-lootfam="clover_grass_corner" data-rendermode=""><img loading="lazy" src="https://pawsandparcels.agpstudios.org/reference/assets/maps/CloverVillage/Map/PNG/land/land_16.png" alt="land_16.png"><div class="filename">land_16.png<div class="canonical">ground_clover_grass_outer_corner_ne_01</div></div><div class="path">reference/assets/maps/CloverVillage/Map/PNG/land/land_16.png</div><div class="meta"><span>26d07384efe7</span><span>256×256</span><span>outer-corner</span><span class="terrain-role">OUTER CORNER</span><span class="terrain-role">OUTER CORNER</span><span class="npc-role">outer corner</span><span class="decor-role" title="Loot family: clover_grass_corner">clover grass corner</span><span class="reference">Reference</span><span class="confirmed">Reviewed</span></div></div>
+<div class="card" data-role="edge" data-world="CLOVER_SAFE" data-runtime="reference-only" data-terrainrole="edge" data-tilemode="manual" data-variant="" data-lootfam="clover_grass_corner" data-rendermode=""><img loading="lazy" src="https://pawsandparcels.agpstudios.org/reference/assets/maps/CloverVillage/Map/PNG/land/land_17.png" alt="land_17.png"><div class="filename">land_17.png<div class="canonical">ground_clover_grass_edge_n_01</div></div><div class="path">reference/assets/maps/CloverVillage/Map/PNG/land/land_17.png</div><div class="meta"><span>9a535ba0a90f</span><span>256×256</span><span>edge</span><span class="terrain-role">EDGE</span><span class="terrain-role">EDGE</span><span class="npc-role">edge</span><span class="decor-role" title="Loot family: clover_grass_corner">clover grass corner</span><span class="reference">Reference</span><span class="confirmed">Reviewed</span></div></div>
+<div class="card" data-role="outer-corner" data-world="CLOVER_SAFE" data-runtime="reference-only" data-terrainrole="outer-corner" data-tilemode="manual" data-variant="" data-lootfam="clover_grass_corner" data-rendermode=""><img loading="lazy" src="https://pawsandparcels.agpstudios.org/reference/assets/maps/CloverVillage/Map/PNG/land/land_18.png" alt="land_18.png"><div class="filename">land_18.png<div class="canonical">ground_clover_grass_outer_corner_nw_01</div></div><div class="path">reference/assets/maps/CloverVillage/Map/PNG/land/land_18.png</div><div class="meta"><span>1ea26edd02f3</span><span>256×256</span><span>outer-corner</span><span class="terrain-role">OUTER CORNER</span><span class="terrain-role">OUTER CORNER</span><span class="npc-role">outer corner</span><span class="decor-role" title="Loot family: clover_grass_corner">clover grass corner</span><span class="reference">Reference</span><span class="confirmed">Reviewed</span></div></div>
+<div class="card" data-role="compound-corner" data-world="CLOVER_SAFE" data-runtime="reference-only" data-terrainrole="compound-corner" data-tilemode="manual" data-variant="" data-lootfam="clover_grass_corner" data-rendermode=""><img loading="lazy" src="https://pawsandparcels.agpstudios.org/reference/assets/maps/CloverVillage/Map/PNG/land/land_19.png" alt="land_19.png"><div class="filename">land_19.png<div class="canonical">ground_clover_grass_compound_corner_nw_01</div></div><div class="path">reference/assets/maps/CloverVillage/Map/PNG/land/land_19.png</div><div class="meta"><span>6ce908e0b872</span><span>256×256</span><span>compound-corner</span><span class="terrain-role">COMPOUND CORNER</span><span class="terrain-role">COMPOUND CORNER</span><span class="npc-role">compound corner</span><span class="decor-role" title="Loot family: clover_grass_corner">clover grass corner</span><span class="reference">Reference</span><span class="confirmed">Reviewed</span></div></div>
+<div class="card" data-role="compound-corner" data-world="CLOVER_SAFE" data-runtime="reference-only" data-terrainrole="compound-corner" data-tilemode="manual" data-variant="" data-lootfam="clover_grass_corner" data-rendermode=""><img loading="lazy" src="https://pawsandparcels.agpstudios.org/reference/assets/maps/CloverVillage/Map/PNG/land/land_20.png" alt="land_20.png"><div class="filename">land_20.png<div class="canonical">ground_clover_grass_compound_corner_ne_01</div></div><div class="path">reference/assets/maps/CloverVillage/Map/PNG/land/land_20.png</div><div class="meta"><span>7085601379d1</span><span>256×256</span><span>compound-corner</span><span class="terrain-role">COMPOUND CORNER</span><span class="terrain-role">COMPOUND CORNER</span><span class="npc-role">compound corner</span><span class="decor-role" title="Loot family: clover_grass_corner">clover grass corner</span><span class="reference">Reference</span><span class="confirmed">Reviewed</span></div></div>
+<div class="card" data-role="compound-corner" data-world="CLOVER_SAFE" data-runtime="reference-only" data-terrainrole="compound-corner" data-tilemode="manual" data-variant="" data-lootfam="clover_grass_corner" data-rendermode=""><img loading="lazy" src="https://pawsandparcels.agpstudios.org/reference/assets/maps/CloverVillage/Map/PNG/land/land_21.png" alt="land_21.png"><div class="filename">land_21.png<div class="canonical">ground_clover_grass_compound_corner_sw_01</div></div><div class="path">reference/assets/maps/CloverVillage/Map/PNG/land/land_21.png</div><div class="meta"><span>8528456125a1</span><span>256×256</span><span>compound-corner</span><span class="terrain-role">COMPOUND CORNER</span><span class="terrain-role">COMPOUND CORNER</span><span class="npc-role">compound corner</span><span class="decor-role" title="Loot family: clover_grass_corner">clover grass corner</span><span class="reference">Reference</span><span class="confirmed">Reviewed</span></div></div>
+<div class="card" data-role="compound-corner" data-world="CLOVER_SAFE" data-runtime="reference-only" data-terrainrole="compound-corner" data-tilemode="manual" data-variant="" data-lootfam="clover_grass_corner" data-rendermode=""><img loading="lazy" src="https://pawsandparcels.agpstudios.org/reference/assets/maps/CloverVillage/Map/PNG/land/land_22.png" alt="land_22.png"><div class="filename">land_22.png<div class="canonical">ground_clover_grass_compound_corner_se_01</div></div><div class="path">reference/assets/maps/CloverVillage/Map/PNG/land/land_22.png</div><div class="meta"><span>c7835ffbfe20</span><span>256×256</span><span>compound-corner</span><span class="terrain-role">COMPOUND CORNER</span><span class="terrain-role">COMPOUND CORNER</span><span class="npc-role">compound corner</span><span class="decor-role" title="Loot family: clover_grass_corner">clover grass corner</span><span class="reference">Reference</span><span class="confirmed">Reviewed</span></div></div>
+<div class="card" data-role="hard-corner" data-world="CLOVER_SAFE" data-runtime="reference-only" data-terrainrole="hard-corner" data-tilemode="manual" data-variant="" data-lootfam="clover_grass_corner" data-rendermode=""><img loading="lazy" src="https://pawsandparcels.agpstudios.org/reference/assets/maps/CloverVillage/Map/PNG/land/land_23.png" alt="land_23.png"><div class="filename">land_23.png<div class="canonical">ground_clover_grass_hard_corner_nw_01</div></div><div class="path">reference/assets/maps/CloverVillage/Map/PNG/land/land_23.png</div><div class="meta"><span>61124d87d783</span><span>256×256</span><span>hard-corner</span><span class="terrain-role">HARD CORNER</span><span class="terrain-role">HARD CORNER</span><span class="npc-role">hard corner</span><span class="decor-role" title="Loot family: clover_grass_corner">clover grass corner</span><span class="reference">Reference</span><span class="confirmed">Reviewed</span></div></div>
+<div class="card" data-role="hard-corner" data-world="CLOVER_SAFE" data-runtime="reference-only" data-terrainrole="hard-corner" data-tilemode="manual" data-variant="" data-lootfam="clover_grass_corner" data-rendermode=""><img loading="lazy" src="https://pawsandparcels.agpstudios.org/reference/assets/maps/CloverVillage/Map/PNG/land/land_24.png" alt="land_24.png"><div class="filename">land_24.png<div class="canonical">ground_clover_grass_hard_corner_ne_01</div></div><div class="path">reference/assets/maps/CloverVillage/Map/PNG/land/land_24.png</div><div class="meta"><span>2d482f5dd443</span><span>256×256</span><span>hard-corner</span><span class="terrain-role">HARD CORNER</span><span class="terrain-role">HARD CORNER</span><span class="npc-role">hard corner</span><span class="decor-role" title="Loot family: clover_grass_corner">clover grass corner</span><span class="reference">Reference</span><span class="confirmed">Reviewed</span></div></div>
+<div class="card" data-role="hard-corner" data-world="CLOVER_SAFE" data-runtime="reference-only" data-terrainrole="hard-corner" data-tilemode="manual" data-variant="" data-lootfam="clover_grass_corner" data-rendermode=""><img loading="lazy" src="https://pawsandparcels.agpstudios.org/reference/assets/maps/CloverVillage/Map/PNG/land/land_25.png" alt="land_25.png"><div class="filename">land_25.png<div class="canonical">ground_clover_grass_hard_corner_sw_01</div></div><div class="path">reference/assets/maps/CloverVillage/Map/PNG/land/land_25.png</div><div class="meta"><span>1f3d9589e16f</span><span>256×256</span><span>hard-corner</span><span class="terrain-role">HARD CORNER</span><span class="terrain-role">HARD CORNER</span><span class="npc-role">hard corner</span><span class="decor-role" title="Loot family: clover_grass_corner">clover grass corner</span><span class="reference">Reference</span><span class="confirmed">Reviewed</span></div></div>
+<div class="card" data-role="hard-corner" data-world="CLOVER_SAFE" data-runtime="reference-only" data-terrainrole="hard-corner" data-tilemode="manual" data-variant="" data-lootfam="clover_grass_corner" data-rendermode=""><img loading="lazy" src="https://pawsandparcels.agpstudios.org/reference/assets/maps/CloverVillage/Map/PNG/land/land_26.png" alt="land_26.png"><div class="filename">land_26.png<div class="canonical">ground_clover_grass_hard_corner_se_01</div></div><div class="path">reference/assets/maps/CloverVillage/Map/PNG/land/land_26.png</div><div class="meta"><span>a7b3caa2e106</span><span>256×256</span><span>hard-corner</span><span class="terrain-role">HARD CORNER</span><span class="terrain-role">HARD CORNER</span><span class="npc-role">hard corner</span><span class="decor-role" title="Loot family: clover_grass_corner">clover grass corner</span><span class="reference">Reference</span><span class="confirmed">Reviewed</span></div></div>
+</div></section><section class="family" data-family="clover_grass_patch"><button type="button" class="family-toggle" aria-expanded="true"><span class="family-caret">▾</span><span class="family-title">Irregular Clover Grass Patch</span></button><div class="family-header"><h2>Irregular Clover Grass Patch</h2><p>1 asset · 1 unique role · <span class="world-role">SHARED_1_20</span></p><p class="family-details">Role: <strong>patch</strong> · Tile mode: manual · World: SHARED_1_20 · Walkable: Yes · Collision: none · Topology: Verified</p><p class="family-details topology-note">🔍 Verified by alpha-silhouette analysis — preview: <a href="../terrain/index.html">Terrain Topology Preview</a></p></div><div class="family-assets">
+<div class="card" data-role="patch" data-world="SHARED_1_20" data-runtime="reference-only" data-terrainrole="patch" data-tilemode="manual" data-variant="" data-lootfam="clover_grass_patch" data-rendermode=""><img loading="lazy" src="https://pawsandparcels.agpstudios.org/reference/assets/maps/CloverVillage/Map/PNG/land/land_2.png" alt="land_2.png"><div class="filename">land_2.png<div class="canonical">ground_clover_grass_patch_irregular_01</div></div><div class="path">reference/assets/maps/CloverVillage/Map/PNG/land/land_2.png</div><div class="meta"><span>b45bf710e449</span><span>256×256</span><span>patch</span><span class="terrain-role">PATCH</span><span class="terrain-role">PATCH</span><span class="npc-role">patch</span><span class="decor-role" title="Loot family: clover_grass_patch">clover grass patch</span><span class="reference">Reference</span><span class="confirmed">Reviewed</span></div></div>
+</div></section></div>
+<script>
+(function () {
+  var families = document.querySelectorAll("section.family");
+  families.forEach(function (sec) {
+    var btn = sec.querySelector(".family-toggle");
+    var body = sec.querySelector(".family-assets");
+    btn.addEventListener("click", function () {
+      var open = body.style.display !== "none";
+      body.style.display = open ? "none" : "";
+      btn.setAttribute("aria-expanded", String(!open));
+      btn.querySelector(".family-caret").textContent = open ? "▸" : "▾";
+    });
+  });
+  var checks = document.querySelectorAll(".filter-check");
+  var clearBtn = document.getElementById("filter-clear");
+  function active(f, v) {
+    return Array.prototype.some.call(checks, function (ch) {
+      return ch.dataset.f === f && (!v || ch.dataset.v === v) && ch.checked;
+    });
+  }
+  function applyFilters() {
+    var placeable = active("placeable");
+    var cards = document.querySelectorAll(".card");
+    var visibleCount = 0;
+    cards.forEach(function (card) {
+      var show = true;
+      if (placeable && card.dataset.role !== "complete") show = false;
+      if (show && active("role") && !active("role", card.dataset.role)) show = false;
+      if (show && active("world") && !active("world", card.dataset.world)) show = false;
+      if (show && active("runtime") && !active("runtime", card.dataset.runtime)) show = false;
+      if (show && active("roadtype") && !active("roadtype", card.dataset.roadtype)) show = false;
+      if (show && active("surface") && !active("surface", card.dataset.surface)) show = false;
+      if (show && active("terrainrole") && !active("terrainrole", card.dataset.terrainrole)) show = false;
+      if (show && active("tilemode") && !active("tilemode", card.dataset.tilemode)) show = false;
+      if (show && active("variant") && !active("variant", card.dataset.variant)) show = false;
+      if (show && active("decorrole") && !active("decorrole", card.dataset.decorrole)) show = false;
+      if (show && active("collision") && !active("collision", card.dataset.collision)) show = false;
+      if (show && active("depthmode") && !active("depthmode", card.dataset.depthmode)) show = false;
+      if (show && active("density") && !active("density", card.dataset.density)) show = false;
+      if (show && active("npc") && !active("npc", card.dataset.npc)) show = false;
+      if (show && active("envtype") && !active("envtype", card.dataset.envtype)) show = false;
+      if (show && active("monster") && !active("monster", card.dataset.monster)) show = false;
+      if (show && active("shadowmode") && !active("shadowmode", card.dataset.shadowmode)) show = false;
+      if (show && active("monstertype") && !active("monstertype", card.dataset.monstertype)) show = false;
+      if (show && active("nature") && !active("nature", card.dataset.nature)) show = false;
+      if (show && active("naturerole") && !active("naturerole", card.dataset.naturerole)) show = false;
+      if (show && active("treetype") && !active("treetype", card.dataset.treetype)) show = false;
+      if (show && active("vdmap") && !active("vdmap", card.dataset.vdmap)) show = false;
+      if (show && active("roadrole") && !active("roadrole", card.dataset.roadrole)) show = false;
+      if (show && active("pathfam") && !active("pathfam", card.dataset.pathfam)) show = false;
+      if (show && active("lootfam") && !active("lootfam", card.dataset.lootfam)) show = false;
+      if (show && active("rendermode") && !active("rendermode", card.dataset.rendermode)) show = false;
+      if (show && active("material") && !active("material", card.dataset.material)) show = false;
+      if (show && active("surfacecontext") && !active("surfacecontext", card.dataset.surfacecontext)) show = false;
+      if (show && active("animation") && !active("animation", card.dataset.animation)) show = false;
+      if (show && active("direction") && !active("direction", card.dataset.direction)) show = false;
+      if (show && active("effect") && !active("effect", card.dataset.effect)) show = false;
+      if (show && active("effectvariant") && !active("effectvariant", card.dataset.effectvariant)) show = false;
+      if (show && active("topology") && !active("topology", card.dataset.topology)) show = false;
+      card.style.display = show ? "" : "none";
+      if (show) visibleCount += 1;
+    });
+    families.forEach(function (sec) {
+      var body = sec.querySelector(".family-assets");
+      if (body.dataset.userCollapsed === "1") return;
+      var visible = Array.prototype.some.call(sec.querySelectorAll(".card"), function (c) {
+        return c.style.display !== "none";
+      });
+      body.style.display = visible ? "" : "none";
+      sec.querySelector(".family-caret").textContent = visible ? "▾" : "▸";
+    });
+    var note = document.getElementById("filter-note");
+    if (note) note.textContent = visibleCount < cards.length ? "Showing " + visibleCount + " of " + cards.length + " assets" : "";
+  }
+  checks.forEach(function (ch) { ch.addEventListener("change", applyFilters); });
+  if (clearBtn) clearBtn.addEventListener("click", function () { checks.forEach(function (ch) { ch.checked = false; }); applyFilters(); });
+  families.forEach(function (sec) {
+    var btn = sec.querySelector(".family-toggle");
+    btn.addEventListener("click", function () {
+      var body = sec.querySelector(".family-assets");
+      var open = body.style.display !== "none";
+      if (open) body.dataset.userCollapsed = "1"; else delete body.dataset.userCollapsed;
+    });
+  });
+})();
+</script></body></html>

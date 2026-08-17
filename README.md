@@ -48,6 +48,32 @@ Config lives under `ai` in `server_config.json` (see `server_config.example.json
 
 The current Alpha workflow keeps `server/data/paws-and-parcels.sqlite` in the repository so the database can be transferred through GitHub. Keep the repository private when it contains real account or character data; GitHub is not a safe public production-database backup or concurrent database service.
 
+## For developers (first-time setup)
+
+```bash
+# 1. Clone (private repo — you must be added as a collaborator)
+git clone https://github.com/buffbot88/Paws-Parcels.git
+cd Paws-Parcels
+
+# 2. Install Git LFS and pull the 3 large vector source files (~560 MB)
+git lfs install
+git lfs pull
+
+# 3. Install dependencies
+npm install
+
+# 4. Create your local server config with real secrets
+cp server_config.example.json server_config.json
+# Edit server_config.json: fill in db.password, auth.jwtSecret (ask the repo owner
+# for these — they are never committed), and the OIDC client details.
+
+# 5. Run
+npm run dev          # client on localhost:5173
+npm run dev:server   # API + WebSocket on localhost:3001
+```
+
+`oraclehost_id_rsa`, `server_config.json`, and `public/server_config.json` are intentionally **not** in the repo (SSH key + real DB/JWT secrets) — request them directly from the owner.
+
 > **Windows note:** the repo folder contains `&` (`Paws&Parcels`), which breaks npm's
 > `node_modules/.bin` PATH shims. Scripts call tools via explicit
 > `node node_modules/...` paths — keep them that way.
@@ -56,7 +82,7 @@ The current Alpha workflow keeps `server/data/paws-and-parcels.sqlite` in the re
 
 ```
 public/            Static web assets (favicon, OIDC callback, client config)
-reference/assets/  Local ignored art archive; see `design/assets/README.md`
+reference/assets/  Raw art archive (PNGs, Aseprite/Illustrator/EPS sources, map sources); three >100 MB vector sources are Git LFS
 Asset Catalog/     Browsable local image catalog and classification review site
 src/
   data/            Content JSON (npcs, items, quests, upgrades, dialogue) + maps/

@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Level-20 Launch Readiness Audit</title>
+<style>
+  body { font-family: system-ui; max-width: 1080px; margin: 2rem auto; padding: 0 1rem; color: #263228; background: #f3f7f1; }
+  h1 { font-size: 1.4rem; }
+  .back { font-size: 0.85rem; color: #456b4e; font-weight: 700; text-decoration: none; }
+
+  .gap-audit { background: #fff; border: 1px solid #d9e3d7; border-radius: 10px; padding: 1rem 1.25rem; margin: 1rem 0; }
+  .gap-head { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; flex-wrap: wrap; }
+  .gap-head h2 { margin: 0; font-size: 1.2rem; color: #2e5037; }
+  .gap-subtitle { color: #68766b; font-size: 0.9rem; }
+  .gap-badge { display: inline-block; padding: 0.15rem 0.5rem; border-radius: 999px; font-size: 0.68rem; font-weight: 700; letter-spacing: 0.03em; white-space: nowrap; }
+  .gap-badge.ok { background: #e8f5e9; color: #1b5e20; border: 1px solid #a5d6a7; }
+  .gap-badge.warn { background: #fff3e0; color: #e65100; border: 1px solid #ffcc80; }
+  .gap-badge.missing { background: #fdecea; color: #b71c1c; border: 1px solid #ef9a9a; }
+  .gap-worlds { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1rem; margin: 1rem 0; }
+  .gap-world { border: 1px solid #e3eae1; border-radius: 8px; padding: 0.75rem 1rem; background: #fbfdfb; }
+  .gap-world h3 { margin: 0 0 0.25rem; font-size: 1rem; }
+  .gap-tier { color: #68766b; font-size: 0.75rem; font-weight: 700; }
+  .gap-label { margin: 0 0 0.5rem; color: #2e5037; font-size: 0.82rem; font-weight: 600; }
+  .gap-systems { width: 100%; border-collapse: collapse; font-size: 0.82rem; }
+  .gap-systems td { padding: 0.3rem 0.4rem; border-top: 1px solid #eef2ec; vertical-align: top; }
+  .gap-systems td:first-child { font-weight: 600; color: #263228; white-space: nowrap; }
+  .gap-coverage { color: #4a5a4e; }
+  .gap-missing { color: #b71c1c; }
+  .gap-note { color: #68766b; font-size: 0.85rem; }
+  .gap-launch-row { display: grid; grid-template-columns: 90px 150px 70px auto 1fr; align-items: baseline; gap: 8px; padding: 0.5rem 0; border-top: 1px solid #eef2ec; font-size: 0.88rem; }
+  .gap-launch-row.current { background: #fdf6e9; border-left: 3px solid #e65100; padding-left: 8px; }
+  .gap-launch-row.future { opacity: 0.85; }
+  .gap-launch-tier { font-weight: 800; color: #a36e23; }
+  .gap-launch-label { color: #2e5037; font-weight: 600; }
+  .gap-launch-scope { grid-column: 1 / -1; color: #68766b; font-size: 0.82rem; }
+  .gap-section { margin: 1rem 0 0; padding-top: 0.75rem; border-top: 1px solid #e3eae1; }
+  .gap-section h3 { margin: 0 0 0.5rem; font-size: 1rem; color: #2e5037; }
+  .gap-section ol { margin: 0.5rem 0; padding-left: 1.25rem; }
+  .gap-section li { margin: 0.35rem 0; font-size: 0.9rem; }
+  .gap-matrix { width: 100%; border-collapse: collapse; font-size: 0.8rem; margin-top: 0.5rem; }
+  .gap-matrix th, .gap-matrix td { border: 1px solid #e3eae1; padding: 0.3rem 0.5rem; text-align: left; }
+  .gap-matrix th { background: #f3f7f1; color: #2e5037; }
+  
+</style>
+</head>
+<body>
+<p><a class="back" href="index.html">← Review index</a></p>
+<h1>Level-20 Launch Readiness Audit</h1>
+<div class="gap-audit">
+  <div class="gap-head">
+    <h2>Level-20 Launch Readiness Audit</h2>
+    <span class="gap-badge warn">CLOVERVILLAGE 1–20 · CONTENT IN PROGRESS</span>
+  </div>
+  <p class="gap-subtitle">Tiered launch: the game ships in tiers — Launch 1 = CloverVillage (levels 1–20), Launch 2 = HappyValley (21–40), Launch 3 = VoidDesert (41–60). This audit covers ONLY the first launch (CloverVillage, levels 1–20). HappyValley and VoidDesert are cataloged but DEFERRED until their launch tier.</p>
+  <p class="gap-note">All 17 file categories across 8 packs are audited and classified. For the FIRST LAUNCH specifically: CloverVillage environment, NPCs, the three playable classes, and the undead loot icon set are production-ready. The launch blockers are concentrated: a native enemy roster, a regional boss, dungeon interactables, item/consumable icons, quest content, and zone UI/audio. HappyValley and VoidDesert are deferred to their launch tiers.</p>
+  <div class="gap-section">
+    <h3>Launch plan</h3>
+    <div class="gap-launch-row current"><span class="gap-launch-tier">Launch 1</span><strong>CloverVillage</strong> <span class="gap-tier">Lv 1–20</span> <span class="gap-badge warn">PARTIAL</span> <span class="gap-launch-label">FIRST LAUNCH — ACTIVE FOCUS</span><div class="gap-launch-scope">Everything needed to ship levels 1–20. Environment is strong; the blockers are enemies, a boss, dungeon interactables, item/consumable icons, quest content, and UI/audio for this zone only.</div></div><div class="gap-launch-row future"><span class="gap-launch-tier">Launch 2</span><strong>HappyValley</strong> <span class="gap-tier">Lv 21–40</span> <span class="gap-badge ok">READY</span> <span class="gap-launch-label">LAUNCH 2 — DEFERRED</span><div class="gap-launch-scope">Cataloged (map kit, NPCs, monsters). Audit deferred until its launch tier: would need 2–3 hostile identities + a boss, plus shared systems still missing globally.</div></div><div class="gap-launch-row future"><span class="gap-launch-tier">Launch 3</span><strong>VoidDesert</strong> <span class="gap-tier">Lv 41–60</span> <span class="gap-badge ok">READY</span> <span class="gap-launch-label">LAUNCH 3 — DEFERRED</span><div class="gap-launch-scope">Cataloged (nature, map kit, full monster roster). Audit deferred until its launch tier: would need NPC/service identities.</div></div>
+  </div>
+  <div class="gap-worlds"><div class="gap-world">
+      <h3>CloverVillage <span class="gap-tier">Lv 1–20</span> <span class="gap-badge missing">MISSING</span></h3>
+      <p class="gap-label">ENVIRONMENT STRONG · PvE CONTENT MISSING</p>
+      <table class="gap-systems">
+        <tr><td>Environment</td><td><span class="gap-badge ok">READY</span></td><td class="gap-coverage">buildings 18 families · ground 4 · roads 5 · decor 8 · source</td></tr><tr><td>NPCs</td><td><span class="gap-badge ok">READY</span></td><td class="gap-coverage">Artist · Astrologer · Citizen (3 identities, 5 animation states)</td></tr><tr><td>Player classes</td><td><span class="gap-badge ok">READY</span></td><td class="gap-coverage">Warrior · Mage · Archer (character + effects art cataloged; skill mapping to 20 pending)</td></tr><tr><td>Loot icons</td><td><span class="gap-badge ok">READY</span></td><td class="gap-coverage">Undead Loot Vector Icons — 48 logical icons / 10 families classified</td></tr><tr><td>Monsters</td><td><span class="gap-badge missing">MISSING</span></td><td class="gap-coverage">none — no native enemy roster in the catalog<br><span class="gap-missing">missing: 4–6 normal enemies (slime/animal/insect-plant/bandit-goblin + stronger regional), 2 elite variants, 1 regional boss</span></td></tr><tr><td>Bosses</td><td><span class="gap-badge missing">MISSING</span></td><td class="gap-coverage">none</td></tr>
+      </table>
+      <p class="gap-note">The #1 missing content package for launch. Level 1–20 has world and NPC material but no enemies.</p>
+    </div></div>
+  <div class="gap-section">
+    <h3>Dungeons</h3>
+    <p><span class="gap-badge ok">READY</span> NO SEPARATE TILESETS NEEDED</p>
+    <p class="gap-coverage">Dungeons remix CloverVillage's own environment under darker lighting + concentrated spawns. Same visual family, different layout.<br><span class="gap-missing">missing: Shared dungeon-interaction mini-pack: door/gate (closed/open/locked), lever (off/on), pressure plate (up/pressed), portal/entrance marker, key-object visual. Chest already exists in HappyValley (reuse if style acceptable). Later: spikes, floor fire, poison pool, collapsing floor, breakable pots/crates.</span></p>
+  </div>
+  <div class="gap-section">
+    <h3>Player classes</h3>
+    <p><span class="gap-badge ok">READY</span> 3 CLASSES ENOUGH · SKILL KITS THROUGH 20 PENDING</p>
+    <p class="gap-coverage">Warrior (264 assets), Mage (173), Archer (127) cover the first launch. Do not add classes. Complete each class's ability vocabulary through level 20 — roughly basic attack + 3 skills by level 20, largely reusing existing effects: Mage has fire/water ball + spell; Warrior has 10 numbered slash variants; Archer's normal/default arrow projectile is a notable gap.<br><span class="gap-missing">missing: Per-class skill mapping through level 20 (basic attack + level 5/10/20 skills). Archer default arrow projectile asset. Full 21–60 mapping deferred with HappyValley/VoidDesert.</span></p>
+  </div>
+  <div class="gap-section">
+    <h3>Shared systems</h3>
+    <table class="gap-systems"><tr><td>Items / equipment</td><td><span class="gap-badge warn">PARTIAL</span></td><td class="gap-coverage">loot pack CLASSIFIED: Undead Loot Vector Icons — 48 logical icons / 10 families (undead bone 12, body parts 3, organs 3, jewelry 8, currency 2, consumables 2, materials 6, quest items 7, equipment 5, source 2). Strong on drops/quest/jewelry.<br><span class="gap-missing">missing: The audit's targeted art gap (~25–35 icons): class weapons (Warrior ×3, Archer bows ×3, Mage staffs ×3), chest armor ×9, shields/offhands ×3, ore/herb/cloth/leather/essence materials, food + 2–4 more consumable silhouettes. No paper-doll art — icon reuse + rarity/tier data.</span></td></tr><tr><td>Consumables</td><td><span class="gap-badge missing">MISSING</span></td><td class="gap-coverage">2 silhouettes (red potion, green vial)<br><span class="gap-missing">missing: Health / mana / revive / food — one icon per type, potency via data (Minor/Greater/Superior)</span></td></tr><tr><td>Crafting materials</td><td><span class="gap-badge missing">MISSING</span></td><td class="gap-coverage">monster-drop materials exist in the loot pack<br><span class="gap-missing">missing: Ore / herb / cloth / leather / essence icons for Clover-tier crafting</span></td></tr><tr><td>Quest content</td><td><span class="gap-badge missing">MISSING</span></td><td class="gap-coverage">not represented<br><span class="gap-missing">missing: Content database for CloverVillage: 5–7 main quests + ~10–15 side quests + world activities (kill/gather/deliver/escort/interact/explore/elite hunt) + a dungeon, tuned so data carries the player 1→20.</span></td></tr><tr><td>UI / HUD</td><td><span class="gap-badge missing">MISSING</span></td><td class="gap-coverage">only NPC dialogue bubbles exist<br><span class="gap-missing">missing: System, largely CSS/UI components: health, class resource, ability bar, XP, level, enemy health/name, boss bar, quest tracker, inventory, equipment, loot popup, dialogue, shop, death/respawn, minimap</span></td></tr><tr><td>Audio (music/SFX)</td><td><span class="gap-badge missing">MISSING</span></td><td class="gap-coverage">not represented anywhere<br><span class="gap-missing">missing: Audit needed — no audio assets are indexed</span></td></tr></table>
+  </div>
+  <div class="gap-section">
+    <h3>Coverage matrix</h3>
+    <table class="gap-matrix">
+      <tr><th>System</th><th>Clover 1–20</th><th>Launch 1 overall</th></tr>
+      <tr><td>Major environment</td><td><span class="gap-badge ok">READY</span></td><td><span class="gap-badge ok">READY</span></td></tr><tr><td>Terrain / paths</td><td><span class="gap-badge ok">READY</span></td><td><span class="gap-badge ok">READY</span></td></tr><tr><td>Buildings / structures</td><td><span class="gap-badge ok">READY</span></td><td><span class="gap-badge ok">READY</span></td></tr><tr><td>Nature / decor</td><td><span class="gap-badge ok">READY</span></td><td><span class="gap-badge ok">READY</span></td></tr><tr><td>NPCs</td><td><span class="gap-badge ok">READY</span></td><td><span class="gap-badge ok">READY</span></td></tr><tr><td>Player classes</td><td><span class="gap-badge ok">READY</span></td><td><span class="gap-badge ok">READY</span></td></tr><tr><td>Loot / item icons</td><td><span class="gap-badge warn">PARTIAL</span></td><td><span class="gap-badge warn">PARTIAL</span></td></tr><tr><td>Monsters</td><td><span class="gap-badge missing">MISSING</span></td><td><span class="gap-badge warn">PARTIAL</span></td></tr><tr><td>Bosses</td><td><span class="gap-badge missing">MISSING</span></td><td><span class="gap-badge warn">PARTIAL</span></td></tr><tr><td>Dungeon environments</td><td><span class="gap-badge ok">READY</span></td><td><span class="gap-badge ok">READY</span></td></tr><tr><td>Dungeon interactables</td><td><span class="gap-badge warn">PARTIAL</span></td><td><span class="gap-badge warn">PARTIAL</span></td></tr><tr><td>Skill effects (to 20)</td><td><span class="gap-badge warn">PARTIAL</span></td><td><span class="gap-badge warn">PARTIAL</span></td></tr><tr><td>Consumables</td><td><span class="gap-badge missing">MISSING</span></td><td><span class="gap-badge missing">MISSING</span></td></tr><tr><td>Crafting materials</td><td><span class="gap-badge missing">MISSING</span></td><td><span class="gap-badge missing">MISSING</span></td></tr><tr><td>Quest content</td><td><span class="gap-badge missing">MISSING</span></td><td><span class="gap-badge missing">MISSING</span></td></tr><tr><td>UI / HUD</td><td><span class="gap-badge missing">MISSING</span></td><td><span class="gap-badge missing">MISSING</span></td></tr><tr><td>Audio</td><td><span class="gap-badge missing">MISSING</span></td><td><span class="gap-badge missing">MISSING</span></td></tr>
+    </table>
+  </div>
+  <div class="gap-section">
+    <h3>Acquisition / creation priorities</h3>
+    <ol><li><strong>#1 · Launch 1 — CloverVillage monster pack.</strong> ~5 normal enemy identities + 2 elites + 1 regional boss. The #1 missing art package for the first launch.</li><li><strong>#2 · Launch 1 — CloverVillage regional boss.</strong> One memorable boss for the level 1–20 tier.</li><li><strong>#3 · Launch 1 — Shared dungeon interaction mini-pack.</strong> door/gate, lever, pressure plate, portal/entrance, key object; reuse the existing chest — needed for any Clover dungeon content.</li><li><strong>#4 · Launch 1 — Item/icon pack (launch-scoped).</strong> <span class="gap-badge ok">COMPLETE</span> Foundational set delivered + classified: Undead Loot Vector Icons — 48 logical icons / 10 families. Remaining targeted gap: class weapons, chest armor, shields, food, ore/herb/cloth (~25–35 more icons).</li><li><strong>#5 · Launch 1 — Complete the three class skill kits (through level 20).</strong> Skills through level 20 for Warrior/Mage/Archer, reusing existing effects; full 21–60 mapping deferred.</li><li><strong>#6 · Launch 1 — Quest / progression content for CloverVillage.</strong> 5–7 main quests + side quests + world activities + a dungeon, tuned so data carries the player 1→20.</li><li><strong>#7 · Launch 1 — Clover zone UI + audio.</strong> HUD/system for the first zone and its music/SFX — minimal, launch-scoped.</li><li><strong>#8 · Launch 2 — HappyValley hostile + boss identities.</strong> <span class="gap-badge missing">MISSING</span> 2–3 hostiles + a regional boss — deferred to Launch 2, not needed for the first launch.</li><li><strong>#9 · Launch 3 — VoidDesert NPC/service pack.</strong> <span class="gap-badge missing">MISSING</span> ~3 NPC identities — deferred to Launch 3, not needed for the first launch.</li></ol>
+  </div>
+</div>
+</body>
+</html>

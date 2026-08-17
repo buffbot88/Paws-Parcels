@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>CloverVillage other — Review</title>
+<style>
+  body { font-family: system-ui; max-width: 1200px; margin: 1rem auto; padding: 0 1rem; color: #263228; background: #f3f7f1; }
+  h1 { font-size: 1.3rem; }
+  nav { margin-bottom: 1rem; }
+  nav a { color: #456b4e; margin-right: 1rem; text-decoration: none; }
+  nav a:hover { text-decoration: underline; }
+  .summary-bar { padding: 0.6rem 1rem; margin-bottom: 0.75rem; background: #dce8da; border: 1px solid #b9cfb5; border-radius: 6px; font-size: 0.9rem; font-weight: 600; color: #2e5037; }
+  .filter-bar { display: flex; flex-wrap: wrap; align-items: center; gap: 0.75rem; padding: 0.5rem 0.75rem; margin-bottom: 0.25rem; background: #fff; border: 1px solid #d9e3d7; border-radius: 6px; font-size: 0.8rem; }
+  .filter-bar .filter-label { font-weight: 600; color: #68766b; }
+  .filter-bar .filter-group { display: inline-flex; align-items: center; gap: 0.4rem; padding: 0.2rem 0.5rem; background: #f0f4ee; border-radius: 4px; }
+  .filter-bar label { display: inline-flex; align-items: center; gap: 0.2rem; cursor: pointer; }
+  .filter-bar button { border: 1px solid #b9cfb5; background: #e8f0e6; border-radius: 4px; padding: 0.2rem 0.6rem; cursor: pointer; font-size: 0.8rem; }
+  .filter-note { min-height: 1rem; margin: 0.25rem 0 0; font-size: 0.8rem; color: #a36e23; }
+  .grid { display: block; }
+  .card { background: #fff; border: 1px solid #d9e3d7; border-radius: 8px; padding: 0.75rem; }
+  .card img { max-width: 100%; max-height: 250px; object-fit: contain; display: block; margin: 0 auto 0.75rem; background: repeating-conic-gradient(#e8ede6 0% 25%, #fff 0% 50%) 50%/16px 16px; border-radius: 4px; }
+  .card .filename { font-weight: 600; font-size: 0.9rem; margin-bottom: 0.25rem; }
+  .card .canonical { font-size: 0.78rem; color: #416f99; font-family: ui-monospace, monospace; margin-top: 0.15rem; }
+  .card .path { font-size: 0.75rem; color: #68766b; word-break: break-all; margin-bottom: 0.5rem; }
+  .card .meta { display: flex; flex-wrap: wrap; gap: 0.5rem; font-size: 0.75rem; }
+  .card .meta span { padding: 0.15rem 0.4rem; border-radius: 4px; background: #f0f4ee; }
+  .card .meta .runtime { background: #e8f5e9; color: #2e7d32; }
+  .card .meta .reference { background: #f5f5f5; color: #666; }
+  .card .meta .confirmed { background: #e3f2fd; color: #1565c0; }
+  .card .meta .unreviewed { background: #fff3e0; color: #e65100; }
+  .card .meta .road-role { background: #ede7f6; color: #4527a0; font-weight: 600; }
+  .card .meta .terrain-role { background: #e0f2f1; color: #00695c; font-weight: 600; }
+  .card .meta .decor-role { background: #fce4ec; color: #ad1457; font-weight: 600; }
+  .card .meta .subtype-badge { background: #f3e5f5; color: #7b1fa2; font-size: 0.7rem; }
+  .card .meta .depth-badge { background: #e3f2fd; color: #1565c0; font-weight: 600; }
+  .card .meta .density-badge { background: #fff3e0; color: #e65100; font-weight: 600; }
+  .card .meta .npc-role { background: #eceff1; color: #37474f; font-weight: 600; }
+  .card .meta .anim-badge { background: #e8f5e9; color: #2e7d32; font-weight: 600; }
+  .card .meta .dir-badge { background: #e3f2fd; color: #1565c0; font-weight: 600; }
+  .card .meta .frame-badge { background: #fce4ec; color: #ad1457; font-weight: 600; }
+  .family-header .npc-note { font-size: 0.75rem; color: #37474f; margin-top: 0.25rem; }
+  .identity-strip { margin-bottom: 1rem; }
+  .identity-heading { font-size: 1rem; color: #2e5037; margin: 0 0 0.5rem; }
+  .identity-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 1rem; }
+  .identity-card { display: flex; gap: 0.75rem; background: #fff; border: 1px solid #b9cfb5; border-left: 4px solid #456b4e; border-radius: 8px; padding: 0.75rem; }
+  .identity-card img { width: 96px; height: 96px; object-fit: contain; background: repeating-conic-gradient(#e8ede6 0% 25%, #fff 0% 50%) 50%/16px 16px; border-radius: 6px; }
+  .identity-name { font-weight: 700; font-size: 1rem; color: #2e5037; }
+  .identity-id { font-size: 0.75rem; color: #416f99; font-family: ui-monospace, monospace; margin: 0.1rem 0 0.3rem; }
+  .identity-desc { font-size: 0.78rem; color: #68766b; }
+  .identity-anims { font-size: 0.72rem; color: #2e7d32; margin-top: 0.35rem; }
+  .card .meta .variant-badge { background: #fff8e1; color: #f57f17; font-weight: 600; }
+  .card .meta .candidate-role { background: #f3e5f5; color: #7b1fa2; font-weight: 600; }
+  .card .meta .topology { background: #fff8e1; color: #f57f17; }
+  .family-header .topology-note { font-size: 0.75rem; color: #00695c; margin-top: 0.25rem; }
+  .family-header .topology-note a { color: #00695c; }
+  .family-header .depth-note { font-size: 0.75rem; color: #6a1b9a; margin-top: 0.25rem; }
+  .family-header .status-badge { font-weight: 600; color: #2e5037; margin-top: 0.35rem; }
+  .family-header .status-badge strong { color: #456b4e; }
+  .family-header .art-required { font-weight: 600; color: #b71c1c; margin-top: 0.25rem; }
+  .family-header .recovery-note { font-size: 0.75rem; color: #5d4037; margin-top: 0.3rem; line-height: 1.45; }
+  .art-task { margin-top: 0.5rem; background: #fff8f0; border: 1px solid #e6c9a8; border-radius: 6px; padding: 0.6rem 0.8rem; font-size: 0.8rem; }
+  .art-task h4 { margin: 0 0 0.35rem; font-size: 0.82rem; color: #a36e23; }
+  .art-task ul { margin: 0; padding-left: 1.1rem; }
+  .art-task li { margin: 0.2rem 0; }
+  .art-task .tt { font-family: ui-monospace, monospace; color: #416f99; }
+  .family-header .family-details { font-size: 0.8rem; color: #2e5037; margin-top: 0.35rem; }
+  .family-header .family-details strong { color: #456b4e; }
+  .family { margin-top: 1.25rem; }
+  .family-toggle { display: flex; align-items: center; gap: 0.5rem; width: 100%; text-align: left; background: #e8f0e6; border: 1px solid #b9cfb5; border-left: 4px solid #456b4e; border-radius: 6px 6px 0 0; padding: 0.65rem 1rem; cursor: pointer; font: inherit; }
+  .family-toggle:hover { background: #dce8da; }
+  .family-caret { color: #456b4e; font-size: 0.9rem; }
+  .family-title { font-weight: 700; font-size: 1.05rem; color: #2e5037; }
+  .family-header { padding: 0.6rem 1rem; background: #f2f6f0; border: 1px solid #d9e3d7; border-top: none; }
+  .family-header p { margin: 0; font-size: 0.8rem; color: #68766b; }
+  .family-header .world-role { font-weight: 600; color: #416f99; }
+  .family-header .structure-type { font-weight: 600; color: #2e5037; }
+  .family-header .suitability { font-weight: 600; color: #a36e23; }
+  .family-header .family-uses { font-size: 0.75rem; color: #68766b; margin-top: 0.25rem; }
+  .family-assets { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 1rem; padding: 1rem; background: #fbfdfa; border: 1px solid #d9e3d7; border-top: none; border-radius: 0 0 6px 6px; }
+</style>
+</head>
+<body>
+<nav><a href="../index.html">← All Categories</a></nav>
+<h1>CloverVillage / other — 2 assets</h1>
+<div class="summary-bar">2 source records · 0 logical loot icons · 1 semantic families · 0 Clover Tileset Source · 0 shadow PNG + 0 without-shadow PNG + 2 EPS sources + 0 AI master + 0 support · Runtime: 0 · Reference: 2 · Reviewed: 2 · 0 unclassified</div><div class="summary-bar env-note">💀 Undead Loot Vector Icons — the 146 files are 48 logical loot items: shadow/without-shadow PNGs are RENDER VARIANTS of the same icon, EPS files are authoring sources (one per icon). Strong on monster drops, undead materials, quest items, jewelry; weak on class weapons (no bow/staff/sword), chest armor, shields, food. Candidate subtype assignments (icons 31–32, 45–48) marked pending visual pass. Everything stays reference.</div>
+<div class="filter-bar">
+  <span class="filter-label">Filter:</span>
+  <span class="filter-group">Family
+    <label><input type="checkbox" class="filter-check" data-f="lootfam" data-v="undead_bone" /> undead bone</label>
+    <label><input type="checkbox" class="filter-check" data-f="lootfam" data-v="undead_body_part" /> body parts</label>
+    <label><input type="checkbox" class="filter-check" data-f="lootfam" data-v="undead_organ" /> organs</label>
+    <label><input type="checkbox" class="filter-check" data-f="lootfam" data-v="jewelry" /> jewelry</label>
+    <label><input type="checkbox" class="filter-check" data-f="lootfam" data-v="currency" /> currency</label>
+    <label><input type="checkbox" class="filter-check" data-f="lootfam" data-v="consumable" /> consumables</label>
+    <label><input type="checkbox" class="filter-check" data-f="lootfam" data-v="material" /> materials</label>
+    <label><input type="checkbox" class="filter-check" data-f="lootfam" data-v="quest_item" /> quest items</label>
+    <label><input type="checkbox" class="filter-check" data-f="lootfam" data-v="equipment" /> equipment</label>
+    <label><input type="checkbox" class="filter-check" data-f="lootfam" data-v="loot_source" /> source</label>
+  </span>
+  <span class="filter-group">Render
+    <label><input type="checkbox" class="filter-check" data-f="rendermode" data-v="shadow" /> shadow</label>
+    <label><input type="checkbox" class="filter-check" data-f="rendermode" data-v="without_shadow" /> without shadow</label>
+    <label><input type="checkbox" class="filter-check" data-f="rendermode" data-v="source" /> eps source</label>
+  </span>
+  <span class="filter-group">Role
+    <label><input type="checkbox" class="filter-check" data-f="role" data-v="loot-icon" /> icon</label>
+    <label><input type="checkbox" class="filter-check" data-f="role" data-v="authoring-source" /> source</label>
+    <label><input type="checkbox" class="filter-check" data-f="role" data-v="authoring-master" /> master</label>
+    <label><input type="checkbox" class="filter-check" data-f="role" data-v="background-support" /> support</label>
+  </span>
+  <span class="filter-group">World
+    <label><input type="checkbox" class="filter-check" data-f="world" data-v="CLOVER_SAFE" /> Clover</label>
+    <label><input type="checkbox" class="filter-check" data-f="world" data-v="SHARED_1_20" /> Shared</label>
+    <label><input type="checkbox" class="filter-check" data-f="world" data-v="PVE_1_20" /> PvE</label>
+    <label><input type="checkbox" class="filter-check" data-f="world" data-v="FUTURE" /> Future</label>
+  </span>
+  <span class="filter-group">Status
+    <label><input type="checkbox" class="filter-check" data-f="runtime" data-v="runtime-used" /> runtime</label>
+    <label><input type="checkbox" class="filter-check" data-f="runtime" data-v="reference-only" /> reference</label>
+  </span>
+  <button type="button" id="filter-clear">Clear</button>
+</div>
+<p id="filter-note" class="filter-note"></p>
+
+
+<div class="grid">
+<section class="family" data-family="clover_tileset_source"><button type="button" class="family-toggle" aria-expanded="true"><span class="family-caret">▾</span><span class="family-title">Clover Tileset Source (Masters)</span></button><div class="family-header"><h2>Clover Tileset Source (Masters)</h2><p>2 records · 0 runtime</p><p class="family-details">Family: <strong>clover tileset source</strong> · Render modes:  · Runtime: 0</p><p class="family-details npc-note">Master authoring sources for the Tropical Medieval City 2D Tileset — the same CloverVillage map artwork cataloged elsewhere. Kept for provenance, not runtime. AI and EPS are formats, not asset families. Audited 2026-08-15.</p></div><div class="family-assets">
+<div class="card" data-role="authoring-source" data-world="UNASSIGNED" data-runtime="reference-only" data-lootfam="clover_tileset_source" data-rendermode=""><div style="height:250px;background:#f0f0f0;display:flex;align-items:center;justify-content:center;color:#666">.ai</div><div class="filename">Tropical_Medieval_City_2D_Tileset.ai<div class="canonical">source_clover_tropical_medieval_city_tileset_ai</div></div><div class="path">reference/assets/maps/CloverVillage/Map/AI/Tropical_Medieval_City_2D_Tileset.ai</div><div class="meta"><span>ba86e188f597</span><span>other</span><span>authoring-source</span><span class="npc-role">master tileset</span><span class="dir-badge">illustrator</span><span class="decor-role" title="Loot family: clover_tileset_source">clover tileset source</span><span class="topology">not runtime-eligible</span><span class="reference">Reference</span><span class="confirmed">Reviewed</span></div></div>
+<div class="card" data-role="authoring-source" data-world="UNASSIGNED" data-runtime="reference-only" data-lootfam="clover_tileset_source" data-rendermode=""><div style="height:250px;background:#f0f0f0;display:flex;align-items:center;justify-content:center;color:#666">.eps</div><div class="filename">Tropical_Medieval_City_2D_Tileset.eps<div class="canonical">source_clover_tropical_medieval_city_tileset_eps</div></div><div class="path">reference/assets/maps/CloverVillage/Map/EPS/Tropical_Medieval_City_2D_Tileset.eps</div><div class="meta"><span>2427bcb3a3d4</span><span>other</span><span>authoring-source</span><span class="npc-role">master tileset</span><span class="dir-badge">eps</span><span class="decor-role" title="Loot family: clover_tileset_source">clover tileset source</span><span class="topology">not runtime-eligible</span><span class="reference">Reference</span><span class="confirmed">Reviewed</span></div></div>
+</div></section></div>
+<script>
+(function () {
+  var families = document.querySelectorAll("section.family");
+  families.forEach(function (sec) {
+    var btn = sec.querySelector(".family-toggle");
+    var body = sec.querySelector(".family-assets");
+    btn.addEventListener("click", function () {
+      var open = body.style.display !== "none";
+      body.style.display = open ? "none" : "";
+      btn.setAttribute("aria-expanded", String(!open));
+      btn.querySelector(".family-caret").textContent = open ? "▸" : "▾";
+    });
+  });
+  var checks = document.querySelectorAll(".filter-check");
+  var clearBtn = document.getElementById("filter-clear");
+  function active(f, v) {
+    return Array.prototype.some.call(checks, function (ch) {
+      return ch.dataset.f === f && (!v || ch.dataset.v === v) && ch.checked;
+    });
+  }
+  function applyFilters() {
+    var placeable = active("placeable");
+    var cards = document.querySelectorAll(".card");
+    var visibleCount = 0;
+    cards.forEach(function (card) {
+      var show = true;
+      if (placeable && card.dataset.role !== "complete") show = false;
+      if (show && active("role") && !active("role", card.dataset.role)) show = false;
+      if (show && active("world") && !active("world", card.dataset.world)) show = false;
+      if (show && active("runtime") && !active("runtime", card.dataset.runtime)) show = false;
+      if (show && active("roadtype") && !active("roadtype", card.dataset.roadtype)) show = false;
+      if (show && active("surface") && !active("surface", card.dataset.surface)) show = false;
+      if (show && active("terrainrole") && !active("terrainrole", card.dataset.terrainrole)) show = false;
+      if (show && active("tilemode") && !active("tilemode", card.dataset.tilemode)) show = false;
+      if (show && active("variant") && !active("variant", card.dataset.variant)) show = false;
+      if (show && active("decorrole") && !active("decorrole", card.dataset.decorrole)) show = false;
+      if (show && active("collision") && !active("collision", card.dataset.collision)) show = false;
+      if (show && active("depthmode") && !active("depthmode", card.dataset.depthmode)) show = false;
+      if (show && active("density") && !active("density", card.dataset.density)) show = false;
+      if (show && active("npc") && !active("npc", card.dataset.npc)) show = false;
+      if (show && active("envtype") && !active("envtype", card.dataset.envtype)) show = false;
+      if (show && active("monster") && !active("monster", card.dataset.monster)) show = false;
+      if (show && active("shadowmode") && !active("shadowmode", card.dataset.shadowmode)) show = false;
+      if (show && active("monstertype") && !active("monstertype", card.dataset.monstertype)) show = false;
+      if (show && active("nature") && !active("nature", card.dataset.nature)) show = false;
+      if (show && active("naturerole") && !active("naturerole", card.dataset.naturerole)) show = false;
+      if (show && active("treetype") && !active("treetype", card.dataset.treetype)) show = false;
+      if (show && active("vdmap") && !active("vdmap", card.dataset.vdmap)) show = false;
+      if (show && active("roadrole") && !active("roadrole", card.dataset.roadrole)) show = false;
+      if (show && active("pathfam") && !active("pathfam", card.dataset.pathfam)) show = false;
+      if (show && active("lootfam") && !active("lootfam", card.dataset.lootfam)) show = false;
+      if (show && active("rendermode") && !active("rendermode", card.dataset.rendermode)) show = false;
+      if (show && active("material") && !active("material", card.dataset.material)) show = false;
+      if (show && active("surfacecontext") && !active("surfacecontext", card.dataset.surfacecontext)) show = false;
+      if (show && active("animation") && !active("animation", card.dataset.animation)) show = false;
+      if (show && active("direction") && !active("direction", card.dataset.direction)) show = false;
+      if (show && active("effect") && !active("effect", card.dataset.effect)) show = false;
+      if (show && active("effectvariant") && !active("effectvariant", card.dataset.effectvariant)) show = false;
+      if (show && active("topology") && !active("topology", card.dataset.topology)) show = false;
+      card.style.display = show ? "" : "none";
+      if (show) visibleCount += 1;
+    });
+    families.forEach(function (sec) {
+      var body = sec.querySelector(".family-assets");
+      if (body.dataset.userCollapsed === "1") return;
+      var visible = Array.prototype.some.call(sec.querySelectorAll(".card"), function (c) {
+        return c.style.display !== "none";
+      });
+      body.style.display = visible ? "" : "none";
+      sec.querySelector(".family-caret").textContent = visible ? "▾" : "▸";
+    });
+    var note = document.getElementById("filter-note");
+    if (note) note.textContent = visibleCount < cards.length ? "Showing " + visibleCount + " of " + cards.length + " assets" : "";
+  }
+  checks.forEach(function (ch) { ch.addEventListener("change", applyFilters); });
+  if (clearBtn) clearBtn.addEventListener("click", function () { checks.forEach(function (ch) { ch.checked = false; }); applyFilters(); });
+  families.forEach(function (sec) {
+    var btn = sec.querySelector(".family-toggle");
+    btn.addEventListener("click", function () {
+      var body = sec.querySelector(".family-assets");
+      var open = body.style.display !== "none";
+      if (open) body.dataset.userCollapsed = "1"; else delete body.dataset.userCollapsed;
+    });
+  });
+})();
+</script></body></html>

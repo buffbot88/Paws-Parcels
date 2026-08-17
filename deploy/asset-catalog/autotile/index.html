@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Earthen Vine Path — Autotile Validation Preview</title>
+<style>
+  body { font-family: system-ui; max-width: 1100px; margin: 1.5rem auto; padding: 0 1rem; color: #263228; background: #f3f7f1; }
+  h1 { font-size: 1.4rem; }
+  h2 { font-size: 1.05rem; margin-top: 2rem; }
+  .banner { padding: 0.8rem 1rem; border-radius: 8px; font-weight: 600; margin-bottom: 1rem; }
+  .banner.ok { background: #e8f5e9; border: 1px solid #a5d6a7; color: #1b5e20; }
+  .banner.warn { background: #fff3e0; border: 1px solid #ffcc80; color: #e65100; }
+  .banner a { color: inherit; }
+  .findings { background: #fff; border: 1px solid #d9e3d7; border-radius: 8px; padding: 0.75rem 1rem; font-size: 0.9rem; }
+  .findings li { margin: 0.2rem 0; }
+  .gallery { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 0.75rem; }
+  .tile-card { background: #fff; border: 1px solid #d9e3d7; border-radius: 8px; padding: 0.5rem; text-align: center; }
+  .tile-card.known { border-color: #456b4e; box-shadow: 0 0 0 2px #c8e6c9; }
+  .tile-card img { image-rendering: pixelated; background: repeating-conic-gradient(#e8ede6 0% 25%, #fff 0% 50%) 50%/16px 16px; border-radius: 4px; }
+  .tname { font-weight: 600; font-size: 0.85rem; margin-top: 0.35rem; }
+  .trole { font-size: 0.75rem; color: #416f99; }
+  .tratios { font-size: 0.65rem; color: #68766b; font-family: ui-monospace, monospace; }
+  .tbits { font-size: 0.65rem; color: #999; font-family: ui-monospace, monospace; }
+  table.map { border-collapse: collapse; background: #cfe0c8; }
+  table.map td { padding: 0; }
+  table.map .cell { position: relative; }
+  table.map img { display: block; }
+  table.map .cellrole { position: absolute; bottom: 0; left: 0; right: 0; font-size: 0.55rem; background: rgba(255,255,255,0.85); color: #333; text-align: center; }
+  table.map .missing { width: 64px; height: 64px; display: flex; align-items: center; justify-content: center; background: #ffcdd2; color: #b71c1c; font-size: 0.6rem; font-family: monospace; }
+  .note { font-size: 0.85rem; color: #68766b; }
+</style>
+</head>
+<body>
+<h1>Earthen Vine Path — Autotile Validation Preview</h1>
+<div class="banner warn">
+  DRAFT — pixel analysis does NOT confirm a clean 13-role autotile. This pack appears to be a decorated surface/edge kit (duplicate + missing roles). No compass roles were committed to the catalog.
+</div>
+<div class="findings"><ul>
+<li>Center / Fill: road_5.png — single candidate</li>
+<li>center-variant: road_11.png — single candidate</li>
+<li>Edge — North: 2 candidate(s) — road_7.png, road_8.png (duplicate role)</li>
+<li>Edge — South: road_2.png — single candidate</li>
+<li>Edge — West: road_6.png — single candidate</li>
+<li>Inner Corner — W: road_4.png — single candidate</li>
+<li>Outer Corner — NW: 2 candidate(s) — road_9.png, road_10.png (duplicate role)</li>
+<li>Outer Corner — SE: 2 candidate(s) — road_1.png, road_13.png (duplicate role)</li>
+<li>Outer Corner — SW: 2 candidate(s) — road_3.png, road_12.png (duplicate role)</li>
+<li>MISSING roles: Inner Corner — E, Outer Corner — NE, Inner Corner — S, Edge — East, Inner Corner — N</li>
+<li>Full 26-tile road kit exists in the archive (VoidDesert has road_1-26); CloverVillage holds only the 13-piece subset. Missing CloverVillage roles likely live in the rest of that kit.</li>
+</ul></div>
+<h2>Test render (draft)</h2>
+<p class="note">Best-fit mapping applied; cells in red have no matching tile in the pack (missing role). Confirm visually whether the path connects — that is the acceptance test.</p>
+<table class="map">
+<td class="grass"></td><td class="grass"></td><td class="grass"></td><td class="grass"></td><td class="grass"></td><td class="grass"></td><td class="grass"></td><td class="grass"></td><td class="grass"></td><td class="grass"></td><td class="grass"></td><td class="grass"></td><td class="grass"></td><td class="grass"></td><td class="grass"></td><td class="grass"></td>
+<td class="grass"></td><td class="grass"></td><td class="cell "><img src="https://pawsandparcels.agpstudios.org/reference/assets/maps/CloverVillage/Map/PNG/road/road_1.png" alt="road_1.png" width="64" height="64" title="road_1.png outer-corner-se"><div class="cellrole">outer-corner-se</div></td><td class="cell cell-missing"><div class="missing" title="0101 unclassified — no tile in pack">0101</div><div class="cellrole">unclassified</div></td><td class="cell cell-missing"><div class="missing" title="0101 unclassified — no tile in pack">0101</div><div class="cellrole">unclassified</div></td><td class="cell cell-missing"><div class="missing" title="0101 unclassified — no tile in pack">0101</div><div class="cellrole">unclassified</div></td><td class="cell "><img src="https://pawsandparcels.agpstudios.org/reference/assets/maps/CloverVillage/Map/PNG/road/road_3.png" alt="road_3.png" width="64" height="64" title="road_3.png outer-corner-sw"><div class="cellrole">outer-corner-sw</div></td><td class="grass"></td><td class="grass"></td><td class="grass"></td><td class="grass"></td><td class="grass"></td><td class="grass"></td><td class="grass"></td><td class="grass"></td><td class="grass"></td>
+<td class="grass"></td><td class="grass"></td><td class="cell cell-missing"><div class="missing" title="1010 unclassified — no tile in pack">1010</div><div class="cellrole">unclassified</div></td><td class="grass"></td><td class="grass"></td><td class="grass"></td><td class="cell cell-missing"><div class="missing" title="1010 unclassified — no tile in pack">1010</div><div class="cellrole">unclassified</div></td><td class="grass"></td><td class="grass"></td><td class="grass"></td><td class="grass"></td><td class="grass"></td><td class="grass"></td><td class="grass"></td><td class="grass"></td><td class="grass"></td>
+<td class="grass"></td><td class="grass"></td><td class="cell cell-missing"><div class="missing" title="1010 unclassified — no tile in pack">1010</div><div class="cellrole">unclassified</div></td><td class="grass"></td><td class="grass"></td><td class="grass"></td><td class="cell cell-missing"><div class="missing" title="1010 unclassified — no tile in pack">1010</div><div class="cellrole">unclassified</div></td><td class="grass"></td><td class="grass"></td><td class="grass"></td><td class="grass"></td><td class="grass"></td><td class="grass"></td><td class="grass"></td><td class="grass"></td><td class="grass"></td>
+<td class="grass"></td><td class="grass"></td><td class="cell cell-missing"><div class="missing" title="1110 inner-corner-w — no tile in pack">1110</div><div class="cellrole">inner-corner-w</div></td><td class="cell cell-missing"><div class="missing" title="0101 unclassified — no tile in pack">0101</div><div class="cellrole">unclassified</div></td><td class="cell cell-missing"><div class="missing" title="0101 unclassified — no tile in pack">0101</div><div class="cellrole">unclassified</div></td><td class="cell cell-missing"><div class="missing" title="0101 unclassified — no tile in pack">0101</div><div class="cellrole">unclassified</div></td><td class="cell cell-missing"><div class="missing" title="1101 inner-corner-s — no tile in pack">1101</div><div class="cellrole">inner-corner-s</div></td><td class="cell cell-missing"><div class="missing" title="0101 unclassified — no tile in pack">0101</div><div class="cellrole">unclassified</div></td><td class="cell cell-missing"><div class="missing" title="0101 unclassified — no tile in pack">0101</div><div class="cellrole">unclassified</div></td><td class="cell cell-missing"><div class="missing" title="0101 unclassified — no tile in pack">0101</div><div class="cellrole">unclassified</div></td><td class="cell "><img src="https://pawsandparcels.agpstudios.org/reference/assets/maps/CloverVillage/Map/PNG/road/road_3.png" alt="road_3.png" width="64" height="64" title="road_3.png outer-corner-sw"><div class="cellrole">outer-corner-sw</div></td><td class="grass"></td><td class="grass"></td><td class="grass"></td><td class="grass"></td><td class="grass"></td>
+<td class="grass"></td><td class="grass"></td><td class="cell cell-missing"><div class="missing" title="1010 unclassified — no tile in pack">1010</div><div class="cellrole">unclassified</div></td><td class="grass"></td><td class="grass"></td><td class="grass"></td><td class="grass"></td><td class="grass"></td><td class="grass"></td><td class="grass"></td><td class="cell cell-missing"><div class="missing" title="1010 unclassified — no tile in pack">1010</div><div class="cellrole">unclassified</div></td><td class="grass"></td><td class="grass"></td><td class="grass"></td><td class="grass"></td><td class="grass"></td>
+<td class="grass"></td><td class="grass"></td><td class="cell cell-missing"><div class="missing" title="1010 unclassified — no tile in pack">1010</div><div class="cellrole">unclassified</div></td><td class="grass"></td><td class="grass"></td><td class="grass"></td><td class="grass"></td><td class="grass"></td><td class="grass"></td><td class="grass"></td><td class="cell cell-missing"><div class="missing" title="1010 unclassified — no tile in pack">1010</div><div class="cellrole">unclassified</div></td><td class="grass"></td><td class="grass"></td><td class="grass"></td><td class="grass"></td><td class="grass"></td>
+<td class="grass"></td><td class="grass"></td><td class="cell cell-missing"><div class="missing" title="1010 unclassified — no tile in pack">1010</div><div class="cellrole">unclassified</div></td><td class="grass"></td><td class="grass"></td><td class="grass"></td><td class="grass"></td><td class="grass"></td><td class="grass"></td><td class="grass"></td><td class="cell cell-missing"><div class="missing" title="1010 unclassified — no tile in pack">1010</div><div class="cellrole">unclassified</div></td><td class="grass"></td><td class="grass"></td><td class="grass"></td><td class="grass"></td><td class="grass"></td>
+<td class="grass"></td><td class="grass"></td><td class="cell cell-missing"><div class="missing" title="1100 outer-corner-ne — no tile in pack">1100</div><div class="cellrole">outer-corner-ne</div></td><td class="cell cell-missing"><div class="missing" title="0101 unclassified — no tile in pack">0101</div><div class="cellrole">unclassified</div></td><td class="cell cell-missing"><div class="missing" title="0111 inner-corner-n — no tile in pack">0111</div><div class="cellrole">inner-corner-n</div></td><td class="cell cell-missing"><div class="missing" title="0111 inner-corner-n — no tile in pack">0111</div><div class="cellrole">inner-corner-n</div></td><td class="cell cell-missing"><div class="missing" title="0111 inner-corner-n — no tile in pack">0111</div><div class="cellrole">inner-corner-n</div></td><td class="cell cell-missing"><div class="missing" title="0111 inner-corner-n — no tile in pack">0111</div><div class="cellrole">inner-corner-n</div></td><td class="cell cell-missing"><div class="missing" title="0111 inner-corner-n — no tile in pack">0111</div><div class="cellrole">inner-corner-n</div></td><td class="cell cell-missing"><div class="missing" title="0111 inner-corner-n — no tile in pack">0111</div><div class="cellrole">inner-corner-n</div></td><td class="cell cell-missing"><div class="missing" title="1011 inner-corner-e — no tile in pack">1011</div><div class="cellrole">inner-corner-e</div></td><td class="grass"></td><td class="grass"></td><td class="grass"></td><td class="grass"></td><td class="grass"></td>
+<td class="grass"></td><td class="grass"></td><td class="grass"></td><td class="grass"></td><td class="cell cell-missing"><div class="missing" title="1100 outer-corner-ne — no tile in pack">1100</div><div class="cellrole">outer-corner-ne</div></td><td class="cell cell-missing"><div class="missing" title="1101 inner-corner-s — no tile in pack">1101</div><div class="cellrole">inner-corner-s</div></td><td class="cell cell-missing"><div class="missing" title="1101 inner-corner-s — no tile in pack">1101</div><div class="cellrole">inner-corner-s</div></td><td class="cell "><img src="https://pawsandparcels.agpstudios.org/reference/assets/maps/CloverVillage/Map/PNG/road/road_5.png" alt="road_5.png" width="64" height="64" title="road_5.png center"><div class="cellrole">center</div></td><td class="cell cell-missing"><div class="missing" title="1101 inner-corner-s — no tile in pack">1101</div><div class="cellrole">inner-corner-s</div></td><td class="cell cell-missing"><div class="missing" title="1101 inner-corner-s — no tile in pack">1101</div><div class="cellrole">inner-corner-s</div></td><td class="cell "><img src="https://pawsandparcels.agpstudios.org/reference/assets/maps/CloverVillage/Map/PNG/road/road_9.png" alt="road_9.png" width="64" height="64" title="road_9.png outer-corner-nw"><div class="cellrole">outer-corner-nw</div></td><td class="grass"></td><td class="grass"></td><td class="grass"></td><td class="grass"></td><td class="grass"></td>
+<td class="grass"></td><td class="grass"></td><td class="grass"></td><td class="grass"></td><td class="grass"></td><td class="grass"></td><td class="grass"></td><td class="cell "><img src="https://pawsandparcels.agpstudios.org/reference/assets/maps/CloverVillage/Map/PNG/road/road_7.png" alt="road_7.png" width="64" height="64" title="road_7.png edge-n"><div class="cellrole">edge-n</div></td><td class="grass"></td><td class="grass"></td><td class="grass"></td><td class="grass"></td><td class="grass"></td><td class="grass"></td><td class="grass"></td><td class="grass"></td>
+<td class="grass"></td><td class="grass"></td><td class="grass"></td><td class="grass"></td><td class="grass"></td><td class="grass"></td><td class="grass"></td><td class="grass"></td><td class="grass"></td><td class="grass"></td><td class="grass"></td><td class="grass"></td><td class="grass"></td><td class="grass"></td><td class="grass"></td><td class="grass"></td>
+</table>
+<h2>Tile gallery</h2>
+<p class="note">Green border = road_5, the known runtime center/fill. Open side threshold: ratio &ge; 0.60.</p>
+<div class="gallery">
+
+    <div class="tile-card " data-role="outer-corner-se">
+      <img src="https://pawsandparcels.agpstudios.org/reference/assets/maps/CloverVillage/Map/PNG/road/road_1.png" alt="road_1.png" width="128" height="128">
+      <div class="tname">road_1.png</div>
+      <div class="trole">Outer Corner — SE</div>
+      <div class="tratios">n 0.00 · e 0.41 · s 0.75 · w 0.00</div>
+      <div class="tbits">undefined</div>
+    </div>
+
+    <div class="tile-card " data-role="edge-s">
+      <img src="https://pawsandparcels.agpstudios.org/reference/assets/maps/CloverVillage/Map/PNG/road/road_2.png" alt="road_2.png" width="128" height="128">
+      <div class="tname">road_2.png</div>
+      <div class="trole">Edge — South</div>
+      <div class="tratios">n 0.00 · e 0.40 · s 0.95 · w 0.38</div>
+      <div class="tbits">undefined</div>
+    </div>
+
+    <div class="tile-card " data-role="outer-corner-sw">
+      <img src="https://pawsandparcels.agpstudios.org/reference/assets/maps/CloverVillage/Map/PNG/road/road_3.png" alt="road_3.png" width="128" height="128">
+      <div class="tname">road_3.png</div>
+      <div class="trole">Outer Corner — SW</div>
+      <div class="tratios">n 0.00 · e 0.00 · s 0.70 · w 0.37</div>
+      <div class="tbits">undefined</div>
+    </div>
+
+    <div class="tile-card " data-role="inner-corner-w">
+      <img src="https://pawsandparcels.agpstudios.org/reference/assets/maps/CloverVillage/Map/PNG/road/road_4.png" alt="road_4.png" width="128" height="128">
+      <div class="tname">road_4.png</div>
+      <div class="trole">Inner Corner — W</div>
+      <div class="tratios">n 0.71 · e 1.00 · s 0.75 · w 0.00</div>
+      <div class="tbits">undefined</div>
+    </div>
+
+    <div class="tile-card known" data-role="center">
+      <img src="https://pawsandparcels.agpstudios.org/reference/assets/maps/CloverVillage/Map/PNG/road/road_5.png" alt="road_5.png" width="128" height="128">
+      <div class="tname">road_5.png</div>
+      <div class="trole">Center / Fill</div>
+      <div class="tratios">n 1.00 · e 1.00 · s 1.00 · w 1.00</div>
+      <div class="tbits">undefined</div>
+    </div>
+
+    <div class="tile-card " data-role="edge-w">
+      <img src="https://pawsandparcels.agpstudios.org/reference/assets/maps/CloverVillage/Map/PNG/road/road_6.png" alt="road_6.png" width="128" height="128">
+      <div class="tname">road_6.png</div>
+      <div class="trole">Edge — West</div>
+      <div class="tratios">n 0.71 · e 0.00 · s 0.72 · w 1.00</div>
+      <div class="tbits">undefined</div>
+    </div>
+
+    <div class="tile-card " data-role="edge-n">
+      <img src="https://pawsandparcels.agpstudios.org/reference/assets/maps/CloverVillage/Map/PNG/road/road_7.png" alt="road_7.png" width="128" height="128">
+      <div class="tname">road_7.png</div>
+      <div class="trole">Edge — North</div>
+      <div class="tratios">n 0.70 · e 0.38 · s 0.00 · w 0.00</div>
+      <div class="tbits">undefined</div>
+    </div>
+
+    <div class="tile-card " data-role="edge-n">
+      <img src="https://pawsandparcels.agpstudios.org/reference/assets/maps/CloverVillage/Map/PNG/road/road_8.png" alt="road_8.png" width="128" height="128">
+      <div class="tname">road_8.png</div>
+      <div class="trole">Edge — North</div>
+      <div class="tratios">n 0.98 · e 0.42 · s 0.00 · w 0.44</div>
+      <div class="tbits">undefined</div>
+    </div>
+
+    <div class="tile-card " data-role="outer-corner-nw">
+      <img src="https://pawsandparcels.agpstudios.org/reference/assets/maps/CloverVillage/Map/PNG/road/road_9.png" alt="road_9.png" width="128" height="128">
+      <div class="tname">road_9.png</div>
+      <div class="trole">Outer Corner — NW</div>
+      <div class="tratios">n 0.70 · e 0.00 · s 0.00 · w 0.43</div>
+      <div class="tbits">undefined</div>
+    </div>
+
+    <div class="tile-card " data-role="outer-corner-nw">
+      <img src="https://pawsandparcels.agpstudios.org/reference/assets/maps/CloverVillage/Map/PNG/road/road_10.png" alt="road_10.png" width="128" height="128">
+      <div class="tname">road_10.png</div>
+      <div class="trole">Outer Corner — NW</div>
+      <div class="tratios">n 1.00 · e 0.40 · s 0.72 · w 1.00</div>
+      <div class="tbits">undefined</div>
+    </div>
+
+    <div class="tile-card " data-role="center-variant">
+      <img src="https://pawsandparcels.agpstudios.org/reference/assets/maps/CloverVillage/Map/PNG/road/road_11.png" alt="road_11.png" width="128" height="128">
+      <div class="tname">road_11.png</div>
+      <div class="trole">center-variant</div>
+      <div class="tratios">n 1.00 · e 1.00 · s 0.74 · w 0.43</div>
+      <div class="tbits">undefined</div>
+    </div>
+
+    <div class="tile-card " data-role="outer-corner-sw">
+      <img src="https://pawsandparcels.agpstudios.org/reference/assets/maps/CloverVillage/Map/PNG/road/road_12.png" alt="road_12.png" width="128" height="128">
+      <div class="tname">road_12.png</div>
+      <div class="trole">Outer Corner — SW</div>
+      <div class="tratios">n 0.72 · e 0.38 · s 1.00 · w 1.00</div>
+      <div class="tbits">undefined</div>
+    </div>
+
+    <div class="tile-card " data-role="outer-corner-se">
+      <img src="https://pawsandparcels.agpstudios.org/reference/assets/maps/CloverVillage/Map/PNG/road/road_13.png" alt="road_13.png" width="128" height="128">
+      <div class="tname">road_13.png</div>
+      <div class="trole">Outer Corner — SE</div>
+      <div class="tratios">n 0.73 · e 1.00 · s 1.00 · w 0.39</div>
+      <div class="tbits">undefined</div>
+    </div>
+</div>
+</body>
+</html>

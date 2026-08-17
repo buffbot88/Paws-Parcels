@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>VoidDesert nature — Review</title>
+<style>
+  body { font-family: system-ui; max-width: 1200px; margin: 1rem auto; padding: 0 1rem; color: #263228; background: #f3f7f1; }
+  h1 { font-size: 1.3rem; }
+  nav { margin-bottom: 1rem; }
+  nav a { color: #456b4e; margin-right: 1rem; text-decoration: none; }
+  nav a:hover { text-decoration: underline; }
+  .summary-bar { padding: 0.6rem 1rem; margin-bottom: 0.75rem; background: #dce8da; border: 1px solid #b9cfb5; border-radius: 6px; font-size: 0.9rem; font-weight: 600; color: #2e5037; }
+  .filter-bar { display: flex; flex-wrap: wrap; align-items: center; gap: 0.75rem; padding: 0.5rem 0.75rem; margin-bottom: 0.25rem; background: #fff; border: 1px solid #d9e3d7; border-radius: 6px; font-size: 0.8rem; }
+  .filter-bar .filter-label { font-weight: 600; color: #68766b; }
+  .filter-bar .filter-group { display: inline-flex; align-items: center; gap: 0.4rem; padding: 0.2rem 0.5rem; background: #f0f4ee; border-radius: 4px; }
+  .filter-bar label { display: inline-flex; align-items: center; gap: 0.2rem; cursor: pointer; }
+  .filter-bar button { border: 1px solid #b9cfb5; background: #e8f0e6; border-radius: 4px; padding: 0.2rem 0.6rem; cursor: pointer; font-size: 0.8rem; }
+  .filter-note { min-height: 1rem; margin: 0.25rem 0 0; font-size: 0.8rem; color: #a36e23; }
+  .grid { display: block; }
+  .card { background: #fff; border: 1px solid #d9e3d7; border-radius: 8px; padding: 0.75rem; }
+  .card img { max-width: 100%; max-height: 250px; object-fit: contain; display: block; margin: 0 auto 0.75rem; background: repeating-conic-gradient(#e8ede6 0% 25%, #fff 0% 50%) 50%/16px 16px; border-radius: 4px; }
+  .card .filename { font-weight: 600; font-size: 0.9rem; margin-bottom: 0.25rem; }
+  .card .canonical { font-size: 0.78rem; color: #416f99; font-family: ui-monospace, monospace; margin-top: 0.15rem; }
+  .card .path { font-size: 0.75rem; color: #68766b; word-break: break-all; margin-bottom: 0.5rem; }
+  .card .meta { display: flex; flex-wrap: wrap; gap: 0.5rem; font-size: 0.75rem; }
+  .card .meta span { padding: 0.15rem 0.4rem; border-radius: 4px; background: #f0f4ee; }
+  .card .meta .runtime { background: #e8f5e9; color: #2e7d32; }
+  .card .meta .reference { background: #f5f5f5; color: #666; }
+  .card .meta .confirmed { background: #e3f2fd; color: #1565c0; }
+  .card .meta .unreviewed { background: #fff3e0; color: #e65100; }
+  .card .meta .road-role { background: #ede7f6; color: #4527a0; font-weight: 600; }
+  .card .meta .terrain-role { background: #e0f2f1; color: #00695c; font-weight: 600; }
+  .card .meta .decor-role { background: #fce4ec; color: #ad1457; font-weight: 600; }
+  .card .meta .subtype-badge { background: #f3e5f5; color: #7b1fa2; font-size: 0.7rem; }
+  .card .meta .depth-badge { background: #e3f2fd; color: #1565c0; font-weight: 600; }
+  .card .meta .density-badge { background: #fff3e0; color: #e65100; font-weight: 600; }
+  .card .meta .npc-role { background: #eceff1; color: #37474f; font-weight: 600; }
+  .card .meta .anim-badge { background: #e8f5e9; color: #2e7d32; font-weight: 600; }
+  .card .meta .dir-badge { background: #e3f2fd; color: #1565c0; font-weight: 600; }
+  .card .meta .frame-badge { background: #fce4ec; color: #ad1457; font-weight: 600; }
+  .family-header .npc-note { font-size: 0.75rem; color: #37474f; margin-top: 0.25rem; }
+  .identity-strip { margin-bottom: 1rem; }
+  .identity-heading { font-size: 1rem; color: #2e5037; margin: 0 0 0.5rem; }
+  .identity-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 1rem; }
+  .identity-card { display: flex; gap: 0.75rem; background: #fff; border: 1px solid #b9cfb5; border-left: 4px solid #456b4e; border-radius: 8px; padding: 0.75rem; }
+  .identity-card img { width: 96px; height: 96px; object-fit: contain; background: repeating-conic-gradient(#e8ede6 0% 25%, #fff 0% 50%) 50%/16px 16px; border-radius: 6px; }
+  .identity-name { font-weight: 700; font-size: 1rem; color: #2e5037; }
+  .identity-id { font-size: 0.75rem; color: #416f99; font-family: ui-monospace, monospace; margin: 0.1rem 0 0.3rem; }
+  .identity-desc { font-size: 0.78rem; color: #68766b; }
+  .identity-anims { font-size: 0.72rem; color: #2e7d32; margin-top: 0.35rem; }
+  .card .meta .variant-badge { background: #fff8e1; color: #f57f17; font-weight: 600; }
+  .card .meta .candidate-role { background: #f3e5f5; color: #7b1fa2; font-weight: 600; }
+  .card .meta .topology { background: #fff8e1; color: #f57f17; }
+  .family-header .topology-note { font-size: 0.75rem; color: #00695c; margin-top: 0.25rem; }
+  .family-header .topology-note a { color: #00695c; }
+  .family-header .depth-note { font-size: 0.75rem; color: #6a1b9a; margin-top: 0.25rem; }
+  .family-header .status-badge { font-weight: 600; color: #2e5037; margin-top: 0.35rem; }
+  .family-header .status-badge strong { color: #456b4e; }
+  .family-header .art-required { font-weight: 600; color: #b71c1c; margin-top: 0.25rem; }
+  .family-header .recovery-note { font-size: 0.75rem; color: #5d4037; margin-top: 0.3rem; line-height: 1.45; }
+  .art-task { margin-top: 0.5rem; background: #fff8f0; border: 1px solid #e6c9a8; border-radius: 6px; padding: 0.6rem 0.8rem; font-size: 0.8rem; }
+  .art-task h4 { margin: 0 0 0.35rem; font-size: 0.82rem; color: #a36e23; }
+  .art-task ul { margin: 0; padding-left: 1.1rem; }
+  .art-task li { margin: 0.2rem 0; }
+  .art-task .tt { font-family: ui-monospace, monospace; color: #416f99; }
+  .family-header .family-details { font-size: 0.8rem; color: #2e5037; margin-top: 0.35rem; }
+  .family-header .family-details strong { color: #456b4e; }
+  .family { margin-top: 1.25rem; }
+  .family-toggle { display: flex; align-items: center; gap: 0.5rem; width: 100%; text-align: left; background: #e8f0e6; border: 1px solid #b9cfb5; border-left: 4px solid #456b4e; border-radius: 6px 6px 0 0; padding: 0.65rem 1rem; cursor: pointer; font: inherit; }
+  .family-toggle:hover { background: #dce8da; }
+  .family-caret { color: #456b4e; font-size: 0.9rem; }
+  .family-title { font-weight: 700; font-size: 1.05rem; color: #2e5037; }
+  .family-header { padding: 0.6rem 1rem; background: #f2f6f0; border: 1px solid #d9e3d7; border-top: none; }
+  .family-header p { margin: 0; font-size: 0.8rem; color: #68766b; }
+  .family-header .world-role { font-weight: 600; color: #416f99; }
+  .family-header .structure-type { font-weight: 600; color: #2e5037; }
+  .family-header .suitability { font-weight: 600; color: #a36e23; }
+  .family-header .family-uses { font-size: 0.75rem; color: #68766b; margin-top: 0.25rem; }
+  .family-assets { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 1rem; padding: 1rem; background: #fbfdfa; border: 1px solid #d9e3d7; border-top: none; border-radius: 0 0 6px 6px; }
+</style>
+</head>
+<body>
+<nav><a href="../index.html">← All Categories</a></nav>
+<h1>VoidDesert / nature — 24 assets</h1>
+<div class="summary-bar">24 source assets · 6 semantic nature families · 6 rocks · 2 cut stone · 1 stone formation · 3 mesa formations · 7 palms · 5 desert trees · Runtime: 0 · Reference: 24 · Reviewed: 24 · 0 unclassified</div><div class="summary-bar env-note">🏜 Clean set of 24 game-ready/reference PNG nature assets — no authoring files or junk records. NOT tiles: transparent standalone overlays/world objects (no tileMode/topology edges). Trees collide on TRUNK footprint (not sprite rect/canopy). Mesas are landmark-scale (occlusion recommended). Everything stays reference.</div>
+<div class="filter-bar">
+  <span class="filter-label">Filter:</span>
+  <span class="filter-group">Family
+    <label><input type="checkbox" class="filter-check" data-f="lootfam" data-v="undead_bone" /> undead bone</label>
+    <label><input type="checkbox" class="filter-check" data-f="lootfam" data-v="undead_body_part" /> body parts</label>
+    <label><input type="checkbox" class="filter-check" data-f="lootfam" data-v="undead_organ" /> organs</label>
+    <label><input type="checkbox" class="filter-check" data-f="lootfam" data-v="jewelry" /> jewelry</label>
+    <label><input type="checkbox" class="filter-check" data-f="lootfam" data-v="currency" /> currency</label>
+    <label><input type="checkbox" class="filter-check" data-f="lootfam" data-v="consumable" /> consumables</label>
+    <label><input type="checkbox" class="filter-check" data-f="lootfam" data-v="material" /> materials</label>
+    <label><input type="checkbox" class="filter-check" data-f="lootfam" data-v="quest_item" /> quest items</label>
+    <label><input type="checkbox" class="filter-check" data-f="lootfam" data-v="equipment" /> equipment</label>
+    <label><input type="checkbox" class="filter-check" data-f="lootfam" data-v="loot_source" /> source</label>
+  </span>
+  <span class="filter-group">Render
+    <label><input type="checkbox" class="filter-check" data-f="rendermode" data-v="shadow" /> shadow</label>
+    <label><input type="checkbox" class="filter-check" data-f="rendermode" data-v="without_shadow" /> without shadow</label>
+    <label><input type="checkbox" class="filter-check" data-f="rendermode" data-v="source" /> eps source</label>
+  </span>
+  <span class="filter-group">Role
+    <label><input type="checkbox" class="filter-check" data-f="role" data-v="loot-icon" /> icon</label>
+    <label><input type="checkbox" class="filter-check" data-f="role" data-v="authoring-source" /> source</label>
+    <label><input type="checkbox" class="filter-check" data-f="role" data-v="authoring-master" /> master</label>
+    <label><input type="checkbox" class="filter-check" data-f="role" data-v="background-support" /> support</label>
+  </span>
+  <span class="filter-group">Nature
+    <label><input type="checkbox" class="filter-check" data-f="nature" data-v="voiddesert_rock" /> rocks</label>
+    <label><input type="checkbox" class="filter-check" data-f="nature" data-v="voiddesert_cut_stone" /> cut stone</label>
+    <label><input type="checkbox" class="filter-check" data-f="nature" data-v="voiddesert_stone_formation" /> stone ring</label>
+    <label><input type="checkbox" class="filter-check" data-f="nature" data-v="voiddesert_mesa" /> mesas</label>
+    <label><input type="checkbox" class="filter-check" data-f="nature" data-v="voiddesert_palm" /> palms</label>
+    <label><input type="checkbox" class="filter-check" data-f="nature" data-v="voiddesert_desert_tree" /> desert trees</label>
+  </span>
+  <span class="filter-group">Role
+    <label><input type="checkbox" class="filter-check" data-f="role" data-v="nature" /> nature</label>
+  </span>
+  <span class="filter-group">Collision
+    <label><input type="checkbox" class="filter-check" data-f="collision" data-v="footprint" /> footprint</label>
+    <label><input type="checkbox" class="filter-check" data-f="collision" data-v="trunk" /> trunk</label>
+  </span>
+  <span class="filter-group">World
+    <label><input type="checkbox" class="filter-check" data-f="world" data-v="CLOVER_SAFE" /> Clover</label>
+    <label><input type="checkbox" class="filter-check" data-f="world" data-v="SHARED_1_20" /> Shared</label>
+    <label><input type="checkbox" class="filter-check" data-f="world" data-v="PVE_1_20" /> PvE</label>
+    <label><input type="checkbox" class="filter-check" data-f="world" data-v="FUTURE" /> Future</label>
+  </span>
+  <span class="filter-group">Status
+    <label><input type="checkbox" class="filter-check" data-f="runtime" data-v="runtime-used" /> runtime</label>
+    <label><input type="checkbox" class="filter-check" data-f="runtime" data-v="reference-only" /> reference</label>
+  </span>
+  <button type="button" id="filter-clear">Clear</button>
+</div>
+<p id="filter-note" class="filter-note"></p>
+
+
+<div class="grid">
+<section class="family" data-family="voiddesert_rock"><button type="button" class="family-toggle" aria-expanded="true"><span class="family-caret">▾</span><span class="family-title">Desert Rocks</span></button><div class="family-header"><h2>Desert Rocks</h2><p>6 assets · 6 semantic variants · 0 runtime · <span class="world-role">PVE_1_20</span></p><p class="family-details">Type: <strong>rock</strong> · Role: rock · Variants: small-jagged, pointed, boulder-cluster, smooth, long, cluster · World: PVE_1_20 · Collision: footprint (recommended) · Placement: manual</p><p class="family-details npc-note">🪨 Six natural rock silhouettes — distinct shapes, kept semantic (not rock_a-f). Collision recommended footprint; ground clutter, placement manual.</p><p class="family-details npc-note">🚫 None are tiles — transparent standalone overlays, no tileMode repeat or edge/corner topology. Entire package stays REFERENCE until runtime usage proves otherwise.</p></div><div class="family-assets">
+<div class="card" data-role="nature" data-world="PVE_1_20" data-runtime="reference-only" data-nature="voiddesert_rock" data-naturerole="rock" data-treetype="" data-collision="footprint" data-lootfam="voiddesert_rock" data-rendermode=""><img loading="lazy" src="https://pawsandparcels.agpstudios.org/reference/assets/maps/VoidDesert/Map/PNG/stones_1.png" alt="stones_1.png"><div class="filename">stones_1.png<div class="canonical">nature_voiddesert_rock_small_jagged</div></div><div class="path">reference/assets/maps/VoidDesert/Map/PNG/stones_1.png</div><div class="meta"><span>9937160e978a</span><span>106×79</span><span>nature</span><span class="decor-role" title="Nature family: voiddesert_rock">rock</span><span class="terrain-role">rock</span><span class="npc-role">nature</span><span class="decor-role" title="Loot family: voiddesert_rock">voiddesert rock</span><span class="reference">Reference</span><span class="confirmed">Reviewed</span></div></div>
+<div class="card" data-role="nature" data-world="PVE_1_20" data-runtime="reference-only" data-nature="voiddesert_rock" data-naturerole="rock" data-treetype="" data-collision="footprint" data-lootfam="voiddesert_rock" data-rendermode=""><img loading="lazy" src="https://pawsandparcels.agpstudios.org/reference/assets/maps/VoidDesert/Map/PNG/stones_5.png" alt="stones_5.png"><div class="filename">stones_5.png<div class="canonical">nature_voiddesert_rock_pointed</div></div><div class="path">reference/assets/maps/VoidDesert/Map/PNG/stones_5.png</div><div class="meta"><span>3f0334aac07f</span><span>181×136</span><span>nature</span><span class="decor-role" title="Nature family: voiddesert_rock">rock</span><span class="terrain-role">rock</span><span class="npc-role">nature</span><span class="decor-role" title="Loot family: voiddesert_rock">voiddesert rock</span><span class="reference">Reference</span><span class="confirmed">Reviewed</span></div></div>
+<div class="card" data-role="nature" data-world="PVE_1_20" data-runtime="reference-only" data-nature="voiddesert_rock" data-naturerole="rock" data-treetype="" data-collision="footprint" data-lootfam="voiddesert_rock" data-rendermode=""><img loading="lazy" src="https://pawsandparcels.agpstudios.org/reference/assets/maps/VoidDesert/Map/PNG/stones_6.png" alt="stones_6.png"><div class="filename">stones_6.png<div class="canonical">nature_voiddesert_boulder_cluster</div></div><div class="path">reference/assets/maps/VoidDesert/Map/PNG/stones_6.png</div><div class="meta"><span>85b6098350a1</span><span>199×188</span><span>nature</span><span class="decor-role" title="Nature family: voiddesert_rock">rock</span><span class="terrain-role">rock</span><span class="npc-role">nature</span><span class="decor-role" title="Loot family: voiddesert_rock">voiddesert rock</span><span class="reference">Reference</span><span class="confirmed">Reviewed</span></div></div>
+<div class="card" data-role="nature" data-world="PVE_1_20" data-runtime="reference-only" data-nature="voiddesert_rock" data-naturerole="rock" data-treetype="" data-collision="footprint" data-lootfam="voiddesert_rock" data-rendermode=""><img loading="lazy" src="https://pawsandparcels.agpstudios.org/reference/assets/maps/VoidDesert/Map/PNG/stones_7.png" alt="stones_7.png"><div class="filename">stones_7.png<div class="canonical">nature_voiddesert_rock_smooth</div></div><div class="path">reference/assets/maps/VoidDesert/Map/PNG/stones_7.png</div><div class="meta"><span>39e8df1936db</span><span>125×100</span><span>nature</span><span class="decor-role" title="Nature family: voiddesert_rock">rock</span><span class="terrain-role">rock</span><span class="npc-role">nature</span><span class="decor-role" title="Loot family: voiddesert_rock">voiddesert rock</span><span class="reference">Reference</span><span class="confirmed">Reviewed</span></div></div>
+<div class="card" data-role="nature" data-world="PVE_1_20" data-runtime="reference-only" data-nature="voiddesert_rock" data-naturerole="rock" data-treetype="" data-collision="footprint" data-lootfam="voiddesert_rock" data-rendermode=""><img loading="lazy" src="https://pawsandparcels.agpstudios.org/reference/assets/maps/VoidDesert/Map/PNG/stones_8.png" alt="stones_8.png"><div class="filename">stones_8.png<div class="canonical">nature_voiddesert_rock_long</div></div><div class="path">reference/assets/maps/VoidDesert/Map/PNG/stones_8.png</div><div class="meta"><span>03f911000b71</span><span>163×103</span><span>nature</span><span class="decor-role" title="Nature family: voiddesert_rock">rock</span><span class="terrain-role">rock</span><span class="npc-role">nature</span><span class="decor-role" title="Loot family: voiddesert_rock">voiddesert rock</span><span class="reference">Reference</span><span class="confirmed">Reviewed</span></div></div>
+<div class="card" data-role="nature" data-world="PVE_1_20" data-runtime="reference-only" data-nature="voiddesert_rock" data-naturerole="rock" data-treetype="" data-collision="footprint" data-lootfam="voiddesert_rock" data-rendermode=""><img loading="lazy" src="https://pawsandparcels.agpstudios.org/reference/assets/maps/VoidDesert/Map/PNG/stones_9.png" alt="stones_9.png"><div class="filename">stones_9.png<div class="canonical">nature_voiddesert_rock_cluster</div></div><div class="path">reference/assets/maps/VoidDesert/Map/PNG/stones_9.png</div><div class="meta"><span>bc64426153f9</span><span>148×101</span><span>nature</span><span class="decor-role" title="Nature family: voiddesert_rock">rock</span><span class="terrain-role">rock</span><span class="npc-role">nature</span><span class="decor-role" title="Loot family: voiddesert_rock">voiddesert rock</span><span class="reference">Reference</span><span class="confirmed">Reviewed</span></div></div>
+</div></section><section class="family" data-family="voiddesert_mesa"><button type="button" class="family-toggle" aria-expanded="true"><span class="family-caret">▾</span><span class="family-title">Desert Mesa Formations</span></button><div class="family-header"><h2>Desert Mesa Formations</h2><p>3 assets · 3 semantic variants · 0 runtime · <span class="world-role">PVE_1_20</span></p><p class="family-details">Type: <strong>mesa</strong> · Role: rock-formation · Variants: tiered, wide, irregular · Formation: tiered, wide, irregular · Scale: landmark · Occlusion: yes · World: PVE_1_20 · Collision: footprint (recommended) · Placement: manual</p><p class="family-details npc-note">🏜 Landmark-scale geological formations (tiered/wide/irregular). occlusion: true recommended — substantial world geometry, not ground clutter. NOT tiles.</p><p class="family-details npc-note">🚫 None are tiles — transparent standalone overlays, no tileMode repeat or edge/corner topology. Entire package stays REFERENCE until runtime usage proves otherwise.</p></div><div class="family-assets">
+<div class="card" data-role="nature" data-world="PVE_1_20" data-runtime="reference-only" data-nature="voiddesert_mesa" data-naturerole="rock-formation" data-treetype="" data-collision="footprint" data-lootfam="voiddesert_mesa" data-rendermode=""><img loading="lazy" src="https://pawsandparcels.agpstudios.org/reference/assets/maps/VoidDesert/Map/PNG/stones_10.png" alt="stones_10.png"><div class="filename">stones_10.png<div class="canonical">nature_voiddesert_mesa_tiered</div></div><div class="path">reference/assets/maps/VoidDesert/Map/PNG/stones_10.png</div><div class="meta"><span>2c34ef68cee2</span><span>769×630</span><span>nature</span><span class="decor-role" title="Nature family: voiddesert_mesa">mesa</span><span class="terrain-role">rock formation</span><span class="variant-badge" title="Formation type">tiered</span><span class="depth-badge" title="Scale class">landmark</span><span class="topology" title="Occlusion recommended">occlusion</span><span class="npc-role">nature</span><span class="decor-role" title="Loot family: voiddesert_mesa">voiddesert mesa</span><span class="reference">Reference</span><span class="confirmed">Reviewed</span></div></div>
+<div class="card" data-role="nature" data-world="PVE_1_20" data-runtime="reference-only" data-nature="voiddesert_mesa" data-naturerole="rock-formation" data-treetype="" data-collision="footprint" data-lootfam="voiddesert_mesa" data-rendermode=""><img loading="lazy" src="https://pawsandparcels.agpstudios.org/reference/assets/maps/VoidDesert/Map/PNG/stones_11.png" alt="stones_11.png"><div class="filename">stones_11.png<div class="canonical">nature_voiddesert_mesa_wide</div></div><div class="path">reference/assets/maps/VoidDesert/Map/PNG/stones_11.png</div><div class="meta"><span>823e07011b69</span><span>1422×643</span><span>nature</span><span class="decor-role" title="Nature family: voiddesert_mesa">mesa</span><span class="terrain-role">rock formation</span><span class="variant-badge" title="Formation type">wide</span><span class="depth-badge" title="Scale class">landmark</span><span class="topology" title="Occlusion recommended">occlusion</span><span class="npc-role">nature</span><span class="decor-role" title="Loot family: voiddesert_mesa">voiddesert mesa</span><span class="reference">Reference</span><span class="confirmed">Reviewed</span></div></div>
+<div class="card" data-role="nature" data-world="PVE_1_20" data-runtime="reference-only" data-nature="voiddesert_mesa" data-naturerole="rock-formation" data-treetype="" data-collision="footprint" data-lootfam="voiddesert_mesa" data-rendermode=""><img loading="lazy" src="https://pawsandparcels.agpstudios.org/reference/assets/maps/VoidDesert/Map/PNG/stones_12.png" alt="stones_12.png"><div class="filename">stones_12.png<div class="canonical">nature_voiddesert_mesa_irregular</div></div><div class="path">reference/assets/maps/VoidDesert/Map/PNG/stones_12.png</div><div class="meta"><span>403d044e2272</span><span>948×660</span><span>nature</span><span class="decor-role" title="Nature family: voiddesert_mesa">mesa</span><span class="terrain-role">rock formation</span><span class="variant-badge" title="Formation type">irregular</span><span class="depth-badge" title="Scale class">landmark</span><span class="topology" title="Occlusion recommended">occlusion</span><span class="npc-role">nature</span><span class="decor-role" title="Loot family: voiddesert_mesa">voiddesert mesa</span><span class="reference">Reference</span><span class="confirmed">Reviewed</span></div></div>
+</div></section><section class="family" data-family="voiddesert_cut_stone"><button type="button" class="family-toggle" aria-expanded="true"><span class="family-caret">▾</span><span class="family-title">Cut Stone Blocks</span></button><div class="family-header"><h2>Cut Stone Blocks</h2><p>2 assets · 2 semantic variants · 0 runtime · <span class="world-role">PVE_1_20</span></p><p class="family-details">Type: <strong>cut stone</strong> · Role: cut-stone · Variants: wedge, block · Material: sandstone · World: PVE_1_20 · Collision: footprint (recommended) · Placement: manual</p><p class="family-details npc-note">🧱 Cut sandstone pieces — wedge + block. Deliberately NOT called ruins: cut stone is visually established, ruin would infer history/function that isn't shown.</p><p class="family-details npc-note">🚫 None are tiles — transparent standalone overlays, no tileMode repeat or edge/corner topology. Entire package stays REFERENCE until runtime usage proves otherwise.</p></div><div class="family-assets">
+<div class="card" data-role="nature" data-world="PVE_1_20" data-runtime="reference-only" data-nature="voiddesert_cut_stone" data-naturerole="cut-stone" data-treetype="" data-collision="footprint" data-lootfam="voiddesert_cut_stone" data-rendermode=""><img loading="lazy" src="https://pawsandparcels.agpstudios.org/reference/assets/maps/VoidDesert/Map/PNG/stones_2.png" alt="stones_2.png"><div class="filename">stones_2.png<div class="canonical">nature_voiddesert_cut_stone_wedge</div></div><div class="path">reference/assets/maps/VoidDesert/Map/PNG/stones_2.png</div><div class="meta"><span>c74a49e59737</span><span>114×104</span><span>nature</span><span class="decor-role" title="Nature family: voiddesert_cut_stone">cut stone</span><span class="terrain-role">cut stone</span><span class="subtype-badge" title="Material">sandstone</span><span class="npc-role">nature</span><span class="decor-role" title="Loot family: voiddesert_cut_stone">voiddesert cut stone</span><span class="reference">Reference</span><span class="confirmed">Reviewed</span></div></div>
+<div class="card" data-role="nature" data-world="PVE_1_20" data-runtime="reference-only" data-nature="voiddesert_cut_stone" data-naturerole="cut-stone" data-treetype="" data-collision="footprint" data-lootfam="voiddesert_cut_stone" data-rendermode=""><img loading="lazy" src="https://pawsandparcels.agpstudios.org/reference/assets/maps/VoidDesert/Map/PNG/stones_3.png" alt="stones_3.png"><div class="filename">stones_3.png<div class="canonical">nature_voiddesert_cut_stone_block</div></div><div class="path">reference/assets/maps/VoidDesert/Map/PNG/stones_3.png</div><div class="meta"><span>d20545273f5a</span><span>121×114</span><span>nature</span><span class="decor-role" title="Nature family: voiddesert_cut_stone">cut stone</span><span class="terrain-role">cut stone</span><span class="subtype-badge" title="Material">sandstone</span><span class="npc-role">nature</span><span class="decor-role" title="Loot family: voiddesert_cut_stone">voiddesert cut stone</span><span class="reference">Reference</span><span class="confirmed">Reviewed</span></div></div>
+</div></section><section class="family" data-family="voiddesert_stone_formation"><button type="button" class="family-toggle" aria-expanded="true"><span class="family-caret">▾</span><span class="family-title">Stone Ring Formation</span></button><div class="family-header"><h2>Stone Ring Formation</h2><p>1 asset · 1 semantic variant · 0 runtime · <span class="world-role">PVE_1_20</span></p><p class="family-details">Type: <strong>stone formation</strong> · Role: stone-formation · Variants: ring · Formation: ring · World: PVE_1_20 · Collision: footprint (recommended) · Placement: manual</p><p class="family-details npc-note">⭕ Stone ring formation — NOT a well. No visible water, bucket, or architectural evidence proving that function.</p><p class="family-details npc-note">🚫 None are tiles — transparent standalone overlays, no tileMode repeat or edge/corner topology. Entire package stays REFERENCE until runtime usage proves otherwise.</p></div><div class="family-assets">
+<div class="card" data-role="nature" data-world="PVE_1_20" data-runtime="reference-only" data-nature="voiddesert_stone_formation" data-naturerole="stone-formation" data-treetype="" data-collision="footprint" data-lootfam="voiddesert_stone_formation" data-rendermode=""><img loading="lazy" src="https://pawsandparcels.agpstudios.org/reference/assets/maps/VoidDesert/Map/PNG/stones_4.png" alt="stones_4.png"><div class="filename">stones_4.png<div class="canonical">nature_voiddesert_stone_ring</div></div><div class="path">reference/assets/maps/VoidDesert/Map/PNG/stones_4.png</div><div class="meta"><span>01a943fb7f5f</span><span>262×181</span><span>nature</span><span class="decor-role" title="Nature family: voiddesert_stone_formation">stone formation</span><span class="terrain-role">stone formation</span><span class="variant-badge" title="Formation type">ring</span><span class="npc-role">nature</span><span class="decor-role" title="Loot family: voiddesert_stone_formation">voiddesert stone formation</span><span class="reference">Reference</span><span class="confirmed">Reviewed</span></div></div>
+</div></section><section class="family" data-family="voiddesert_palm"><button type="button" class="family-toggle" aria-expanded="true"><span class="family-caret">▾</span><span class="family-title">Desert Palms</span></button><div class="family-header"><h2>Desert Palms</h2><p>7 assets · 7 semantic variants · 0 runtime · <span class="world-role">PVE_1_20</span></p><p class="family-details">Type: <strong>palm</strong> · Role: tree · Variants: twin_a, mature, young, tall_dry, ragged, leaning, twin_b · Tree types: palm · World: PVE_1_20 · Collision: trunk (recommended) · Placement: manual</p><p class="family-details npc-note">🌴 7 palm variants — twin_a and twin_b are genuine variants (different silhouettes), not collapsed. Collision: TRUNK footprint, not the transparent sprite rectangle/canopy.</p><p class="family-details npc-note">🚫 None are tiles — transparent standalone overlays, no tileMode repeat or edge/corner topology. Entire package stays REFERENCE until runtime usage proves otherwise.</p></div><div class="family-assets">
+<div class="card" data-role="nature" data-world="PVE_1_20" data-runtime="reference-only" data-nature="voiddesert_palm" data-naturerole="tree" data-treetype="palm" data-collision="trunk" data-lootfam="voiddesert_palm" data-rendermode=""><img loading="lazy" src="https://pawsandparcels.agpstudios.org/reference/assets/maps/VoidDesert/Map/PNG/tree_1.png" alt="tree_1.png"><div class="filename">tree_1.png<div class="canonical">nature_voiddesert_palm_twin_a</div></div><div class="path">reference/assets/maps/VoidDesert/Map/PNG/tree_1.png</div><div class="meta"><span>cf0f4a0bc843</span><span>285×297</span><span>nature</span><span class="decor-role" title="Nature family: voiddesert_palm">palm</span><span class="terrain-role">tree</span><span class="candidate-role" title="Tree type">palm</span><span class="npc-role">nature</span><span class="decor-role" title="Loot family: voiddesert_palm">voiddesert palm</span><span class="reference">Reference</span><span class="confirmed">Reviewed</span></div></div>
+<div class="card" data-role="nature" data-world="PVE_1_20" data-runtime="reference-only" data-nature="voiddesert_palm" data-naturerole="tree" data-treetype="palm" data-collision="trunk" data-lootfam="voiddesert_palm" data-rendermode=""><img loading="lazy" src="https://pawsandparcels.agpstudios.org/reference/assets/maps/VoidDesert/Map/PNG/tree_2.png" alt="tree_2.png"><div class="filename">tree_2.png<div class="canonical">nature_voiddesert_palm_mature</div></div><div class="path">reference/assets/maps/VoidDesert/Map/PNG/tree_2.png</div><div class="meta"><span>780c04343d27</span><span>235×358</span><span>nature</span><span class="decor-role" title="Nature family: voiddesert_palm">palm</span><span class="terrain-role">tree</span><span class="candidate-role" title="Tree type">palm</span><span class="npc-role">nature</span><span class="decor-role" title="Loot family: voiddesert_palm">voiddesert palm</span><span class="reference">Reference</span><span class="confirmed">Reviewed</span></div></div>
+<div class="card" data-role="nature" data-world="PVE_1_20" data-runtime="reference-only" data-nature="voiddesert_palm" data-naturerole="tree" data-treetype="palm" data-collision="trunk" data-lootfam="voiddesert_palm" data-rendermode=""><img loading="lazy" src="https://pawsandparcels.agpstudios.org/reference/assets/maps/VoidDesert/Map/PNG/tree_3.png" alt="tree_3.png"><div class="filename">tree_3.png<div class="canonical">nature_voiddesert_palm_young</div></div><div class="path">reference/assets/maps/VoidDesert/Map/PNG/tree_3.png</div><div class="meta"><span>6ea62d0813d1</span><span>181×234</span><span>nature</span><span class="decor-role" title="Nature family: voiddesert_palm">palm</span><span class="terrain-role">tree</span><span class="candidate-role" title="Tree type">palm</span><span class="npc-role">nature</span><span class="decor-role" title="Loot family: voiddesert_palm">voiddesert palm</span><span class="reference">Reference</span><span class="confirmed">Reviewed</span></div></div>
+<div class="card" data-role="nature" data-world="PVE_1_20" data-runtime="reference-only" data-nature="voiddesert_palm" data-naturerole="tree" data-treetype="palm" data-collision="trunk" data-lootfam="voiddesert_palm" data-rendermode=""><img loading="lazy" src="https://pawsandparcels.agpstudios.org/reference/assets/maps/VoidDesert/Map/PNG/tree_4.png" alt="tree_4.png"><div class="filename">tree_4.png<div class="canonical">nature_voiddesert_palm_tall_dry</div></div><div class="path">reference/assets/maps/VoidDesert/Map/PNG/tree_4.png</div><div class="meta"><span>b49603d823c5</span><span>123×323</span><span>nature</span><span class="decor-role" title="Nature family: voiddesert_palm">palm</span><span class="terrain-role">tree</span><span class="candidate-role" title="Tree type">palm</span><span class="npc-role">nature</span><span class="decor-role" title="Loot family: voiddesert_palm">voiddesert palm</span><span class="reference">Reference</span><span class="confirmed">Reviewed</span></div></div>
+<div class="card" data-role="nature" data-world="PVE_1_20" data-runtime="reference-only" data-nature="voiddesert_palm" data-naturerole="tree" data-treetype="palm" data-collision="trunk" data-lootfam="voiddesert_palm" data-rendermode=""><img loading="lazy" src="https://pawsandparcels.agpstudios.org/reference/assets/maps/VoidDesert/Map/PNG/tree_5.png" alt="tree_5.png"><div class="filename">tree_5.png<div class="canonical">nature_voiddesert_palm_ragged</div></div><div class="path">reference/assets/maps/VoidDesert/Map/PNG/tree_5.png</div><div class="meta"><span>eecda5051b78</span><span>187×244</span><span>nature</span><span class="decor-role" title="Nature family: voiddesert_palm">palm</span><span class="terrain-role">tree</span><span class="candidate-role" title="Tree type">palm</span><span class="npc-role">nature</span><span class="decor-role" title="Loot family: voiddesert_palm">voiddesert palm</span><span class="reference">Reference</span><span class="confirmed">Reviewed</span></div></div>
+<div class="card" data-role="nature" data-world="PVE_1_20" data-runtime="reference-only" data-nature="voiddesert_palm" data-naturerole="tree" data-treetype="palm" data-collision="trunk" data-lootfam="voiddesert_palm" data-rendermode=""><img loading="lazy" src="https://pawsandparcels.agpstudios.org/reference/assets/maps/VoidDesert/Map/PNG/tree_6.png" alt="tree_6.png"><div class="filename">tree_6.png<div class="canonical">nature_voiddesert_palm_leaning</div></div><div class="path">reference/assets/maps/VoidDesert/Map/PNG/tree_6.png</div><div class="meta"><span>0fcbd4cb23a4</span><span>205×255</span><span>nature</span><span class="decor-role" title="Nature family: voiddesert_palm">palm</span><span class="terrain-role">tree</span><span class="candidate-role" title="Tree type">palm</span><span class="npc-role">nature</span><span class="decor-role" title="Loot family: voiddesert_palm">voiddesert palm</span><span class="reference">Reference</span><span class="confirmed">Reviewed</span></div></div>
+<div class="card" data-role="nature" data-world="PVE_1_20" data-runtime="reference-only" data-nature="voiddesert_palm" data-naturerole="tree" data-treetype="palm" data-collision="trunk" data-lootfam="voiddesert_palm" data-rendermode=""><img loading="lazy" src="https://pawsandparcels.agpstudios.org/reference/assets/maps/VoidDesert/Map/PNG/tree_9.png" alt="tree_9.png"><div class="filename">tree_9.png<div class="canonical">nature_voiddesert_palm_twin_b</div></div><div class="path">reference/assets/maps/VoidDesert/Map/PNG/tree_9.png</div><div class="meta"><span>6e154f2669bb</span><span>378×443</span><span>nature</span><span class="decor-role" title="Nature family: voiddesert_palm">palm</span><span class="terrain-role">tree</span><span class="candidate-role" title="Tree type">palm</span><span class="npc-role">nature</span><span class="decor-role" title="Loot family: voiddesert_palm">voiddesert palm</span><span class="reference">Reference</span><span class="confirmed">Reviewed</span></div></div>
+</div></section><section class="family" data-family="voiddesert_desert_tree"><button type="button" class="family-toggle" aria-expanded="true"><span class="family-caret">▾</span><span class="family-title">Desert Trees</span></button><div class="family-header"><h2>Desert Trees</h2><p>5 assets · 5 semantic variants · 0 runtime · <span class="world-role">PVE_1_20</span></p><p class="family-details">Type: <strong>desert tree</strong> · Role: tree · Variants: default, large, twisted · Tree types: broad, baobab, umbrella, dead · World: PVE_1_20 · Collision: trunk (recommended) · Placement: manual</p><p class="family-details npc-note">🌳 Non-palm desert trees — broad, baobab (extremely characteristic silhouette), umbrella (conservative, not asserted acacia), dead ×2. Dead handled via treeType: dead, not a 7th family. Collision: trunk.</p><p class="family-details npc-note">🚫 None are tiles — transparent standalone overlays, no tileMode repeat or edge/corner topology. Entire package stays REFERENCE until runtime usage proves otherwise.</p></div><div class="family-assets">
+<div class="card" data-role="nature" data-world="PVE_1_20" data-runtime="reference-only" data-nature="voiddesert_desert_tree" data-naturerole="tree" data-treetype="broad" data-collision="trunk" data-lootfam="voiddesert_desert_tree" data-rendermode=""><img loading="lazy" src="https://pawsandparcels.agpstudios.org/reference/assets/maps/VoidDesert/Map/PNG/tree_7.png" alt="tree_7.png"><div class="filename">tree_7.png<div class="canonical">nature_voiddesert_tree_broad</div></div><div class="path">reference/assets/maps/VoidDesert/Map/PNG/tree_7.png</div><div class="meta"><span>98bf41e7c8c6</span><span>224×281</span><span>nature</span><span class="decor-role" title="Nature family: voiddesert_desert_tree">desert tree</span><span class="terrain-role">tree</span><span class="candidate-role" title="Tree type">broad</span><span class="npc-role">nature</span><span class="decor-role" title="Loot family: voiddesert_desert_tree">voiddesert desert tree</span><span class="reference">Reference</span><span class="confirmed">Reviewed</span></div></div>
+<div class="card" data-role="nature" data-world="PVE_1_20" data-runtime="reference-only" data-nature="voiddesert_desert_tree" data-naturerole="tree" data-treetype="baobab" data-collision="trunk" data-lootfam="voiddesert_desert_tree" data-rendermode=""><img loading="lazy" src="https://pawsandparcels.agpstudios.org/reference/assets/maps/VoidDesert/Map/PNG/tree_8.png" alt="tree_8.png"><div class="filename">tree_8.png<div class="canonical">nature_voiddesert_baobab</div></div><div class="path">reference/assets/maps/VoidDesert/Map/PNG/tree_8.png</div><div class="meta"><span>399d37ec3262</span><span>337×501</span><span>nature</span><span class="decor-role" title="Nature family: voiddesert_desert_tree">desert tree</span><span class="terrain-role">tree</span><span class="candidate-role" title="Tree type">baobab</span><span class="npc-role">nature</span><span class="decor-role" title="Loot family: voiddesert_desert_tree">voiddesert desert tree</span><span class="reference">Reference</span><span class="confirmed">Reviewed</span></div></div>
+<div class="card" data-role="nature" data-world="PVE_1_20" data-runtime="reference-only" data-nature="voiddesert_desert_tree" data-naturerole="tree" data-treetype="umbrella" data-collision="trunk" data-lootfam="voiddesert_desert_tree" data-rendermode=""><img loading="lazy" src="https://pawsandparcels.agpstudios.org/reference/assets/maps/VoidDesert/Map/PNG/tree_10.png" alt="tree_10.png"><div class="filename">tree_10.png<div class="canonical">nature_voiddesert_tree_umbrella</div></div><div class="path">reference/assets/maps/VoidDesert/Map/PNG/tree_10.png</div><div class="meta"><span>06226c13fbe0</span><span>218×172</span><span>nature</span><span class="decor-role" title="Nature family: voiddesert_desert_tree">desert tree</span><span class="terrain-role">tree</span><span class="candidate-role" title="Tree type">umbrella</span><span class="npc-role">nature</span><span class="decor-role" title="Loot family: voiddesert_desert_tree">voiddesert desert tree</span><span class="reference">Reference</span><span class="confirmed">Reviewed</span></div></div>
+<div class="card" data-role="nature" data-world="PVE_1_20" data-runtime="reference-only" data-nature="voiddesert_desert_tree" data-naturerole="tree" data-treetype="dead" data-collision="trunk" data-lootfam="voiddesert_desert_tree" data-rendermode=""><img loading="lazy" src="https://pawsandparcels.agpstudios.org/reference/assets/maps/VoidDesert/Map/PNG/tree_11.png" alt="tree_11.png"><div class="filename">tree_11.png<div class="canonical">nature_voiddesert_dead_tree_large</div></div><div class="path">reference/assets/maps/VoidDesert/Map/PNG/tree_11.png</div><div class="meta"><span>1912f8ad0197</span><span>206×367</span><span>nature</span><span class="decor-role" title="Nature family: voiddesert_desert_tree">desert tree</span><span class="terrain-role">tree</span><span class="candidate-role" title="Tree type">dead</span><span class="npc-role">nature</span><span class="decor-role" title="Loot family: voiddesert_desert_tree">voiddesert desert tree</span><span class="reference">Reference</span><span class="confirmed">Reviewed</span></div></div>
+<div class="card" data-role="nature" data-world="PVE_1_20" data-runtime="reference-only" data-nature="voiddesert_desert_tree" data-naturerole="tree" data-treetype="dead" data-collision="trunk" data-lootfam="voiddesert_desert_tree" data-rendermode=""><img loading="lazy" src="https://pawsandparcels.agpstudios.org/reference/assets/maps/VoidDesert/Map/PNG/tree_12.png" alt="tree_12.png"><div class="filename">tree_12.png<div class="canonical">nature_voiddesert_dead_tree_twisted</div></div><div class="path">reference/assets/maps/VoidDesert/Map/PNG/tree_12.png</div><div class="meta"><span>2b15181c6791</span><span>221×301</span><span>nature</span><span class="decor-role" title="Nature family: voiddesert_desert_tree">desert tree</span><span class="terrain-role">tree</span><span class="candidate-role" title="Tree type">dead</span><span class="npc-role">nature</span><span class="decor-role" title="Loot family: voiddesert_desert_tree">voiddesert desert tree</span><span class="reference">Reference</span><span class="confirmed">Reviewed</span></div></div>
+</div></section></div>
+<script>
+(function () {
+  var families = document.querySelectorAll("section.family");
+  families.forEach(function (sec) {
+    var btn = sec.querySelector(".family-toggle");
+    var body = sec.querySelector(".family-assets");
+    btn.addEventListener("click", function () {
+      var open = body.style.display !== "none";
+      body.style.display = open ? "none" : "";
+      btn.setAttribute("aria-expanded", String(!open));
+      btn.querySelector(".family-caret").textContent = open ? "▸" : "▾";
+    });
+  });
+  var checks = document.querySelectorAll(".filter-check");
+  var clearBtn = document.getElementById("filter-clear");
+  function active(f, v) {
+    return Array.prototype.some.call(checks, function (ch) {
+      return ch.dataset.f === f && (!v || ch.dataset.v === v) && ch.checked;
+    });
+  }
+  function applyFilters() {
+    var placeable = active("placeable");
+    var cards = document.querySelectorAll(".card");
+    var visibleCount = 0;
+    cards.forEach(function (card) {
+      var show = true;
+      if (placeable && card.dataset.role !== "complete") show = false;
+      if (show && active("role") && !active("role", card.dataset.role)) show = false;
+      if (show && active("world") && !active("world", card.dataset.world)) show = false;
+      if (show && active("runtime") && !active("runtime", card.dataset.runtime)) show = false;
+      if (show && active("roadtype") && !active("roadtype", card.dataset.roadtype)) show = false;
+      if (show && active("surface") && !active("surface", card.dataset.surface)) show = false;
+      if (show && active("terrainrole") && !active("terrainrole", card.dataset.terrainrole)) show = false;
+      if (show && active("tilemode") && !active("tilemode", card.dataset.tilemode)) show = false;
+      if (show && active("variant") && !active("variant", card.dataset.variant)) show = false;
+      if (show && active("decorrole") && !active("decorrole", card.dataset.decorrole)) show = false;
+      if (show && active("collision") && !active("collision", card.dataset.collision)) show = false;
+      if (show && active("depthmode") && !active("depthmode", card.dataset.depthmode)) show = false;
+      if (show && active("density") && !active("density", card.dataset.density)) show = false;
+      if (show && active("npc") && !active("npc", card.dataset.npc)) show = false;
+      if (show && active("envtype") && !active("envtype", card.dataset.envtype)) show = false;
+      if (show && active("monster") && !active("monster", card.dataset.monster)) show = false;
+      if (show && active("shadowmode") && !active("shadowmode", card.dataset.shadowmode)) show = false;
+      if (show && active("monstertype") && !active("monstertype", card.dataset.monstertype)) show = false;
+      if (show && active("nature") && !active("nature", card.dataset.nature)) show = false;
+      if (show && active("naturerole") && !active("naturerole", card.dataset.naturerole)) show = false;
+      if (show && active("treetype") && !active("treetype", card.dataset.treetype)) show = false;
+      if (show && active("vdmap") && !active("vdmap", card.dataset.vdmap)) show = false;
+      if (show && active("roadrole") && !active("roadrole", card.dataset.roadrole)) show = false;
+      if (show && active("pathfam") && !active("pathfam", card.dataset.pathfam)) show = false;
+      if (show && active("lootfam") && !active("lootfam", card.dataset.lootfam)) show = false;
+      if (show && active("rendermode") && !active("rendermode", card.dataset.rendermode)) show = false;
+      if (show && active("material") && !active("material", card.dataset.material)) show = false;
+      if (show && active("surfacecontext") && !active("surfacecontext", card.dataset.surfacecontext)) show = false;
+      if (show && active("animation") && !active("animation", card.dataset.animation)) show = false;
+      if (show && active("direction") && !active("direction", card.dataset.direction)) show = false;
+      if (show && active("effect") && !active("effect", card.dataset.effect)) show = false;
+      if (show && active("effectvariant") && !active("effectvariant", card.dataset.effectvariant)) show = false;
+      if (show && active("topology") && !active("topology", card.dataset.topology)) show = false;
+      card.style.display = show ? "" : "none";
+      if (show) visibleCount += 1;
+    });
+    families.forEach(function (sec) {
+      var body = sec.querySelector(".family-assets");
+      if (body.dataset.userCollapsed === "1") return;
+      var visible = Array.prototype.some.call(sec.querySelectorAll(".card"), function (c) {
+        return c.style.display !== "none";
+      });
+      body.style.display = visible ? "" : "none";
+      sec.querySelector(".family-caret").textContent = visible ? "▾" : "▸";
+    });
+    var note = document.getElementById("filter-note");
+    if (note) note.textContent = visibleCount < cards.length ? "Showing " + visibleCount + " of " + cards.length + " assets" : "";
+  }
+  checks.forEach(function (ch) { ch.addEventListener("change", applyFilters); });
+  if (clearBtn) clearBtn.addEventListener("click", function () { checks.forEach(function (ch) { ch.checked = false; }); applyFilters(); });
+  families.forEach(function (sec) {
+    var btn = sec.querySelector(".family-toggle");
+    btn.addEventListener("click", function () {
+      var body = sec.querySelector(".family-assets");
+      var open = body.style.display !== "none";
+      if (open) body.dataset.userCollapsed = "1"; else delete body.dataset.userCollapsed;
+    });
+  });
+})();
+</script></body></html>

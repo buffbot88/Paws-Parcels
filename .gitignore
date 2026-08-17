@@ -5,7 +5,6 @@ coverage/
 *.log
 .DS_Store
 /.freebuff
-deploy/
 oraclehost_id_rsa
 
 # Unified server config — contains real DB password and JWT secret.
@@ -15,9 +14,11 @@ server_config.json
 # The SQLite game database is intentionally tracked for the current Alpha workflow.
 # Keep this repository private if it contains real account/character data; never
 # commit server_config.json, credentials, tokens, or production secrets.
-# Runtime game-data JSON is committed. Large local art packs are kept in the
-# ignored reference archive and are never added by plain `git add .`.
-/reference/assets/
+# The full raw art archive (reference/assets/) is committed so the whole team has
+# it. It contains the game's PNG art, Aseprite/Illustrator/EPS sources, and the
+# Tiled map sources. Only macOS junk and the three >100 MB vector source files
+# (tracked via Git LFS) are handled specially.
+reference/**/.DS_Store
 
 src/data/*
 !src/data/*.json

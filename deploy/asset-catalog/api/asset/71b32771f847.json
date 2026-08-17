@@ -1,0 +1,252 @@
+{
+  "id": "71b32771f847",
+  "filename": "road_6.png",
+  "path": "reference/assets/maps/CloverVillage/Map/PNG/road/road_6.png",
+  "imageUrl": "https://pawsandparcels.agpstudios.org/reference/assets/maps/CloverVillage/Map/PNG/road/road_6.png",
+  "pack": "CloverVillage",
+  "category": "road",
+  "extension": ".png",
+  "width": 64,
+  "height": 64,
+  "bytes": 4014,
+  "isImage": true,
+  "runtimeStatus": "reference-only",
+  "usedBy": null,
+  "assetRole": "autotile",
+  "roadRole": "autotile",
+  "surfaceType": "dirt",
+  "worldRole": "SHARED_1_20",
+  "walkable": true,
+  "collision": "none",
+  "reviewStatus": "reviewed",
+  "topology": "needs-verification",
+  "description": "Earthen vine path autotile connectivity piece; compass role pending autotile preview",
+  "renameStatus": "uncertain",
+  "canonicalName": "road_earthen_vine_candidate_edge_w_a",
+  "displayName": "Earthen Vine Path — Edge West (candidate)",
+  "candidateRole": "edge-w",
+  "canonicalFamily": "earthen_vine_path",
+  "suggestedFamilyName": "Earthen Vine Path",
+  "suitability": "very-high",
+  "recommendedUses": [
+    "primary village paths",
+    "secondary paths",
+    "woodland trails",
+    "residential paths",
+    "Happy Valley approach"
+  ],
+  "notes": "Autotile set. road_5 is the known runtime center/fill (confirmed). Autotile validation pass (2026-08-14, pixel analysis of all 13 tiles) concluded the set is NOT a clean 13-role autotile: duplicate roles (edge-n: road_7/road_8; outer-se: road_1/road_13; outer-sw: road_3/road_12; outer-nw: road_9/road_10) and missing roles (edge-e, outer-corner-ne, inner-corner-n/e/s). The full 26-tile road kit exists elsewhere in the archive (VoidDesert road_1-26); CloverVillage holds only the 13-piece subset. Compass roles stay needs-verification — do not assign until the full kit is reviewed. Analysis: design/assets/road-autotile-roles.json; visual preview: /asset-catalog/autotile/ ROAD KIT RECOVERY PASS (2026-08-15): compared CV road_1-13 vs VoidDesert road_1-26 (design/assets/road-kit-recovery.json, preview /asset-catalog/autotile/recovery.html). Same structural kit and same earthen path family (color distance 32) but DIFFERENT tint — VoidDesert tiles are desert-gold with 0% green grass vs CV 3.6%; do not copy tiles in without recoloring. Of the 5 missing roles, 4 exist in VoidDesert (outer-corner-ne: road_7; inner-corner-n: road_2/15; inner-corner-e: road_6/19; inner-corner-s: road_8/21); edge-e exists in NO pack. CV duplicate candidates are all TRUE VARIANTS (46-88% pixels differ), none pixel-identical, and no CV tile is pixel-identical to any VD tile. Status: INCOMPLETE AUTOTILE KIT — candidate compass roles recorded below but topology stays needs-verification until a recolored/recovered kit is rendered. FINAL ROAD VERDICT (2026-08-15): Road Catalog Audit COMPLETE; Earthen Vine Path art kit INCOMPLETE — 5 assets required (see artTask). No further archive searching or catalog work can complete this set; edge-east exists in no pack. Existing Clover assets stay untouched. VoidDesert is structural reference only. Topology of the existing 13 tiles is verified by visual classification; the missing 5 tiles are an art asset gap, not a metadata problem.",
+  "roadType": "autotile",
+  "variant": null,
+  "npcId": null,
+  "npcPackage": null,
+  "classId": null,
+  "classFamilyType": null,
+  "effect": null,
+  "element": null,
+  "effectType": null,
+  "shape": null,
+  "effectVariant": null,
+  "sourceOf": null,
+  "animation": null,
+  "direction": null,
+  "frame": null,
+  "frameCount": null,
+  "bodyPart": null,
+  "side": null,
+  "placeable": true,
+  "sourceRole": null,
+  "format": null,
+  "runtimeEligible": null,
+  "uiAsset": null,
+  "sharedVisual": null,
+  "envRole": null,
+  "treeRole": null,
+  "objectRole": null,
+  "orientation": null,
+  "size": null,
+  "monsterId": null,
+  "shadowMode": null,
+  "duplicateOf": null,
+  "catalogVisible": true,
+  "natureFamilyType": null,
+  "natureRole": null,
+  "formationType": null,
+  "material": null,
+  "scaleClass": null,
+  "occlusion": null,
+  "treeType": null,
+  "vdMapFamilyType": null,
+  "waterType": null,
+  "vdMonsterFamilyType": null,
+  "monsterType": null,
+  "weaponType": null,
+  "component": null,
+  "propRole": null,
+  "pathFamilyType": null,
+  "pathMaterial": null,
+  "surfaceContext": null,
+  "contains": null,
+  "tileExtraction": null,
+  "tileSource": null,
+  "lootFamilyType": "earthen_vine_path",
+  "lootRole": null,
+  "lootSubtype": null,
+  "lootIconId": null,
+  "renderMode": null,
+  "lootConfirmed": null,
+  "iconCount": null,
+  "status": "INCOMPLETE AUTOTILE KIT",
+  "catalogStatus": "COMPLETE",
+  "topologyStatus": "verified",
+  "kitStatus": "incomplete",
+  "recoveryStatus": "art-required",
+  "runtimeReady": "partial",
+  "artRequired": true,
+  "artTask": {
+    "status": "open",
+    "scope": "Create exactly 5 new 64x64 tiles in the Clover Earthen Vine Path visual family. Source art stays untouched; VoidDesert used only as topology reference, not as copy source.",
+    "deliverable": [
+      {
+        "asset": "road_earthen_vine_outer_corner_ne_01.png",
+        "role": "outer-corner-ne",
+        "visualReference": "Clover Earthen Vine family",
+        "structuralReference": [
+          "VoidDesert/road_7.png"
+        ],
+        "note": "Outer corner — path in NE quadrant, grass in SW"
+      },
+      {
+        "asset": "road_earthen_vine_inner_corner_n_01.png",
+        "role": "inner-corner-n",
+        "visualReference": "Clover Earthen Vine family",
+        "structuralReference": [
+          "VoidDesert/road_2.png",
+          "VoidDesert/road_15.png"
+        ],
+        "note": "Inner corner — notch opening north"
+      },
+      {
+        "asset": "road_earthen_vine_inner_corner_e_01.png",
+        "role": "inner-corner-e",
+        "visualReference": "Clover Earthen Vine family",
+        "structuralReference": [
+          "VoidDesert/road_6.png",
+          "VoidDesert/road_19.png"
+        ],
+        "note": "Inner corner — notch opening east"
+      },
+      {
+        "asset": "road_earthen_vine_inner_corner_s_01.png",
+        "role": "inner-corner-s",
+        "visualReference": "Clover Earthen Vine family",
+        "structuralReference": [
+          "VoidDesert/road_8.png",
+          "VoidDesert/road_21.png"
+        ],
+        "note": "Inner corner — notch opening south"
+      },
+      {
+        "asset": "road_earthen_vine_edge_e_01.png",
+        "role": "edge-e",
+        "visualReference": "Clover Earthen Vine family (opposite edge road_6 = edge-w)",
+        "structuralReference": [
+          "derive from Clover opposite edge, mirror + manual vegetation pass"
+        ],
+        "note": "Mirror edge-w for geometry, then redo vine detail so it does not look mechanically mirrored"
+      }
+    ],
+    "provenance": {
+      "type": "derived",
+      "sourcePack": "CloverVillage",
+      "sourceAssets": [
+        "road/road_6.png",
+        "road/road_7.png",
+        "road/road_1.png",
+        "road/road_3.png",
+        "road/road_9.png"
+      ],
+      "topologyReference": [
+        "VoidDesert/road_7.png",
+        "VoidDesert/road_2.png",
+        "VoidDesert/road_15.png",
+        "VoidDesert/road_6.png",
+        "VoidDesert/road_19.png",
+        "VoidDesert/road_8.png",
+        "VoidDesert/road_21.png"
+      ],
+      "createdFor": "Paws & Parcels",
+      "note": "Derived artwork created from licensed source material — confirm the pack license permits derivative modification before shipping commercially."
+    }
+  },
+  "recovery": {
+    "pass": "2026-08-15",
+    "verdict": "PARTIAL RECOVERY — VoidDesert road_1-26 is the same structural kit (64x64, same role shapes, path color distance 32) but a DIFFERENT tint: VoidDesert has 0% green grass (CV 3.6%) and golden paths rgb(176,133,84) vs CV warm rgb(189,131,101). Artwork does NOT match the CloverVillage visual family — do not copy tiles in without recoloring.",
+    "cvMissingRoles": [
+      "edge-e",
+      "outer-corner-ne",
+      "inner-corner-n",
+      "inner-corner-e",
+      "inner-corner-s"
+    ],
+    "foundInVoidDesert": {
+      "outer-corner-ne": [
+        "VoidDesert/road_7.png"
+      ],
+      "inner-corner-n": [
+        "VoidDesert/road_2.png",
+        "VoidDesert/road_15.png"
+      ],
+      "inner-corner-e": [
+        "VoidDesert/road_6.png",
+        "VoidDesert/road_19.png"
+      ],
+      "inner-corner-s": [
+        "VoidDesert/road_8.png",
+        "VoidDesert/road_21.png"
+      ]
+    },
+    "notFoundAnywhere": [
+      "edge-e"
+    ],
+    "cvDuplicatesConfirmed": [
+      {
+        "pair": [
+          "road_7.png",
+          "road_8.png"
+        ],
+        "verdict": "TRUE VARIANTS (46.9% pixels differ)"
+      },
+      {
+        "pair": [
+          "road_1.png",
+          "road_13.png"
+        ],
+        "verdict": "TRUE VARIANTS (78.9% pixels differ)"
+      },
+      {
+        "pair": [
+          "road_3.png",
+          "road_12.png"
+        ],
+        "verdict": "TRUE VARIANTS (87.7% pixels differ)"
+      },
+      {
+        "pair": [
+          "road_9.png",
+          "road_10.png"
+        ],
+        "verdict": "TRUE VARIANTS (86.9% pixels differ)"
+      }
+    ],
+    "crossPackPixelIdentical": "none",
+    "analysisFile": "design/assets/road-kit-recovery.json",
+    "preview": "/asset-catalog/autotile/recovery.html"
+  },
+  "review": {
+    "status": "reviewed",
+    "suggestedName": "road_earthen_vine_candidate_edge_w_a",
+    "description": "Earthen vine path autotile connectivity piece; compass role pending autotile preview",
+    "notes": ""
+  }
+}

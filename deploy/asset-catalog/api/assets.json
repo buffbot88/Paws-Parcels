@@ -1,0 +1,159 @@
+{
+  "version": 1,
+  "generatedAt": "2026-08-15T08:29:42.817Z",
+  "totalAssets": 6553,
+  "totalBytes": 1828948968,
+  "packs": [
+    {
+      "name": "Classes-Archer",
+      "total": 127,
+      "images": 106,
+      "categories": [
+        "class"
+      ]
+    },
+    {
+      "name": "Classes-Mage",
+      "total": 173,
+      "images": 128,
+      "categories": [
+        "class"
+      ]
+    },
+    {
+      "name": "Classes-Warrior",
+      "total": 264,
+      "images": 175,
+      "categories": [
+        "class"
+      ]
+    },
+    {
+      "name": "CloverVillage",
+      "total": 1573,
+      "images": 1465,
+      "categories": [
+        "building",
+        "decor",
+        "ground",
+        "npc",
+        "other",
+        "road"
+      ]
+    },
+    {
+      "name": "HappyValley",
+      "total": 1164,
+      "images": 894,
+      "categories": [
+        "monster",
+        "npc",
+        "other"
+      ]
+    },
+    {
+      "name": "loot",
+      "total": 146,
+      "images": 97,
+      "categories": [
+        "loot"
+      ]
+    },
+    {
+      "name": "OtherAssets",
+      "total": 17,
+      "images": 16,
+      "categories": [
+        "path-composite"
+      ]
+    },
+    {
+      "name": "VoidDesert",
+      "total": 3089,
+      "images": 2742,
+      "categories": [
+        "monster",
+        "nature",
+        "other"
+      ]
+    }
+  ],
+  "endpoints": {
+    "packs": "/asset-catalog/api/packs.json",
+    "byPack": "/asset-catalog/api/assets/{pack}.json",
+    "byPackCategory": "/asset-catalog/api/assets/{pack}/{category}.json",
+    "paginated": "/asset-catalog/api/assets/{pack}/page-{n}.json",
+    "assetDetail": "/asset-catalog/api/asset/{id}.json",
+    "families": "/asset-catalog/api/families.json"
+  },
+  "auditStatus": {
+    "CloverVillage|building": {
+      "label": "COMPLETE · PRODUCTION READY",
+      "tone": "ok"
+    },
+    "CloverVillage|ground": {
+      "label": "COMPLETE · TOPOLOGY VERIFIED",
+      "tone": "ok"
+    },
+    "CloverVillage|decor": {
+      "label": "COMPLETE",
+      "tone": "ok"
+    },
+    "CloverVillage|road": {
+      "label": "CATALOG COMPLETE · KIT INCOMPLETE (5 tiles)",
+      "tone": "warn"
+    },
+    "CloverVillage|npc": {
+      "label": "CLASSIFIED · 3 IDENTITIES / 5 ANIMATIONS",
+      "tone": "ok"
+    },
+    "CloverVillage|other": {
+      "label": "COMPLETE · SOURCE MASTERS ONLY",
+      "tone": "ok"
+    },
+    "Classes-Archer|class": {
+      "label": "COMPLETE · 6 FAMILIES / 0 UNCLASSIFIED",
+      "tone": "ok"
+    },
+    "Classes-Mage|class": {
+      "label": "COMPLETE · 6 FAMILIES / 0 UNCLASSIFIED",
+      "tone": "ok"
+    },
+    "Classes-Warrior|class": {
+      "label": "COMPLETE · 6 FAMILIES / 0 UNCLASSIFIED",
+      "tone": "ok"
+    },
+    "HappyValley|other": {
+      "label": "COMPLETE · 12 FAMILIES / 0 UNCLASSIFIED",
+      "tone": "ok"
+    },
+    "HappyValley|monster": {
+      "label": "COMPLETE · 5 IDENTITIES / 4 FAMILIES / 0 UNCLASSIFIED",
+      "tone": "ok"
+    },
+    "HappyValley|npc": {
+      "label": "COMPLETE · 3 IDENTITIES / 5 FAMILIES / 0 UNCLASSIFIED",
+      "tone": "ok"
+    },
+    "VoidDesert|nature": {
+      "label": "COMPLETE · 6 NATURE FAMILIES / 0 UNCLASSIFIED",
+      "tone": "ok"
+    },
+    "VoidDesert|other": {
+      "label": "COMPLETE · 8 MAP FAMILIES / 0 UNCLASSIFIED",
+      "tone": "ok"
+    },
+    "VoidDesert|monster": {
+      "label": "COMPLETE · 7 IDENTITIES / 6 FAMILIES / 0 UNCLASSIFIED",
+      "tone": "ok"
+    },
+    "OtherAssets|path-composite": {
+      "label": "COMPLETE · 3 PATH FAMILIES / 0 UNCLASSIFIED",
+      "tone": "ok"
+    },
+    "loot|loot": {
+      "label": "CLASSIFIED · 48 ICONS / 10 FAMILIES / 0 UNCLASSIFIED",
+      "tone": "ok"
+    }
+  }
+}

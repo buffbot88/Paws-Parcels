@@ -1,2 +1,5 @@
 # Auto detect text files and perform LF normalization
 * text=auto
+reference/assets/maps/CloverVillage/Map/EPS/Tropical_Medieval_City_2D_Tileset.eps filter=lfs diff=lfs merge=lfs -text
+reference/assets/maps/CloverVillage/Map/AI/Tropical_Medieval_City_2D_Tileset.ai filter=lfs diff=lfs merge=lfs -text
+reference/assets/maps/VoidDesert/Map/EPS/2D_RPG_Desert_Tileset.eps filter=lfs diff=lfs merge=lfs -text

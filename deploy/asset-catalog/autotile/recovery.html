@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Road Kit Recovery — CloverVillage × VoidDesert</title>
+<style>
+  body { font-family: system-ui; max-width: 1200px; margin: 1.5rem auto; padding: 0 1rem; color: #263228; background: #f3f7f1; }
+  h1 { font-size: 1.4rem; } h2 { font-size: 1.05rem; margin-top: 1.75rem; }
+  .banner { padding: 0.8rem 1rem; border-radius: 8px; font-weight: 600; margin-bottom: 1rem; }
+  .banner.ok { background: #e8f5e9; border: 1px solid #a5d6a7; color: #1b5e20; }
+  .banner.warn { background: #fff3e0; border: 1px solid #ffcc80; color: #e65100; }
+  .cols { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+  .role-group { background: #fff; border: 1px solid #d9e3d7; border-radius: 8px; padding: 0.6rem; margin-bottom: 0.6rem; }
+  .role-group.missing { border-color: #ef9a9a; background: #fff5f5; }
+  .role-name { font-weight: 700; font-size: 0.8rem; margin-bottom: 0.4rem; }
+  .role-tiles { display: flex; flex-wrap: wrap; gap: 0.4rem; }
+  .tile { text-align: center; }
+  .tile img, .tile-inline img { width: 64px; height: 64px; image-rendering: pixelated; background: repeating-conic-gradient(#e8ede6 0% 25%, #fff 0% 50%) 50%/16px 16px; border-radius: 4px; }
+  .tname { font-size: 0.6rem; color: #68766b; }
+  .none { font-size: 0.75rem; color: #b71c1c; font-style: italic; }
+  .note { font-size: 0.85rem; color: #68766b; }
+  table.data { border-collapse: collapse; font-size: 0.8rem; width: 100%; }
+  table.data td, table.data th { border: 1px solid #d9e3d7; padding: 0.4rem 0.6rem; text-align: left; vertical-align: top; }
+  .tile-inline { display: inline-flex; align-items: center; gap: 0.4rem; margin: 0.2rem 0.4rem 0.2rem 0; }
+  .tile-inline span { font-size: 0.7rem; }
+  .pill { display: inline-block; padding: 0.1rem 0.5rem; border-radius: 999px; font-size: 0.7rem; font-weight: 600; }
+  .pill.yes { background: #e8f5e9; color: #1b5e20; } .pill.no { background: #ffebee; color: #b71c1c; }
+</style>
+</head>
+<body>
+<h1>Road Kit Recovery Pass — CloverVillage × VoidDesert</h1>
+<div class="banner warn">PARTIAL RECOVERY — same visual family; 4/5 missing roles recoverable. Still absent: Edge — East</div>
+<div class="note">Status: <b>INCOMPLETE AUTOTILE KIT</b>. Path color distance <b>32</b> (CV rgb(189,131,101) vs VD rgb(176,133,84)) — same visual family: <span class="pill yes">YES</span>. No source files were copied or renamed; this is a catalog-level comparison.</div>
+
+<h2>Recovery candidates — missing CloverVillage roles</h2>
+<table class="data">
+<tr><th>Missing role</th><th>VoidDesert candidate tile(s)</th></tr>
+<tr><td>Edge — East</td><td><span class='none'>not in VoidDesert either</span></td></tr>
+<tr><td>Outer Corner — NE</td><td><div class="tile-inline"><img src="https://pawsandparcels.agpstudios.org/reference/assets/maps/VoidDesert/Map/PNG/road_7.png" alt="road_7.png" title="road_7.png"><span>road_7.png</span></div></td></tr>
+<tr><td>Inner Corner — N</td><td><div class="tile-inline"><img src="https://pawsandparcels.agpstudios.org/reference/assets/maps/VoidDesert/Map/PNG/road_2.png" alt="road_2.png" title="road_2.png"><span>road_2.png</span></div><div class="tile-inline"><img src="https://pawsandparcels.agpstudios.org/reference/assets/maps/VoidDesert/Map/PNG/road_15.png" alt="road_15.png" title="road_15.png"><span>road_15.png</span></div></td></tr>
+<tr><td>Inner Corner — E</td><td><div class="tile-inline"><img src="https://pawsandparcels.agpstudios.org/reference/assets/maps/VoidDesert/Map/PNG/road_6.png" alt="road_6.png" title="road_6.png"><span>road_6.png</span></div><div class="tile-inline"><img src="https://pawsandparcels.agpstudios.org/reference/assets/maps/VoidDesert/Map/PNG/road_19.png" alt="road_19.png" title="road_19.png"><span>road_19.png</span></div></td></tr>
+<tr><td>Inner Corner — S</td><td><div class="tile-inline"><img src="https://pawsandparcels.agpstudios.org/reference/assets/maps/VoidDesert/Map/PNG/road_8.png" alt="road_8.png" title="road_8.png"><span>road_8.png</span></div><div class="tile-inline"><img src="https://pawsandparcels.agpstudios.org/reference/assets/maps/VoidDesert/Map/PNG/road_21.png" alt="road_21.png" title="road_21.png"><span>road_21.png</span></div></td></tr>
+</table>
+
+<h2>Role coverage — CloverVillage (13 tiles)</h2>
+<div class="cols"><div>
+    <div class="role-group ">
+      <div class="role-name">Center / Fill</div>
+      <div class="role-tiles"><div class="tile"><img src="CloverVillage/road_5.png" alt="road_5.png" title="road_5.png"><div class="tname">road_5.png</div></div></div>
+    </div>
+    <div class="role-group ">
+      <div class="role-name">Edge — North</div>
+      <div class="role-tiles"><div class="tile"><img src="CloverVillage/road_7.png" alt="road_7.png" title="road_7.png"><div class="tname">road_7.png</div></div><div class="tile"><img src="CloverVillage/road_8.png" alt="road_8.png" title="road_8.png"><div class="tname">road_8.png</div></div></div>
+    </div>
+    <div class="role-group missing">
+      <div class="role-name">Edge — East</div>
+      <div class="role-tiles"><span class='none'>— not in pack —</span></div>
+    </div>
+    <div class="role-group ">
+      <div class="role-name">Edge — South</div>
+      <div class="role-tiles"><div class="tile"><img src="CloverVillage/road_2.png" alt="road_2.png" title="road_2.png"><div class="tname">road_2.png</div></div></div>
+    </div>
+    <div class="role-group ">
+      <div class="role-name">Edge — West</div>
+      <div class="role-tiles"><div class="tile"><img src="CloverVillage/road_6.png" alt="road_6.png" title="road_6.png"><div class="tname">road_6.png</div></div></div>
+    </div>
+    <div class="role-group missing">
+      <div class="role-name">Outer Corner — NE</div>
+      <div class="role-tiles"><span class='none'>— not in pack —</span></div>
+    </div>
+    <div class="role-group ">
+      <div class="role-name">Outer Corner — SE</div>
+      <div class="role-tiles"><div class="tile"><img src="CloverVillage/road_1.png" alt="road_1.png" title="road_1.png"><div class="tname">road_1.png</div></div><div class="tile"><img src="CloverVillage/road_13.png" alt="road_13.png" title="road_13.png"><div class="tname">road_13.png</div></div></div>
+    </div>
+    <div class="role-group ">
+      <div class="role-name">Outer Corner — SW</div>
+      <div class="role-tiles"><div class="tile"><img src="CloverVillage/road_3.png" alt="road_3.png" title="road_3.png"><div class="tname">road_3.png</div></div><div class="tile"><img src="CloverVillage/road_12.png" alt="road_12.png" title="road_12.png"><div class="tname">road_12.png</div></div></div>
+    </div>
+    <div class="role-group ">
+      <div class="role-name">Outer Corner — NW</div>
+      <div class="role-tiles"><div class="tile"><img src="CloverVillage/road_9.png" alt="road_9.png" title="road_9.png"><div class="tname">road_9.png</div></div><div class="tile"><img src="CloverVillage/road_10.png" alt="road_10.png" title="road_10.png"><div class="tname">road_10.png</div></div></div>
+    </div>
+    <div class="role-group missing">
+      <div class="role-name">Inner Corner — N</div>
+      <div class="role-tiles"><span class='none'>— not in pack —</span></div>
+    </div>
+    <div class="role-group missing">
+      <div class="role-name">Inner Corner — E</div>
+      <div class="role-tiles"><span class='none'>— not in pack —</span></div>
+    </div>
+    <div class="role-group missing">
+      <div class="role-name">Inner Corner — S</div>
+      <div class="role-tiles"><span class='none'>— not in pack —</span></div>
+    </div>
+    <div class="role-group ">
+      <div class="role-name">Inner Corner — W</div>
+      <div class="role-tiles"><div class="tile"><img src="CloverVillage/road_4.png" alt="road_4.png" title="road_4.png"><div class="tname">road_4.png</div></div></div>
+    </div></div></div>
+
+<h2>Role coverage — VoidDesert (26 tiles)</h2>
+<div class="cols"><div>
+    <div class="role-group ">
+      <div class="role-name">Center / Fill</div>
+      <div class="role-tiles"><div class="tile"><img src="VoidDesert/road_5.png" alt="road_5.png" title="road_5.png"><div class="tname">road_5.png</div></div></div>
+    </div>
+    <div class="role-group ">
+      <div class="role-name">Edge — North</div>
+      <div class="role-tiles"><div class="tile"><img src="VoidDesert/road_20.png" alt="road_20.png" title="road_20.png"><div class="tname">road_20.png</div></div></div>
+    </div>
+    <div class="role-group missing">
+      <div class="role-name">Edge — East</div>
+      <div class="role-tiles"><span class='none'>— not in pack —</span></div>
+    </div>
+    <div class="role-group missing">
+      <div class="role-name">Edge — South</div>
+      <div class="role-tiles"><span class='none'>— not in pack —</span></div>
+    </div>
+    <div class="role-group missing">
+      <div class="role-name">Edge — West</div>
+      <div class="role-tiles"><span class='none'>— not in pack —</span></div>
+    </div>
+    <div class="role-group ">
+      <div class="role-name">Outer Corner — NE</div>
+      <div class="role-tiles"><div class="tile"><img src="VoidDesert/road_7.png" alt="road_7.png" title="road_7.png"><div class="tname">road_7.png</div></div></div>
+    </div>
+    <div class="role-group ">
+      <div class="role-name">Outer Corner — SE</div>
+      <div class="role-tiles"><div class="tile"><img src="VoidDesert/road_1.png" alt="road_1.png" title="road_1.png"><div class="tname">road_1.png</div></div><div class="tile"><img src="VoidDesert/road_14.png" alt="road_14.png" title="road_14.png"><div class="tname">road_14.png</div></div></div>
+    </div>
+    <div class="role-group ">
+      <div class="role-name">Outer Corner — SW</div>
+      <div class="role-tiles"><div class="tile"><img src="VoidDesert/road_3.png" alt="road_3.png" title="road_3.png"><div class="tname">road_3.png</div></div><div class="tile"><img src="VoidDesert/road_16.png" alt="road_16.png" title="road_16.png"><div class="tname">road_16.png</div></div></div>
+    </div>
+    <div class="role-group ">
+      <div class="role-name">Outer Corner — NW</div>
+      <div class="role-tiles"><div class="tile"><img src="VoidDesert/road_9.png" alt="road_9.png" title="road_9.png"><div class="tname">road_9.png</div></div><div class="tile"><img src="VoidDesert/road_22.png" alt="road_22.png" title="road_22.png"><div class="tname">road_22.png</div></div></div>
+    </div>
+    <div class="role-group ">
+      <div class="role-name">Inner Corner — N</div>
+      <div class="role-tiles"><div class="tile"><img src="VoidDesert/road_2.png" alt="road_2.png" title="road_2.png"><div class="tname">road_2.png</div></div><div class="tile"><img src="VoidDesert/road_15.png" alt="road_15.png" title="road_15.png"><div class="tname">road_15.png</div></div></div>
+    </div>
+    <div class="role-group ">
+      <div class="role-name">Inner Corner — E</div>
+      <div class="role-tiles"><div class="tile"><img src="VoidDesert/road_6.png" alt="road_6.png" title="road_6.png"><div class="tname">road_6.png</div></div><div class="tile"><img src="VoidDesert/road_19.png" alt="road_19.png" title="road_19.png"><div class="tname">road_19.png</div></div></div>
+    </div>
+    <div class="role-group ">
+      <div class="role-name">Inner Corner — S</div>
+      <div class="role-tiles"><div class="tile"><img src="VoidDesert/road_8.png" alt="road_8.png" title="road_8.png"><div class="tname">road_8.png</div></div><div class="tile"><img src="VoidDesert/road_21.png" alt="road_21.png" title="road_21.png"><div class="tname">road_21.png</div></div></div>
+    </div>
+    <div class="role-group ">
+      <div class="role-name">Inner Corner — W</div>
+      <div class="role-tiles"><div class="tile"><img src="VoidDesert/road_4.png" alt="road_4.png" title="road_4.png"><div class="tname">road_4.png</div></div><div class="tile"><img src="VoidDesert/road_17.png" alt="road_17.png" title="road_17.png"><div class="tname">road_17.png</div></div></div>
+    </div></div></div>
+
+<p class="note">Source paths are untouched — this is catalog-level comparison only. Generated by <code>Asset Catalog/recover-road-kit.mjs</code>.</p>
+</body>
+</html>

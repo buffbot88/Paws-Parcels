@@ -1,0 +1,1926 @@
+{
+  "pack": "CloverVillage",
+  "category": "building + road + ground + decor + npc",
+  "familyCount": 51,
+  "buildingFamilyCount": 24,
+  "roadFamilyCount": 5,
+  "groundFamilyCount": 6,
+  "decorFamilyCount": 12,
+  "npcFamilyCount": 4,
+  "sourceAssetCount": 2519,
+  "note": "24 architectural families + 5 road families + 6 ground families + 12 decor families + 4 npc families. Families, not placeable assets.",
+  "families": [
+    {
+      "sourceFamily": "happyvalley_npc_source",
+      "canonicalFamily": "happyvalley_npc_source",
+      "displayName": "HappyValley NPC Authoring Sources",
+      "structureType": null,
+      "worldRole": "PVE_1_20",
+      "suitability": null,
+      "collision": null,
+      "recommendedUses": [],
+      "notes": "61 EPS authoring sources (body parts, profession props, popups — each sourceOf-linked to its PNG/component/prop canonical) + 6 AI masters (3 character masters + 3 popup masters). Authoring material for provenance; never runtime-eligible or placeable. Locked 2026-08-15.",
+      "status": null,
+      "catalogStatus": null,
+      "topologyStatus": null,
+      "kitStatus": null,
+      "recoveryStatus": null,
+      "runtimeReady": null,
+      "artRequired": null,
+      "artTask": null,
+      "recovery": null,
+      "assetCount": 67,
+      "composition": {
+        "complete": 0,
+        "component": 0,
+        "prop": 0
+      },
+      "completeAssets": []
+    },
+    {
+      "sourceFamily": "happyvalley_npc_animation",
+      "canonicalFamily": "happyvalley_npc_animation",
+      "displayName": "HappyValley NPC Animation Frames",
+      "structureType": null,
+      "worldRole": "PVE_1_20",
+      "suitability": null,
+      "collision": null,
+      "recommendedUses": [],
+      "notes": "630 complete-character PNG frames — 7 emotional/social animation states × 3 NPCs × 30 frames (chagrin, communication, greeting, greeting_2, idle, idle_blink, joy). Frontal complete-character renders; NOT a directional movement set (no front/back/side dirs in source) — direction: front reflects the source. greeting_2 preserved as its own ID, not guessed. Spawnable dialogue/expressive entity resources. Entire package stays REFERENCE until runtime usage proves otherwise. Locked 2026-08-15.",
+      "status": null,
+      "catalogStatus": null,
+      "topologyStatus": null,
+      "kitStatus": null,
+      "recoveryStatus": null,
+      "runtimeReady": null,
+      "artRequired": null,
+      "artTask": null,
+      "recovery": null,
+      "assetCount": 630,
+      "composition": {
+        "complete": 0,
+        "component": 0,
+        "prop": 0
+      },
+      "completeAssets": []
+    },
+    {
+      "sourceFamily": "happyvalley_npc_component",
+      "canonicalFamily": "happyvalley_npc_component",
+      "displayName": "HappyValley NPC Vector Components",
+      "structureType": null,
+      "worldRole": "PVE_1_20",
+      "suitability": null,
+      "collision": null,
+      "recommendedUses": [],
+      "notes": "Reusable character assembly parts (Body, Head, Face_01-09, Left/Right arm/hand/leg) + Animations.scml per NPC. Never individually placeable. Canonical npc_component_happyvalley_<npc>_<part>. Locked 2026-08-15.",
+      "status": null,
+      "catalogStatus": null,
+      "topologyStatus": null,
+      "kitStatus": null,
+      "recoveryStatus": null,
+      "runtimeReady": null,
+      "artRequired": null,
+      "artTask": null,
+      "recovery": null,
+      "assetCount": 54,
+      "composition": {
+        "complete": 0,
+        "component": 0,
+        "prop": 0
+      },
+      "completeAssets": []
+    },
+    {
+      "sourceFamily": "happyvalley_npc_profession_prop",
+      "canonicalFamily": "happyvalley_npc_profession_prop",
+      "displayName": "HappyValley NPC Profession Props",
+      "structureType": null,
+      "worldRole": "PVE_1_20",
+      "suitability": null,
+      "collision": null,
+      "recommendedUses": [],
+      "notes": "Profession-specific assembly props: blacksmith anvil (anvil.png shared across all 3 NPC folders — sharedVisual), sage stick. Jeweler gems and sage shield exist as EPS authoring sources in the source family (EPS-only identities until runtime art exists). These are NPC assembly props, not world-decor props unless runtime later uses them independently. Locked 2026-08-15.",
+      "status": null,
+      "catalogStatus": null,
+      "topologyStatus": null,
+      "kitStatus": null,
+      "recoveryStatus": null,
+      "runtimeReady": null,
+      "artRequired": null,
+      "artTask": null,
+      "recovery": null,
+      "assetCount": 4,
+      "composition": {
+        "complete": 0,
+        "component": 0,
+        "prop": 0
+      },
+      "completeAssets": []
+    },
+    {
+      "sourceFamily": "happyvalley_npc_dialogue_ui",
+      "canonicalFamily": "happyvalley_npc_dialogue_ui",
+      "displayName": "HappyValley NPC Dialogue UI",
+      "structureType": null,
+      "worldRole": "PVE_1_20",
+      "suitability": null,
+      "collision": null,
+      "recommendedUses": [],
+      "notes": "6 popup PNGs (popup_1 ×3, popup_2 ×3) logically deduped to ui_dialogue_bubble_small (415x376) and ui_dialogue_bubble_large (767x540). Identical sizes across all 3 NPCs — sharedVisual, not 6 separate logical assets. Source files kept as aliases. Locked 2026-08-15.",
+      "status": null,
+      "catalogStatus": null,
+      "topologyStatus": null,
+      "kitStatus": null,
+      "recoveryStatus": null,
+      "runtimeReady": null,
+      "artRequired": null,
+      "artTask": null,
+      "recovery": null,
+      "assetCount": 6,
+      "composition": {
+        "complete": 0,
+        "component": 0,
+        "prop": 0
+      },
+      "completeAssets": []
+    },
+    {
+      "sourceFamily": "voiddesert_stone_road",
+      "canonicalFamily": "voiddesert_stone_road",
+      "displayName": "Stone Road Kit (13 Topologies × 2 Variants)",
+      "structureType": null,
+      "worldRole": "PVE_1_20",
+      "suitability": null,
+      "collision": "none",
+      "recommendedUses": [],
+      "notes": "26 assets — road_1-13 = topology A, road_14-26 = variant B of the same 13-piece topology (road_14<->1 ... road_26<->13, confirmed by identical alpha silhouettes). Outer corners NW/NE/SW/SE, edges N/E/S/W, center verified from analysis matching the audit. road_10-13 = four inner-corner transitions — compass directions NOT asserted (needs-verification). topology and visual variant stay separate fields. walkable, collision none. Locked 2026-08-15.",
+      "status": null,
+      "catalogStatus": null,
+      "topologyStatus": null,
+      "kitStatus": null,
+      "recoveryStatus": null,
+      "runtimeReady": null,
+      "artRequired": null,
+      "artTask": null,
+      "recovery": null,
+      "assetCount": 26,
+      "composition": {
+        "complete": 0,
+        "component": 0,
+        "prop": 0
+      },
+      "completeAssets": []
+    },
+    {
+      "sourceFamily": "building_1",
+      "canonicalFamily": "raised_leaf_roof_hut",
+      "displayName": "Raised Leaf-Roof Hut",
+      "structureType": "residence",
+      "worldRole": "CLOVER_SAFE",
+      "suitability": "very-high",
+      "collision": "building-footprint",
+      "recommendedUses": [
+        "NPC residence",
+        "woodland residence",
+        "small specialty shop"
+      ],
+      "notes": "Stilts/raised floor and ladder distinguish it from other cottages. Complete composite already runtime-confirmed.",
+      "status": null,
+      "catalogStatus": null,
+      "topologyStatus": null,
+      "kitStatus": null,
+      "recoveryStatus": null,
+      "runtimeReady": null,
+      "artRequired": null,
+      "artTask": null,
+      "recovery": null,
+      "assetCount": 10,
+      "composition": {
+        "complete": 1,
+        "component": 9,
+        "prop": 0
+      },
+      "completeAssets": [
+        {
+          "id": "96ad48cb4fb5",
+          "filename": "building_1.png",
+          "canonicalName": "building_raised_leaf_roof_hut_complete_01",
+          "imageUrl": "https://pawsandparcels.agpstudios.org/reference/assets/maps/CloverVillage/Map/PNG/buildings/building_1/building_1.png",
+          "runtimeStatus": "runtime-used"
+        }
+      ]
+    },
+    {
+      "sourceFamily": "building_2",
+      "canonicalFamily": "thatch_market_stall",
+      "displayName": "Thatched Market Stall",
+      "structureType": "stall",
+      "worldRole": "CLOVER_SAFE",
+      "suitability": "very-high",
+      "collision": "partial-footprint",
+      "recommendedUses": [
+        "market vendor",
+        "temporary market activity",
+        "small shop"
+      ],
+      "notes": "Excellent for small vendors and temporary market activity.",
+      "status": null,
+      "catalogStatus": null,
+      "topologyStatus": null,
+      "kitStatus": null,
+      "recoveryStatus": null,
+      "runtimeReady": null,
+      "artRequired": null,
+      "artTask": null,
+      "recovery": null,
+      "assetCount": 4,
+      "composition": {
+        "complete": 1,
+        "component": 3,
+        "prop": 0
+      },
+      "completeAssets": [
+        {
+          "id": "fa0c90b2ab99",
+          "filename": "building_1.png",
+          "canonicalName": "stall_thatch_market_complete_01",
+          "imageUrl": "https://pawsandparcels.agpstudios.org/reference/assets/maps/CloverVillage/Map/PNG/buildings/building_2/building_1.png",
+          "runtimeStatus": "reference-only"
+        }
+      ]
+    },
+    {
+      "sourceFamily": "building_3",
+      "canonicalFamily": "covered_market_stall",
+      "displayName": "Covered Market Stall",
+      "structureType": "stall",
+      "worldRole": "CLOVER_SAFE",
+      "suitability": "very-high",
+      "collision": "partial-footprint",
+      "recommendedUses": [
+        "market vendor",
+        "covered stall",
+        "small shop"
+      ],
+      "notes": "Use alongside building_2 for visual variety in a small market.",
+      "status": null,
+      "catalogStatus": null,
+      "topologyStatus": null,
+      "kitStatus": null,
+      "recoveryStatus": null,
+      "runtimeReady": null,
+      "artRequired": null,
+      "artTask": null,
+      "recovery": null,
+      "assetCount": 4,
+      "composition": {
+        "complete": 1,
+        "component": 3,
+        "prop": 0
+      },
+      "completeAssets": [
+        {
+          "id": "b35d7f340461",
+          "filename": "building_1.png",
+          "canonicalName": "stall_covered_market_complete_01",
+          "imageUrl": "https://pawsandparcels.agpstudios.org/reference/assets/maps/CloverVillage/Map/PNG/buildings/building_3/building_1.png",
+          "runtimeStatus": "reference-only"
+        }
+      ]
+    },
+    {
+      "sourceFamily": "building_4",
+      "canonicalFamily": "woodland_tent",
+      "displayName": "Woodland Tent",
+      "structureType": "shelter",
+      "worldRole": "SHARED_1_20",
+      "suitability": "high",
+      "collision": "partial-footprint",
+      "recommendedUses": [
+        "travelling merchant",
+        "courier camp",
+        "PvE campsite",
+        "quest NPC",
+        "temporary event"
+      ],
+      "notes": "Only one source asset; already runtime-confirmed.",
+      "status": null,
+      "catalogStatus": null,
+      "topologyStatus": null,
+      "kitStatus": null,
+      "recoveryStatus": null,
+      "runtimeReady": null,
+      "artRequired": null,
+      "artTask": null,
+      "recovery": null,
+      "assetCount": 1,
+      "composition": {
+        "complete": 1,
+        "component": 0,
+        "prop": 0
+      },
+      "completeAssets": [
+        {
+          "id": "2d03c6b5d271",
+          "filename": "building_1.png",
+          "canonicalName": "shelter_woodland_tent_complete_01",
+          "imageUrl": "https://pawsandparcels.agpstudios.org/reference/assets/maps/CloverVillage/Map/PNG/buildings/building_4/building_1.png",
+          "runtimeStatus": "runtime-used"
+        }
+      ]
+    },
+    {
+      "sourceFamily": "building_5",
+      "canonicalFamily": "round_stone_cottage",
+      "displayName": "Round Stone Cottage",
+      "structureType": "residence",
+      "worldRole": "CLOVER_SAFE",
+      "suitability": "very-high",
+      "collision": "building-footprint",
+      "recommendedUses": [
+        "residence",
+        "generic Clover building"
+      ],
+      "notes": "Strong generic Clover building. Complete composite already runtime-confirmed.",
+      "status": null,
+      "catalogStatus": null,
+      "topologyStatus": null,
+      "kitStatus": null,
+      "recoveryStatus": null,
+      "runtimeReady": null,
+      "artRequired": null,
+      "artTask": null,
+      "recovery": null,
+      "assetCount": 6,
+      "composition": {
+        "complete": 1,
+        "component": 5,
+        "prop": 0
+      },
+      "completeAssets": [
+        {
+          "id": "ea3a42f9c7e1",
+          "filename": "building_1.png",
+          "canonicalName": "building_round_stone_cottage_complete_01",
+          "imageUrl": "https://pawsandparcels.agpstudios.org/reference/assets/maps/CloverVillage/Map/PNG/buildings/building_5/building_1.png",
+          "runtimeStatus": "runtime-used"
+        }
+      ]
+    },
+    {
+      "sourceFamily": "building_6",
+      "canonicalFamily": "timber_balcony_cottage",
+      "displayName": "Timber Balcony Cottage",
+      "structureType": "residence",
+      "worldRole": "CLOVER_SAFE",
+      "suitability": "high",
+      "collision": "building-footprint",
+      "recommendedUses": [
+        "residence",
+        "distinctive cottage"
+      ],
+      "notes": "Balcony gives it identity; avoid repeating this building excessively.",
+      "status": null,
+      "catalogStatus": null,
+      "topologyStatus": null,
+      "kitStatus": null,
+      "recoveryStatus": null,
+      "runtimeReady": null,
+      "artRequired": null,
+      "artTask": null,
+      "recovery": null,
+      "assetCount": 7,
+      "composition": {
+        "complete": 1,
+        "component": 6,
+        "prop": 0
+      },
+      "completeAssets": [
+        {
+          "id": "37c0c9d9b798",
+          "filename": "building_1.png",
+          "canonicalName": "building_timber_balcony_cottage_complete_01",
+          "imageUrl": "https://pawsandparcels.agpstudios.org/reference/assets/maps/CloverVillage/Map/PNG/buildings/building_6/building_1.png",
+          "runtimeStatus": "reference-only"
+        }
+      ]
+    },
+    {
+      "sourceFamily": "building_7",
+      "canonicalFamily": "green_gable_cottage",
+      "displayName": "Green Gable Cottage",
+      "structureType": "residence",
+      "worldRole": "CLOVER_SAFE",
+      "suitability": "very-high",
+      "collision": "building-footprint",
+      "recommendedUses": [
+        "residence",
+        "core Clover architecture"
+      ],
+      "notes": "Excellent core Clover architecture.",
+      "status": null,
+      "catalogStatus": null,
+      "topologyStatus": null,
+      "kitStatus": null,
+      "recoveryStatus": null,
+      "runtimeReady": null,
+      "artRequired": null,
+      "artTask": null,
+      "recovery": null,
+      "assetCount": 6,
+      "composition": {
+        "complete": 1,
+        "component": 5,
+        "prop": 0
+      },
+      "completeAssets": [
+        {
+          "id": "944beebd0042",
+          "filename": "building_1.png",
+          "canonicalName": "building_green_gable_cottage_complete_01",
+          "imageUrl": "https://pawsandparcels.agpstudios.org/reference/assets/maps/CloverVillage/Map/PNG/buildings/building_7/building_1.png",
+          "runtimeStatus": "reference-only"
+        }
+      ]
+    },
+    {
+      "sourceFamily": "building_8",
+      "canonicalFamily": "ivy_gable_structure",
+      "displayName": "Ivy-Covered Gable Structure",
+      "structureType": "building",
+      "worldRole": "SHARED_1_20",
+      "suitability": "high",
+      "collision": "building-footprint",
+      "recommendedUses": [
+        "old residence",
+        "abandoned building",
+        "forest structure",
+        "special quest location",
+        "edge-of-village building"
+      ],
+      "notes": "Vegetation gives an overgrown/older appearance than normal cottages.",
+      "status": null,
+      "catalogStatus": null,
+      "topologyStatus": null,
+      "kitStatus": null,
+      "recoveryStatus": null,
+      "runtimeReady": null,
+      "artRequired": null,
+      "artTask": null,
+      "recovery": null,
+      "assetCount": 7,
+      "composition": {
+        "complete": 1,
+        "component": 6,
+        "prop": 0
+      },
+      "completeAssets": [
+        {
+          "id": "f279ec6f6a49",
+          "filename": "building_1.png",
+          "canonicalName": "building_ivy_gable_structure_complete_01",
+          "imageUrl": "https://pawsandparcels.agpstudios.org/reference/assets/maps/CloverVillage/Map/PNG/buildings/building_8/building_1.png",
+          "runtimeStatus": "reference-only"
+        }
+      ]
+    },
+    {
+      "sourceFamily": "building_9",
+      "canonicalFamily": "green_roof_cottage",
+      "displayName": "Green-Roof Cottage",
+      "structureType": "residence",
+      "worldRole": "CLOVER_SAFE",
+      "suitability": "very-high",
+      "collision": "building-footprint",
+      "recommendedUses": [
+        "residence",
+        "small service building"
+      ],
+      "notes": "Strong general-purpose residence or small service building.",
+      "status": null,
+      "catalogStatus": null,
+      "topologyStatus": null,
+      "kitStatus": null,
+      "recoveryStatus": null,
+      "runtimeReady": null,
+      "artRequired": null,
+      "artTask": null,
+      "recovery": null,
+      "assetCount": 6,
+      "composition": {
+        "complete": 1,
+        "component": 5,
+        "prop": 0
+      },
+      "completeAssets": [
+        {
+          "id": "ec75801014a4",
+          "filename": "building_1.png",
+          "canonicalName": "building_green_roof_cottage_complete_01",
+          "imageUrl": "https://pawsandparcels.agpstudios.org/reference/assets/maps/CloverVillage/Map/PNG/buildings/building_9/building_1.png",
+          "runtimeStatus": "reference-only"
+        }
+      ]
+    },
+    {
+      "sourceFamily": "building_10",
+      "canonicalFamily": "timber_open_bay",
+      "displayName": "Timber Open-Bay Structure",
+      "structureType": "utility",
+      "worldRole": "CLOVER_SAFE",
+      "suitability": "high",
+      "collision": "building-footprint",
+      "recommendedUses": [
+        "courier loading bay",
+        "parcel sorting annex",
+        "cart shelter",
+        "crafting area",
+        "workshop",
+        "service building"
+      ],
+      "notes": "Candidate for courier infrastructure. Complete composite already runtime-confirmed.",
+      "status": null,
+      "catalogStatus": null,
+      "topologyStatus": null,
+      "kitStatus": null,
+      "recoveryStatus": null,
+      "runtimeReady": null,
+      "artRequired": null,
+      "artTask": null,
+      "recovery": null,
+      "assetCount": 9,
+      "composition": {
+        "complete": 1,
+        "component": 8,
+        "prop": 0
+      },
+      "completeAssets": [
+        {
+          "id": "3384a32957a6",
+          "filename": "building_1.png",
+          "canonicalName": "structure_timber_open_bay_complete_01",
+          "imageUrl": "https://pawsandparcels.agpstudios.org/reference/assets/maps/CloverVillage/Map/PNG/buildings/building_10/building_1.png",
+          "runtimeStatus": "runtime-used"
+        }
+      ]
+    },
+    {
+      "sourceFamily": "building_11",
+      "canonicalFamily": "leaf_hearth_shelter",
+      "displayName": "Leaf Hearth Shelter",
+      "structureType": "shelter",
+      "worldRole": "SHARED_1_20",
+      "suitability": "very-high",
+      "collision": "partial-footprint",
+      "recommendedUses": [
+        "outdoor cooking",
+        "café exterior",
+        "communal hearth",
+        "garden shelter",
+        "picnic area",
+        "forest rest stop",
+        "camp"
+      ],
+      "notes": "Open woodland shelter, not a residence.",
+      "status": null,
+      "catalogStatus": null,
+      "topologyStatus": null,
+      "kitStatus": null,
+      "recoveryStatus": null,
+      "runtimeReady": null,
+      "artRequired": null,
+      "artTask": null,
+      "recovery": null,
+      "assetCount": 5,
+      "composition": {
+        "complete": 1,
+        "component": 4,
+        "prop": 0
+      },
+      "completeAssets": [
+        {
+          "id": "24028796ae9e",
+          "filename": "building_1.png",
+          "canonicalName": "structure_leaf_hearth_shelter_complete_01",
+          "imageUrl": "https://pawsandparcels.agpstudios.org/reference/assets/maps/CloverVillage/Map/PNG/buildings/building_11/building_1.png",
+          "runtimeStatus": "reference-only"
+        }
+      ]
+    },
+    {
+      "sourceFamily": "building_12",
+      "canonicalFamily": "stone_bell_tower",
+      "displayName": "Stone Bell Tower",
+      "structureType": "landmark",
+      "worldRole": "CLOVER_SAFE",
+      "suitability": "high",
+      "collision": "building-footprint",
+      "recommendedUses": [
+        "village landmark",
+        "courier dispatch tower",
+        "signal tower",
+        "village bell",
+        "navigation landmark",
+        "event announcement location"
+      ],
+      "notes": "Major landmark; gives Clover Village a readable skyline. Complete composite already runtime-confirmed.",
+      "status": null,
+      "catalogStatus": null,
+      "topologyStatus": null,
+      "kitStatus": null,
+      "recoveryStatus": null,
+      "runtimeReady": null,
+      "artRequired": null,
+      "artTask": null,
+      "recovery": null,
+      "assetCount": 8,
+      "composition": {
+        "complete": 1,
+        "component": 7,
+        "prop": 0
+      },
+      "completeAssets": [
+        {
+          "id": "be4c20dfa620",
+          "filename": "building_1.png",
+          "canonicalName": "building_stone_bell_tower_complete_01",
+          "imageUrl": "https://pawsandparcels.agpstudios.org/reference/assets/maps/CloverVillage/Map/PNG/buildings/building_12/building_1.png",
+          "runtimeStatus": "runtime-used"
+        }
+      ]
+    },
+    {
+      "sourceFamily": "building_13",
+      "canonicalFamily": "bone_moss_hut",
+      "displayName": "Bone-Trimmed Moss Hut",
+      "structureType": "special",
+      "worldRole": "PVE_1_20",
+      "suitability": "low",
+      "collision": "building-footprint",
+      "recommendedUses": [
+        "wilderness NPC",
+        "witch/healer",
+        "monster researcher",
+        "strange hermit",
+        "PvE quest hub"
+      ],
+      "notes": "Do not use as ordinary Clover housing. Skull/bone and crossed-pole decorative pieces are cataloged as props despite residing in the building source directory.",
+      "status": null,
+      "catalogStatus": null,
+      "topologyStatus": null,
+      "kitStatus": null,
+      "recoveryStatus": null,
+      "runtimeReady": null,
+      "artRequired": null,
+      "artTask": null,
+      "recovery": null,
+      "assetCount": 8,
+      "composition": {
+        "complete": 1,
+        "component": 0,
+        "prop": 7
+      },
+      "completeAssets": [
+        {
+          "id": "1c55f3f67da9",
+          "filename": "building_1.png",
+          "canonicalName": "building_bone_moss_hut_complete_01",
+          "imageUrl": "https://pawsandparcels.agpstudios.org/reference/assets/maps/CloverVillage/Map/PNG/buildings/building_13/building_1.png",
+          "runtimeStatus": "reference-only"
+        }
+      ]
+    },
+    {
+      "sourceFamily": "building_14",
+      "canonicalFamily": "green_thatch_cottage",
+      "displayName": "Green Thatch Cottage",
+      "structureType": "residence",
+      "worldRole": "CLOVER_SAFE",
+      "suitability": "very-high",
+      "collision": "building-footprint",
+      "recommendedUses": [
+        "residence",
+        "small shop",
+        "gardener home",
+        "quest NPC home",
+        "small service building"
+      ],
+      "notes": "Steep golden-thatch A-frame cottage with green façade and heavy timber framing. Complete composite already runtime-confirmed.",
+      "status": null,
+      "catalogStatus": null,
+      "topologyStatus": null,
+      "kitStatus": null,
+      "recoveryStatus": null,
+      "runtimeReady": null,
+      "artRequired": null,
+      "artTask": null,
+      "recovery": null,
+      "assetCount": 7,
+      "composition": {
+        "complete": 1,
+        "component": 6,
+        "prop": 0
+      },
+      "completeAssets": [
+        {
+          "id": "a9ec49910537",
+          "filename": "building_1.png",
+          "canonicalName": "building_green_thatch_cottage_complete_01",
+          "imageUrl": "https://pawsandparcels.agpstudios.org/reference/assets/maps/CloverVillage/Map/PNG/buildings/building_14/building_1.png",
+          "runtimeStatus": "runtime-used"
+        }
+      ]
+    },
+    {
+      "sourceFamily": "building_15",
+      "canonicalFamily": "rose_double_cottage",
+      "displayName": "Rose Double Cottage",
+      "structureType": "commercial",
+      "worldRole": "CLOVER_SAFE",
+      "suitability": "very-high",
+      "collision": "building-footprint",
+      "recommendedUses": [
+        "florist",
+        "boutique",
+        "café",
+        "guild/service building",
+        "special residence",
+        "small inn"
+      ],
+      "notes": "Larger symmetrical cream structure with twin rose-colored curved roofs and central entrance. Do not hardcode as Maple's Florist yet.",
+      "status": null,
+      "catalogStatus": null,
+      "topologyStatus": null,
+      "kitStatus": null,
+      "recoveryStatus": null,
+      "runtimeReady": null,
+      "artRequired": null,
+      "artTask": null,
+      "recovery": null,
+      "assetCount": 6,
+      "composition": {
+        "complete": 1,
+        "component": 5,
+        "prop": 0
+      },
+      "completeAssets": [
+        {
+          "id": "5e86b3e412e3",
+          "filename": "building_1.png",
+          "canonicalName": "building_rose_double_cottage_complete_01",
+          "imageUrl": "https://pawsandparcels.agpstudios.org/reference/assets/maps/CloverVillage/Map/PNG/buildings/building_15/building_1.png",
+          "runtimeStatus": "reference-only"
+        }
+      ]
+    },
+    {
+      "sourceFamily": "building_16",
+      "canonicalFamily": "thatch_sign_hut",
+      "displayName": "Thatched Sign Hut",
+      "structureType": "commercial",
+      "worldRole": "CLOVER_SAFE",
+      "suitability": "very-high",
+      "collision": "building-footprint",
+      "recommendedUses": [
+        "shop",
+        "café",
+        "courier service",
+        "merchant",
+        "apothecary",
+        "small guild office"
+      ],
+      "notes": "Small wooden building with oversized rounded thatched roof, central round-doored entrance/windows, and hanging exterior sign. Strong small-village business asset.",
+      "status": null,
+      "catalogStatus": null,
+      "topologyStatus": null,
+      "kitStatus": null,
+      "recoveryStatus": null,
+      "runtimeReady": null,
+      "artRequired": null,
+      "artTask": null,
+      "recovery": null,
+      "assetCount": 8,
+      "composition": {
+        "complete": 1,
+        "component": 7,
+        "prop": 0
+      },
+      "completeAssets": [
+        {
+          "id": "7af5a8497459",
+          "filename": "building_1.png",
+          "canonicalName": "building_thatch_sign_hut_complete_01",
+          "imageUrl": "https://pawsandparcels.agpstudios.org/reference/assets/maps/CloverVillage/Map/PNG/buildings/building_16/building_1.png",
+          "runtimeStatus": "reference-only"
+        }
+      ]
+    },
+    {
+      "sourceFamily": "building_17",
+      "canonicalFamily": "timber_two_story_shop",
+      "displayName": "Two-Story Timber Shop",
+      "structureType": "commercial",
+      "worldRole": "CLOVER_SAFE",
+      "suitability": "very-high",
+      "collision": "building-footprint",
+      "recommendedUses": [
+        "general store",
+        "inn",
+        "major shop",
+        "courier administration",
+        "guild building",
+        "larger café"
+      ],
+      "notes": "Major building; gives Clover Village architectural hierarchy.",
+      "status": null,
+      "catalogStatus": null,
+      "topologyStatus": null,
+      "kitStatus": null,
+      "recoveryStatus": null,
+      "runtimeReady": null,
+      "artRequired": null,
+      "artTask": null,
+      "recovery": null,
+      "assetCount": 11,
+      "composition": {
+        "complete": 1,
+        "component": 10,
+        "prop": 0
+      },
+      "completeAssets": [
+        {
+          "id": "28eca34aa52b",
+          "filename": "building_1.png",
+          "canonicalName": "building_timber_two_story_shop_complete_01",
+          "imageUrl": "https://pawsandparcels.agpstudios.org/reference/assets/maps/CloverVillage/Map/PNG/buildings/building_17/building_1.png",
+          "runtimeStatus": "reference-only"
+        }
+      ]
+    },
+    {
+      "sourceFamily": "building_18",
+      "canonicalFamily": "round_furnace_structure",
+      "displayName": "Round Furnace Structure",
+      "structureType": "utility",
+      "worldRole": "SHARED_1_20",
+      "suitability": "medium",
+      "collision": "building-footprint",
+      "recommendedUses": [
+        "kiln",
+        "forge",
+        "furnace",
+        "magical processor",
+        "crafting structure",
+        "industrial utility"
+      ],
+      "notes": "Rounded gray metal/stone vessel-like structure with large front wooden hatch/door and open circular top. Do not name it 'forge' until gameplay determines its role.",
+      "status": null,
+      "catalogStatus": null,
+      "topologyStatus": null,
+      "kitStatus": null,
+      "recoveryStatus": null,
+      "runtimeReady": null,
+      "artRequired": null,
+      "artTask": null,
+      "recovery": null,
+      "assetCount": 5,
+      "composition": {
+        "complete": 1,
+        "component": 4,
+        "prop": 0
+      },
+      "completeAssets": [
+        {
+          "id": "c544852b5ac4",
+          "filename": "building_1.png",
+          "canonicalName": "structure_round_furnace_complete_01",
+          "imageUrl": "https://pawsandparcels.agpstudios.org/reference/assets/maps/CloverVillage/Map/PNG/buildings/building_18/building_1.png",
+          "runtimeStatus": "reference-only"
+        }
+      ]
+    },
+    {
+      "sourceFamily": "clover_npc_animation",
+      "canonicalFamily": "clover_npc_animation",
+      "displayName": "NPC Animations",
+      "structureType": null,
+      "worldRole": null,
+      "suitability": null,
+      "collision": null,
+      "recommendedUses": [],
+      "notes": "Complete-character animation frames. 5 states: greeting (back/front/side x30), idle (back/front/side x30), walk (back/front/side x30), communication (front/side x30 — NO back direction in source), idle_blink (front/side x30). 3 NPCs x 3 directions x 30 frames per state. Derived deterministically from paths. Locked 2026-08-15.",
+      "status": null,
+      "catalogStatus": null,
+      "topologyStatus": null,
+      "kitStatus": null,
+      "recoveryStatus": null,
+      "runtimeReady": null,
+      "artRequired": null,
+      "artTask": null,
+      "recovery": null,
+      "assetCount": 1170,
+      "composition": {
+        "complete": 0,
+        "component": 0,
+        "prop": 0
+      },
+      "completeAssets": [],
+      "npcFamilyType": "animation",
+      "assetRoles": {
+        "animation-frame": 1170
+      }
+    },
+    {
+      "sourceFamily": "clover_npc_component",
+      "canonicalFamily": "clover_npc_component",
+      "displayName": "NPC Components",
+      "structureType": null,
+      "worldRole": null,
+      "suitability": null,
+      "collision": null,
+      "recommendedUses": [],
+      "notes": "Reusable character assembly components (body/head/face/arms/hands/legs + scml) per NPC and direction. Never individually placeable in the game editor. Locked 2026-08-15.",
+      "status": null,
+      "catalogStatus": null,
+      "topologyStatus": null,
+      "kitStatus": null,
+      "recoveryStatus": null,
+      "runtimeReady": null,
+      "artRequired": null,
+      "artTask": null,
+      "recovery": null,
+      "assetCount": 106,
+      "composition": {
+        "complete": 0,
+        "component": 0,
+        "prop": 0
+      },
+      "completeAssets": [],
+      "npcFamilyType": "component",
+      "assetRoles": {
+        "character-component": 106
+      }
+    },
+    {
+      "sourceFamily": "clover_npc_dialogue_ui",
+      "canonicalFamily": "clover_npc_dialogue_ui",
+      "displayName": "Dialogue UI",
+      "structureType": null,
+      "worldRole": null,
+      "suitability": null,
+      "collision": null,
+      "recommendedUses": [],
+      "notes": "Shared cream speech-bubble popup assets. popup_2.png is pixel-identical across all three NPCs; popup_1 likewise. Logically deduplicated into ui_dialogue_bubble_small / _large — physical source files untouched; all source paths recorded as aliases. Locked 2026-08-15.",
+      "status": null,
+      "catalogStatus": null,
+      "topologyStatus": null,
+      "kitStatus": null,
+      "recoveryStatus": null,
+      "runtimeReady": null,
+      "artRequired": null,
+      "artTask": null,
+      "recovery": null,
+      "assetCount": 6,
+      "composition": {
+        "complete": 0,
+        "component": 0,
+        "prop": 0
+      },
+      "completeAssets": [],
+      "npcFamilyType": "ui",
+      "assetRoles": {
+        "dialogue-ui": 6
+      }
+    },
+    {
+      "sourceFamily": "clover_npc_source",
+      "canonicalFamily": "clover_npc_source",
+      "displayName": "Source / Authoring",
+      "structureType": null,
+      "worldRole": null,
+      "suitability": null,
+      "collision": null,
+      "recommendedUses": [],
+      "notes": "AI/EPS/TXT authoring material — Illustrator masters, vector component sources, popup sources, license.txt and readme.txt per NPC. Inventoried for provenance; NOT runtime-eligible and not placeable. Locked 2026-08-15.",
+      "status": null,
+      "catalogStatus": null,
+      "topologyStatus": null,
+      "kitStatus": null,
+      "recoveryStatus": null,
+      "runtimeReady": null,
+      "artRequired": null,
+      "artTask": null,
+      "recovery": null,
+      "assetCount": 96,
+      "composition": {
+        "complete": 0,
+        "component": 0,
+        "prop": 0
+      },
+      "completeAssets": [],
+      "npcFamilyType": "source",
+      "assetRoles": {
+        "authoring-source": 90,
+        "documentation": 6
+      }
+    },
+    {
+      "sourceFamily": "clover_greenery",
+      "canonicalFamily": "clover_greenery",
+      "displayName": "Clover Greenery",
+      "structureType": null,
+      "worldRole": "SHARED_1_20",
+      "suitability": null,
+      "collision": "none",
+      "recommendedUses": [],
+      "notes": "Five distinct plant silhouettes — NOT interchangeable. Visual identity and collision are separate concerns: no collision on decorative plants. Locked 2026-08-15.",
+      "status": null,
+      "catalogStatus": null,
+      "topologyStatus": null,
+      "kitStatus": null,
+      "recoveryStatus": null,
+      "runtimeReady": null,
+      "artRequired": null,
+      "artTask": null,
+      "recovery": null,
+      "assetCount": 5,
+      "composition": {
+        "complete": 0,
+        "component": 0,
+        "prop": 0
+      },
+      "completeAssets": [],
+      "decorRole": "flowering-plant",
+      "placementRole": null,
+      "depthMode": "object"
+    },
+    {
+      "sourceFamily": "clover_palm",
+      "canonicalFamily": "clover_palm",
+      "displayName": "Clover Palms",
+      "structureType": null,
+      "worldRole": "SPECIAL_USE",
+      "suitability": null,
+      "collision": "trunk-footprint",
+      "recommendedUses": [],
+      "notes": "Both palms are SPECIAL_USE — sourcePack and worldRole remain separate. Not default Clover vegetation. Locked 2026-08-15.",
+      "status": null,
+      "catalogStatus": null,
+      "topologyStatus": null,
+      "kitStatus": null,
+      "recoveryStatus": null,
+      "runtimeReady": null,
+      "artRequired": null,
+      "artTask": null,
+      "recovery": null,
+      "assetCount": 2,
+      "composition": {
+        "complete": 0,
+        "component": 0,
+        "prop": 0
+      },
+      "completeAssets": [],
+      "decorRole": "tree",
+      "placementRole": null,
+      "depthMode": "tall-object"
+    },
+    {
+      "sourceFamily": "clover_stone",
+      "canonicalFamily": "clover_stone",
+      "displayName": "Clover Stones",
+      "structureType": null,
+      "worldRole": "SHARED_1_20",
+      "suitability": null,
+      "collision": "small-footprint",
+      "recommendedUses": [],
+      "notes": "One coherent rock family, seven shape variants encoded as A-G (no topology meaning). Collision is a recommended profile — map-controlled, not hardcoded. Locked 2026-08-15.",
+      "status": null,
+      "catalogStatus": null,
+      "topologyStatus": null,
+      "kitStatus": null,
+      "recoveryStatus": null,
+      "runtimeReady": null,
+      "artRequired": null,
+      "artTask": null,
+      "recovery": null,
+      "assetCount": 7,
+      "composition": {
+        "complete": 0,
+        "component": 0,
+        "prop": 0
+      },
+      "completeAssets": [],
+      "decorRole": "stone",
+      "placementRole": null,
+      "depthMode": "object"
+    },
+    {
+      "sourceFamily": "happyvalley_banner",
+      "canonicalFamily": "happyvalley_banner",
+      "displayName": "HappyValley Banners & Flag",
+      "structureType": null,
+      "worldRole": "SHARED_1_20",
+      "suitability": null,
+      "collision": "small-footprint",
+      "recommendedUses": [
+        "castle banners",
+        "camp markers",
+        "festival decorations",
+        "Happy Valley landmarks"
+      ],
+      "notes": "Blue banner (160x240), red banner (160x240), and flag (100x160). variant blue | red | default. Locked 2026-08-15.",
+      "status": null,
+      "catalogStatus": null,
+      "topologyStatus": null,
+      "kitStatus": null,
+      "recoveryStatus": null,
+      "runtimeReady": null,
+      "artRequired": null,
+      "artTask": null,
+      "recovery": null,
+      "assetCount": 6,
+      "composition": {
+        "complete": 0,
+        "component": 0,
+        "prop": 0
+      },
+      "completeAssets": [],
+      "decorRole": "banner",
+      "placementRole": null,
+      "depthMode": null
+    },
+    {
+      "sourceFamily": "happyvalley_bush",
+      "canonicalFamily": "happyvalley_bush",
+      "displayName": "HappyValley Bushes",
+      "structureType": null,
+      "worldRole": "SHARED_1_20",
+      "suitability": null,
+      "collision": "small-footprint",
+      "recommendedUses": [
+        "ground cover",
+        "garden edges",
+        "pathside planting",
+        "Happy Valley greenery"
+      ],
+      "notes": "Three standalone rounded bush sizes (small/medium/large). Placement mode manual; collision is a recommended profile, map-controlled. Locked 2026-08-15.",
+      "status": null,
+      "catalogStatus": null,
+      "topologyStatus": null,
+      "kitStatus": null,
+      "recoveryStatus": null,
+      "runtimeReady": null,
+      "artRequired": null,
+      "artTask": null,
+      "recovery": null,
+      "assetCount": 6,
+      "composition": {
+        "complete": 0,
+        "component": 0,
+        "prop": 0
+      },
+      "completeAssets": [],
+      "decorRole": "vegetation",
+      "placementRole": null,
+      "depthMode": null
+    },
+    {
+      "sourceFamily": "happyvalley_rock",
+      "canonicalFamily": "happyvalley_rock",
+      "displayName": "HappyValley Rocks",
+      "structureType": null,
+      "worldRole": "SHARED_1_20",
+      "suitability": null,
+      "collision": "small-footprint",
+      "recommendedUses": [
+        "ground scatter",
+        "terrain dressing",
+        "path edges",
+        "camp perimeter"
+      ],
+      "notes": "Five stone variants (01-05) — shape as variant, no invented directional semantics. Collision is a recommended profile; tiny variants may be collision-free at map level. Locked 2026-08-15.",
+      "status": null,
+      "catalogStatus": null,
+      "topologyStatus": null,
+      "kitStatus": null,
+      "recoveryStatus": null,
+      "runtimeReady": null,
+      "artRequired": null,
+      "artTask": null,
+      "recovery": null,
+      "assetCount": 10,
+      "composition": {
+        "complete": 0,
+        "component": 0,
+        "prop": 0
+      },
+      "completeAssets": [],
+      "decorRole": "stone",
+      "placementRole": null,
+      "depthMode": null
+    },
+    {
+      "sourceFamily": "village_container",
+      "canonicalFamily": "village_container",
+      "displayName": "Village Containers",
+      "structureType": null,
+      "worldRole": "SHARED_1_20",
+      "suitability": null,
+      "collision": "footprint",
+      "recommendedUses": [],
+      "notes": "Bowls, basins, trough, vessel, barrel, bin — everyday containers that make the settlement look lived-in. Locked 2026-08-15.",
+      "status": null,
+      "catalogStatus": null,
+      "topologyStatus": null,
+      "kitStatus": null,
+      "recoveryStatus": null,
+      "runtimeReady": null,
+      "artRequired": null,
+      "artTask": null,
+      "recovery": null,
+      "assetCount": 7,
+      "composition": {
+        "complete": 0,
+        "component": 0,
+        "prop": 0
+      },
+      "completeAssets": [],
+      "decorRole": "trough",
+      "placementRole": null,
+      "depthMode": "object"
+    },
+    {
+      "sourceFamily": "village_landmark",
+      "canonicalFamily": "village_landmark",
+      "displayName": "Village Landmarks",
+      "structureType": null,
+      "worldRole": "SHARED_1_20",
+      "suitability": null,
+      "collision": "small-footprint",
+      "recommendedUses": [],
+      "notes": "Torch (light source), fire ring, carved stone idol, stone spring. Locked 2026-08-15.",
+      "status": null,
+      "catalogStatus": null,
+      "topologyStatus": null,
+      "kitStatus": null,
+      "recoveryStatus": null,
+      "runtimeReady": null,
+      "artRequired": null,
+      "artTask": null,
+      "recovery": null,
+      "assetCount": 4,
+      "composition": {
+        "complete": 0,
+        "component": 0,
+        "prop": 0
+      },
+      "completeAssets": [],
+      "decorRole": "light-source",
+      "placementRole": null,
+      "depthMode": "tall-object"
+    },
+    {
+      "sourceFamily": "village_market",
+      "canonicalFamily": "village_market",
+      "displayName": "Village Market",
+      "structureType": null,
+      "worldRole": "CLOVER_SAFE",
+      "suitability": null,
+      "collision": "footprint",
+      "recommendedUses": [],
+      "notes": "Produce display stand. Locked 2026-08-15.",
+      "status": null,
+      "catalogStatus": null,
+      "topologyStatus": null,
+      "kitStatus": null,
+      "recoveryStatus": null,
+      "runtimeReady": null,
+      "artRequired": null,
+      "artTask": null,
+      "recovery": null,
+      "assetCount": 1,
+      "composition": {
+        "complete": 0,
+        "component": 0,
+        "prop": 0
+      },
+      "completeAssets": [],
+      "decorRole": "produce-display",
+      "placementRole": null,
+      "depthMode": "object"
+    },
+    {
+      "sourceFamily": "village_signage",
+      "canonicalFamily": "village_signage",
+      "displayName": "Village Signage",
+      "structureType": null,
+      "worldRole": "SHARED_1_20",
+      "suitability": null,
+      "collision": "footprint",
+      "recommendedUses": [],
+      "notes": "Mossy sign + notice board. Locked 2026-08-15.",
+      "status": null,
+      "catalogStatus": null,
+      "topologyStatus": null,
+      "kitStatus": null,
+      "recoveryStatus": null,
+      "runtimeReady": null,
+      "artRequired": null,
+      "artTask": null,
+      "recovery": null,
+      "assetCount": 2,
+      "composition": {
+        "complete": 0,
+        "component": 0,
+        "prop": 0
+      },
+      "completeAssets": [],
+      "decorRole": "sign",
+      "placementRole": null,
+      "depthMode": "tall-object"
+    },
+    {
+      "sourceFamily": "village_woodwork",
+      "canonicalFamily": "village_woodwork",
+      "displayName": "Village Woodwork",
+      "structureType": null,
+      "worldRole": "SHARED_1_20",
+      "suitability": null,
+      "collision": "none",
+      "recommendedUses": [],
+      "notes": "Stump, curved log, straight beam, handcart. Locked 2026-08-15.",
+      "status": null,
+      "catalogStatus": null,
+      "topologyStatus": null,
+      "kitStatus": null,
+      "recoveryStatus": null,
+      "runtimeReady": null,
+      "artRequired": null,
+      "artTask": null,
+      "recovery": null,
+      "assetCount": 4,
+      "composition": {
+        "complete": 0,
+        "component": 0,
+        "prop": 0
+      },
+      "completeAssets": [],
+      "decorRole": "timber",
+      "placementRole": null,
+      "depthMode": "object"
+    },
+    {
+      "sourceFamily": "voiddesert_decor",
+      "canonicalFamily": "voiddesert_decor",
+      "displayName": "Desert Decor Props",
+      "structureType": null,
+      "worldRole": "PVE_1_20",
+      "suitability": null,
+      "collision": "none",
+      "recommendedUses": [],
+      "notes": "8 visually distinct standalone props — pyramid (landmark), tent (camp), signpost (sign), log (timber), boat, horned skull (bone), campfire (fire), covered wagon (vehicle). Semantic decorRole per object; identities established directly from the rendered sprites. Locked 2026-08-15.",
+      "status": null,
+      "catalogStatus": null,
+      "topologyStatus": null,
+      "kitStatus": null,
+      "recoveryStatus": null,
+      "runtimeReady": null,
+      "artRequired": null,
+      "artTask": null,
+      "recovery": null,
+      "assetCount": 8,
+      "composition": {
+        "complete": 0,
+        "component": 0,
+        "prop": 0
+      },
+      "completeAssets": [],
+      "decorRole": "landmark",
+      "placementRole": null,
+      "depthMode": null
+    },
+    {
+      "sourceFamily": "clover_grass_base",
+      "canonicalFamily": "clover_grass_base",
+      "displayName": "Clover Grass (Base)",
+      "structureType": null,
+      "worldRole": "CLOVER_SAFE",
+      "suitability": null,
+      "collision": "none",
+      "recommendedUses": [],
+      "notes": "Seamless bright-green woodland grass texture with darker organic soil/vegetation markings, scattered dots, stones and irregular natural details. Primary underlying terrain for Clover Village — currently used as one uninterrupted repeating field; the other 25 pieces exist to break that up (terrain silhouette system). Locked 2026-08-15.",
+      "status": null,
+      "catalogStatus": null,
+      "topologyStatus": null,
+      "kitStatus": null,
+      "recoveryStatus": null,
+      "runtimeReady": null,
+      "artRequired": null,
+      "artTask": null,
+      "recovery": null,
+      "assetCount": 1,
+      "composition": {
+        "complete": 0,
+        "component": 0,
+        "prop": 0
+      },
+      "completeAssets": [],
+      "terrainRole": "base-texture",
+      "tileMode": "repeat",
+      "topology": "verified",
+      "walkable": true
+    },
+    {
+      "sourceFamily": "clover_grass_corner",
+      "canonicalFamily": "clover_grass_corner",
+      "displayName": "Clover Grass Corner / Transition Kit",
+      "structureType": null,
+      "worldRole": "CLOVER_SAFE",
+      "suitability": null,
+      "collision": "none",
+      "recommendedUses": [],
+      "notes": "16 organic corner/bend/transition pieces. Composition (alpha-verified): 4 tiny corner accents (land_11/13/16/18), 4 organic edge transitions (land_12/14/15/17), 4 organic L-corners (land_19-22), 4 hard 90-degree corners (land_23-26). land_11-22 = natural landscape boundaries; land_23-26 = structured spaces (plazas, building plots, gardens, courtyards, clearings). Directions derived from alpha silhouette + quadrant analysis (no guessing).",
+      "status": null,
+      "catalogStatus": null,
+      "topologyStatus": null,
+      "kitStatus": null,
+      "recoveryStatus": null,
+      "runtimeReady": null,
+      "artRequired": null,
+      "artTask": null,
+      "recovery": null,
+      "assetCount": 16,
+      "composition": {
+        "complete": 0,
+        "component": 0,
+        "prop": 0
+      },
+      "completeAssets": [],
+      "terrainRole": "outer-corner",
+      "tileMode": "manual",
+      "topology": "verified",
+      "walkable": true
+    },
+    {
+      "sourceFamily": "clover_grass_edge",
+      "canonicalFamily": "clover_grass_edge",
+      "displayName": "Clover Grass Edge Kit",
+      "structureType": null,
+      "worldRole": "CLOVER_SAFE",
+      "suitability": null,
+      "collision": "none",
+      "recommendedUses": [],
+      "notes": "8 straight terrain-boundary pieces: 4 cardinal directions x 2 visual variants (land_3-6 = a: S/N/W/E; land_7-10 = b: S/N/W/E). NOT duplicates — organic contour variants (verified by alpha analysis: single solid edge band each). Preserve both variants so the map generator can alternate A/B deterministically for organic borders. Directions derived from alpha silhouette (no guessing).",
+      "status": null,
+      "catalogStatus": null,
+      "topologyStatus": null,
+      "kitStatus": null,
+      "recoveryStatus": null,
+      "runtimeReady": null,
+      "artRequired": null,
+      "artTask": null,
+      "recovery": null,
+      "assetCount": 8,
+      "composition": {
+        "complete": 0,
+        "component": 0,
+        "prop": 0
+      },
+      "completeAssets": [],
+      "terrainRole": "edge",
+      "tileMode": "manual",
+      "topology": "verified",
+      "walkable": true
+    },
+    {
+      "sourceFamily": "clover_grass_patch",
+      "canonicalFamily": "clover_grass_patch",
+      "displayName": "Irregular Clover Grass Patch",
+      "structureType": null,
+      "worldRole": "SHARED_1_20",
+      "suitability": null,
+      "collision": "none",
+      "recommendedUses": [],
+      "notes": "Large irregular island/blob of the same green terrain surrounded by transparency. Uses: small grass islands, garden beds, terrain overlays, irregular clearings, path breakup, transition scenery. Locked 2026-08-15.",
+      "status": null,
+      "catalogStatus": null,
+      "topologyStatus": null,
+      "kitStatus": null,
+      "recoveryStatus": null,
+      "runtimeReady": null,
+      "artRequired": null,
+      "artTask": null,
+      "recovery": null,
+      "assetCount": 1,
+      "composition": {
+        "complete": 0,
+        "component": 0,
+        "prop": 0
+      },
+      "completeAssets": [],
+      "terrainRole": "patch",
+      "tileMode": "manual",
+      "topology": "verified",
+      "walkable": true
+    },
+    {
+      "sourceFamily": "happyvalley_ground_dirt_grass",
+      "canonicalFamily": "happyvalley_ground_dirt_grass",
+      "displayName": "HappyValley Dirt & Grass Terrain Kit",
+      "structureType": null,
+      "worldRole": "SHARED_1_20",
+      "suitability": null,
+      "collision": "none",
+      "recommendedUses": [
+        "Happy Valley ground",
+        "grass clearings",
+        "dirt paths",
+        "terrain transitions",
+        "village outskirts"
+      ],
+      "notes": "56-tile grass + dirt/path autotile kit (all 256x256): dirt interiors, grass interiors, straight boundaries, inside/outside corners, narrow corridors, bends, and compound transition pieces. Ground 14/23 are dirt-only base tiles and Ground 43/52 are grass-only base tiles (confirmed by audit); the remaining 52 tiles keep per-tile roles NEEDS-VERIFICATION until an alpha-silhouette topology pass (like Clover ground) assigns edge/corner/corridor compass roles — not guessed. Visually similar numbered pieces are TRUE VARIANTS, kept for breaking repetition. Locked 2026-08-15.",
+      "status": null,
+      "catalogStatus": null,
+      "topologyStatus": null,
+      "kitStatus": null,
+      "recoveryStatus": null,
+      "runtimeReady": null,
+      "artRequired": null,
+      "artTask": null,
+      "recovery": null,
+      "assetCount": 112,
+      "composition": {
+        "complete": 0,
+        "component": 0,
+        "prop": 0
+      },
+      "completeAssets": [],
+      "terrainRole": "autotile-kit",
+      "tileMode": "autotile",
+      "topology": "needs-verification",
+      "walkable": true
+    },
+    {
+      "sourceFamily": "voiddesert_ground",
+      "canonicalFamily": "voiddesert_ground",
+      "displayName": "Desert Sand & Cliff Terrain Kit",
+      "structureType": null,
+      "worldRole": "PVE_1_20",
+      "suitability": null,
+      "collision": "none",
+      "recommendedUses": [],
+      "notes": "19 assets — bg.png (seamless sand base) + land_1-18 (one elevation/cliff system, NOT 18 arbitrary pieces). land_6 = clean sand base; land_12/14/17 = cliff faces (a/b/c, walkable false); land_13 = cliff stairs; land_4/8 = stair transitions; the other 11 = sand boundary tiles (terrainRole edge, compass directions needs-verification pending a topology pass — same rule as Clover road candidates). Locked 2026-08-15.",
+      "status": null,
+      "catalogStatus": null,
+      "topologyStatus": null,
+      "kitStatus": null,
+      "recoveryStatus": null,
+      "runtimeReady": null,
+      "artRequired": null,
+      "artTask": null,
+      "recovery": null,
+      "assetCount": 19,
+      "composition": {
+        "complete": 0,
+        "component": 0,
+        "prop": 0
+      },
+      "completeAssets": [],
+      "terrainRole": "base-texture",
+      "tileMode": null,
+      "topology": "verified",
+      "walkable": null
+    },
+    {
+      "sourceFamily": "earthen_vine_path",
+      "canonicalFamily": "earthen_vine_path",
+      "displayName": "Earthen Vine Path",
+      "structureType": null,
+      "worldRole": "SHARED_1_20",
+      "suitability": "very-high",
+      "collision": "none",
+      "recommendedUses": [
+        "primary village paths",
+        "secondary paths",
+        "woodland trails",
+        "residential paths",
+        "Happy Valley approach"
+      ],
+      "notes": "Autotile set. road_5 is the known runtime center/fill (confirmed). Autotile validation pass (2026-08-14, pixel analysis of all 13 tiles) concluded the set is NOT a clean 13-role autotile: duplicate roles (edge-n: road_7/road_8; outer-se: road_1/road_13; outer-sw: road_3/road_12; outer-nw: road_9/road_10) and missing roles (edge-e, outer-corner-ne, inner-corner-n/e/s). The full 26-tile road kit exists elsewhere in the archive (VoidDesert road_1-26); CloverVillage holds only the 13-piece subset. Compass roles stay needs-verification — do not assign until the full kit is reviewed. Analysis: design/assets/road-autotile-roles.json; visual preview: /asset-catalog/autotile/ ROAD KIT RECOVERY PASS (2026-08-15): compared CV road_1-13 vs VoidDesert road_1-26 (design/assets/road-kit-recovery.json, preview /asset-catalog/autotile/recovery.html). Same structural kit and same earthen path family (color distance 32) but DIFFERENT tint — VoidDesert tiles are desert-gold with 0% green grass vs CV 3.6%; do not copy tiles in without recoloring. Of the 5 missing roles, 4 exist in VoidDesert (outer-corner-ne: road_7; inner-corner-n: road_2/15; inner-corner-e: road_6/19; inner-corner-s: road_8/21); edge-e exists in NO pack. CV duplicate candidates are all TRUE VARIANTS (46-88% pixels differ), none pixel-identical, and no CV tile is pixel-identical to any VD tile. Status: INCOMPLETE AUTOTILE KIT — candidate compass roles recorded below but topology stays needs-verification until a recolored/recovered kit is rendered. FINAL ROAD VERDICT (2026-08-15): Road Catalog Audit COMPLETE; Earthen Vine Path art kit INCOMPLETE — 5 assets required (see artTask). No further archive searching or catalog work can complete this set; edge-east exists in no pack. Existing Clover assets stay untouched. VoidDesert is structural reference only. Topology of the existing 13 tiles is verified by visual classification; the missing 5 tiles are an art asset gap, not a metadata problem.",
+      "status": "INCOMPLETE AUTOTILE KIT",
+      "catalogStatus": "COMPLETE",
+      "topologyStatus": "verified",
+      "kitStatus": "incomplete",
+      "recoveryStatus": "art-required",
+      "runtimeReady": "partial",
+      "artRequired": true,
+      "artTask": {
+        "status": "open",
+        "scope": "Create exactly 5 new 64x64 tiles in the Clover Earthen Vine Path visual family. Source art stays untouched; VoidDesert used only as topology reference, not as copy source.",
+        "deliverable": [
+          {
+            "asset": "road_earthen_vine_outer_corner_ne_01.png",
+            "role": "outer-corner-ne",
+            "visualReference": "Clover Earthen Vine family",
+            "structuralReference": [
+              "VoidDesert/road_7.png"
+            ],
+            "note": "Outer corner — path in NE quadrant, grass in SW"
+          },
+          {
+            "asset": "road_earthen_vine_inner_corner_n_01.png",
+            "role": "inner-corner-n",
+            "visualReference": "Clover Earthen Vine family",
+            "structuralReference": [
+              "VoidDesert/road_2.png",
+              "VoidDesert/road_15.png"
+            ],
+            "note": "Inner corner — notch opening north"
+          },
+          {
+            "asset": "road_earthen_vine_inner_corner_e_01.png",
+            "role": "inner-corner-e",
+            "visualReference": "Clover Earthen Vine family",
+            "structuralReference": [
+              "VoidDesert/road_6.png",
+              "VoidDesert/road_19.png"
+            ],
+            "note": "Inner corner — notch opening east"
+          },
+          {
+            "asset": "road_earthen_vine_inner_corner_s_01.png",
+            "role": "inner-corner-s",
+            "visualReference": "Clover Earthen Vine family",
+            "structuralReference": [
+              "VoidDesert/road_8.png",
+              "VoidDesert/road_21.png"
+            ],
+            "note": "Inner corner — notch opening south"
+          },
+          {
+            "asset": "road_earthen_vine_edge_e_01.png",
+            "role": "edge-e",
+            "visualReference": "Clover Earthen Vine family (opposite edge road_6 = edge-w)",
+            "structuralReference": [
+              "derive from Clover opposite edge, mirror + manual vegetation pass"
+            ],
+            "note": "Mirror edge-w for geometry, then redo vine detail so it does not look mechanically mirrored"
+          }
+        ],
+        "provenance": {
+          "type": "derived",
+          "sourcePack": "CloverVillage",
+          "sourceAssets": [
+            "road/road_6.png",
+            "road/road_7.png",
+            "road/road_1.png",
+            "road/road_3.png",
+            "road/road_9.png"
+          ],
+          "topologyReference": [
+            "VoidDesert/road_7.png",
+            "VoidDesert/road_2.png",
+            "VoidDesert/road_15.png",
+            "VoidDesert/road_6.png",
+            "VoidDesert/road_19.png",
+            "VoidDesert/road_8.png",
+            "VoidDesert/road_21.png"
+          ],
+          "createdFor": "Paws & Parcels",
+          "note": "Derived artwork created from licensed source material — confirm the pack license permits derivative modification before shipping commercially."
+        }
+      },
+      "recovery": {
+        "pass": "2026-08-15",
+        "verdict": "PARTIAL RECOVERY — VoidDesert road_1-26 is the same structural kit (64x64, same role shapes, path color distance 32) but a DIFFERENT tint: VoidDesert has 0% green grass (CV 3.6%) and golden paths rgb(176,133,84) vs CV warm rgb(189,131,101). Artwork does NOT match the CloverVillage visual family — do not copy tiles in without recoloring.",
+        "cvMissingRoles": [
+          "edge-e",
+          "outer-corner-ne",
+          "inner-corner-n",
+          "inner-corner-e",
+          "inner-corner-s"
+        ],
+        "foundInVoidDesert": {
+          "outer-corner-ne": [
+            "VoidDesert/road_7.png"
+          ],
+          "inner-corner-n": [
+            "VoidDesert/road_2.png",
+            "VoidDesert/road_15.png"
+          ],
+          "inner-corner-e": [
+            "VoidDesert/road_6.png",
+            "VoidDesert/road_19.png"
+          ],
+          "inner-corner-s": [
+            "VoidDesert/road_8.png",
+            "VoidDesert/road_21.png"
+          ]
+        },
+        "notFoundAnywhere": [
+          "edge-e"
+        ],
+        "cvDuplicatesConfirmed": [
+          {
+            "pair": [
+              "road_7.png",
+              "road_8.png"
+            ],
+            "verdict": "TRUE VARIANTS (46.9% pixels differ)"
+          },
+          {
+            "pair": [
+              "road_1.png",
+              "road_13.png"
+            ],
+            "verdict": "TRUE VARIANTS (78.9% pixels differ)"
+          },
+          {
+            "pair": [
+              "road_3.png",
+              "road_12.png"
+            ],
+            "verdict": "TRUE VARIANTS (87.7% pixels differ)"
+          },
+          {
+            "pair": [
+              "road_9.png",
+              "road_10.png"
+            ],
+            "verdict": "TRUE VARIANTS (86.9% pixels differ)"
+          }
+        ],
+        "crossPackPixelIdentical": "none",
+        "analysisFile": "design/assets/road-kit-recovery.json",
+        "preview": "/asset-catalog/autotile/recovery.html"
+      },
+      "assetCount": 13,
+      "composition": {
+        "complete": 0,
+        "component": 0,
+        "prop": 0
+      },
+      "completeAssets": [],
+      "roadType": "autotile",
+      "surfaceType": "dirt",
+      "topology": "needs-verification",
+      "walkable": true,
+      "roadRoles": {
+        "autotile": 12,
+        "center": 1
+      }
+    },
+    {
+      "sourceFamily": "green_brick_paving",
+      "canonicalFamily": "green_brick_paving",
+      "displayName": "Green Stone Brick Paving",
+      "structureType": null,
+      "worldRole": "CLOVER_SAFE",
+      "suitability": "high",
+      "collision": "none",
+      "recommendedUses": [
+        "commercial frontage",
+        "formal hardscape"
+      ],
+      "notes": "",
+      "status": null,
+      "catalogStatus": null,
+      "topologyStatus": null,
+      "kitStatus": null,
+      "recoveryStatus": null,
+      "runtimeReady": null,
+      "artRequired": null,
+      "artTask": null,
+      "recovery": null,
+      "assetCount": 1,
+      "composition": {
+        "complete": 0,
+        "component": 0,
+        "prop": 0
+      },
+      "completeAssets": [],
+      "roadType": "seamless-texture",
+      "surfaceType": "brick",
+      "topology": "verified",
+      "walkable": true,
+      "roadRoles": {
+        "seamless": 1
+      }
+    },
+    {
+      "sourceFamily": "mixed_green_pavers",
+      "canonicalFamily": "mixed_green_pavers",
+      "displayName": "Mixed Green Stone Pavers",
+      "structureType": null,
+      "worldRole": "CLOVER_SAFE",
+      "suitability": "high",
+      "collision": "none",
+      "recommendedUses": [
+        "plaza",
+        "Courier Square",
+        "civic space"
+      ],
+      "notes": "",
+      "status": null,
+      "catalogStatus": null,
+      "topologyStatus": null,
+      "kitStatus": null,
+      "recoveryStatus": null,
+      "runtimeReady": null,
+      "artRequired": null,
+      "artTask": null,
+      "recovery": null,
+      "assetCount": 1,
+      "composition": {
+        "complete": 0,
+        "component": 0,
+        "prop": 0
+      },
+      "completeAssets": [],
+      "roadType": "seamless-texture",
+      "surfaceType": "stone-paver",
+      "topology": "verified",
+      "walkable": true,
+      "roadRoles": {
+        "seamless": 1
+      }
+    },
+    {
+      "sourceFamily": "natural_stone_cobble",
+      "canonicalFamily": "natural_stone_cobble",
+      "displayName": "Natural Green Stone Cobble",
+      "structureType": null,
+      "worldRole": "SHARED_1_20",
+      "suitability": "high",
+      "collision": "none",
+      "recommendedUses": [
+        "landmarks",
+        "old paths",
+        "transitions"
+      ],
+      "notes": "",
+      "status": null,
+      "catalogStatus": null,
+      "topologyStatus": null,
+      "kitStatus": null,
+      "recoveryStatus": null,
+      "runtimeReady": null,
+      "artRequired": null,
+      "artTask": null,
+      "recovery": null,
+      "assetCount": 1,
+      "composition": {
+        "complete": 0,
+        "component": 0,
+        "prop": 0
+      },
+      "completeAssets": [],
+      "roadType": "seamless-texture",
+      "surfaceType": "natural-stone",
+      "topology": "verified",
+      "walkable": true,
+      "roadRoles": {
+        "seamless": 1
+      }
+    },
+    {
+      "sourceFamily": "rounded_green_cobblestone",
+      "canonicalFamily": "rounded_green_cobblestone",
+      "displayName": "Rounded Green Cobblestone",
+      "structureType": null,
+      "worldRole": "CLOVER_SAFE",
+      "suitability": "high",
+      "collision": "none",
+      "recommendedUses": [
+        "garden",
+        "courtyard",
+        "decorative paving"
+      ],
+      "notes": "",
+      "status": null,
+      "catalogStatus": null,
+      "topologyStatus": null,
+      "kitStatus": null,
+      "recoveryStatus": null,
+      "runtimeReady": null,
+      "artRequired": null,
+      "artTask": null,
+      "recovery": null,
+      "assetCount": 1,
+      "composition": {
+        "complete": 0,
+        "component": 0,
+        "prop": 0
+      },
+      "completeAssets": [],
+      "roadType": "seamless-texture",
+      "surfaceType": "cobblestone",
+      "topology": "verified",
+      "walkable": true,
+      "roadRoles": {
+        "seamless": 1
+      }
+    }
+  ]
+}

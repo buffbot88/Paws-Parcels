@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Asset Review Pages</title>
+<style>
+  body { font-family: system-ui; max-width: 960px; margin: 2rem auto; padding: 0 1rem; color: #263228; background: #f3f7f1; }
+  h1 { font-size: 1.5rem; }
+  .cat-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 1rem; margin-top: 1rem; }
+  .cat-card { background: #fff; border: 1px solid #d9e3d7; border-radius: 8px; padding: 1rem; text-decoration: none; color: inherit; display: flex; flex-direction: column; gap: 0.35rem; }
+  .cat-card:hover { border-color: #456b4e; box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+  .cat-card h2 { font-size: 1rem; margin: 0; }
+  .cat-card .pack { color: #68766b; font-size: 0.85rem; }
+  .cat-card .status { align-self: flex-start; padding: 0.15rem 0.5rem; border-radius: 999px; font-size: 0.68rem; font-weight: 700; letter-spacing: 0.03em; }
+  .cat-card .status.ok { background: #e8f5e9; color: #1b5e20; border: 1px solid #a5d6a7; }
+  .cat-card .status.warn { background: #fff3e0; color: #e65100; border: 1px solid #ffcc80; }
+  .cat-card .status.todo { background: #f5f5f5; color: #757575; border: 1px solid #e0e0e0; }
+  .audit-progress { margin-bottom: 1rem; }
+  .audit-progress-head { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; margin-bottom: 8px; }
+  .audit-progress-head h2 { font-size: 1.1rem; margin: 0; }
+  .audit-progress-summary { color: #68766b; font-size: 0.85rem; }
+  .audit-progress-bars { display: grid; gap: 10px; padding: 14px 16px; background: #fff; border: 1px solid #d9e3d7; border-radius: 10px; box-shadow: 0 4px 18px rgba(41,68,42,0.05); }
+  .progress-pack { display: grid; grid-template-columns: 150px 1fr 52px; align-items: center; gap: 12px; }
+  .pack-name { font-weight: 700; font-size: 0.85rem; color: #2e5037; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .progress-track { height: 10px; border-radius: 999px; background: #e3eae1; overflow: hidden; }
+  .progress-fill { height: 100%; border-radius: 999px; background: linear-gradient(90deg, #6a9e70, #93c39a); }
+  .progress-fill.done { background: linear-gradient(90deg, #2e7d32, #66bb6a); }
+  .progress-count { text-align: right; font-size: 0.78rem; font-weight: 800; color: #68766b; }
+  .gap-panel { margin-bottom: 1rem; }
+  .gap-panel-head { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; flex-wrap: wrap; }
+  .gap-panel-head h2 { font-size: 1.1rem; margin: 0; }
+  .gap-link { font-size: 0.85rem; color: #456b4e; font-weight: 700; text-decoration: none; }
+  .gap-panel-summary { margin: 0.5rem 0; font-weight: 800; font-size: 0.9rem; color: #2e5037; }
+  .gap-panel-matrix { display: grid; gap: 4px; margin-top: 0.5rem; }
+  .gap-panel-row { display: grid; grid-template-columns: 1fr repeat(4, auto); align-items: center; gap: 8px; font-size: 0.8rem; }
+  .gap-panel-system { color: #263228; font-weight: 600; }
+
+  .gap-audit { background: #fff; border: 1px solid #d9e3d7; border-radius: 10px; padding: 1rem 1.25rem; margin: 1rem 0; }
+  .gap-head { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; flex-wrap: wrap; }
+  .gap-head h2 { margin: 0; font-size: 1.2rem; color: #2e5037; }
+  .gap-subtitle { color: #68766b; font-size: 0.9rem; }
+  .gap-badge { display: inline-block; padding: 0.15rem 0.5rem; border-radius: 999px; font-size: 0.68rem; font-weight: 700; letter-spacing: 0.03em; white-space: nowrap; }
+  .gap-badge.ok { background: #e8f5e9; color: #1b5e20; border: 1px solid #a5d6a7; }
+  .gap-badge.warn { background: #fff3e0; color: #e65100; border: 1px solid #ffcc80; }
+  .gap-badge.missing { background: #fdecea; color: #b71c1c; border: 1px solid #ef9a9a; }
+  .gap-worlds { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1rem; margin: 1rem 0; }
+  .gap-world { border: 1px solid #e3eae1; border-radius: 8px; padding: 0.75rem 1rem; background: #fbfdfb; }
+  .gap-world h3 { margin: 0 0 0.25rem; font-size: 1rem; }
+  .gap-tier { color: #68766b; font-size: 0.75rem; font-weight: 700; }
+  .gap-label { margin: 0 0 0.5rem; color: #2e5037; font-size: 0.82rem; font-weight: 600; }
+  .gap-systems { width: 100%; border-collapse: collapse; font-size: 0.82rem; }
+  .gap-systems td { padding: 0.3rem 0.4rem; border-top: 1px solid #eef2ec; vertical-align: top; }
+  .gap-systems td:first-child { font-weight: 600; color: #263228; white-space: nowrap; }
+  .gap-coverage { color: #4a5a4e; }
+  .gap-missing { color: #b71c1c; }
+  .gap-note { color: #68766b; font-size: 0.85rem; }
+  .gap-launch-row { display: grid; grid-template-columns: 90px 150px 70px auto 1fr; align-items: baseline; gap: 8px; padding: 0.5rem 0; border-top: 1px solid #eef2ec; font-size: 0.88rem; }
+  .gap-launch-row.current { background: #fdf6e9; border-left: 3px solid #e65100; padding-left: 8px; }
+  .gap-launch-row.future { opacity: 0.85; }
+  .gap-launch-tier { font-weight: 800; color: #a36e23; }
+  .gap-launch-label { color: #2e5037; font-weight: 600; }
+  .gap-launch-scope { grid-column: 1 / -1; color: #68766b; font-size: 0.82rem; }
+  .gap-section { margin: 1rem 0 0; padding-top: 0.75rem; border-top: 1px solid #e3eae1; }
+  .gap-section h3 { margin: 0 0 0.5rem; font-size: 1rem; color: #2e5037; }
+  .gap-section ol { margin: 0.5rem 0; padding-left: 1.25rem; }
+  .gap-section li { margin: 0.35rem 0; font-size: 0.9rem; }
+  .gap-matrix { width: 100%; border-collapse: collapse; font-size: 0.8rem; margin-top: 0.5rem; }
+  .gap-matrix th, .gap-matrix td { border: 1px solid #e3eae1; padding: 0.3rem 0.5rem; text-align: left; }
+  .gap-matrix th { background: #f3f7f1; color: #2e5037; }
+  
+</style>
+</head>
+<body>
+<h1>Asset Review Pages</h1>
+<p>Per-category visual audit pages. Each category is one page; families are shown whole.</p>
+<section class="audit-progress">
+  <div class="audit-progress-head">
+    <h2>Audit progress</h2>
+    <span class="audit-progress-summary">17 of 17 categories locked across 8 packs</span>
+  </div>
+  <div class="audit-progress-bars">
+  <div class="progress-pack" title="Classes-Archer — 1 of 1 categories audited">
+    <span class="pack-name">Classes-Archer</span>
+    <div class="progress-track"><div class="progress-fill done" style="width:100%" aria-label="1 of 1 audited"></div></div>
+    <span class="progress-count">1/1</span>
+  </div>
+<div class="progress-pack" title="Classes-Mage — 1 of 1 categories audited">
+    <span class="pack-name">Classes-Mage</span>
+    <div class="progress-track"><div class="progress-fill done" style="width:100%" aria-label="1 of 1 audited"></div></div>
+    <span class="progress-count">1/1</span>
+  </div>
+<div class="progress-pack" title="Classes-Warrior — 1 of 1 categories audited">
+    <span class="pack-name">Classes-Warrior</span>
+    <div class="progress-track"><div class="progress-fill done" style="width:100%" aria-label="1 of 1 audited"></div></div>
+    <span class="progress-count">1/1</span>
+  </div>
+<div class="progress-pack" title="CloverVillage — 6 of 6 categories audited">
+    <span class="pack-name">CloverVillage</span>
+    <div class="progress-track"><div class="progress-fill done" style="width:100%" aria-label="6 of 6 audited"></div></div>
+    <span class="progress-count">6/6</span>
+  </div>
+<div class="progress-pack" title="HappyValley — 3 of 3 categories audited">
+    <span class="pack-name">HappyValley</span>
+    <div class="progress-track"><div class="progress-fill done" style="width:100%" aria-label="3 of 3 audited"></div></div>
+    <span class="progress-count">3/3</span>
+  </div>
+<div class="progress-pack" title="loot — 1 of 1 categories audited">
+    <span class="pack-name">loot</span>
+    <div class="progress-track"><div class="progress-fill done" style="width:100%" aria-label="1 of 1 audited"></div></div>
+    <span class="progress-count">1/1</span>
+  </div>
+<div class="progress-pack" title="OtherAssets — 1 of 1 categories audited">
+    <span class="pack-name">OtherAssets</span>
+    <div class="progress-track"><div class="progress-fill done" style="width:100%" aria-label="1 of 1 audited"></div></div>
+    <span class="progress-count">1/1</span>
+  </div>
+<div class="progress-pack" title="VoidDesert — 3 of 3 categories audited">
+    <span class="pack-name">VoidDesert</span>
+    <div class="progress-track"><div class="progress-fill done" style="width:100%" aria-label="3 of 3 audited"></div></div>
+    <span class="progress-count">3/3</span>
+  </div>
+  </div>
+</section>
+<section class="gap-panel">
+  <div class="gap-panel-head">
+    <h2>Launch-1 readiness (CloverVillage 1–20)</h2>
+    <a class="gap-link" href="gap-audit.html">Full gap audit →</a>
+  </div>
+  <p class="gap-subtitle">Tiered launch: the game ships in tiers — Launch 1 = CloverVillage (levels 1–20), Launch 2 = HappyValley (21–40), Launch 3 = VoidDesert (41–60). This audit covers ONLY the first launch (CloverVillage, levels 1–20). HappyValley and VoidDesert are cataloged but DEFERRED until their launch tier.</p>
+  <div class="gap-panel-summary"><span class="gap-badge warn">PARTIAL</span> CLOVERVILLAGE 1–20 · CONTENT IN PROGRESS</div>
+  <div class="gap-panel-launch"><div class="gap-launch-row current"><span class="gap-launch-tier">Launch 1</span><strong>CloverVillage</strong> <span class="gap-tier">Lv 1–20</span> <span class="gap-badge warn">PARTIAL</span> <span class="gap-launch-label">FIRST LAUNCH — ACTIVE FOCUS</span><div class="gap-launch-scope">Everything needed to ship levels 1–20. Environment is strong; the blockers are enemies, a boss, dungeon interactables, item/consumable icons, quest content, and UI/audio for this zone only.</div></div><div class="gap-launch-row future"><span class="gap-launch-tier">Launch 2</span><strong>HappyValley</strong> <span class="gap-tier">Lv 21–40</span> <span class="gap-badge ok">READY</span> <span class="gap-launch-label">LAUNCH 2 — DEFERRED</span><div class="gap-launch-scope">Cataloged (map kit, NPCs, monsters). Audit deferred until its launch tier: would need 2–3 hostile identities + a boss, plus shared systems still missing globally.</div></div><div class="gap-launch-row future"><span class="gap-launch-tier">Launch 3</span><strong>VoidDesert</strong> <span class="gap-tier">Lv 41–60</span> <span class="gap-badge ok">READY</span> <span class="gap-launch-label">LAUNCH 3 — DEFERRED</span><div class="gap-launch-scope">Cataloged (nature, map kit, full monster roster). Audit deferred until its launch tier: would need NPC/service identities.</div></div></div>
+  <div class="gap-panel-matrix"><div class="gap-panel-row"><span class="gap-panel-system">Major environment</span><span class="gap-badge ok">READY</span><span class="gap-badge ok">READY</span></div><div class="gap-panel-row"><span class="gap-panel-system">Terrain / paths</span><span class="gap-badge ok">READY</span><span class="gap-badge ok">READY</span></div><div class="gap-panel-row"><span class="gap-panel-system">Buildings / structures</span><span class="gap-badge ok">READY</span><span class="gap-badge ok">READY</span></div><div class="gap-panel-row"><span class="gap-panel-system">Nature / decor</span><span class="gap-badge ok">READY</span><span class="gap-badge ok">READY</span></div><div class="gap-panel-row"><span class="gap-panel-system">NPCs</span><span class="gap-badge ok">READY</span><span class="gap-badge ok">READY</span></div><div class="gap-panel-row"><span class="gap-panel-system">Player classes</span><span class="gap-badge ok">READY</span><span class="gap-badge ok">READY</span></div><div class="gap-panel-row"><span class="gap-panel-system">Loot / item icons</span><span class="gap-badge warn">PARTIAL</span><span class="gap-badge warn">PARTIAL</span></div><div class="gap-panel-row"><span class="gap-panel-system">Monsters</span><span class="gap-badge missing">MISSING</span><span class="gap-badge warn">PARTIAL</span></div><div class="gap-panel-row"><span class="gap-panel-system">Bosses</span><span class="gap-badge missing">MISSING</span><span class="gap-badge warn">PARTIAL</span></div><div class="gap-panel-row"><span class="gap-panel-system">Dungeon environments</span><span class="gap-badge ok">READY</span><span class="gap-badge ok">READY</span></div><div class="gap-panel-row"><span class="gap-panel-system">Dungeon interactables</span><span class="gap-badge warn">PARTIAL</span><span class="gap-badge warn">PARTIAL</span></div><div class="gap-panel-row"><span class="gap-panel-system">Skill effects (to 20)</span><span class="gap-badge warn">PARTIAL</span><span class="gap-badge warn">PARTIAL</span></div><div class="gap-panel-row"><span class="gap-panel-system">Consumables</span><span class="gap-badge missing">MISSING</span><span class="gap-badge missing">MISSING</span></div><div class="gap-panel-row"><span class="gap-panel-system">Crafting materials</span><span class="gap-badge missing">MISSING</span><span class="gap-badge missing">MISSING</span></div><div class="gap-panel-row"><span class="gap-panel-system">Quest content</span><span class="gap-badge missing">MISSING</span><span class="gap-badge missing">MISSING</span></div><div class="gap-panel-row"><span class="gap-panel-system">UI / HUD</span><span class="gap-badge missing">MISSING</span><span class="gap-badge missing">MISSING</span></div><div class="gap-panel-row"><span class="gap-panel-system">Audio</span><span class="gap-badge missing">MISSING</span><span class="gap-badge missing">MISSING</span></div></div>
+</section>
+<div class="cat-grid">
+<a class="cat-card" href="Classes-Archer/class.html"><h2>class</h2><p class="pack">Classes-Archer · 127 assets</p><span class="status ok">COMPLETE · 6 FAMILIES / 0 UNCLASSIFIED</span></a>
+<a class="cat-card" href="Classes-Mage/class.html"><h2>class</h2><p class="pack">Classes-Mage · 173 assets</p><span class="status ok">COMPLETE · 6 FAMILIES / 0 UNCLASSIFIED</span></a>
+<a class="cat-card" href="Classes-Warrior/class.html"><h2>class</h2><p class="pack">Classes-Warrior · 264 assets</p><span class="status ok">COMPLETE · 6 FAMILIES / 0 UNCLASSIFIED</span></a>
+<a class="cat-card" href="CloverVillage/building.html"><h2>building</h2><p class="pack">CloverVillage · 118 assets</p><span class="status ok">COMPLETE · PRODUCTION READY</span></a>
+<a class="cat-card" href="CloverVillage/decor.html"><h2>decor</h2><p class="pack">CloverVillage · 32 assets</p><span class="status ok">COMPLETE</span></a>
+<a class="cat-card" href="CloverVillage/ground.html"><h2>ground</h2><p class="pack">CloverVillage · 26 assets</p><span class="status ok">COMPLETE · TOPOLOGY VERIFIED</span></a>
+<a class="cat-card" href="CloverVillage/npc.html"><h2>npc</h2><p class="pack">CloverVillage · 1378 assets</p><span class="status ok">CLASSIFIED · 3 IDENTITIES / 5 ANIMATIONS</span></a>
+<a class="cat-card" href="CloverVillage/other.html"><h2>other</h2><p class="pack">CloverVillage · 2 assets</p><span class="status ok">COMPLETE · SOURCE MASTERS ONLY</span></a>
+<a class="cat-card" href="CloverVillage/road.html"><h2>road</h2><p class="pack">CloverVillage · 17 assets</p><span class="status warn">CATALOG COMPLETE · KIT INCOMPLETE (5 tiles)</span></a>
+<a class="cat-card" href="HappyValley/monster.html"><h2>monster</h2><p class="pack">HappyValley · 223 assets</p><span class="status ok">COMPLETE · 5 IDENTITIES / 4 FAMILIES / 0 UNCLASSIFIED</span></a>
+<a class="cat-card" href="HappyValley/npc.html"><h2>npc</h2><p class="pack">HappyValley · 761 assets</p><span class="status ok">COMPLETE · 3 IDENTITIES / 5 FAMILIES / 0 UNCLASSIFIED</span></a>
+<a class="cat-card" href="HappyValley/other.html"><h2>other</h2><p class="pack">HappyValley · 180 assets</p><span class="status ok">COMPLETE · 12 FAMILIES / 0 UNCLASSIFIED</span></a>
+<a class="cat-card" href="OtherAssets/path-composite.html"><h2>path-composite</h2><p class="pack">OtherAssets · 17 assets</p><span class="status ok">COMPLETE · 3 PATH FAMILIES / 0 UNCLASSIFIED</span></a>
+<a class="cat-card" href="VoidDesert/monster.html"><h2>monster</h2><p class="pack">VoidDesert · 2993 assets</p><span class="status ok">COMPLETE · 7 IDENTITIES / 6 FAMILIES / 0 UNCLASSIFIED</span></a>
+<a class="cat-card" href="VoidDesert/nature.html"><h2>nature</h2><p class="pack">VoidDesert · 24 assets</p><span class="status ok">COMPLETE · 6 NATURE FAMILIES / 0 UNCLASSIFIED</span></a>
+<a class="cat-card" href="VoidDesert/other.html"><h2>other</h2><p class="pack">VoidDesert · 72 assets</p><span class="status ok">COMPLETE · 8 MAP FAMILIES / 0 UNCLASSIFIED</span></a>
+<a class="cat-card" href="loot/loot.html"><h2>loot</h2><p class="pack">loot · 146 assets</p><span class="status ok">CLASSIFIED · 48 ICONS / 10 FAMILIES / 0 UNCLASSIFIED</span></a>
+</div></body></html>

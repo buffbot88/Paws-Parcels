@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>OtherAssets path-composite — Review</title>
+<style>
+  body { font-family: system-ui; max-width: 1200px; margin: 1rem auto; padding: 0 1rem; color: #263228; background: #f3f7f1; }
+  h1 { font-size: 1.3rem; }
+  nav { margin-bottom: 1rem; }
+  nav a { color: #456b4e; margin-right: 1rem; text-decoration: none; }
+  nav a:hover { text-decoration: underline; }
+  .summary-bar { padding: 0.6rem 1rem; margin-bottom: 0.75rem; background: #dce8da; border: 1px solid #b9cfb5; border-radius: 6px; font-size: 0.9rem; font-weight: 600; color: #2e5037; }
+  .filter-bar { display: flex; flex-wrap: wrap; align-items: center; gap: 0.75rem; padding: 0.5rem 0.75rem; margin-bottom: 0.25rem; background: #fff; border: 1px solid #d9e3d7; border-radius: 6px; font-size: 0.8rem; }
+  .filter-bar .filter-label { font-weight: 600; color: #68766b; }
+  .filter-bar .filter-group { display: inline-flex; align-items: center; gap: 0.4rem; padding: 0.2rem 0.5rem; background: #f0f4ee; border-radius: 4px; }
+  .filter-bar label { display: inline-flex; align-items: center; gap: 0.2rem; cursor: pointer; }
+  .filter-bar button { border: 1px solid #b9cfb5; background: #e8f0e6; border-radius: 4px; padding: 0.2rem 0.6rem; cursor: pointer; font-size: 0.8rem; }
+  .filter-note { min-height: 1rem; margin: 0.25rem 0 0; font-size: 0.8rem; color: #a36e23; }
+  .grid { display: block; }
+  .card { background: #fff; border: 1px solid #d9e3d7; border-radius: 8px; padding: 0.75rem; }
+  .card img { max-width: 100%; max-height: 250px; object-fit: contain; display: block; margin: 0 auto 0.75rem; background: repeating-conic-gradient(#e8ede6 0% 25%, #fff 0% 50%) 50%/16px 16px; border-radius: 4px; }
+  .card .filename { font-weight: 600; font-size: 0.9rem; margin-bottom: 0.25rem; }
+  .card .canonical { font-size: 0.78rem; color: #416f99; font-family: ui-monospace, monospace; margin-top: 0.15rem; }
+  .card .path { font-size: 0.75rem; color: #68766b; word-break: break-all; margin-bottom: 0.5rem; }
+  .card .meta { display: flex; flex-wrap: wrap; gap: 0.5rem; font-size: 0.75rem; }
+  .card .meta span { padding: 0.15rem 0.4rem; border-radius: 4px; background: #f0f4ee; }
+  .card .meta .runtime { background: #e8f5e9; color: #2e7d32; }
+  .card .meta .reference { background: #f5f5f5; color: #666; }
+  .card .meta .confirmed { background: #e3f2fd; color: #1565c0; }
+  .card .meta .unreviewed { background: #fff3e0; color: #e65100; }
+  .card .meta .road-role { background: #ede7f6; color: #4527a0; font-weight: 600; }
+  .card .meta .terrain-role { background: #e0f2f1; color: #00695c; font-weight: 600; }
+  .card .meta .decor-role { background: #fce4ec; color: #ad1457; font-weight: 600; }
+  .card .meta .subtype-badge { background: #f3e5f5; color: #7b1fa2; font-size: 0.7rem; }
+  .card .meta .depth-badge { background: #e3f2fd; color: #1565c0; font-weight: 600; }
+  .card .meta .density-badge { background: #fff3e0; color: #e65100; font-weight: 600; }
+  .card .meta .npc-role { background: #eceff1; color: #37474f; font-weight: 600; }
+  .card .meta .anim-badge { background: #e8f5e9; color: #2e7d32; font-weight: 600; }
+  .card .meta .dir-badge { background: #e3f2fd; color: #1565c0; font-weight: 600; }
+  .card .meta .frame-badge { background: #fce4ec; color: #ad1457; font-weight: 600; }
+  .family-header .npc-note { font-size: 0.75rem; color: #37474f; margin-top: 0.25rem; }
+  .identity-strip { margin-bottom: 1rem; }
+  .identity-heading { font-size: 1rem; color: #2e5037; margin: 0 0 0.5rem; }
+  .identity-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 1rem; }
+  .identity-card { display: flex; gap: 0.75rem; background: #fff; border: 1px solid #b9cfb5; border-left: 4px solid #456b4e; border-radius: 8px; padding: 0.75rem; }
+  .identity-card img { width: 96px; height: 96px; object-fit: contain; background: repeating-conic-gradient(#e8ede6 0% 25%, #fff 0% 50%) 50%/16px 16px; border-radius: 6px; }
+  .identity-name { font-weight: 700; font-size: 1rem; color: #2e5037; }
+  .identity-id { font-size: 0.75rem; color: #416f99; font-family: ui-monospace, monospace; margin: 0.1rem 0 0.3rem; }
+  .identity-desc { font-size: 0.78rem; color: #68766b; }
+  .identity-anims { font-size: 0.72rem; color: #2e7d32; margin-top: 0.35rem; }
+  .card .meta .variant-badge { background: #fff8e1; color: #f57f17; font-weight: 600; }
+  .card .meta .candidate-role { background: #f3e5f5; color: #7b1fa2; font-weight: 600; }
+  .card .meta .topology { background: #fff8e1; color: #f57f17; }
+  .family-header .topology-note { font-size: 0.75rem; color: #00695c; margin-top: 0.25rem; }
+  .family-header .topology-note a { color: #00695c; }
+  .family-header .depth-note { font-size: 0.75rem; color: #6a1b9a; margin-top: 0.25rem; }
+  .family-header .status-badge { font-weight: 600; color: #2e5037; margin-top: 0.35rem; }
+  .family-header .status-badge strong { color: #456b4e; }
+  .family-header .art-required { font-weight: 600; color: #b71c1c; margin-top: 0.25rem; }
+  .family-header .recovery-note { font-size: 0.75rem; color: #5d4037; margin-top: 0.3rem; line-height: 1.45; }
+  .art-task { margin-top: 0.5rem; background: #fff8f0; border: 1px solid #e6c9a8; border-radius: 6px; padding: 0.6rem 0.8rem; font-size: 0.8rem; }
+  .art-task h4 { margin: 0 0 0.35rem; font-size: 0.82rem; color: #a36e23; }
+  .art-task ul { margin: 0; padding-left: 1.1rem; }
+  .art-task li { margin: 0.2rem 0; }
+  .art-task .tt { font-family: ui-monospace, monospace; color: #416f99; }
+  .family-header .family-details { font-size: 0.8rem; color: #2e5037; margin-top: 0.35rem; }
+  .family-header .family-details strong { color: #456b4e; }
+  .family { margin-top: 1.25rem; }
+  .family-toggle { display: flex; align-items: center; gap: 0.5rem; width: 100%; text-align: left; background: #e8f0e6; border: 1px solid #b9cfb5; border-left: 4px solid #456b4e; border-radius: 6px 6px 0 0; padding: 0.65rem 1rem; cursor: pointer; font: inherit; }
+  .family-toggle:hover { background: #dce8da; }
+  .family-caret { color: #456b4e; font-size: 0.9rem; }
+  .family-title { font-weight: 700; font-size: 1.05rem; color: #2e5037; }
+  .family-header { padding: 0.6rem 1rem; background: #f2f6f0; border: 1px solid #d9e3d7; border-top: none; }
+  .family-header p { margin: 0; font-size: 0.8rem; color: #68766b; }
+  .family-header .world-role { font-weight: 600; color: #416f99; }
+  .family-header .structure-type { font-weight: 600; color: #2e5037; }
+  .family-header .suitability { font-weight: 600; color: #a36e23; }
+  .family-header .family-uses { font-size: 0.75rem; color: #68766b; margin-top: 0.25rem; }
+  .family-assets { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 1rem; padding: 1rem; background: #fbfdfa; border: 1px solid #d9e3d7; border-top: none; border-radius: 0 0 6px 6px; }
+</style>
+</head>
+<body>
+<nav><a href="../index.html">← All Categories</a></nav>
+<h1>OtherAssets / path-composite — 17 assets</h1>
+<div class="summary-bar">17 source records · 3 semantic families · 15 composite path sheets (5 materials × 3 surface contexts) · 1 terrain-support sheet · 1 Tiled source · Runtime: 0 · Reference: 17 · Reviewed: 17 · 0 other</div><div class="summary-bar env-note">🛤 Precomposed path/road COMPOSITE sheets, not individual tiles — 240x416 / 240x480 are sheet dimensions. 5 materials (blue_cobble, tan_brick, blue_masonry, brown_paver, pale_cobble) × 3 surface contexts (transparent/ground-edge/grass-edge). Sheet shape vocabulary (pad/straight/bend/junction/ring/intersection/platform) extracted via Roads.tmx — NOT exploded into manual tiles. Everything stays reference.</div>
+<div class="filter-bar">
+  <span class="filter-label">Filter:</span>
+  <span class="filter-group">Family
+    <label><input type="checkbox" class="filter-check" data-f="lootfam" data-v="undead_bone" /> undead bone</label>
+    <label><input type="checkbox" class="filter-check" data-f="lootfam" data-v="undead_body_part" /> body parts</label>
+    <label><input type="checkbox" class="filter-check" data-f="lootfam" data-v="undead_organ" /> organs</label>
+    <label><input type="checkbox" class="filter-check" data-f="lootfam" data-v="jewelry" /> jewelry</label>
+    <label><input type="checkbox" class="filter-check" data-f="lootfam" data-v="currency" /> currency</label>
+    <label><input type="checkbox" class="filter-check" data-f="lootfam" data-v="consumable" /> consumables</label>
+    <label><input type="checkbox" class="filter-check" data-f="lootfam" data-v="material" /> materials</label>
+    <label><input type="checkbox" class="filter-check" data-f="lootfam" data-v="quest_item" /> quest items</label>
+    <label><input type="checkbox" class="filter-check" data-f="lootfam" data-v="equipment" /> equipment</label>
+    <label><input type="checkbox" class="filter-check" data-f="lootfam" data-v="loot_source" /> source</label>
+  </span>
+  <span class="filter-group">Render
+    <label><input type="checkbox" class="filter-check" data-f="rendermode" data-v="shadow" /> shadow</label>
+    <label><input type="checkbox" class="filter-check" data-f="rendermode" data-v="without_shadow" /> without shadow</label>
+    <label><input type="checkbox" class="filter-check" data-f="rendermode" data-v="source" /> eps source</label>
+  </span>
+  <span class="filter-group">Role
+    <label><input type="checkbox" class="filter-check" data-f="role" data-v="loot-icon" /> icon</label>
+    <label><input type="checkbox" class="filter-check" data-f="role" data-v="authoring-source" /> source</label>
+    <label><input type="checkbox" class="filter-check" data-f="role" data-v="authoring-master" /> master</label>
+    <label><input type="checkbox" class="filter-check" data-f="role" data-v="background-support" /> support</label>
+  </span>
+  <span class="filter-group">Family
+    <label><input type="checkbox" class="filter-check" data-f="pathfam" data-v="shared_path_composite" /> composite sheets</label>
+    <label><input type="checkbox" class="filter-check" data-f="pathfam" data-v="shared_path_terrain_support" /> terrain support</label>
+    <label><input type="checkbox" class="filter-check" data-f="pathfam" data-v="shared_path_source" /> tiled source</label>
+  </span>
+  <span class="filter-group">Material
+    <label><input type="checkbox" class="filter-check" data-f="material" data-v="blue_cobble" /> blue cobble</label>
+    <label><input type="checkbox" class="filter-check" data-f="material" data-v="tan_brick" /> tan brick</label>
+    <label><input type="checkbox" class="filter-check" data-f="material" data-v="blue_masonry" /> blue masonry</label>
+    <label><input type="checkbox" class="filter-check" data-f="material" data-v="brown_paver" /> brown paver</label>
+    <label><input type="checkbox" class="filter-check" data-f="material" data-v="pale_cobble" /> pale cobble</label>
+  </span>
+  <span class="filter-group">Surface
+    <label><input type="checkbox" class="filter-check" data-f="surfacecontext" data-v="transparent" /> plain</label>
+    <label><input type="checkbox" class="filter-check" data-f="surfacecontext" data-v="ground-edge" /> ground edge</label>
+    <label><input type="checkbox" class="filter-check" data-f="surfacecontext" data-v="grass-edge" /> grass edge</label>
+  </span>
+  <span class="filter-group">World
+    <label><input type="checkbox" class="filter-check" data-f="world" data-v="CLOVER_SAFE" /> Clover</label>
+    <label><input type="checkbox" class="filter-check" data-f="world" data-v="SHARED_1_20" /> Shared</label>
+    <label><input type="checkbox" class="filter-check" data-f="world" data-v="PVE_1_20" /> PvE</label>
+    <label><input type="checkbox" class="filter-check" data-f="world" data-v="FUTURE" /> Future</label>
+  </span>
+  <span class="filter-group">Status
+    <label><input type="checkbox" class="filter-check" data-f="runtime" data-v="runtime-used" /> runtime</label>
+    <label><input type="checkbox" class="filter-check" data-f="runtime" data-v="reference-only" /> reference</label>
+  </span>
+  <button type="button" id="filter-clear">Clear</button>
+</div>
+<p id="filter-note" class="filter-note"></p>
+
+
+<div class="grid">
+<section class="family" data-family="shared_path_terrain_support"><button type="button" class="family-toggle" aria-expanded="true"><span class="family-caret">▾</span><span class="family-title">Shared Path Terrain Support</span></button><div class="family-header"><h2>Shared Path Terrain Support</h2><p>1 terrain-support sheet · path-edge palette · 0 runtime · <span class="world-role">SHARED_1_20</span></p><p class="family-details">Family: <strong>shared path terrain support</strong> · Render modes:  · Runtime: 0</p><p class="family-details npc-note">Ground_grass.png — NOT a road. Contains grouped color/material samples and small vegetation/ground-edge shapes in several palettes (green, cyan, dark green, olive, brown/light ground). Classified as a terrain-support sheet / path-edge palette: support artwork for adding grass/ground fringes to the path set (fits the _grass and _ground composite variants). Inference from visual relationship, not an explicit source label. placeable false, runtimeStatus reference. Locked 2026-08-15.</p></div><div class="family-assets">
+<div class="card" data-role="terrain-support-sheet" data-world="SHARED_1_20" data-runtime="reference-only" data-pathfam="shared_path_terrain_support" data-material="" data-surfacecontext="" data-lootfam="shared_path_terrain_support" data-rendermode=""><img loading="lazy" src="https://pawsandparcels.agpstudios.org/reference/assets/maps/OtherAssets/Paths/Ground_grass.png" alt="Ground_grass.png"><div class="filename">Ground_grass.png<div class="canonical">path_composite_ground_grass_palette</div></div><div class="path">reference/assets/maps/OtherAssets/Paths/Ground_grass.png</div><div class="meta"><span>19345dc92df2</span><span>272×496</span><span>terrain-support-sheet</span><span class="decor-role" title="Path family">terrain support</span><span class="npc-role">terrain support sheet</span><span class="decor-role" title="Loot family: shared_path_terrain_support">shared path terrain support</span><span class="reference">Reference</span><span class="confirmed">Reviewed</span></div></div>
+</div></section><section class="family" data-family="shared_path_composite"><button type="button" class="family-toggle" aria-expanded="true"><span class="family-caret">▾</span><span class="family-title">Shared Path Composite Sheets</span></button><div class="family-header"><h2>Shared Path Composite Sheets</h2><p>15 composite sheets · 5 materials × 3 surface contexts · tileExtraction required · 0 runtime · <span class="world-role">SHARED_1_20</span></p><p class="family-details">Family: <strong>shared path composite</strong> · Render modes:  · Runtime: 0</p><p class="family-details npc-note">15 precomposed path/road sprite sheets — 5 materials × 3 surface contexts. Materials: blue_cobble (Road1), tan_brick (Road2), blue_masonry (Road3), brown_paver (Road4), pale_cobble (Road5). Each material has plain (transparent), ground-edge (_ground), and grass-edge (_grass) variants — same path geometry, different edge treatment, NOT duplicates. These are COMPOSITE sheets (240x416 / 240x480), NOT individual tiles: the sheet contains a shape vocabulary (pad/straight/bend/junction/ring/intersection/platform) to be extracted via Roads.tmx — tileExtraction: required, placeable false. No gameplay labels (castle/village/desert) invented. Locked 2026-08-15.</p></div><div class="family-assets">
+<div class="card" data-role="path-composite-sheet" data-world="SHARED_1_20" data-runtime="reference-only" data-pathfam="shared_path_composite" data-material="blue_cobble" data-surfacecontext="grass-edge" data-lootfam="shared_path_composite" data-rendermode=""><img loading="lazy" src="https://pawsandparcels.agpstudios.org/reference/assets/maps/OtherAssets/Paths/Road1_grass.png" alt="Road1_grass.png"><div class="filename">Road1_grass.png<div class="canonical">path_composite_blue_cobble_grass</div></div><div class="path">reference/assets/maps/OtherAssets/Paths/Road1_grass.png</div><div class="meta"><span>71492287aa0c</span><span>240×416</span><span>path-composite-sheet</span><span class="decor-role" title="Path family">path composite</span><span class="candidate-role" title="Path material">blue cobble</span><span class="terrain-role">grass edge</span><span class="npc-role">path composite sheet</span><span class="decor-role" title="Loot family: shared_path_composite">shared path composite</span><span class="reference">Reference</span><span class="confirmed">Reviewed</span></div></div>
+<div class="card" data-role="path-composite-sheet" data-world="SHARED_1_20" data-runtime="reference-only" data-pathfam="shared_path_composite" data-material="blue_cobble" data-surfacecontext="ground-edge" data-lootfam="shared_path_composite" data-rendermode=""><img loading="lazy" src="https://pawsandparcels.agpstudios.org/reference/assets/maps/OtherAssets/Paths/Road1_ground.png" alt="Road1_ground.png"><div class="filename">Road1_ground.png<div class="canonical">path_composite_blue_cobble_ground</div></div><div class="path">reference/assets/maps/OtherAssets/Paths/Road1_ground.png</div><div class="meta"><span>e957f8106447</span><span>240×416</span><span>path-composite-sheet</span><span class="decor-role" title="Path family">path composite</span><span class="candidate-role" title="Path material">blue cobble</span><span class="terrain-role">ground edge</span><span class="npc-role">path composite sheet</span><span class="decor-role" title="Loot family: shared_path_composite">shared path composite</span><span class="reference">Reference</span><span class="confirmed">Reviewed</span></div></div>
+<div class="card" data-role="path-composite-sheet" data-world="SHARED_1_20" data-runtime="reference-only" data-pathfam="shared_path_composite" data-material="blue_cobble" data-surfacecontext="transparent" data-lootfam="shared_path_composite" data-rendermode=""><img loading="lazy" src="https://pawsandparcels.agpstudios.org/reference/assets/maps/OtherAssets/Paths/Road1.png" alt="Road1.png"><div class="filename">Road1.png<div class="canonical">path_composite_blue_cobble_plain</div></div><div class="path">reference/assets/maps/OtherAssets/Paths/Road1.png</div><div class="meta"><span>47f14f07f2d1</span><span>240×416</span><span>path-composite-sheet</span><span class="decor-role" title="Path family">path composite</span><span class="candidate-role" title="Path material">blue cobble</span><span class="terrain-role">transparent</span><span class="npc-role">path composite sheet</span><span class="decor-role" title="Loot family: shared_path_composite">shared path composite</span><span class="reference">Reference</span><span class="confirmed">Reviewed</span></div></div>
+<div class="card" data-role="path-composite-sheet" data-world="SHARED_1_20" data-runtime="reference-only" data-pathfam="shared_path_composite" data-material="tan_brick" data-surfacecontext="grass-edge" data-lootfam="shared_path_composite" data-rendermode=""><img loading="lazy" src="https://pawsandparcels.agpstudios.org/reference/assets/maps/OtherAssets/Paths/Road2_grass.png" alt="Road2_grass.png"><div class="filename">Road2_grass.png<div class="canonical">path_composite_tan_brick_grass</div></div><div class="path">reference/assets/maps/OtherAssets/Paths/Road2_grass.png</div><div class="meta"><span>e52535c08bd7</span><span>240×416</span><span>path-composite-sheet</span><span class="decor-role" title="Path family">path composite</span><span class="candidate-role" title="Path material">tan brick</span><span class="terrain-role">grass edge</span><span class="npc-role">path composite sheet</span><span class="decor-role" title="Loot family: shared_path_composite">shared path composite</span><span class="reference">Reference</span><span class="confirmed">Reviewed</span></div></div>
+<div class="card" data-role="path-composite-sheet" data-world="SHARED_1_20" data-runtime="reference-only" data-pathfam="shared_path_composite" data-material="tan_brick" data-surfacecontext="ground-edge" data-lootfam="shared_path_composite" data-rendermode=""><img loading="lazy" src="https://pawsandparcels.agpstudios.org/reference/assets/maps/OtherAssets/Paths/Road2_ground.png" alt="Road2_ground.png"><div class="filename">Road2_ground.png<div class="canonical">path_composite_tan_brick_ground</div></div><div class="path">reference/assets/maps/OtherAssets/Paths/Road2_ground.png</div><div class="meta"><span>18fcaa8db6e2</span><span>240×416</span><span>path-composite-sheet</span><span class="decor-role" title="Path family">path composite</span><span class="candidate-role" title="Path material">tan brick</span><span class="terrain-role">ground edge</span><span class="npc-role">path composite sheet</span><span class="decor-role" title="Loot family: shared_path_composite">shared path composite</span><span class="reference">Reference</span><span class="confirmed">Reviewed</span></div></div>
+<div class="card" data-role="path-composite-sheet" data-world="SHARED_1_20" data-runtime="reference-only" data-pathfam="shared_path_composite" data-material="tan_brick" data-surfacecontext="transparent" data-lootfam="shared_path_composite" data-rendermode=""><img loading="lazy" src="https://pawsandparcels.agpstudios.org/reference/assets/maps/OtherAssets/Paths/Road2.png" alt="Road2.png"><div class="filename">Road2.png<div class="canonical">path_composite_tan_brick_plain</div></div><div class="path">reference/assets/maps/OtherAssets/Paths/Road2.png</div><div class="meta"><span>11e4d47b3611</span><span>240×416</span><span>path-composite-sheet</span><span class="decor-role" title="Path family">path composite</span><span class="candidate-role" title="Path material">tan brick</span><span class="terrain-role">transparent</span><span class="npc-role">path composite sheet</span><span class="decor-role" title="Loot family: shared_path_composite">shared path composite</span><span class="reference">Reference</span><span class="confirmed">Reviewed</span></div></div>
+<div class="card" data-role="path-composite-sheet" data-world="SHARED_1_20" data-runtime="reference-only" data-pathfam="shared_path_composite" data-material="blue_masonry" data-surfacecontext="grass-edge" data-lootfam="shared_path_composite" data-rendermode=""><img loading="lazy" src="https://pawsandparcels.agpstudios.org/reference/assets/maps/OtherAssets/Paths/Road3_grass.png" alt="Road3_grass.png"><div class="filename">Road3_grass.png<div class="canonical">path_composite_blue_masonry_grass</div></div><div class="path">reference/assets/maps/OtherAssets/Paths/Road3_grass.png</div><div class="meta"><span>a395a73ae4a8</span><span>240×480</span><span>path-composite-sheet</span><span class="decor-role" title="Path family">path composite</span><span class="candidate-role" title="Path material">blue masonry</span><span class="terrain-role">grass edge</span><span class="npc-role">path composite sheet</span><span class="decor-role" title="Loot family: shared_path_composite">shared path composite</span><span class="reference">Reference</span><span class="confirmed">Reviewed</span></div></div>
+<div class="card" data-role="path-composite-sheet" data-world="SHARED_1_20" data-runtime="reference-only" data-pathfam="shared_path_composite" data-material="blue_masonry" data-surfacecontext="ground-edge" data-lootfam="shared_path_composite" data-rendermode=""><img loading="lazy" src="https://pawsandparcels.agpstudios.org/reference/assets/maps/OtherAssets/Paths/Road3_ground.png" alt="Road3_ground.png"><div class="filename">Road3_ground.png<div class="canonical">path_composite_blue_masonry_ground</div></div><div class="path">reference/assets/maps/OtherAssets/Paths/Road3_ground.png</div><div class="meta"><span>b3225c9e2eb5</span><span>240×480</span><span>path-composite-sheet</span><span class="decor-role" title="Path family">path composite</span><span class="candidate-role" title="Path material">blue masonry</span><span class="terrain-role">ground edge</span><span class="npc-role">path composite sheet</span><span class="decor-role" title="Loot family: shared_path_composite">shared path composite</span><span class="reference">Reference</span><span class="confirmed">Reviewed</span></div></div>
+<div class="card" data-role="path-composite-sheet" data-world="SHARED_1_20" data-runtime="reference-only" data-pathfam="shared_path_composite" data-material="blue_masonry" data-surfacecontext="transparent" data-lootfam="shared_path_composite" data-rendermode=""><img loading="lazy" src="https://pawsandparcels.agpstudios.org/reference/assets/maps/OtherAssets/Paths/Road3.png" alt="Road3.png"><div class="filename">Road3.png<div class="canonical">path_composite_blue_masonry_plain</div></div><div class="path">reference/assets/maps/OtherAssets/Paths/Road3.png</div><div class="meta"><span>7adc1efa4e87</span><span>240×480</span><span>path-composite-sheet</span><span class="decor-role" title="Path family">path composite</span><span class="candidate-role" title="Path material">blue masonry</span><span class="terrain-role">transparent</span><span class="npc-role">path composite sheet</span><span class="decor-role" title="Loot family: shared_path_composite">shared path composite</span><span class="reference">Reference</span><span class="confirmed">Reviewed</span></div></div>
+<div class="card" data-role="path-composite-sheet" data-world="SHARED_1_20" data-runtime="reference-only" data-pathfam="shared_path_composite" data-material="brown_paver" data-surfacecontext="grass-edge" data-lootfam="shared_path_composite" data-rendermode=""><img loading="lazy" src="https://pawsandparcels.agpstudios.org/reference/assets/maps/OtherAssets/Paths/Road4_grass.png" alt="Road4_grass.png"><div class="filename">Road4_grass.png<div class="canonical">path_composite_brown_paver_grass</div></div><div class="path">reference/assets/maps/OtherAssets/Paths/Road4_grass.png</div><div class="meta"><span>0bd19126041c</span><span>240×480</span><span>path-composite-sheet</span><span class="decor-role" title="Path family">path composite</span><span class="candidate-role" title="Path material">brown paver</span><span class="terrain-role">grass edge</span><span class="npc-role">path composite sheet</span><span class="decor-role" title="Loot family: shared_path_composite">shared path composite</span><span class="reference">Reference</span><span class="confirmed">Reviewed</span></div></div>
+<div class="card" data-role="path-composite-sheet" data-world="SHARED_1_20" data-runtime="reference-only" data-pathfam="shared_path_composite" data-material="brown_paver" data-surfacecontext="ground-edge" data-lootfam="shared_path_composite" data-rendermode=""><img loading="lazy" src="https://pawsandparcels.agpstudios.org/reference/assets/maps/OtherAssets/Paths/Road4_ground.png" alt="Road4_ground.png"><div class="filename">Road4_ground.png<div class="canonical">path_composite_brown_paver_ground</div></div><div class="path">reference/assets/maps/OtherAssets/Paths/Road4_ground.png</div><div class="meta"><span>3e7eaf929380</span><span>240×480</span><span>path-composite-sheet</span><span class="decor-role" title="Path family">path composite</span><span class="candidate-role" title="Path material">brown paver</span><span class="terrain-role">ground edge</span><span class="npc-role">path composite sheet</span><span class="decor-role" title="Loot family: shared_path_composite">shared path composite</span><span class="reference">Reference</span><span class="confirmed">Reviewed</span></div></div>
+<div class="card" data-role="path-composite-sheet" data-world="SHARED_1_20" data-runtime="reference-only" data-pathfam="shared_path_composite" data-material="brown_paver" data-surfacecontext="transparent" data-lootfam="shared_path_composite" data-rendermode=""><img loading="lazy" src="https://pawsandparcels.agpstudios.org/reference/assets/maps/OtherAssets/Paths/Road4.png" alt="Road4.png"><div class="filename">Road4.png<div class="canonical">path_composite_brown_paver_plain</div></div><div class="path">reference/assets/maps/OtherAssets/Paths/Road4.png</div><div class="meta"><span>ab6c7ea1f64c</span><span>240×480</span><span>path-composite-sheet</span><span class="decor-role" title="Path family">path composite</span><span class="candidate-role" title="Path material">brown paver</span><span class="terrain-role">transparent</span><span class="npc-role">path composite sheet</span><span class="decor-role" title="Loot family: shared_path_composite">shared path composite</span><span class="reference">Reference</span><span class="confirmed">Reviewed</span></div></div>
+<div class="card" data-role="path-composite-sheet" data-world="SHARED_1_20" data-runtime="reference-only" data-pathfam="shared_path_composite" data-material="pale_cobble" data-surfacecontext="grass-edge" data-lootfam="shared_path_composite" data-rendermode=""><img loading="lazy" src="https://pawsandparcels.agpstudios.org/reference/assets/maps/OtherAssets/Paths/Road5_grass.png" alt="Road5_grass.png"><div class="filename">Road5_grass.png<div class="canonical">path_composite_pale_cobble_grass</div></div><div class="path">reference/assets/maps/OtherAssets/Paths/Road5_grass.png</div><div class="meta"><span>3b3ad2a5ce04</span><span>240×416</span><span>path-composite-sheet</span><span class="decor-role" title="Path family">path composite</span><span class="candidate-role" title="Path material">pale cobble</span><span class="terrain-role">grass edge</span><span class="npc-role">path composite sheet</span><span class="decor-role" title="Loot family: shared_path_composite">shared path composite</span><span class="reference">Reference</span><span class="confirmed">Reviewed</span></div></div>
+<div class="card" data-role="path-composite-sheet" data-world="SHARED_1_20" data-runtime="reference-only" data-pathfam="shared_path_composite" data-material="pale_cobble" data-surfacecontext="ground-edge" data-lootfam="shared_path_composite" data-rendermode=""><img loading="lazy" src="https://pawsandparcels.agpstudios.org/reference/assets/maps/OtherAssets/Paths/Road5_ground.png" alt="Road5_ground.png"><div class="filename">Road5_ground.png<div class="canonical">path_composite_pale_cobble_ground</div></div><div class="path">reference/assets/maps/OtherAssets/Paths/Road5_ground.png</div><div class="meta"><span>2217bec20c66</span><span>240×416</span><span>path-composite-sheet</span><span class="decor-role" title="Path family">path composite</span><span class="candidate-role" title="Path material">pale cobble</span><span class="terrain-role">ground edge</span><span class="npc-role">path composite sheet</span><span class="decor-role" title="Loot family: shared_path_composite">shared path composite</span><span class="reference">Reference</span><span class="confirmed">Reviewed</span></div></div>
+<div class="card" data-role="path-composite-sheet" data-world="SHARED_1_20" data-runtime="reference-only" data-pathfam="shared_path_composite" data-material="pale_cobble" data-surfacecontext="transparent" data-lootfam="shared_path_composite" data-rendermode=""><img loading="lazy" src="https://pawsandparcels.agpstudios.org/reference/assets/maps/OtherAssets/Paths/Road5.png" alt="Road5.png"><div class="filename">Road5.png<div class="canonical">path_composite_pale_cobble_plain</div></div><div class="path">reference/assets/maps/OtherAssets/Paths/Road5.png</div><div class="meta"><span>81f19eeb93cc</span><span>240×416</span><span>path-composite-sheet</span><span class="decor-role" title="Path family">path composite</span><span class="candidate-role" title="Path material">pale cobble</span><span class="terrain-role">transparent</span><span class="npc-role">path composite sheet</span><span class="decor-role" title="Loot family: shared_path_composite">shared path composite</span><span class="reference">Reference</span><span class="confirmed">Reviewed</span></div></div>
+</div></section><section class="family" data-family="shared_path_source"><button type="button" class="family-toggle" aria-expanded="true"><span class="family-caret">▾</span><span class="family-title">Shared Path Tiled Source</span></button><div class="family-header"><h2>Shared Path Tiled Source</h2><p>1 Tiled source · 0 gameplay · 0 runtime · <span class="world-role">SHARED_1_20</span></p><p class="family-details">Family: <strong>shared path source</strong> · Render modes:  · Runtime: 0</p><p class="family-details npc-note">Roads.tmx — Tiled path-layout definition. Given the repeated layout of the five sheets, this TMX is the strongest candidate for encoding the intended tile regions/layout rather than manually chopping the sheets by eye (inference, fits the package structure). runtimeEligible false unless the runtime actually consumes TMX directly. Locked 2026-08-15.</p></div><div class="family-assets">
+<div class="card" data-role="tiled-map" data-world="SHARED_1_20" data-runtime="reference-only" data-pathfam="shared_path_source" data-lootfam="shared_path_source" data-rendermode=""><div style="height:250px;background:#f0f0f0;display:flex;align-items:center;justify-content:center;color:#666">.tmx</div><div class="filename">Roads.tmx<div class="canonical">source_paths_roads_tmx</div></div><div class="path">reference/assets/maps/OtherAssets/Paths/Roads.tmx</div><div class="meta"><span>b086157061df</span><span>path-composite</span><span>tiled-map</span><span class="npc-role">path layout definition</span><span class="dir-badge">tmx</span><span class="decor-role" title="Path family">source</span><span class="decor-role" title="Loot family: shared_path_source">shared path source</span><span class="topology">not runtime-eligible</span><span class="reference">Reference</span><span class="confirmed">Reviewed</span></div></div>
+</div></section></div>
+<script>
+(function () {
+  var families = document.querySelectorAll("section.family");
+  families.forEach(function (sec) {
+    var btn = sec.querySelector(".family-toggle");
+    var body = sec.querySelector(".family-assets");
+    btn.addEventListener("click", function () {
+      var open = body.style.display !== "none";
+      body.style.display = open ? "none" : "";
+      btn.setAttribute("aria-expanded", String(!open));
+      btn.querySelector(".family-caret").textContent = open ? "▸" : "▾";
+    });
+  });
+  var checks = document.querySelectorAll(".filter-check");
+  var clearBtn = document.getElementById("filter-clear");
+  function active(f, v) {
+    return Array.prototype.some.call(checks, function (ch) {
+      return ch.dataset.f === f && (!v || ch.dataset.v === v) && ch.checked;
+    });
+  }
+  function applyFilters() {
+    var placeable = active("placeable");
+    var cards = document.querySelectorAll(".card");
+    var visibleCount = 0;
+    cards.forEach(function (card) {
+      var show = true;
+      if (placeable && card.dataset.role !== "complete") show = false;
+      if (show && active("role") && !active("role", card.dataset.role)) show = false;
+      if (show && active("world") && !active("world", card.dataset.world)) show = false;
+      if (show && active("runtime") && !active("runtime", card.dataset.runtime)) show = false;
+      if (show && active("roadtype") && !active("roadtype", card.dataset.roadtype)) show = false;
+      if (show && active("surface") && !active("surface", card.dataset.surface)) show = false;
+      if (show && active("terrainrole") && !active("terrainrole", card.dataset.terrainrole)) show = false;
+      if (show && active("tilemode") && !active("tilemode", card.dataset.tilemode)) show = false;
+      if (show && active("variant") && !active("variant", card.dataset.variant)) show = false;
+      if (show && active("decorrole") && !active("decorrole", card.dataset.decorrole)) show = false;
+      if (show && active("collision") && !active("collision", card.dataset.collision)) show = false;
+      if (show && active("depthmode") && !active("depthmode", card.dataset.depthmode)) show = false;
+      if (show && active("density") && !active("density", card.dataset.density)) show = false;
+      if (show && active("npc") && !active("npc", card.dataset.npc)) show = false;
+      if (show && active("envtype") && !active("envtype", card.dataset.envtype)) show = false;
+      if (show && active("monster") && !active("monster", card.dataset.monster)) show = false;
+      if (show && active("shadowmode") && !active("shadowmode", card.dataset.shadowmode)) show = false;
+      if (show && active("monstertype") && !active("monstertype", card.dataset.monstertype)) show = false;
+      if (show && active("nature") && !active("nature", card.dataset.nature)) show = false;
+      if (show && active("naturerole") && !active("naturerole", card.dataset.naturerole)) show = false;
+      if (show && active("treetype") && !active("treetype", card.dataset.treetype)) show = false;
+      if (show && active("vdmap") && !active("vdmap", card.dataset.vdmap)) show = false;
+      if (show && active("roadrole") && !active("roadrole", card.dataset.roadrole)) show = false;
+      if (show && active("pathfam") && !active("pathfam", card.dataset.pathfam)) show = false;
+      if (show && active("lootfam") && !active("lootfam", card.dataset.lootfam)) show = false;
+      if (show && active("rendermode") && !active("rendermode", card.dataset.rendermode)) show = false;
+      if (show && active("material") && !active("material", card.dataset.material)) show = false;
+      if (show && active("surfacecontext") && !active("surfacecontext", card.dataset.surfacecontext)) show = false;
+      if (show && active("animation") && !active("animation", card.dataset.animation)) show = false;
+      if (show && active("direction") && !active("direction", card.dataset.direction)) show = false;
+      if (show && active("effect") && !active("effect", card.dataset.effect)) show = false;
+      if (show && active("effectvariant") && !active("effectvariant", card.dataset.effectvariant)) show = false;
+      if (show && active("topology") && !active("topology", card.dataset.topology)) show = false;
+      card.style.display = show ? "" : "none";
+      if (show) visibleCount += 1;
+    });
+    families.forEach(function (sec) {
+      var body = sec.querySelector(".family-assets");
+      if (body.dataset.userCollapsed === "1") return;
+      var visible = Array.prototype.some.call(sec.querySelectorAll(".card"), function (c) {
+        return c.style.display !== "none";
+      });
+      body.style.display = visible ? "" : "none";
+      sec.querySelector(".family-caret").textContent = visible ? "▾" : "▸";
+    });
+    var note = document.getElementById("filter-note");
+    if (note) note.textContent = visibleCount < cards.length ? "Showing " + visibleCount + " of " + cards.length + " assets" : "";
+  }
+  checks.forEach(function (ch) { ch.addEventListener("change", applyFilters); });
+  if (clearBtn) clearBtn.addEventListener("click", function () { checks.forEach(function (ch) { ch.checked = false; }); applyFilters(); });
+  families.forEach(function (sec) {
+    var btn = sec.querySelector(".family-toggle");
+    btn.addEventListener("click", function () {
+      var body = sec.querySelector(".family-assets");
+      var open = body.style.display !== "none";
+      if (open) body.dataset.userCollapsed = "1"; else delete body.dataset.userCollapsed;
+    });
+  });
+})();
+</script></body></html>

@@ -1,0 +1,77 @@
+{
+  "packs": [
+    {
+      "name": "Classes-Archer",
+      "total": 127,
+      "images": 106,
+      "categories": [
+        "class"
+      ]
+    },
+    {
+      "name": "Classes-Mage",
+      "total": 173,
+      "images": 128,
+      "categories": [
+        "class"
+      ]
+    },
+    {
+      "name": "Classes-Warrior",
+      "total": 264,
+      "images": 175,
+      "categories": [
+        "class"
+      ]
+    },
+    {
+      "name": "CloverVillage",
+      "total": 1573,
+      "images": 1465,
+      "categories": [
+        "building",
+        "decor",
+        "ground",
+        "npc",
+        "other",
+        "road"
+      ]
+    },
+    {
+      "name": "HappyValley",
+      "total": 1164,
+      "images": 894,
+      "categories": [
+        "monster",
+        "npc",
+        "other"
+      ]
+    },
+    {
+      "name": "loot",
+      "total": 146,
+      "images": 97,
+      "categories": [
+        "loot"
+      ]
+    },
+    {
+      "name": "OtherAssets",
+      "total": 17,
+      "images": 16,
+      "categories": [
+        "path-composite"
+      ]
+    },
+    {
+      "name": "VoidDesert",
+      "total": 3089,
+      "images": 2742,
+      "categories": [
+        "monster",
+        "nature",
+        "other"
+      ]
+    }
+  ]
+}
