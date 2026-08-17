@@ -29,7 +29,7 @@ import {
   isSnapshotForZone,
 } from "../net/snapshotOrdering.ts";
 
-/** Read the persistent 24-hour JWT (with a legacy tab-session fallback). */
+/** Read the persistent server-issued JWT (lifetime per server config; legacy tab-session fallback). */
 function readToken(): string | null {
   try {
     return window.localStorage.getItem("paws.auth.token") ?? window.sessionStorage.getItem("paws.auth.token");

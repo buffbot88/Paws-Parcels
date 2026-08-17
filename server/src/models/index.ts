@@ -27,7 +27,6 @@ export {
   toPublicClass,
 } from "./CharacterClass.ts";
 export { type ZoneRow, getZoneByKey } from "./Zone.ts";
-export { type RefreshToken, type TokenPair } from "./Session.ts";
 export {
   type EquipmentStats,
   type InventoryItemSnapshot,

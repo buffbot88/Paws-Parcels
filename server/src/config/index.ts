@@ -61,8 +61,6 @@ export interface DbConfig {
 export interface AuthConfig {
   jwtSecret: string;
   accessTokenTtlSeconds: number;
-  refreshTokenTtlSeconds: number;
-  bcryptRounds: number;
 }
 
 export interface OidcConfig {
@@ -160,21 +158,6 @@ function validateAndNormalize(raw: unknown): {
     errors,
     "auth.accessTokenTtlSeconds",
   );
-  const refreshTokenTtl = num(
-    authRaw.refreshTokenTtlSeconds,
-    86_400,
-    errors,
-    "auth.refreshTokenTtlSeconds",
-  );
-  const bcryptRounds = num(
-    authRaw.bcryptRounds,
-    12,
-    errors,
-    "auth.bcryptRounds",
-  );
-  if (bcryptRounds < 4 || bcryptRounds > 15) {
-    errors.push(`auth.bcryptRounds must be 4-15 (got ${bcryptRounds}).`);
-  }
 
   // oidc (Phase 3 — ASHAT Hub as an OIDC issuer)
   const clientId = reqStr(oidcRaw.clientId, "oidc.clientId", "", errors);
@@ -276,8 +259,6 @@ function validateAndNormalize(raw: unknown): {
     auth: {
       jwtSecret,
       accessTokenTtlSeconds: accessTokenTtl,
-      refreshTokenTtlSeconds: refreshTokenTtl,
-      bcryptRounds,
     },
     oidc: {
       clientId,

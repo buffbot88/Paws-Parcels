@@ -49,7 +49,21 @@ export async function runMigrations(): Promise<void> {
     try {
       db.exec("BEGIN");
       for (const stmt of statements) {
-        db.exec(stmt);
+        try {
+          db.exec(stmt);
+        } catch (err) {
+          // Dropping a column that this schema never had (fresh DBs created
+          // after a migration-001 cleanup) is a no-op, not a migration
+          // failure — SQLite has no DROP COLUMN IF EXISTS.
+          if (
+            /^ALTER TABLE\b[\s\S]*\bDROP COLUMN\b/i.test(stmt) &&
+            String(err).includes("no such column")
+          ) {
+            logger.debug(`Migration ${version}: skipping DROP COLUMN (column already absent)`);
+            continue;
+          }
+          throw err;
+        }
       }
 
       // Simple checksum: the file content length.

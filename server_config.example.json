@@ -19,9 +19,7 @@
   },
   "auth": {
     "jwtSecret": "REPLACE_ME_JWT_SECRET_AT_LEAST_32_CHARS_LONG",
-    "accessTokenTtlSeconds": 86400,
-    "refreshTokenTtlSeconds": 86400,
-    "bcryptRounds": 12
+    "accessTokenTtlSeconds": 86400
   },
   "oidc": {
     "_comment_clientId": "Registered client_id in Ashat Hub's oauth_clients table (seeded for Paws & Parcels).",

@@ -2,8 +2,9 @@
  * Phase 3 — LoginOverlay (OIDC redirect pattern). The whole page redirects
  * to ASHAT Hub's /authorize endpoint with PKCE; /oidc-callback.html receives
  * the code, POSTs it to /api/auth/oidc/callback, and returns here with a
- * stored JWT. The 24-hour auth session lives in localStorage so a page
- * refresh does not require another sign-in; PKCE verifier + state remain
+ * stored JWT. The auth session (lifetime per server config) lives in
+ * localStorage so a page refresh does not require another sign-in; PKCE
+ * verifier + state remain
  * tab-scoped in sessionStorage and die with the tab.
  */
 import { SELECTED_CHARACTER_KEY } from "../net/bootTarget.ts";
@@ -72,7 +73,7 @@ function readAuthValue(key: string): string | null {
   }
 }
 
-/** Promote a legacy tab session into the persistent 24-hour auth session. */
+/** Promote a legacy tab session into the persistent auth session (JWT TTL per server config). */
 function migrateLegacyAuth(): void {
   const persistent = persistentStore();
   const legacy = tabStore();

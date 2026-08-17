@@ -45,6 +45,7 @@ vi.mock("../../server/src/config/index.ts", () => ({
 
 import type { ZoneData } from "../../server/src/ws/zoneData.ts";
 import { GameServer, type SocketLike } from "../../server/src/ws/gameServer.ts";
+import type { EquipmentMutationResult } from "../../server/src/models/Equipment.ts";
 import {
   resetWsTokenStore,
   issueWsToken,
@@ -516,6 +517,42 @@ describe("GameServer", () => {
     expect(lastOfType(socket, "zone_state")).toMatchObject({ zoneId: "zone-next" });
   });
 
+  it("expires a stale session when the same character re-authenticates", async () => {
+    const server = makeServer();
+    const stale = fakeSocket();
+    const fresh = fakeSocket();
+    await connectAndJoin(server, stale, 10);
+
+    // The old socket is half-open from the server's perspective (its close
+    // event never arrived) when the client reconnects on a new socket.
+    await connectAndJoin(server, fresh, 10);
+    expect(stale.closed).toBe(true); // stale session was expired
+
+    // The stale socket's late close event must not yank the live player.
+    server.onClose(stale);
+    expect(server["zones"].get("zone-test", 10)?.connected).toBe(true);
+
+    // The fresh session owns the character and still gets snapshots.
+    server.runTick();
+    expect(lastOfType(fresh, "player_snapshot")).toBeDefined();
+  });
+
+  it("keeps the live player connected when the expired socket closes later", async () => {
+    const server = makeServer();
+    const a = fakeSocket();
+    const b = fakeSocket();
+    await connectAndJoin(server, a, 10);
+    await connectAndJoin(server, b, 10); // expires a
+
+    server.onClose(a);
+    // The grace restore in b's join already reconnected the player; the
+    // expired socket's close must not start a fresh grace window.
+    expect(server["zones"].get("zone-test", 10)?.connected).toBe(true);
+    expect(lastOfType(b, "player_snapshot")).toBeUndefined();
+    server.runTick();
+    expect(lastOfType(b, "player_snapshot")).toBeDefined();
+  });
+
   it("rejects joining a zone that is at max_players with ZONE_FULL", async () => {
     const server = makeServer();
     const zone = server["deps"].getZoneData("zone-test") as ZoneData;
@@ -816,6 +853,41 @@ describe("GameServer — move_item handler", () => {
       requestType: "move_item",
     });
     expect(lastOfType(socket, "inventory_updated")).toBeUndefined();
+  });
+
+  it("rejects move_item with a non-integer item id before touching the model", async () => {
+    const server = makeServer();
+    const socket = fakeSocket();
+    await connectAndJoin(server, socket);
+    const model = vi.fn<() => EquipmentMutationResult>(() => ({ ok: true, inventory: INVENTORY, message: "" }));
+    server["deps"].moveInventoryItem = model;
+    await server.onMessage(
+      socket,
+      JSON.stringify({ type: "move_item", itemInstanceId: "abc", targetSlot: 0 }),
+    );
+    expect(model).not.toHaveBeenCalled();
+    expect(lastOfType(socket, "error")).toMatchObject({
+      code: "INVALID_SLOT",
+      requestType: "move_item",
+    });
+    expect(lastOfType(socket, "inventory_updated")).toBeUndefined();
+  });
+
+  it("rejects equip_item with a missing item id as a clean protocol error", async () => {
+    const server = makeServer();
+    const socket = fakeSocket();
+    await connectAndJoin(server, socket);
+    const model = vi.fn<() => EquipmentMutationResult>(() => ({ ok: true, inventory: INVENTORY, message: "" }));
+    server["deps"].equipItem = model;
+    await server.onMessage(
+      socket,
+      JSON.stringify({ type: "equip_item", slot: "weapon" }),
+    );
+    expect(model).not.toHaveBeenCalled();
+    expect(lastOfType(socket, "error")).toMatchObject({
+      code: "INVALID_SLOT",
+      requestType: "equip_item",
+    });
   });
 
   it("broadcasts inventory_updated with the authoritative state on success", async () => {

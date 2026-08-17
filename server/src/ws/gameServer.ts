@@ -446,6 +446,11 @@ export class GameServer {
     session.characterId = character.characterId;
     session.zoneId = character.zoneId;
     session.authenticated = true;
+    // One session per character: a half-open socket that never reached the
+    // server's close event (the client reconnected before the heartbeat
+    // noticed) would otherwise stay in the map and yank the live player's
+    // zone state when its late onClose fires.
+    this.expireDuplicateSessions(character.characterId, session);
     session.socket.send({
       type: "authenticated",
       accountId: character.accountId,
@@ -648,7 +653,14 @@ export class GameServer {
       this.sendError(session, "INTERNAL_ERROR", "Inventory service is unavailable", "move_item");
       return;
     }
-    const result = this.deps.moveInventoryItem(characterId, Number(msg.itemInstanceId), Number(msg.targetSlot));
+    // Untrusted input: coerce nothing — a garbage id must be a clean protocol
+    // rejection, not a NaN bound into a prepared statement (INTERNAL_ERROR).
+    const itemInstanceId = Number(msg.itemInstanceId);
+    if (!Number.isInteger(itemInstanceId) || itemInstanceId < 1) {
+      this.sendError(session, "INVALID_SLOT", "itemInstanceId must be a positive integer", "move_item");
+      return;
+    }
+    const result = this.deps.moveInventoryItem(characterId, itemInstanceId, Number(msg.targetSlot));
     if (!result.ok) {
       this.sendError(session, result.reason, "Inventory move rejected", "move_item");
       return;
@@ -663,8 +675,14 @@ export class GameServer {
       this.sendError(session, "INTERNAL_ERROR", "Equipment service is unavailable", "equip_item");
       return;
     }
+    // Same untrusted-input guard as move_item: reject non-integer ids cleanly.
+    const itemInstanceId = Number(msg.itemInstanceId);
+    if (!Number.isInteger(itemInstanceId) || itemInstanceId < 1) {
+      this.sendError(session, "INVALID_SLOT", "itemInstanceId must be a positive integer", "equip_item");
+      return;
+    }
     const requestedSlot = typeof msg.slot === "string" ? msg.slot : undefined;
-    const result = this.deps.equipItem(characterId, Number(msg.itemInstanceId), requestedSlot);
+    const result = this.deps.equipItem(characterId, itemInstanceId, requestedSlot);
     if (!result.ok) {
       this.sendError(session, result.reason, "Equipment change rejected", "equip_item");
       return;
@@ -1179,6 +1197,25 @@ export class GameServer {
       if (session.characterId === characterId) return session;
     }
     return null;
+  }
+
+  /**
+   * Expire any other live session bound to the same character so a stale
+   * socket can never yank the reconnected player's zone state. The stale
+   * session's grace window starts first (the player it held is marked
+   * disconnected and will be restored or cleaned up by the fresh join), then
+   * its identity is cleared so its late onClose becomes a no-op.
+   */
+  private expireDuplicateSessions(characterId: number, keep: Session): void {
+    for (const [socket, session] of [...this.sessions]) {
+      if (session === keep || session.characterId !== characterId) continue;
+      this.startGrace(session);
+      session.characterId = null;
+      session.zoneId = null;
+      session.authenticated = false;
+      this.sessions.delete(socket);
+      socket.close();
+    }
   }
 
   private sendError(

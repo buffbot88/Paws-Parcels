@@ -188,7 +188,7 @@ async function main(): Promise<void> {
       }
 
       // Store body for route handlers
-      (req as any).body = body;
+      (req as IncomingMessage & { body?: unknown }).body = body;
 
       // Route resolution
       const matched = await router.resolve(req, res);
