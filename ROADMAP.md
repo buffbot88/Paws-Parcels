@@ -46,11 +46,11 @@ are complete. Next up: **Phase 5 — Inventory and Courier Equipment**. Phase 4A
 `DialogueService` friendship-level-aware set selection
 - **Map objects:** interactables (counter, quest board, mailbox, shop, signs) with flavor lines
 - **Validation:** NPCs must have dialogue sets; home tiles walkable; interactables unique/reachable
-- **Test suite:** 400 passing (server + client + content + maps + systems)
+- **Test suite:** 417 passing (server + client + content + maps + systems)
 
 ### Phase 0 — Pre-Production ✅
 - Locked decisions: 960×540 @ 48×48 tiles, Scale.FIT, ID conventions, economy, friendship thresholds
-- Content data: 5 NPCs, 20 items, 19 quests, 3 upgrades, 6 dialogue sets
+- Content data: 5 NPCs, 37 items, 23 quests, 3 upgrades, 6 dialogue sets
 - Data models: `PlayerState`, `SaveData`, `ItemDefinition`, `QuestDefinition`, `NPC`, etc.
 - Validation: `ContentValidator` + `scripts/validate-content.ts`
 
@@ -113,7 +113,7 @@ Goal: first monster map, basic combat, class system.
 - **WS protocol:** `attack` (C→S); `monster_snapshot`, `combat_event`,
   `loot_received`, `player_respawned` (S→C); error codes `INVALID_TARGET`,
   `OUT_OF_RANGE`, `COOLDOWN_ACTIVE`, `INSUFFICIENT_RESOURCE`, `TARGET_DEAD`
-- **Client:** Monster entity with HP bars + damage numbers, attack key (Space),
+- **Client:** Monster entity with HP bars + damage numbers, attack key (J),
   player HP chip, defeat/respawn handling
 - Gate: combat math server-side; monster + player respawn work; damage validated
 
@@ -129,7 +129,7 @@ Goal: teach movement, interaction, quest acceptance, parcel carrying, and local 
 
 ### Phase 4B — Village Side Quests ✅
 Goal: add optional local errands and friendship-gated stories before opening broader progression.
-- Five optional errands and deliveries after the Courier Circuit
+- Ten optional errands and deliveries after the Courier Circuit
 - Server-validated search objectives in Clover Village and Happy Valley
 - Friendship-gated personal stories with cosmetic and keepsake rewards
 - JSON-authored content with persisted per-character quest/friendship state

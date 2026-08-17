@@ -19,8 +19,8 @@ import { logger } from "../middleware/logger.ts";
  * GET /api/auth/login-url?state=...&code_challenge=...
  * Returns the ASHAT Hub authorize URL the client redirects the whole page
  * to. state + PKCE code_challenge come from the client (LoginOverlay holds
- * them in sessionStorage); the resulting 24-hour session JWT is persisted
- * client-side so a page refresh does not require another sign-in.
+ * them in sessionStorage); the resulting session JWT (TTL from auth config) is
+ * persisted client-side so a page refresh does not require another sign-in.
  */
 export async function loginUrlHandler(
   req: IncomingMessage,
@@ -194,7 +194,7 @@ export async function meHandler(
 
 /**
  * POST /api/auth/logout
- * JWT is stateless and expires after the configured 24-hour session window — the actual logout
+ * JWT is stateless and expires after the configured session TTL — the actual logout
  * is on the client (delete from localStorage). This endpoint exists so
  * the client can call it for symmetry, and so Phase 4 has a place to
  * add a token blacklist or refresh-token revocation.

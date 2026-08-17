@@ -1,7 +1,7 @@
 import { SignJWT, jwtVerify, type JWTPayload } from "jose";
 import { auth as authConfig } from "../config/index.ts";
 
-/** Generate the server-authoritative 24-hour session JWT. */
+/** Generate the server-authoritative session JWT (TTL from auth config). */
 export async function generateAccessToken(payload: {
   accountId: number;
   ashatUserId: string;

@@ -79,10 +79,14 @@ export class QuestTracker {
     const available = this.quests.find((quest) => quest.state === "available");
     const next = active ?? available;
     const tutorial = this.quests.filter((quest) => !quest.sideQuest);
+    // The circuit size comes from the server's quest snapshots, so the
+    // "N/5 routes" readout stays correct if the tutorial chain grows.
+    const circuitSize = tutorial.length;
     const tutorialCompleted = tutorial.filter((quest) => quest.state === "completed").length;
+    const circuitDone = circuitSize > 0 && tutorialCompleted >= circuitSize;
     const sideCompleted = this.quests.filter((quest) => quest.sideQuest && quest.state === "completed").length;
     this.root.hidden = next === undefined && this.quests.length === 0;
-    this.title.textContent = next?.title ?? (tutorialCompleted >= 5 ? "Clover Village routes" : "Explore Clover Village");
+    this.title.textContent = next?.title ?? (circuitDone ? "Clover Village routes" : "Explore Clover Village");
     this.objective.textContent = next === undefined
       ? "Meet village friends to unlock errands, stories, and keepsakes."
       : `${next.description}${next.state === "active" && next.type === "delivery" ? ` · Parcel: ${parcelConditionLabel(next.parcelCondition)}` : ""}`;
@@ -90,19 +94,19 @@ export class QuestTracker {
     if (active !== undefined) {
       const deadline = active.deadlineAt === null ? "" : ` · ${formatDeadline(active.deadlineAt)}`;
       const objective = active.searchObjectId !== null && active.progress === 0 ? ` · Search: ${active.findAt ?? "the marked location"}` : "";
-      this.status.textContent = `${active.type === "delivery" ? "Delivery" : "Objective"} ${active.progress}/${active.requiredQuantity} · Circuit ${tutorialCompleted}/5 · Side quests ${sideCompleted}${deadline}${objective}`;
+      this.status.textContent = `${active.type === "delivery" ? "Delivery" : "Objective"} ${active.progress}/${active.requiredQuantity} · Circuit ${tutorialCompleted}/${circuitSize} · Side quests ${sideCompleted}${deadline}${objective}`;
       this.action.hidden = true;
     } else if (available !== undefined) {
       this.status.textContent = this.offeredQuestId === available.questId
-        ? `New ${available.sideQuest ? "side quest" : "route"} ready · Circuit ${tutorialCompleted}/5`
-        : `Speak with ${available.giverId.replace("npc-", "")} to accept · Circuit ${tutorialCompleted}/5`;
+        ? `New ${available.sideQuest ? "side quest" : "route"} ready · Circuit ${tutorialCompleted}/${circuitSize}`
+        : `Speak with ${available.giverId.replace("npc-", "")} to accept · Circuit ${tutorialCompleted}/${circuitSize}`;
       this.action.textContent = available.sideQuest ? "Accept side quest" : "Accept route";
       this.action.hidden = this.offeredQuestId !== available.questId;
-    } else if (tutorialCompleted >= 5) {
+    } else if (circuitDone) {
       this.status.textContent = `Circuit complete · ${sideCompleted} side quest${sideCompleted === 1 ? "" : "s"} completed`;
       this.action.hidden = true;
     } else {
-      this.status.textContent = `${tutorialCompleted}/5 routes completed · speak with a village friend`;
+      this.status.textContent = `${tutorialCompleted}/${circuitSize} routes completed · speak with a village friend`;
       this.action.hidden = true;
     }
   }

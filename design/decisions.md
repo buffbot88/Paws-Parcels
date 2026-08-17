@@ -111,13 +111,13 @@
 - **Consequences:** Save system moves entirely server-side; migration scripts versioned.
 - **Status:** ✅ decided.
 
-### localStorage holds the 24-hour auth session, never gameplay state
+### localStorage holds the auth session, never gameplay state
 - **Decision:** localStorage may hold the server-issued authentication session and client
   settings (audio volumes, text speed, UI toggles, control bindings). It must never hold
   authoritative gameplay state, inventory, quest progress, or character saves.
 - **Reason:** Players should not have to sign in after every page refresh, while gameplay
   remains server-authoritative and protected from client-side state edits.
-- **Consequences:** The access JWT has a 24-hour absolute lifetime; logout clears it, and
+- **Consequences:** The access JWT's lifetime comes from server config; logout clears it, and
   a 401 clears the browser session. PKCE state/verifiers remain tab-scoped in sessionStorage.
 - **Status:** ✅ decided.
 
@@ -190,7 +190,7 @@
 - **Consequences:** All five cozy NPCs live in the hub for now (placeholders until
   Phase 7 art); zone transitions become server-validated join/leave as more zones
   land.
-- **Status:** ✅ built (hub map) / ⬜ planned (monster content, Phase 3).
+- **Status:** ✅ built (hub map + Happy Valley monster content).
 
 ### ID conventions (retained)
 - **Decision:** Stable kebab-case prefixed IDs (`zone-`, `npc-`, `item-`, `quest-`,
@@ -215,18 +215,17 @@
   progression + quest prerequisites.
 - **Consequences:** `friendships` table in SQLite; reputation changes are server-validated;
   the no-two-level-jump invariant still applies to rewards.
-- **Status:** ✅ decided (content) / ⬜ planned (server persistence).
+- **Status:** ✅ built (content + server persistence).
 
 ---
 
 ## 4. Controls (retained from single-player)
 
-- **Decision:** Desktop: WASD/arrows move · E/Space interact · attack via mouse-click or
-  hotkey per class · I inventory · J journal · Esc close. Mobile: virtual pad + on-screen
-  interact/attack buttons.
+- **Decision:** Desktop: WASD/arrows move · E/Space interact · J basic attack (Phase 3) ·
+  Esc closes panels. Mobile: pointer-drag virtual pad + on-screen interact/attack buttons.
 - **Reason:** Shipped input already works; combat adds an attack input.
 - **Consequences:** InputSystem gains attack intents; mobile gets an attack button.
-- **Status:** ✅ built (movement/interact) / ⬜ planned (attack).
+- **Status:** ✅ built.
 
 ## 5. Open questions (⚠)
 

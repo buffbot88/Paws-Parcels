@@ -28,7 +28,9 @@
 - Capture input (movement, interact, attack, UI) and send as **intents**.
 - Predict movement locally; reconcile with authoritative snapshots.
 - Display server-approved results (combat events, quest updates, inventory).
-- Persist the non-authoritative 24-hour auth session in localStorage so page refreshes do not require another sign-in; gameplay state remains server-side.
+- Persist the non-authoritative auth session (JWT, lifetime per server config) in
+  localStorage so page refreshes do not require another sign-in while the token is valid;
+  gameplay state remains server-side.
 - Never mutate gameplay state locally; never trust its own state for validation.
 
 ### Game/API server
@@ -57,16 +59,19 @@
 
 | Method | Path | Purpose | Auth |
 |---|---|---|---|
-| POST | `/api/auth/register` | Create account (email, password, name) | none (rate-limited) |
-| POST | `/api/auth/login` | Exchange credentials for access + refresh token | none (rate-limited) |
-| POST | `/api/auth/refresh` | Rotate refresh token → new access token | refresh token |
+| GET | `/api/health` | Health check (liveness + DB ping) | none |
+| GET | `/api/auth/login-url` | OIDC authorize URL (PKCE challenge) | none |
+| POST | `/api/auth/oidc/callback` | Exchange code + PKCE verifier for a session JWT | none |
+| GET | `/api/auth/me` | Validate the session JWT and return account + characters | access token |
 | POST | `/api/auth/logout` | Revoke current session | access token |
 | GET | `/api/characters` | List the account's characters | access token |
+| GET | `/api/classes` | Class catalog | access token |
 | POST | `/api/characters` | Create character (name, class, appearance) | access token |
-| GET | `/api/health` | Health check (liveness + DB ping) | none |
-| GET | `/api/content/:kind` | Static content (items, quests, monsters, recipes) | access token |
-| GET | `/api/zones/:zoneId` | Zone metadata (tiles, spawns, transitions) | access token |
+| GET | `/api/characters/:characterId/profile` | Character + inventory + stats snapshot | access token |
+| POST | `/api/characters/:characterId/skills/:skillKey/unlock` | Unlock a skill | access token |
 | GET | `/api/ws-token` | Obtain a short-lived WS handshake token | access token |
+| POST | `/api/npc/talk` | AI NPC dialogue line (world-brain) | access token |
+| POST | `/api/admin/visual-capture` | Save an in-game visual review capture | access token (Admin) |
 
 HTTP is for auth, character management, and content. All real-time gameplay is WebSocket.
 
@@ -84,24 +89,28 @@ HTTP is for auth, character management, and content. All real-time gameplay is W
     `inventory_updated`, `loot_received`, `error` to the affected clients.
 - Rate limiting: cap messages/sec per connection; queue intents; drop-and-error spam.
 
-## 5. Authentication flow
+## 5. Authentication flow (ASHAT Hub OIDC)
 
 ```text
-client ── POST /api/auth/login ──► server ──► SQLite (verify hash)
-server ── { accessToken (JWT, 24h session), refreshToken (random, 24h policy) } ──► client
-client stores the session token in localStorage (PKCE state remains tab-scoped); gameplay state stays server-side
+client ── GET /api/auth/login-url (PKCE challenge) ──► server ──► { authorize URL }
+client redirects to ASHAT Hub /authorize → Hub redirects back with the code
+client ── POST /api/auth/oidc/callback { code, verifier } ──► server
+server verifies the code + PKCE, validates the Hub's JWKS-signed ID token, upserts the account
+server ── { accessToken (JWT, TTL per server config), account, characters } ──► client
+client stores the JWT in localStorage (PKCE state/verifier remain tab-scoped and die with the tab)
 client ── GET /api/ws-token ──► server ──► { wsToken (30s) }
 client ── WS connect + { type: "authenticate", token: wsToken } ──► server
 server validates wsToken → binds socket to account+character → sends "authenticated"
 ```
 
-- **Passwords:** hashed with **argon2id** (or bcrypt) — never plain text, never logged.
-- **Refresh tokens:** random, stored hashed in SQLite (`refresh_tokens`), rotated on each
-  refresh, revocable on logout/compromise.
-- **Access tokens:** server-signed JWTs with a default 24-hour absolute session lifetime; the server rejects them after expiration.
-- **Secrets:** `JWT_SECRET`, DB credentials, token-pepper — env/secrets store only;
-  never in the repo (`docs/` and `.env*` excluded from commits; `.gitignore` updated in
-  Phase 1).
+- **Passwords:** none stored locally — identity is delegated to ASHAT Hub (authorization
+  code + PKCE, JWKS-verified ID tokens); no password hashing happens in this server.
+- **Sessions:** a signed JWT access token whose TTL comes from server config
+  (`auth.accessTokenTtlSeconds`); the client stores it and sends it as `Authorization`
+  for HTTP and to mint WS handshake tokens.
+- **Secrets:** `JWT_SECRET`, DB credentials, OIDC `clientId`/`discoveryUrl`/`issuer`
+  (public PKCE client — no client secret) — env/secrets store only; never in the repo
+  (`docs/` and `.env*` excluded from commits; `.gitignore` updated in Phase 1).
 
 ## 6. Reconnection behavior
 

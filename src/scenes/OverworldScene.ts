@@ -11,6 +11,7 @@ import {
   readSelectedCharacterId,
   resolveBootTarget,
 } from "../net/bootTarget.ts";
+import { classCooldownMs } from "../game/classStats.ts";
 import { hasAdminDevAccess, readAuthToken } from "../ui/LoginOverlay.ts";
 import { ChatBox } from "../ui/ChatBox.ts";
 import { apiPath } from "../config.ts";
@@ -241,7 +242,10 @@ export class OverworldScene extends Phaser.Scene {
         text: message.text,
         self: message.characterId === this.network.getCharacterId(),
       });
-    this.network.onAttackConfirmed = () => this.skillBar.showFeedback();
+    // The cooldown sweep should reflect how long the server will gate the
+    // next attack (bear 3s / cat 2.5s / fox 2s), not a fixed cosmetic flash.
+    this.network.onAttackConfirmed = () =>
+      this.skillBar.showFeedback(classCooldownMs(this.player.classKey));
     this.network.onLoot = () => {
       // The server has already committed loot to SQLite; refresh the open
       // sheet so inventory reflects the authoritative grant immediately.

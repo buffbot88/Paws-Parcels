@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import classesJson from "../../src/data/classes.json";
-import { classSpeed, type ClassKey } from "../../src/game/classStats.ts";
+import { classCooldownMs, classSpeed, type ClassKey } from "../../src/game/classStats.ts";
 import { CLASS_PROFILES } from "../../server/src/ws/combat.ts";
 
 // Client movement and server combat both key off the same class ids; a
@@ -24,6 +24,14 @@ describe("class data parity (client vs server)", () => {
       expect(profile, cls.key).toBeDefined();
       expect(profile.maxRange, cls.key).toBeGreaterThan(0);
       expect(profile.cooldownMs, cls.key).toBeGreaterThan(0);
+    }
+  });
+
+  it("client CLASS_COOLDOWN_MS matches the server's CLASS_PROFILES.cooldownMs", () => {
+    for (const cls of classes) {
+      expect(classCooldownMs(cls.key as ClassKey), cls.key).toBe(
+        CLASS_PROFILES[cls.key].cooldownMs,
+      );
     }
   });
 });

@@ -11,29 +11,13 @@ CREATE TABLE accounts (
   display_name VARCHAR(100),
   `role` VARCHAR(50) NOT NULL DEFAULT 'Member',
   ashat_user_id VARCHAR(64) UNIQUE,
-  password_hash VARCHAR(255),
   status TEXT NOT NULL DEFAULT 'active',
   created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
   updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
   last_login_at TEXT
 );
 
--- 2. refresh_tokens (sessions)
-CREATE TABLE refresh_tokens (
-  id INTEGER PRIMARY KEY AUTOINCREMENT,
-  account_id INTEGER NOT NULL REFERENCES accounts(id) ON DELETE CASCADE,
-  refresh_token_hash VARCHAR(64) NOT NULL UNIQUE,
-  expires_at TEXT NOT NULL,
-  revoked_at TEXT,
-  created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  last_used_at TEXT,
-  user_agent VARCHAR(500),
-  ip VARCHAR(45)
-);
-CREATE INDEX idx_refresh_tokens_account ON refresh_tokens(account_id);
-CREATE INDEX idx_refresh_tokens_expires ON refresh_tokens(expires_at);
-
--- 3. character_classes (JSON content materialized as a runtime lookup table)
+-- 2. character_classes (JSON content materialized as a runtime lookup table)
 CREATE TABLE character_classes (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   `key` VARCHAR(50) NOT NULL UNIQUE,
@@ -47,7 +31,7 @@ CREATE TABLE character_classes (
   description TEXT
 );
 
--- 4. characters
+-- 3. characters
 CREATE TABLE characters (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   account_id INTEGER NOT NULL REFERENCES accounts(id) ON DELETE CASCADE,
@@ -70,7 +54,7 @@ CREATE TABLE characters (
 CREATE INDEX idx_characters_account ON characters(account_id);
 CREATE INDEX idx_characters_zone ON characters(zone_id);
 
--- 5. character_stats (derived stats — 1:1 with characters)
+-- 4. character_stats (derived stats — 1:1 with characters)
 CREATE TABLE character_stats (
   character_id INTEGER NOT NULL PRIMARY KEY REFERENCES characters(id) ON DELETE CASCADE,
   attack INTEGER NOT NULL DEFAULT 10,
@@ -87,14 +71,14 @@ CREATE TABLE character_stats (
   updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
--- 6. inventories (1:1 with characters)
+-- 5. inventories (1:1 with characters)
 CREATE TABLE inventories (
   character_id INTEGER NOT NULL PRIMARY KEY REFERENCES characters(id) ON DELETE CASCADE,
   slot_count INTEGER NOT NULL DEFAULT 12,
   updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
--- 7. item_definitions (JSON content materialized as a runtime lookup table)
+-- 6. item_definitions (JSON content materialized as a runtime lookup table)
 CREATE TABLE item_definitions (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   `key` VARCHAR(100) NOT NULL UNIQUE,
@@ -109,7 +93,7 @@ CREATE TABLE item_definitions (
 );
 CREATE INDEX idx_item_definitions_category ON item_definitions(category);
 
--- 8. inventory_items
+-- 7. inventory_items
 CREATE TABLE inventory_items (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   character_id INTEGER NOT NULL REFERENCES characters(id) ON DELETE CASCADE,
@@ -122,7 +106,7 @@ CREATE TABLE inventory_items (
 CREATE INDEX idx_inventory_items_character ON inventory_items(character_id);
 CREATE INDEX idx_inventory_items_character_slot ON inventory_items(character_id, slot);
 
--- 9. equipment (slots: head, body, weapon, accessory)
+-- 8. equipment (slots: head, body, weapon, accessory, boots, courier-bag)
 CREATE TABLE equipment (
   character_id INTEGER NOT NULL REFERENCES characters(id) ON DELETE CASCADE,
   slot VARCHAR(20) NOT NULL,
@@ -131,7 +115,7 @@ CREATE TABLE equipment (
   PRIMARY KEY (character_id, slot)
 );
 
--- 10. quest_definitions (legacy compatibility table; JSON quests are authoritative)
+-- 9. quest_definitions (legacy compatibility table; JSON quests are authoritative)
 CREATE TABLE quest_definitions (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   `key` VARCHAR(100) NOT NULL UNIQUE,
@@ -152,7 +136,7 @@ CREATE TABLE quest_definitions (
 );
 CREATE INDEX idx_quest_definitions_next ON quest_definitions(next_quest_id);
 
--- 11. quest_prerequisites
+-- 10. quest_prerequisites
 CREATE TABLE quest_prerequisites (
   quest_id INTEGER NOT NULL REFERENCES quest_definitions(id) ON DELETE CASCADE,
   prerequisite_kind VARCHAR(20) NOT NULL,
@@ -162,7 +146,7 @@ CREATE TABLE quest_prerequisites (
 );
 CREATE INDEX idx_quest_prerequisites_quest ON quest_prerequisites(quest_id);
 
--- 12. character_quests
+-- 11. character_quests
 CREATE TABLE character_quests (
   character_id INTEGER NOT NULL REFERENCES characters(id) ON DELETE CASCADE,
   quest_id INTEGER NOT NULL REFERENCES quest_definitions(id) ON DELETE CASCADE,
@@ -175,7 +159,7 @@ CREATE TABLE character_quests (
 );
 CREATE INDEX idx_character_quests_state ON character_quests(character_id, state);
 
--- 13. friendships (reputation)
+-- 12. friendships (reputation)
 CREATE TABLE friendships (
   character_id INTEGER NOT NULL REFERENCES characters(id) ON DELETE CASCADE,
   npc_id VARCHAR(50) NOT NULL,
@@ -185,7 +169,7 @@ CREATE TABLE friendships (
   PRIMARY KEY (character_id, npc_id)
 );
 
--- 14. zones (JSON content materialized as a runtime lookup table)
+-- 13. zones (JSON content materialized as a runtime lookup table)
 CREATE TABLE zones (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   `key` VARCHAR(50) NOT NULL UNIQUE,
@@ -200,7 +184,7 @@ CREATE TABLE zones (
   is_safe INTEGER NOT NULL DEFAULT 0
 );
 
--- 15. dungeon_runs
+-- 14. dungeon_runs
 CREATE TABLE dungeon_runs (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   zone_id INTEGER NOT NULL REFERENCES zones(id) ON DELETE CASCADE,
@@ -214,7 +198,7 @@ CREATE TABLE dungeon_runs (
 CREATE INDEX idx_dungeon_runs_zone ON dungeon_runs(zone_id, state);
 CREATE INDEX idx_dungeon_runs_owner ON dungeon_runs(owner_character_id);
 
--- 16. monster_definitions (JSON content materialized as a runtime lookup table)
+-- 15. monster_definitions (JSON content materialized as a runtime lookup table)
 CREATE TABLE monster_definitions (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   `key` VARCHAR(100) NOT NULL UNIQUE,
@@ -235,7 +219,7 @@ CREATE TABLE monster_definitions (
 );
 CREATE INDEX idx_monster_definitions_zone ON monster_definitions(zone_id);
 
--- 17. audit_economy_events (append-only ledger)
+-- 16. audit_economy_events (append-only ledger)
 CREATE TABLE audit_economy_events (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   character_id INTEGER REFERENCES characters(id) ON DELETE SET NULL,
