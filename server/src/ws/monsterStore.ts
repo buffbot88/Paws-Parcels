@@ -39,6 +39,8 @@ export interface MonsterInstance {
   /** A passive monster's attacker for 10s after being hit (design §4). */
   grudgeTargetId: number | null;
   grudgeUntil: number;
+  /** Fractional tile budget so sub-tile speeds accrue across 20Hz ticks. */
+  moveBudget: number;
 }
 
 /** A connected player in the zone, shaped for monster AI. */
@@ -278,6 +280,14 @@ export class MonsterStore {
     }
   }
 
+  /** Whole tiles a monster may step this tick, from its fractional budget. */
+  private takeMoveSteps(m: MonsterInstance, elapsedMs: number): number {
+    m.moveBudget += (elapsedMs / 1000) * m.tilesPerSecond;
+    const steps = Math.floor(m.moveBudget);
+    m.moveBudget -= steps;
+    return steps;
+  }
+
   /** Move one tile per step directly away from a threat point. */
   private moveAwayFrom(
     m: MonsterInstance,
@@ -285,7 +295,7 @@ export class MonsterStore {
     isWalkable: (x: number, y: number) => boolean,
     elapsedMs: number,
   ): void {
-    const steps = Math.max(1, Math.round((elapsedMs / 1000) * m.tilesPerSecond));
+    const steps = this.takeMoveSteps(m, elapsedMs);
     for (let i = 0; i < steps; i++) {
       let dx = m.pos.x - threat.x;
       let dy = m.pos.y - threat.y;
@@ -342,8 +352,7 @@ export class MonsterStore {
     isWalkable: (x: number, y: number) => boolean,
     elapsedMs: number,
   ): void {
-    // Tile steps per update, scaled by elapsed time vs a 1s baseline.
-    const steps = Math.max(1, Math.round((elapsedMs / 1000) * m.tilesPerSecond));
+    const steps = this.takeMoveSteps(m, elapsedMs);
     for (let i = 0; i < steps; i++) {
       const dx = Math.sign(target.x - m.pos.x);
       const dy = Math.sign(target.y - m.pos.y);
@@ -394,5 +403,6 @@ function instanceFromSpawn(
     lastAttackAt: 0,
     grudgeTargetId: null,
     grudgeUntil: 0,
+    moveBudget: 0,
   };
 }

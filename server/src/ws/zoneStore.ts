@@ -96,13 +96,6 @@ export class ZoneStore {
     return [...this.zones.keys()];
   }
 
-  /** Whether any zone currently tracks the character. */
-  isTracked(characterId: number): boolean {
-    for (const zone of this.zones.values()) {
-      if (zone.has(characterId)) return true;
-    }
-    return false;
-  }
 }
 
 function toSnapshotPlayer(p: ZonePlayer): ZoneSnapshotPlayer {

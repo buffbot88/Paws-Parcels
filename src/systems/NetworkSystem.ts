@@ -91,7 +91,12 @@ export class NetworkSystem {
   /** Scene-owned minimap receives the same authoritative connection status. */
   onStatus: ((status: NetStatus, detail?: string) => void) | null = null;
   /** Surface non-gameplay connection failures to the scene-owned HUD. */
-  onError: ((code: string, message: string) => void) | null = null;
+  /** requestType is set for intent rejections (gameplay), absent for connection errors. */
+  onError: ((code: string, message: string, requestType?: string) => void) | null = null;
+  /** Friendly toast for gameplay rejections (quest/inventory/chat) — the
+   * scene wires this to its transient notice UI so rejections are never
+   * silently dropped. */
+  onGameplayNotice: ((message: string) => void) | null = null;
   onChatMessage: ((message: { characterId: number; name: string; text: string }) => void) | null = null;
   onNpcInteraction: ((npcId: string, quests: NetQuestSnapshot[]) => void) | null = null;
   onQuestState: ((quests: NetQuestSnapshot[]) => void) | null = null;
@@ -102,6 +107,9 @@ export class NetworkSystem {
   onAttackConfirmed: (() => void) | null = null;
   /** Server-authoritative tile for this courier (from zone_state) — scene snaps to it. */
   onSelfPosition: ((tile: { x: number; y: number }) => void) | null = null;
+  /** The authenticated session landed in a different zone than the boot scene
+   * (another tab moved the courier) — the scene should restart there. */
+  onServerZoneRedirect: ((zoneId: string) => void) | null = null;
   private currentStatus: NetStatus = "idle";
   private currentStatusDetail: string | undefined;
   private currentZoneId: string | null = null;
@@ -116,6 +124,10 @@ export class NetworkSystem {
   private latestSnapshotSequence = new Map<string, number>();
   /** Authoritative tile for this courier from the latest zone_state. */
   private selfPosition: { x: number; y: number } | null = null;
+  /** Zone the server authenticated this session into (fresher than the
+   * character-list snapshot used to pick the boot scene); cleared once a zone
+   * has actually been joined. */
+  private authoritativeZone: string | null = null;
 
   private constructor() {
     this.ensureHpChip();
@@ -126,6 +138,9 @@ export class NetworkSystem {
     if (zoneId !== undefined) this.expectedZoneId = zoneId;
     this.destroyEntities();
     this.scene = scene;
+    // shutdown() removes the HP chip; re-create it on every scene attach so
+    // a character switch (singleton reuse) never loses the HUD bar.
+    this.ensureHpChip();
     // The socket can now be started before Phaser finishes loading art. If the
     // server answered during the preloader, replay that authoritative snapshot
     // into the newly attached scene instead of losing the initial world state.
@@ -168,7 +183,15 @@ export class NetworkSystem {
     this.selfPosition = null;
     this.latestSnapshotSequence.clear();
     this.currentZoneId = null;
+    this.authoritativeZone = null;
     this.socket?.joinZone(zoneId);
+  }
+
+  /** The zone the server authenticated this session into, before any join
+   * (used by the scene to pick the boot zone when the character-list snapshot
+   * is stale — see the authenticated redirect in buildSocket). */
+  getAuthoritativeZone(): string | null {
+    return this.authoritativeZone;
   }
 
   /** Send a move intent for the current input vector (throttled by socket). */
@@ -218,11 +241,6 @@ export class NetworkSystem {
 
   getCharacterId(): number | null {
     return this.myCharacterId;
-  }
-
-  /** Server-confirmed identity and zone for production multiplayer diagnostics. */
-  getSessionInfo(): { characterId: number | null; zoneId: string | null } {
-    return { characterId: this.myCharacterId, zoneId: this.currentZoneId };
   }
 
   /** Authoritative tile for this courier from the latest zone_state (join restore). */
@@ -351,8 +369,11 @@ export class NetworkSystem {
     this.onQuestUpdated = null;
     this.onQuestNotice = null;
     this.onInventoryUpdated = null;
+    this.onGameplayNotice = null;
     this.onSelfPosition = null;
+    this.onServerZoneRedirect = null;
     this.selfPosition = null;
+    this.authoritativeZone = null;
   }
 
   /** Close the socket for good (logout / page teardown). */
@@ -363,6 +384,7 @@ export class NetworkSystem {
     this.latestZoneState = null;
     this.latestPlayers = null;
     this.selfPosition = null;
+    this.authoritativeZone = null;
     this.latestSnapshotSequence.clear();
     this.expectedZoneId = null;
     this.destroyEntities();
@@ -381,6 +403,17 @@ export class NetworkSystem {
     const character = characters.find((c) => c.id === characterId);
     const speed = classSpeedFromId(character?.class_id ?? 1);
     return Math.max(50, Math.round(48000 / speed));
+  }
+
+  /**
+   * Re-derive the intent throttle from the server's gear-adjusted speed
+   * (inventoryState.stats.speed — the same derivation the server's move cap
+   * uses, so the client never sends faster than the server accepts).
+   */
+  private applyInventorySpeed(state?: NetInventoryState): void {
+    const speed = state?.stats?.speed;
+    if (typeof speed !== "number" || !Number.isFinite(speed) || speed <= 0) return;
+    this.socket?.setMoveIntervalMs(Math.max(50, Math.round(48000 / speed)));
   }
 
   private buildSocket(characterId: number): GameSocket {
@@ -407,6 +440,22 @@ export class NetworkSystem {
       if (info.hp !== undefined && info.maxHp !== undefined) {
         this.setPlayerHp(info.hp, info.maxHp);
       }
+      // The server's authenticated zone is fresher than the /api/characters
+      // snapshot the boot scene was built from (another tab may have moved the
+      // courier between the two reads). Redirect only before any zone_state
+      // has been received — an established session always keeps its zone.
+      if (
+        info.zoneId !== "" &&
+        this.currentZoneId === null &&
+        this.latestZoneState === null &&
+        this.expectedZoneId !== null &&
+        info.zoneId !== this.expectedZoneId
+      ) {
+        this.authoritativeZone = info.zoneId;
+        this.expectedZoneId = info.zoneId;
+        this.socket?.joinZone(info.zoneId);
+        this.onServerZoneRedirect?.(info.zoneId);
+      }
     };
     socket.callbacks.onZoneState = (zoneId, players, monsters) =>
       this.handleZoneState(zoneId, players, monsters);
@@ -421,21 +470,34 @@ export class NetworkSystem {
     socket.callbacks.onQuestState = (quests) => this.onQuestState?.(quests);
     socket.callbacks.onQuestUpdated = (payload) => this.onQuestUpdated?.(payload);
     socket.callbacks.onQuestNotice = (message) => this.onQuestNotice?.(message);
-    socket.callbacks.onInventoryUpdated = (items, stamps, state) => this.onInventoryUpdated?.(items, stamps, state);
+    socket.callbacks.onInventoryUpdated = (items, stamps, state) => {
+      // Speed gear changes the server's accepted move cadence — keep the
+      // client's intent throttle in sync so the bonus isn't dead weight.
+      this.applyInventorySpeed(state);
+      this.onInventoryUpdated?.(items, stamps, state);
+    };
     socket.callbacks.onCombatEvent = (event) => this.handleCombatEvent(event);
     socket.callbacks.onRespawn = (info) => this.handleRespawn(info);
     socket.callbacks.onLoot = (sourceId, items) => this.onLoot?.(sourceId, items);
-    socket.callbacks.onError = (code, message) => {
+    socket.callbacks.onError = (code, message, requestType) => {
       // Collision/range rejections are normal gameplay feedback — stay quiet.
       if (
-        code !== "MOVE_COLLISION" &&
-        code !== "MOVE_TELEPORT_DETECTED" &&
-        code !== "OUT_OF_RANGE" &&
-        code !== "COOLDOWN_ACTIVE"
+        code === "MOVE_COLLISION" ||
+        code === "MOVE_TELEPORT_DETECTED" ||
+        code === "OUT_OF_RANGE" ||
+        code === "COOLDOWN_ACTIVE"
       ) {
-        console.warn(`[net] ${code}: ${message}`);
-        this.onError?.(code, message);
+        return;
       }
+      if (requestType !== undefined) {
+        // Gameplay rejection (quest/inventory/chat/zone) — surface a friendly
+        // notice instead of the scary connection panel (main.ts reserves that
+        // for requestType-less failures).
+        this.onGameplayNotice?.(message);
+        return;
+      }
+      console.warn(`[net] ${code}: ${message}`);
+      this.onError?.(code, message, requestType);
     };
     return socket;
   }
@@ -456,6 +518,7 @@ export class NetworkSystem {
       players: players.map((player) => ({ ...player, pos: { ...player.pos } })),
     };
     this.latestSnapshotSequence.delete(zoneId);
+    this.authoritativeZone = null;
     this.destroyEntities();
     for (const p of players) {
       if (p.characterId === this.myCharacterId) {

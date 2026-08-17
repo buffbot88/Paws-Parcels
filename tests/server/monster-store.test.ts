@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { MonsterStore, type MonsterPlayer } from "../../server/src/ws/monsterStore.ts";
 import type { MonsterDefinitionRow } from "../../server/src/models/Monster.ts";
+import type { BrainMonsterDecision } from "../../server/src/ai/prompts.ts";
 
 function def(overrides: Partial<MonsterDefinitionRow> = {}): MonsterDefinitionRow {
   return {
@@ -162,5 +163,86 @@ describe("MonsterStore — AI behavior", () => {
     // The monster should NOT have walked all the way to y=11 (leash range 10).
     const monster = store.get("zone-happy-valley", "m1");
     expect(monster?.pos.y).toBeLessThan(11);
+  });
+
+  it("moves at its tiles/sec rate, not one tile per tick", () => {
+    // Regression: the old code moved Math.max(1, ...) tiles every tick, so at
+    // 20Hz a 2.5 tiles/s monster ran at 20 tiles/s. With the fractional budget
+    // a 50ms tick yields 0 whole tiles until the budget accrues.
+    const store = seededStore();
+    const p = player({ pos: { x: 2, y: 6 } }); // 4 tiles away — inside aggro range
+    // 20 ticks of 50ms = 1s of game time = ~2.5 tiles for a 120 px/s monster.
+    for (let i = 0; i < 20; i++) {
+      store.update("zone-happy-valley", 1000 + i * 50, [p], walkable, 50);
+    }
+    const monster = store.get("zone-happy-valley", "m1");
+    const moved = Math.abs(monster!.pos.y - 2) + Math.abs(monster!.pos.x - 2);
+    expect(moved).toBeLessThanOrEqual(3);
+    expect(moved).toBeGreaterThanOrEqual(2);
+  });
+});
+
+describe("MonsterStore — brain decision overrides", () => {
+  const decisions = (d: BrainMonsterDecision) => new Map([["m1", d]]);
+
+  it("a seek decision moves the monster toward the target tile", () => {
+    const store = seededStore();
+    const decision = decisions({ action: "seek", targetPlayerId: null, targetTile: { x: 8, y: 2 } });
+    for (let i = 0; i < 10; i++) {
+      store.update("zone-happy-valley", 1000 + i * 1000, [], walkable, 1000, decision);
+    }
+    const monster = store.get("zone-happy-valley", "m1");
+    expect(monster?.pos.x).toBeGreaterThan(2);
+  });
+
+  it("a patrol decision holds position once the tile is reached", () => {
+    const store = seededStore();
+    const decision = decisions({ action: "patrol", targetPlayerId: null, targetTile: { x: 2, y: 2 } });
+    store.update("zone-happy-valley", 1000, [], walkable, 1000, decision);
+    const monster = store.get("zone-happy-valley", "m1");
+    expect(monster?.pos).toEqual({ x: 2, y: 2 });
+  });
+
+  it("a flee decision moves the monster away from the threat tile", () => {
+    const store = seededStore();
+    // Threat one tile north of home (2,2) — fleeing pushes the monster south.
+    const decision = decisions({ action: "flee", targetPlayerId: null, targetTile: { x: 2, y: 1 } });
+    for (let i = 0; i < 6; i++) {
+      store.update("zone-happy-valley", 1000 + i * 1000, [], walkable, 1000, decision);
+    }
+    const monster = store.get("zone-happy-valley", "m1");
+    // Fleeing from its own home tile pushes it off that tile.
+    expect(monster?.pos).not.toEqual({ x: 2, y: 2 });
+  });
+
+  it("an attack decision strikes the named player in range", () => {
+    const store = seededStore();
+    const p = player({ pos: { x: 2, y: 3 } }); // adjacent to home (2,2)
+    const decision = decisions({ action: "attack", targetPlayerId: 10, targetTile: null });
+    const events = store.update("zone-happy-valley", 10_000, [p], walkable, 50, decision);
+    expect(events.length).toBe(1);
+    expect(events[0].playerId).toBe(10);
+  });
+
+  it("an attack decision chases when the target is out of range", () => {
+    const store = seededStore();
+    const p = player({ pos: { x: 2, y: 6 } });
+    const decision = decisions({ action: "attack", targetPlayerId: 10, targetTile: null });
+    for (let i = 0; i < 6; i++) {
+      store.update("zone-happy-valley", 1000 + i * 1000, [p], walkable, 1000, decision);
+    }
+    const monster = store.get("zone-happy-valley", "m1");
+    expect(monster?.pos.y).toBeGreaterThan(2);
+  });
+
+  it("falls back to deterministic AI when the decision's target is gone", () => {
+    const store = seededStore();
+    // attack names a player that is not present and no fallback target exists.
+    const decision = decisions({ action: "attack", targetPlayerId: 999, targetTile: null });
+    const events = store.update("zone-happy-valley", 10_000, [], walkable, 50, decision);
+    expect(events).toEqual([]);
+    // Monster stays put (no target, at home).
+    const monster = store.get("zone-happy-valley", "m1");
+    expect(monster?.pos).toEqual({ x: 2, y: 2 });
   });
 });

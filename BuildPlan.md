@@ -154,7 +154,8 @@ See [`design/quests.md`](design/quests.md). Summary:
 ## 11. Inventory & Equipment
 
 - Server-authoritative inventory: slots, stacks, item ownership (per character).
-- Equipment slots: head, body, weapon, accessory. Gear modifies `character_stats`.
+- Equipment slots: head, body, weapon, accessory, boots, courier-bag (six total). Gear
+  modifies `character_stats`.
 - Item transactions (buy, sell, equip, quest reward, loot) are server-validated and
   audited via `audit_economy_events`.
 - See [`design/database-schema.md`](design/database-schema.md) (`inventories`,
@@ -177,8 +178,9 @@ See [`design/crafting.md`](design/crafting.md). Summary:
 
 - **Gear materials** (dungeon drops) → craft equipment.
 - **Upgrade materials** (monster drops + dungeon) → upgrade existing gear levels.
-- Recipes live in SQLite (`item_definitions` + recipe fields) and are validated server-side:
-  materials present, station used, level cap respected.
+- Recipes are authored in versioned `src/data/*.json` (like items and classes) and
+  validated server-side — materials present, station used, level cap respected. No
+  hand-authored recipe SQL; the JSON catalogs are the single source of truth (see §14).
 - One crafting station in the MVP (in Main Village).
 
 ## 14. SQLite Persistence

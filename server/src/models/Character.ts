@@ -3,6 +3,7 @@ import type { CharacterClassRow } from "./CharacterClass.ts";
 import { getZoneByKey } from "./Zone.ts";
 import { logger } from "../middleware/logger.ts";
 import { auditInventoryEvent, getDerivedEquipmentStats, getEffectiveSlotCount, getInventoryState, type EquipmentStats } from "./Equipment.ts";
+import { applyExperience } from "./leveling.ts";
 
 type SqlRow = Record<string, unknown>;
 
@@ -288,14 +289,11 @@ export async function grantExperience(characterId: number, amount: number): Prom
   const row = db.prepare("SELECT experience, level, skill_points FROM characters WHERE id = ?").get(characterId) as SqlRow | undefined;
   if (row === undefined) return null;
   const next = Math.max(0, Number(row.experience ?? 0) + Math.max(0, amount));
-  let level = Math.max(1, Number(row.level ?? 1));
-  let skillPoints = Math.max(0, Number(row.skill_points ?? 0));
-  let threshold = level * 100;
-  while (next >= threshold) {
-    level += 1;
-    skillPoints += 1;
-    threshold = level * 100;
-  }
+  const { level, skillPoints } = applyExperience(
+    Number(row.level ?? 1),
+    Number(row.skill_points ?? 0),
+    next,
+  );
   db.prepare("UPDATE characters SET experience = ?, level = ?, skill_points = ?, updated_at = ? WHERE id = ?")
     .run(next, level, skillPoints, new Date().toISOString(), characterId);
   return next;

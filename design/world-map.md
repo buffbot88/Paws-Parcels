@@ -13,7 +13,7 @@
 
 # Paws & Parcels — MVP World Map Sketch (LEGACY — single-player)
 
-Tile size **48×48**. Viewport ≈ 20×11.25 tiles at 960×540 (the game zooms to 0.65 for the village, ≈30×17 tiles). All coordinates are in **tile units** (x, y), origin top-left.
+Tile size **48×48**. Viewport ≈ 20×11.25 tiles at 960×540 (the game zooms to 0.8 for the village, ≈25×14 tiles). All coordinates are in **tile units** (x, y), origin top-left.
 
 ## Zone: Clover Village (hub) — `zone-clover-village`
 Dimensions: **75×75 tiles** (regenerated as one compact world map — see `scripts/generate-clover-village.py`; the original 30×20 sketch is superseded). Village district around a plaza at `(37,38)`, southern road to Happy Valley at `(37,74)`. All five cozy NPCs live here (see `design/npcs.md`).

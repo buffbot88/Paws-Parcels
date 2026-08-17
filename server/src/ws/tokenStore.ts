@@ -7,6 +7,8 @@ import { randomBytes } from "node:crypto";
  */
 
 const WS_TOKEN_TTL_MS = 30_000;
+/** Outstanding-token cap per account — bounds memory if issuance is spammed. */
+const MAX_TOKENS_PER_ACCOUNT = 5;
 
 interface WsTokenEntry {
   accountId: number;
@@ -22,11 +24,25 @@ export function issueWsToken(
   accountId: number,
   characterId: number,
 ): string {
+  const now = Date.now();
+  // Expired tokens are only deleted on consume, so prune them here — this is
+  // the only place the store grows.
+  for (const [key, entry] of store) {
+    if (entry.expiresAt < now) store.delete(key);
+  }
+  // Enforce the per-account cap, dropping the oldest tokens first.
+  const mine: string[] = [];
+  for (const [key, entry] of store) {
+    if (entry.accountId === accountId) mine.push(key);
+  }
+  for (const key of mine.slice(0, mine.length - (MAX_TOKENS_PER_ACCOUNT - 1))) {
+    store.delete(key);
+  }
   const token = randomBytes(24).toString("base64url");
   store.set(token, {
     accountId,
     characterId,
-    expiresAt: Date.now() + WS_TOKEN_TTL_MS,
+    expiresAt: now + WS_TOKEN_TTL_MS,
     used: false,
   });
   return token;

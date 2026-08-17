@@ -31,7 +31,6 @@ describe("ZoneStore", () => {
     const isNew = store.join("zone-clover-village", player());
     expect(isNew).toBe(true);
     expect(store.players("zone-clover-village")).toHaveLength(1);
-    expect(store.isTracked(1)).toBe(true);
   });
 
   it("reports a reconnect as already-present (grace restore)", () => {
@@ -67,7 +66,6 @@ describe("ZoneStore", () => {
     expect(removed?.characterId).toBe(1);
     expect(store.players("zone-clover-village")).toHaveLength(0);
     expect(store.zoneIds()).toEqual([]);
-    expect(store.isTracked(1)).toBe(false);
   });
 
   it("leave returns null for a player not in the zone", () => {
@@ -97,7 +95,5 @@ describe("ZoneStore", () => {
     store.join("zone-clover-village", player({ characterId: 1 }));
     store.join("zone-happy-valley", player({ characterId: 2 }));
     expect(store.zoneIds()).toEqual(["zone-clover-village", "zone-happy-valley"]);
-    expect(store.isTracked(2)).toBe(true);
-    expect(store.isTracked(3)).toBe(false);
   });
 });

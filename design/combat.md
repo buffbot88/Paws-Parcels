@@ -2,7 +2,8 @@
 
 > Companion docs: [`BuildPlan.md`](../BuildPlan.md), [`decisions.md`](decisions.md),
 > [`classes.md`](classes.md), [`monsters.md`](monsters.md), [`dungeons.md`](dungeons.md).
-> Status: ⬜ planned (Phase 3 implementation).
+> Status: ✅ built (Phase 3) — server-authoritative combat in `server/src/ws/combat.ts`
+> + `monsterStore.ts` (damage formula, class range/cooldowns, defeat → hub respawn).
 
 ---
 

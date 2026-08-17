@@ -41,12 +41,6 @@ export class MonsterBrain {
     return zoneDecisions;
   }
 
-  /** Clear a zone's decisions (e.g., zone emptied). */
-  clearZone(zoneId: string): void {
-    this.decisions.delete(zoneId);
-    this.lastDecisionAt.delete(zoneId);
-  }
-
   /**
    * Fire one decision request for the zone if it is due. Never awaited by the
    * caller; the result (or a failure) lands asynchronously.

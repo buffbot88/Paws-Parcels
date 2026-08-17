@@ -46,7 +46,7 @@ are complete. Next up: **Phase 5 — Inventory and Courier Equipment**. Phase 4A
 `DialogueService` friendship-level-aware set selection
 - **Map objects:** interactables (counter, quest board, mailbox, shop, signs) with flavor lines
 - **Validation:** NPCs must have dialogue sets; home tiles walkable; interactables unique/reachable
-- **Test suite:** 69 passing (content + map + systems)
+- **Test suite:** 400 passing (server + client + content + maps + systems)
 
 ### Phase 0 — Pre-Production ✅
 - Locked decisions: 960×540 @ 48×48 tiles, Scale.FIT, ID conventions, economy, friendship thresholds

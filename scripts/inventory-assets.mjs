@@ -85,7 +85,7 @@ const inventory = {
   policy: {
     runtimeUsed: "Files matched by the explicit runtime asset rules in scripts/inventory-assets.mjs.",
     referenceOnly: "Files retained for future art selection and not currently queued by the client.",
-    ignored: "The source asset archive is local-only and intentionally ignored by Git.",
+    ignored: "The source asset archive is committed to the repository as reference material.",
   },
   summary: {
     files: files.length,

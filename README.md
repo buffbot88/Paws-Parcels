@@ -37,13 +37,19 @@ Config lives under `ai` in `server_config.json` (see `server_config.example.json
 | `npm run typecheck` | TypeScript check (`tsc --noEmit`) |
 | `npm test` | Run Vitest unit tests |
 | `npm run validate` | Validate `src/data` content integrity |
-| `npm run assets:inventory` | Rebuild the tracked asset inventory from the local ignored reference archive |
+| `npm run assets:inventory` | Rebuild the tracked asset inventory from the committed reference archive |
 | `http://localhost:5173/Asset%20Catalog/` | Open the browsable visual Asset Catalog after `npm run dev` |
 | `npm run visual:review -- --image scripts/tiles-review.png` | Ask the local 450M VL for a dry-run 2.5D visual direction report |
 | `npm run visual:latest` | Find the newest complete `paws-visual-*.png`/`.json` capture pair, review it, and archive the report under `reports/` |
 | `npm run visual:history` | Compare archived Visual Director reports and write recurring issues/trends to `reports/visual-history.json` |
 | **Ctrl+Shift+V in-game (Admin only)** | Save a live `paws-visual-*.png` screenshot plus matching `paws-visual-*.json` scene metadata to the server's `server/data/visual-captures/` directory for Visual Director review |
 | `npm run dev:server` | Start the game/API server (localhost:3001) |
+| `npm run start:server` | Same as `dev:server` (alias used by deploy configs) |
+| `npm run test:watch` | Run Vitest in watch mode |
+| `npm run tiles:render` | Render the authored tileset PNGs |
+| `npm run tiles:review` | Ask the local AI for a tile-render review |
+| `npm run tiles:loop` | Render tiles then review them in one pass |
+| `npm run tiles:tune` | Auto-tune tile render parameters |
 | `npm run migrate` | Apply SQLite migrations + seeds (`server/data/paws-and-parcels.sqlite`) |
 
 The current Alpha workflow keeps `server/data/paws-and-parcels.sqlite` in the repository so the database can be transferred through GitHub. Keep the repository private when it contains real account or character data; GitHub is not a safe public production-database backup or concurrent database service.
@@ -123,7 +129,7 @@ server/            Node/TS game server (HTTP + WebSocket, SQLite persistence, mi
 | [`design/decisions.md`](design/decisions.md) | Locked decisions (2.5D, authority, classes, zones) |
 | [`design/architecture.md`](design/architecture.md) | Client/server/SQLite responsibilities, HTTP, WS, lifecycle |
 | [`design/database-schema.md`](design/database-schema.md) | SQLite entities, PK/FK, ownership, auth/secrets |
-| [`design/network-protocol.md`](design/network-protocol.md) | WS/HTTP messages (10 C→S + 8 S→C), payload shapes, validation, failure cases |
+| [`design/network-protocol.md`](design/network-protocol.md) | WS/HTTP messages (13 C→S + 15 S→C), payload shapes, validation, failure cases |
 | [`design/classes.md`](design/classes.md) | Bear Warrior · Cat Mage · Fox Archer cards |
 | [`design/combat.md`](design/combat.md) | Damage, health, defeat, respawn, validation |
 | [`design/quests.md`](design/quests.md) | Quest chains, prerequisites, gated deliveries |

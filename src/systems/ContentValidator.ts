@@ -1,8 +1,8 @@
 import type { ContentData } from "../types/ContentData.ts";
 import type { ItemCategory } from "../types/ItemTypes.ts";
-import type { QuestType } from "../types/QuestTypes.ts";
-import type { ZoneId } from "../types/NPCtypes.ts";
+import type { QuestDefinition, QuestType } from "../types/QuestTypes.ts";
 import type { StaticContentData } from "../types/ContentData.ts";
+import { MAP_DIMENSIONS } from "../game/Maps.ts";
 
 export interface ValidationResult {
   errors: string[];
@@ -10,10 +10,6 @@ export interface ValidationResult {
   /** True when there are no errors. */
   ok: boolean;
 }
-
-const ZONE_DIMS: Record<ZoneId, { w: number; h: number }> = {
-  "zone-clover-village": { w: 75, h: 75 },
-};
 
 const CATEGORIES: readonly ItemCategory[] = ["resource", "gift", "delivery", "quest", "cosmetic", "material", "equipment"];
 const EQUIPMENT_SLOTS = ["head", "body", "weapon", "accessory", "boots", "courier-bag"] as const;
@@ -58,7 +54,7 @@ export function validateContent(data: ContentData): ValidationResult {
   // ---- NPC checks ----
   for (const npc of data.npcs) {
     if (!npc.name || typeof npc.name !== "string") fail(`npc ${npc.id}: missing name`);
-    const dims = ZONE_DIMS[npc.homeZone];
+    const dims = MAP_DIMENSIONS[npc.homeZone];
     if (!dims) {
       fail(`npc ${npc.id}: unknown homeZone "${npc.homeZone}"`);
       continue;
@@ -68,10 +64,10 @@ export function validateContent(data: ContentData): ValidationResult {
       continue;
     }
     if (
-      npc.homeTile.x < 0 || npc.homeTile.x >= dims.w ||
-      npc.homeTile.y < 0 || npc.homeTile.y >= dims.h
+      npc.homeTile.x < 0 || npc.homeTile.x >= dims.width ||
+      npc.homeTile.y < 0 || npc.homeTile.y >= dims.height
     ) {
-      fail(`npc ${npc.id}: homeTile (${npc.homeTile.x},${npc.homeTile.y}) outside ${npc.homeZone} (${dims.w}x${dims.h})`);
+      fail(`npc ${npc.id}: homeTile (${npc.homeTile.x},${npc.homeTile.y}) outside ${npc.homeZone} (${dims.width}x${dims.height})`);
     }
   }
 
@@ -262,6 +258,79 @@ export function validateStaticContent(data: StaticContentData, itemIds: Readonly
     for (const loot of monster.lootTable) {
       if (!itemIds.has(loot.key)) fail(`monster ${monster.key}: loot references unknown item "${loot.key}"`);
       if (loot.chance < 0 || loot.chance > 1 || loot.quantity < 1) fail(`monster ${monster.key}: loot entry "${loot.key}" has invalid chance/quantity`);
+    }
+  }
+  return { errors, warnings: [], ok: errors.length === 0 };
+}
+
+/**
+ * Every quest's searchObjectId must reference a real map interactable.
+ * Shipped quests (server filter: chainPosition>0 or phase "4B") error on a
+ * dangling reference; quests the server filters out only warn, since they
+ * cannot be played anyway.
+ */
+export function validateQuestSearchObjects(
+  quests: readonly QuestDefinition[],
+  interactableIds: ReadonlySet<string>,
+): ValidationResult {
+  const errors: string[] = [];
+  const warnings: string[] = [];
+  for (const q of quests) {
+    if (q.searchObjectId === undefined) continue;
+    if (interactableIds.has(q.searchObjectId)) continue;
+    const shipped = (q.chainPosition ?? 0) > 0 || q.phase === "4B";
+    const msg = `quest ${q.id}: searchObjectId "${q.searchObjectId}" is not a known map interactable`;
+    if (shipped) errors.push(msg);
+    else warnings.push(`${msg} (quest is not currently shipped)`);
+  }
+  return { errors, warnings, ok: errors.length === 0 };
+}
+
+/** Minimal map shape the parity checks need (avoids importing the full MapData). */
+interface ParityMap {
+  width: number;
+  height: number;
+  spawn: { x: number; y: number };
+  monsterSpawns?: { id: string; key: string }[];
+}
+
+/**
+ * zones.json dimensions/spawn must match the client map files — the server
+ * builds collision from the map while clients render from zones.json, so a
+ * drift desyncs movement validation from what players see.
+ */
+export function validateZoneMapParity(
+  zones: readonly { key: string; widthTiles: number; heightTiles: number; defaultSpawn: { x: number; y: number } }[],
+  maps: Readonly<Record<string, ParityMap>>,
+): ValidationResult {
+  const errors: string[] = [];
+  for (const zone of zones) {
+    const map = maps[zone.key];
+    if (map === undefined) {
+      errors.push(`zone ${zone.key}: no client map registered for this key`);
+      continue;
+    }
+    if (zone.widthTiles !== map.width || zone.heightTiles !== map.height) {
+      errors.push(`zone ${zone.key}: zones.json ${zone.widthTiles}x${zone.heightTiles} != map ${map.width}x${map.height}`);
+    }
+    if (zone.defaultSpawn.x !== map.spawn.x || zone.defaultSpawn.y !== map.spawn.y) {
+      errors.push(`zone ${zone.key}: zones.json spawn (${zone.defaultSpawn.x},${zone.defaultSpawn.y}) != map spawn (${map.spawn.x},${map.spawn.y})`);
+    }
+  }
+  return { errors, warnings: [], ok: errors.length === 0 };
+}
+
+/** Every map monster-spawn key must reference a defined monster in monsters.json. */
+export function validateMonsterSpawnKeys(
+  maps: Readonly<Record<string, ParityMap>>,
+  monsterKeys: ReadonlySet<string>,
+): ValidationResult {
+  const errors: string[] = [];
+  for (const [zoneId, map] of Object.entries(maps)) {
+    for (const spawn of map.monsterSpawns ?? []) {
+      if (!monsterKeys.has(spawn.key)) {
+        errors.push(`${zoneId}: monster spawn "${spawn.id}" references unknown monster key "${spawn.key}"`);
+      }
     }
   }
   return { errors, warnings: [], ok: errors.length === 0 };

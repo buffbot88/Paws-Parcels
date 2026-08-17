@@ -63,7 +63,10 @@ function showConnectionDiagnostic(title: string, detail: string): void {
   container.appendChild(panel);
 }
 
-NetworkSystem.get().onError = (code, message) => {
+NetworkSystem.get().onError = (code, message, requestType) => {
+  // Intent rejections (requestType set) are gameplay feedback, not a broken
+  // connection — the scary diagnostic panel is reserved for real failures.
+  if (requestType !== undefined) return;
   showConnectionDiagnostic("Village connection failed", `${code}: ${message}`);
 };
 

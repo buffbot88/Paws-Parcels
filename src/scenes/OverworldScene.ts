@@ -106,10 +106,13 @@ export class OverworldScene extends Phaser.Scene {
     this.visualInteractables = [];
 
     // Boot where the courier actually is (their server-saved zone + position)
-    // unless a scene restart already decided the zone. Unknown saved zones
-    // fall back to the hub — never leave the scene half-built.
+    // unless a scene restart already decided the zone. The authenticated
+    // session's zone wins over the character-list snapshot (which can be stale
+    // if another tab moved the courier). Unknown saved zones fall back to the
+    // hub — never leave the scene half-built.
     const boot = resolveBootTarget(readBootCharacters());
-    const requestedZone = data?.zoneId ?? boot.zoneId;
+    const requestedZone =
+      data?.zoneId ?? this.network.getAuthoritativeZone() ?? boot.zoneId;
     const map = MAPS[requestedZone];
     if (!map) {
       console.warn(
@@ -219,6 +222,9 @@ export class OverworldScene extends Phaser.Scene {
       CharacterProfilePanel.instance?.refresh();
     };
     this.network.onQuestNotice = (message) => this.questTracker.showMessage(message);
+    // Gameplay rejections (quest/inventory/chat/zone) arrive as tagged errors —
+    // show them in the same transient notice slot so they're never silent.
+    this.network.onGameplayNotice = (message) => this.questTracker.showMessage(message);
     this.network.onStatus = (status, detail) => {
       this.minimap.setServerStatus(status, detail);
       this.chatBox.setEnabled(status === "joined");
@@ -241,9 +247,15 @@ export class OverworldScene extends Phaser.Scene {
       // sheet so inventory reflects the authoritative grant immediately.
       CharacterProfilePanel.instance?.refresh();
     };
-    this.network.onInventoryUpdated = () => {
+    this.network.onInventoryUpdated = (_items, _stamps, state) => {
       // Equip, unequip, move, and quest/loot grants all arrive as authoritative
-      // snapshots. Keep the open courier ledger in sync with the server.
+      // snapshots. Keep the open courier ledger in sync with the server, and
+      // let gear speed affect the rendered courier (the server already allows
+      // the faster cadence — the sprite must keep up or the view desyncs).
+      const speed = state?.stats?.speed;
+      if (typeof speed === "number" && Number.isFinite(speed) && speed > 0) {
+        this.player.setSpeed(speed);
+      }
       CharacterProfilePanel.instance?.refresh();
     };
 
@@ -251,15 +263,24 @@ export class OverworldScene extends Phaser.Scene {
     this.lastTileX = spawn.x;
     this.lastTileY = spawn.y;
 
-    // On a fresh boot (no explicit transition/respawn spawn) the server is
-    // authoritative for where this courier actually is. Snap to the zone_state
-    // position so a page refresh lands exactly where the server restored them
-    // instead of the possibly-stale boot position.
-    if (data?.spawn === undefined) {
-      this.network.onSelfPosition = (tile) => this.placeAtTile(tile);
-      const authoritativeTile = this.network.getSelfPosition();
-      if (authoritativeTile !== null) this.placeAtTile(authoritativeTile);
-    }
+    // The server is always authoritative for where this courier actually is.
+    // Keep snapping to zone_state so a page refresh, defeat respawn, or any
+    // scene restart with a spawn never lets the render diverge from the server.
+    this.network.onSelfPosition = (tile) => this.placeAtTile(tile);
+    const authoritativeTile = this.network.getSelfPosition();
+    if (authoritativeTile !== null) this.placeAtTile(authoritativeTile);
+
+    // The server authenticated this session into a different zone than this
+    // scene (another tab moved the courier before this tab's join) — restart
+    // the scene there. Only fires before the first zone_state, so an
+    // established session never gets yanked around by reconnects.
+    this.network.onServerZoneRedirect = (zoneId) => {
+      if (zoneId === this.mapData.id) return;
+      this.network.joinZone(zoneId);
+      this.scene.restart({
+        zoneId,
+      } satisfies OverworldSceneData);
+    };
 
     this.inputSystem = new InputSystem(this, { devAccess: hasAdminDevAccess() });
 

@@ -5,7 +5,6 @@
 > Each decision lists **Decision · Reason · Consequences · Status**.
 > Status markers: ✅ built · ⏭ next · ⬜ planned · ⚠ blocked or undecided · 🗃 archived
 >
-> Historical single-player decisions were archived to
 > The former single-player decisions document was retired when this online plan became authoritative.
 
 ---

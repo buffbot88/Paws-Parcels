@@ -184,6 +184,33 @@ describe("ws handshake token store", () => {
       vi.useRealTimers();
     }
   });
+
+  it("caps outstanding tokens per account, evicting the oldest first", () => {
+    const first = issueWsToken(7, 10);
+    for (let i = 0; i < 4; i++) issueWsToken(7, 10);
+    const sixth = issueWsToken(7, 10);
+    // The first token is evicted by the cap; the newest is still valid.
+    expect(consumeWsToken(first)).toBeNull();
+    expect(consumeWsToken(sixth)).toEqual({ accountId: 7, characterId: 10 });
+  });
+
+  it("evicting one account never touches another account's tokens", () => {
+    const other = issueWsToken(8, 11);
+    for (let i = 0; i < 5; i++) issueWsToken(7, 10);
+    expect(consumeWsToken(other)).toEqual({ accountId: 8, characterId: 11 });
+  });
+
+  it("prunes expired tokens on issue", () => {
+    vi.useFakeTimers();
+    try {
+      const stale = issueWsToken(7, 10);
+      vi.advanceTimersByTime((WS_TOKEN_TTL_SECONDS + 1) * 1000);
+      issueWsToken(8, 11); // issuance prunes the expired entry
+      expect(consumeWsToken(stale)).toBeNull();
+    } finally {
+      vi.useRealTimers();
+    }
+  });
 });
 
 // ===== GET /api/ws-token =====
@@ -249,6 +276,26 @@ describe("wsTokenHandler", () => {
     );
     expect(res._status).toBe(404);
     expect(res._body).toMatchObject({ error: "CHARACTER_NOT_FOUND" });
+  });
+
+  it("still issues to a capped account after the oldest token was evicted", async () => {
+    const token = await generateAccessToken({
+      accountId: 7,
+      ashatUserId: "u-7",
+      username: "maple",
+      role: "Member",
+    });
+    mockGetAccount.mockResolvedValue(ACCOUNT);
+    mockGetCharacter.mockResolvedValue(CHARACTER);
+    for (let i = 0; i < 6; i++) issueWsToken(7, 10); // flood past the cap
+    const res = makeRes();
+    await wsTokenHandler(
+      makeReq({ url: "/api/ws-token?characterId=10", authHeader: `Bearer ${token}` }),
+      res,
+    );
+    expect(res._status).toBe(200);
+    const body = res._body as { wsToken: string };
+    expect(consumeWsToken(body.wsToken)).toEqual({ accountId: 7, characterId: 10 });
   });
 
   it("issues a single-use token for an owned character", async () => {

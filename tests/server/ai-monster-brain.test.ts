@@ -121,18 +121,6 @@ describe("MonsterBrain", () => {
     expect(monsterBrain.decisionsFor("zone-happy-valley")).toBeNull();
   });
 
-  it("clears a zone's decisions and lets it be asked again", async () => {
-    const { monsterBrain, completeJson } = makeBrain();
-    monsterBrain.requestDecision(scene(), 1_000);
-    await settle();
-    expect(monsterBrain.decisionsFor("zone-happy-valley")).not.toBeNull();
-    monsterBrain.clearZone("zone-happy-valley");
-    expect(monsterBrain.decisionsFor("zone-happy-valley")).toBeNull();
-    monsterBrain.requestDecision(scene(), 1_001);
-    await settle();
-    expect(completeJson).toHaveBeenCalledTimes(2); // throttle state cleared too
-  });
-
   it("prewarm delegates to the brain", () => {
     const { monsterBrain, brain } = makeBrain();
     monsterBrain.prewarm();

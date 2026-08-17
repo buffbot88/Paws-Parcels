@@ -2,7 +2,8 @@
 
 > Companion docs: [`BuildPlan.md`](../BuildPlan.md), [`decisions.md`](decisions.md),
 > [`combat.md`](combat.md), [`database-schema.md`](database-schema.md).
-> Status: ⬜ planned (Phase 3 implementation).
+> Status: ✅ built (Phase 3) — three classes (bear/cat/fox) seeded in SQLite and driven
+> by the JSON class catalog; the client mirrors speed/combat tables in `classStats.ts`.
 
 ---
 

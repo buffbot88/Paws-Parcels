@@ -169,39 +169,50 @@ async function main(): Promise<void> {
   });
 
   const server = createServer(async (req: IncomingMessage, res: ServerResponse) => {
-    // Apply CORS and other universal middleware
-    await middleware(req, res);
-    if (res.writableEnded) return; // OPTIONS preflight
-
-    // Parse body for non-GET requests
-    let body: unknown;
     try {
-      body = await parseBody(req);
-    } catch (err) {
-      if (err instanceof RequestBodyTooLargeError) {
-        errorResponse(res, 413, "REQUEST_TOO_LARGE", "Request body exceeds the upload limit");
-      } else {
-        errorResponse(res, 400, "INVALID_JSON", "Request body is not valid JSON");
-      }
-      return;
-    }
+      // Apply CORS and other universal middleware
+      await middleware(req, res);
+      if (res.writableEnded) return; // OPTIONS preflight
 
-    // Store body for route handlers
-    (req as any).body = body;
-
-    // Route resolution
-    const matched = await router.resolve(req, res);
-
-    if (!matched) {
-      // Not an API route — serve the built client (production single-process
-      // hosting), otherwise 404.
-      if (serveClientFile !== null && serveClientFile(req, res)) {
+      // Parse body for non-GET requests
+      let body: unknown;
+      try {
+        body = await parseBody(req);
+      } catch (err) {
+        if (err instanceof RequestBodyTooLargeError) {
+          errorResponse(res, 413, "REQUEST_TOO_LARGE", "Request body exceeds the upload limit");
+        } else {
+          errorResponse(res, 400, "INVALID_JSON", "Request body is not valid JSON");
+        }
         return;
       }
-      jsonResponse(res, 404, {
-        error: "NOT_FOUND",
-        message: `Route ${req.method} ${req.url} not found`,
-      });
+
+      // Store body for route handlers
+      (req as any).body = body;
+
+      // Route resolution
+      const matched = await router.resolve(req, res);
+
+      if (!matched) {
+        // Not an API route — serve the built client (production single-process
+        // hosting), otherwise 404.
+        if (serveClientFile !== null && serveClientFile(req, res)) {
+          return;
+        }
+        jsonResponse(res, 404, {
+          error: "NOT_FOUND",
+          message: `Route ${req.method} ${req.url} not found`,
+        });
+      }
+    } catch (err) {
+      // A handler bug must produce a 500, never an unhandled rejection that
+      // takes the whole game server down.
+      logger.error("Unhandled HTTP handler error", { url: req.url, err: String(err) });
+      if (!res.headersSent) {
+        errorResponse(res, 500, "INTERNAL_ERROR", "Internal server error");
+      } else if (!res.writableEnded) {
+        res.end();
+      }
     }
   });
 

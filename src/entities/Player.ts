@@ -24,8 +24,10 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
   static readonly BODY_HEIGHT = 20;
 
   readonly classKey: ClassKey;
-  /** Movement speed (px/s) matching the server's class speed — see classAssets.ts. */
-  readonly speed: number;
+  /** Movement speed (px/s) matching the server's class speed — see classAssets.ts.
+   * Raised to the gear-adjusted speed when the server's inventory snapshot
+   * arrives, so speed gear renders (and the intent throttle matches). */
+  private speed: number;
   facing: Facing = "down";
   private moving = false;
   private readonly attackCompleteHandler = (): void => this.playIdle();
@@ -45,6 +47,13 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     this.setScale(1.33);
     this.setDepth(worldDepth(this.y));
     this.playIfAvailable("idle", "south");
+  }
+
+  /** Adjust the rendered speed to the server's gear-adjusted px/s. */
+  setSpeed(pxPerSecond: number): void {
+    if (Number.isFinite(pxPerSecond) && pxPerSecond > 0) {
+      this.speed = pxPerSecond;
+    }
   }
 
   move(vector: MoveVector): void {

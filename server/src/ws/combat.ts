@@ -96,7 +96,9 @@ export interface ClassCombatProfile {
   cooldownMs: number;
 }
 
-const CLASS_PROFILES: Readonly<Record<string, ClassCombatProfile>> = {
+/** Raw per-class profiles — exported so parity tests can assert the table
+ * itself (the accessor's fallback would mask a deleted profile). */
+export const CLASS_PROFILES: Readonly<Record<string, ClassCombatProfile>> = {
   "bear-warrior": { maxRange: 1, cooldownMs: 3000 },
   "cat-mage": { maxRange: 4, cooldownMs: 2500 },
   "fox-archer": { maxRange: 5, cooldownMs: 2000 },

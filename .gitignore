@@ -7,6 +7,9 @@ coverage/
 /.freebuff
 oraclehost_id_rsa
 
+# Scratch / review artifacts (npm cache, ad-hoc notes)
+tmp/
+
 # Unified server config — contains real DB password and JWT secret.
 # Commit server_config.example.json instead; copy it locally and fill in secrets.
 server_config.json

@@ -2,7 +2,8 @@
 
 > Companion docs: [`BuildPlan.md`](../BuildPlan.md), [`decisions.md`](decisions.md),
 > [`combat.md`](combat.md), [`dungeons.md`](dungeons.md), [`database-schema.md`](database-schema.md).
-> Status: ⬜ planned (Phase 3 implementation).
+> Status: ✅ built (Phase 3) — Happy Valley monsters seeded via migration 004, spawned
+> from map spawn points, driven by deterministic AI (with the optional world-brain override).
 >
 > **Map note:** Phase 3's open-world combat zone is **Happy Valley** (`zone-happy-valley`).
 > The old Bramble Patch plan was dropped — the art pack shipped for Happy Valley instead

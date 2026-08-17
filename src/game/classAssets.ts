@@ -1,6 +1,8 @@
 import Phaser from "phaser";
+import type { ClassKey } from "./classStats.ts";
 
-export type ClassKey = "bear-warrior" | "cat-mage" | "fox-archer";
+export type { ClassKey } from "./classStats.ts";
+export { classKeyFromId, classSpeed, classSpeedFromId } from "./classStats.ts";
 export type SpriteDirection = "north" | "south" | "east" | "west";
 export type SpriteAnimation = "idle" | "walk" | "attack" | "death";
 
@@ -13,36 +15,6 @@ const classFolders: Readonly<Record<ClassKey, "Warrior" | "Mage" | "Archer">> = 
   "cat-mage": "Mage",
   "fox-archer": "Archer",
 };
-
-/** The stable seeded class order used by the server's class migration. */
-export function classKeyFromId(classId: number): ClassKey {
-  if (classId === 2) return "cat-mage";
-  if (classId === 3) return "fox-archer";
-  return "bear-warrior";
-}
-
-/**
- * Per-class movement speed in px/s. This must match the server's seeded
- * `character_classes.base_stats.speed` (design/classes.md) — the server caps
- * accepted moves at 1000/(speed/48) ms per tile, so the client has to render
- * and emit move intents at the SAME rate or the server position drifts behind
- * the rendered courier and NPC/quest interactions fail their range check.
- */
-const CLASS_SPEED: Readonly<Record<ClassKey, number>> = {
-  "bear-warrior": 150,
-  "cat-mage": 170,
-  "fox-archer": 190,
-};
-
-/** Movement speed in px/s for a class key. */
-export function classSpeed(classKey: ClassKey): number {
-  return CLASS_SPEED[classKey];
-}
-
-/** Movement speed in px/s for a class id (server-seeded order). */
-export function classSpeedFromId(classId: number): number {
-  return CLASS_SPEED[classKeyFromId(classId)];
-}
 
 const idleFrames: AssetGlob = import.meta.glob(
   "../../reference/assets/Classes/*/Idle/animations/**/*.png",
@@ -70,13 +42,6 @@ const effectFrames: AssetGlob = {
     { eager: true, query: "?url", import: "default" },
   ),
 } as AssetGlob;
-
-const classByFolder = (folder: string): ClassKey | null => {
-  if (folder === "Warrior") return "bear-warrior";
-  if (folder === "Mage") return "cat-mage";
-  if (folder === "Archer") return "fox-archer";
-  return null;
-};
 
 function numericFrameOrder(path: string): number {
   const match = path.match(/(?:frame_|\/)(\d+)(?:\.png)?$/i);
@@ -219,7 +184,3 @@ export function playAttackEffect(
   effect.play(key);
 }
 
-/** Parse an imported asset path into its class key, useful for diagnostics. */
-export function classKeyFromFolder(folder: string): ClassKey | null {
-  return classByFolder(folder);
-}

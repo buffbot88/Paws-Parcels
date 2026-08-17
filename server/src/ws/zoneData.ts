@@ -2,6 +2,12 @@ import { readFileSync } from "node:fs";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { TILES } from "../../../src/game/Tiles.ts";
+import zonesJson from "../../../src/data/zones.json" with { type: "json" };
+
+/** zones.json is the single authored source for zone capacity. */
+const ZONE_CAPACITY = new Map(
+  zonesJson.zones.map((zone) => [zone.key, zone.maxPlayers]),
+);
 
 /**
  * Server-side zone geometry for movement validation. Reads the same custom
@@ -29,6 +35,10 @@ export interface ZoneData {
   isWalkable: (x: number, y: number) => boolean;
   /** Outdoor monster spawn points (design/monsters.md §1); empty in safe zones. */
   monsterSpawns: { id: string; key: string; x: number; y: number }[];
+  /** Zone capacity (zones.json maxPlayers) — enforced in handleJoinZone. */
+  maxPlayers: number;
+  /** Map-authored zone transitions — the only legal cross-zone joins. */
+  transitions: { x: number; y: number; toZone: string }[];
 }
 
 interface MapFile {
@@ -37,6 +47,7 @@ interface MapFile {
   rows: string[];
   spawn?: { x: number; y: number };
   monsterSpawns?: { id: string; key: string; x: number; y: number }[];
+  transitions?: { x: number; y: number; toZone: string }[];
 }
 
 // Resolve relative to this module, never process.cwd() — the server must find
@@ -70,7 +81,28 @@ export function loadZoneData(zoneId: string): ZoneData | null {
     spawn: map.spawn ?? { x: 0, y: 0 },
     isWalkable: (x, y) => isWalkableTile(map, x, y),
     monsterSpawns: normalizeSpawns(map.monsterSpawns),
+    maxPlayers: ZONE_CAPACITY.get(zoneId) ?? 32,
+    transitions: normalizeTransitions(map.transitions),
   };
+}
+
+/** Keep only well-formed transition entries (x, y + a non-empty toZone). */
+function normalizeTransitions(
+  raw: MapFile["transitions"],
+): { x: number; y: number; toZone: string }[] {
+  if (!Array.isArray(raw)) return [];
+  const out: { x: number; y: number; toZone: string }[] = [];
+  for (const t of raw) {
+    if (
+      Number.isInteger(t.x) &&
+      Number.isInteger(t.y) &&
+      typeof t.toZone === "string" &&
+      t.toZone !== ""
+    ) {
+      out.push({ x: t.x, y: t.y, toZone: t.toZone });
+    }
+  }
+  return out;
 }
 
 /** Keep only well-formed spawn entries (id + key + in-bounds coords). */

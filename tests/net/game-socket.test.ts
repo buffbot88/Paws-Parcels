@@ -266,6 +266,30 @@ describe("GameSocket.moveIntent", () => {
     expect(ws.sentOfType("move_intent")).toHaveLength(0);
   });
 
+  it("setMoveIntervalMs tightens/loosens the throttle (gear speed sync)", async () => {
+    let now = 1000;
+    const socket = makeSocket({ moveIntervalMs: 320, now: () => now });
+    const ws = await connectedSocket(socket);
+
+    socket.moveIntent(1, 0);
+    socket.moveIntent(0, 1);
+    expect(ws.sentOfType("move_intent")).toHaveLength(1); // 320ms not elapsed
+
+    // Server reports gear-adjusted speed 160 px/s → 48000/160 = 300ms.
+    socket.setMoveIntervalMs(Math.round(48000 / 160));
+    now += 300;
+    socket.moveIntent(0, 1);
+    expect(ws.sentOfType("move_intent")).toHaveLength(2); // 300ms elapsed since last send
+
+    now += 299; // 299ms < 300ms — still throttled (not back to the 320ms base)
+    socket.moveIntent(1, 0);
+    expect(ws.sentOfType("move_intent")).toHaveLength(2);
+
+    now += 1; // full 300ms elapsed → allowed
+    socket.moveIntent(0, -1);
+    expect(ws.sentOfType("move_intent")).toHaveLength(3);
+  });
+
   it("does not send before joining a zone", async () => {
     const socket = makeSocket();
     await socket.connect();
@@ -346,7 +370,7 @@ describe("GameSocket message dispatch", () => {
 
     const ws = await connectedSocket(socket);
     ws.receive({ type: "error", code: "MOVE_COLLISION", message: "nope", requestType: "move_intent" });
-    expect(onError).toHaveBeenCalledWith("MOVE_COLLISION", "nope");
+    expect(onError).toHaveBeenCalledWith("MOVE_COLLISION", "nope", "move_intent");
   });
 
   it("sends and dispatches same-zone chat messages", async () => {
@@ -393,5 +417,71 @@ describe("GameSocket reconnect", () => {
     expect(socket.statusValue).toBe("closed");
     await vi.advanceTimersByTimeAsync(10_000);
     expect(FakeWebSocket.instances).toHaveLength(1); // no reconnect
+  });
+
+  it("keeps retrying on a slow cadence after the fast attempts are exhausted", async () => {
+    vi.useFakeTimers();
+    const socket = makeSocket({ maxReconnectAttempts: 2, reconnectDelayMs: 100 });
+    await socket.connect();
+    const ws1 = FakeWebSocket.instances[0];
+    ws1.open();
+    ws1.receive({ type: "authenticated", accountId: 7, characterId: 5, zoneId: "zone-clover-village" });
+
+    // Attempts 1 and 2 use the fast backoff (100ms * attempt).
+    ws1.close();
+    expect(socket.statusValue).toBe("reconnecting");
+    await vi.advanceTimersByTimeAsync(100);
+    const ws2 = FakeWebSocket.instances[1];
+    ws2.open();
+    ws2.receive({ type: "authenticated", accountId: 7, characterId: 5, zoneId: "zone-clover-village" });
+    ws2.close();
+    await vi.advanceTimersByTimeAsync(200);
+    const ws3 = FakeWebSocket.instances[2];
+    ws3.open();
+    ws3.receive({ type: "authenticated", accountId: 7, characterId: 5, zoneId: "zone-clover-village" });
+    ws3.close();
+
+    // Attempt 3 exceeds maxReconnectAttempts → slow cadence, still retrying.
+    expect(socket.statusValue).toBe("reconnecting");
+    await vi.advanceTimersByTimeAsync(8_000);
+    expect(FakeWebSocket.instances).toHaveLength(4);
+    const ws4 = FakeWebSocket.instances[3];
+    ws4.open();
+    ws4.receive({ type: "authenticated", accountId: 7, characterId: 5, zoneId: "zone-clover-village" });
+
+    // A successful re-authentication resets the cycle.
+    expect(ws4.sentOfType("authenticate")).toHaveLength(1);
+  });
+
+  it("keeps retrying when the ws-token fetch fails mid-reconnect", async () => {
+    vi.useFakeTimers();
+    let failFetch = false;
+    const socket = makeSocket({
+      reconnectDelayMs: 100,
+      fetchImpl: (async (input: RequestInfo | URL, init?: RequestInit) => {
+        if (failFetch) throw new Error("offline");
+        return makeFetch()(input, init);
+      }) as typeof fetch,
+    });
+    await socket.connect();
+    const ws1 = FakeWebSocket.instances[0];
+    ws1.open();
+    ws1.receive({ type: "authenticated", accountId: 7, characterId: 5, zoneId: "zone-clover-village" });
+
+    // Drop the network; the first reconnect's token fetch fails — the cycle
+    // must schedule another attempt instead of stranding at "closed".
+    failFetch = true;
+    ws1.close();
+    await vi.advanceTimersByTimeAsync(100);
+    expect(socket.statusValue).toBe("reconnecting");
+    expect(FakeWebSocket.instances).toHaveLength(1); // no new socket — fetch failed
+
+    // Network recovers: the next scheduled attempt must connect again.
+    failFetch = false;
+    await vi.advanceTimersByTimeAsync(100);
+    expect(FakeWebSocket.instances).toHaveLength(2);
+    const ws2 = FakeWebSocket.instances[1];
+    ws2.open();
+    expect(ws2.sentOfType("authenticate")).toHaveLength(1);
   });
 });

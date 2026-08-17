@@ -29,6 +29,9 @@ export async function runMigrations(): Promise<void> {
     .sort();
 
   for (const file of files) {
+    // The version key is the filename without its .sql suffix (e.g.
+    // "001_init.sql" → "001_init"). Renaming an applied file re-runs it, so
+    // treat applied version keys as immutable.
     const version = file.replace(/\.sql$/, "");
 
     // Check if already applied

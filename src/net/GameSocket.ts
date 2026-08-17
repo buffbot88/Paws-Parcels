@@ -161,7 +161,8 @@ export interface GameSocketCallbacks {
   onQuestUpdated?: (payload: { action: string; quest: NetQuestSnapshot; quests: NetQuestSnapshot[]; inventory: NetQuestInventoryItem[]; stamps: number; xp: number; message: string }) => void;
   onQuestNotice?: (message: string) => void;
   onInventoryUpdated?: (items: NetQuestInventoryItem[], stamps: number, state?: NetInventoryState) => void;
-  onError?: (code: string, message: string) => void;
+  /** requestType is set for intent rejections (gameplay), absent for connection errors. */
+  onError?: (code: string, message: string, requestType?: string) => void;
 }
 
 export interface GameSocketOptions {
@@ -184,6 +185,9 @@ export interface GameSocketOptions {
 }
 
 const WS_READY_OPEN = 1;
+/** Backoff after the fast reconnect attempts are exhausted — never strand the
+ * player until reload; keep retrying slowly while the tab is open. */
+const SLOW_RECONNECT_DELAY_MS = 8_000;
 
 /** Serializes a payload the way the server expects (single JSON frame). */
 export function encodeMessage(payload: unknown): string {
@@ -211,6 +215,9 @@ export class GameSocket {
   private joinedZoneId: string | null = null;
   private pendingZoneId: string | null = null;
   private lastIntentAt = 0;
+  /** Move-intent throttle; starts at the class base and is raised when the
+   * server's gear-adjusted speed arrives (speed gear is not dead weight). */
+  private moveIntervalMs: number;
   private reconnectAttempts = 0;
   private reconnectTimer: ReturnType<typeof setTimeout> | null = null;
   private closedByUser = false;
@@ -230,6 +237,12 @@ export class GameSocket {
       now: () => Date.now(),
       ...opts,
     };
+    this.moveIntervalMs = this.opts.moveIntervalMs;
+  }
+
+  /** Adjust the move-intent throttle (server's gear-adjusted speed on join/equip). */
+  setMoveIntervalMs(ms: number): void {
+    if (Number.isFinite(ms) && ms > 0) this.moveIntervalMs = Math.max(50, ms);
   }
 
   get statusValue(): NetStatus {
@@ -273,11 +286,13 @@ export class GameSocket {
         "WS_TOKEN_NETWORK_FAILED",
         `Network error fetching ws-token: ${detail}`,
       );
+      this.scheduleRecovery();
       return;
     }
     if (this.wsToken === null) {
       // fetchWsToken already fired onError for HTTP failures.
       this.setStatus("closed", "Could not obtain a ws-token");
+      this.scheduleRecovery();
       return;
     }
     // The user may have closed while we were fetching.
@@ -291,6 +306,7 @@ export class GameSocket {
     } catch (err) {
       this.setStatus("closed", "Could not open the WebSocket");
       this.callbacks.onError?.("WS_CONSTRUCTOR_FAILED", String(err));
+      this.scheduleRecovery();
       return;
     }
     this.ws = ws;
@@ -367,7 +383,7 @@ export class GameSocket {
     if (this.ws === null || !this.authenticated || this.joinedZoneId === null) return;
     if (this.ws.readyState !== WS_READY_OPEN) return;
     const now = this.opts.now();
-    if (now - this.lastIntentAt < this.opts.moveIntervalMs) return;
+    if (now - this.lastIntentAt < this.moveIntervalMs) return;
     this.lastIntentAt = now;
     this.ws.send(encodeMessage({ type: "move_intent", dx, dy }));
   }
@@ -589,7 +605,8 @@ export class GameSocket {
       case "error": {
         const code = typeof msg.code === "string" ? msg.code : "UNKNOWN";
         const message = typeof msg.message === "string" ? msg.message : "Server error";
-        this.callbacks.onError?.(code, message);
+        const requestType = typeof msg.requestType === "string" ? msg.requestType : undefined;
+        this.callbacks.onError?.(code, message, requestType);
         break;
       }
       default:
@@ -607,16 +624,41 @@ export class GameSocket {
       this.setStatus("closed");
       return;
     }
-    if (wasAuthenticated && this.reconnectAttempts < this.opts.maxReconnectAttempts) {
-      this.reconnectAttempts += 1;
-      this.setStatus("reconnecting", `Attempt ${this.reconnectAttempts}`);
-      this.reconnectTimer = setTimeout(() => {
-        this.reconnectTimer = null;
-        void this.connect();
-      }, this.opts.reconnectDelayMs * this.reconnectAttempts);
-    } else {
+    if (!wasAuthenticated) {
+      // Never authenticated (dropped during the handshake) — the recovery
+      // path still retries when this is part of a reconnect cycle.
       this.setStatus("closed", "Connection lost");
+      this.scheduleRecovery();
+      return;
     }
+    this.reconnectAttempts += 1;
+    const maxed = this.reconnectAttempts > this.opts.maxReconnectAttempts;
+    this.setStatus(
+      "reconnecting",
+      maxed ? "Connection lost — retrying" : `Attempt ${this.reconnectAttempts}`,
+    );
+    this.reconnectTimer = setTimeout(() => {
+      this.reconnectTimer = null;
+      void this.connect();
+    }, maxed ? SLOW_RECONNECT_DELAY_MS : this.opts.reconnectDelayMs * this.reconnectAttempts);
+  }
+
+  /**
+   * Keep the reconnect cycle alive after a mid-cycle failure (token fetch or
+   * constructor throw) so a flapping network never strands the player at
+   * "closed". Initial boot failures and intentional close() are untouched.
+   */
+  private scheduleRecovery(): void {
+    if (this.closedByUser || this.reconnectAttempts === 0) return;
+    const maxed = this.reconnectAttempts > this.opts.maxReconnectAttempts;
+    this.setStatus(
+      "reconnecting",
+      maxed ? "Connection lost — retrying" : `Attempt ${this.reconnectAttempts}`,
+    );
+    this.reconnectTimer = setTimeout(() => {
+      this.reconnectTimer = null;
+      void this.connect();
+    }, maxed ? SLOW_RECONNECT_DELAY_MS : this.opts.reconnectDelayMs * this.reconnectAttempts);
   }
 
   private setStatus(status: NetStatus, detail?: string): void {

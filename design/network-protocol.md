@@ -7,6 +7,10 @@
 > **Client sends intent; server decides.** All messages are JSON-encoded.
 > Protocol version: `1.1` (Phase 3 adds combat). Delivery: at least once; duplicate
 > intents are idempotent where possible.
+>
+> **Wire set (implemented in `server/src/ws/gameServer.ts`): 13 client intents + 15
+> server frames.** `leave_zone` and `request_inventory` have server handlers and client
+> APIs, but the current client never sends them in normal play.
 
 ---
 
@@ -46,25 +50,28 @@ processes each message independently.
 - **Validation:** Zone must exist; character must have access (no level gate for the
   village hub).
 - **Expected response:** `zone_state` (full zone snapshot for the character's new zone).
-- **Failure cases:** unknown zone, zone full, character already in zone (idempotent).
+- **Failure cases:** unknown zone (`ZONE_NOT_FOUND`), zone at capacity (`ZONE_FULL`),
+  zone not reachable from the current zone (`ZONE_UNREACHABLE` — the server only
+  allows joins through the map's authored transitions, plus the initial join).
 
 ### move_intent
 ```json
 {
   "type": "move_intent",
   "dx": 1,
-  "dy": 0,
-  "tick": 1234
+  "dy": 0
 }
 ```
 - **Validation:** `dx, dy ∈ {-1, 0, 1}`, `|dx + dy| ≤ 1` (4-direction for MVP);
-  velocity-per-tick ≤ max speed (config, class-based); resulting tile is walkable
-  (server collision check); no teleport (delta from last accepted pos ≤ 2 tiles in one
-  tick; difference beyond that = reset to server pos).
+  velocity ≤ max speed (config, class-based); resulting tile is walkable (server
+  collision check); no teleport (delta from last accepted pos ≤ 2 tiles; difference
+  beyond that = reset to server pos). The client emits one intent per move interval
+  (`1000/(speed/48)` ms); the field is not timestamped — the server enforces the cap
+  from its own clock.
 - **Expected response:** None directly — the server rebroadcasts a `player_snapshot` to
   all zone clients including this player's updated position.
-- **Failure cases:** speed hank (reset to server pos), collision (position unchanged,
-  snapshot repeats last valid pos).
+- **Failure cases:** speed cap (`COOLDOWN_ACTIVE`), collision (`MOVE_COLLISION`, position
+  unchanged, snapshot repeats last valid pos), teleport detected (`MOVE_TELEPORT_DETECTED`).
 
 ### interact
 ```json
@@ -74,23 +81,27 @@ processes each message independently.
   "kind": "npc"
 }
 ```
-- **Validation:** target must be valid for the character's current zone (NPC exists,
-  interactable object loaded from zone data); character must be in interaction range
-  (≤ 2 tiles); target not in cooldown.
-- **Expected response:** `dialogue_available` (with NPC lines, quest offers, delivery
-  validation state).
+- **Validation:** target must be a valid NPC in the character's current zone and within
+  interaction range (≤ 2 tiles); `kind` is accepted but only NPC interaction is wired.
+- **Behavior:** the server first attempts to complete an active delivery at that NPC
+  (`quest_updated` with `action: "delivery"` on success); if no delivery completes, it
+  returns `npc_interaction` with the current quest offers/state for the NPC.
 - **Failure cases:** out of range, target not in zone, invalid targetId.
 
-### interact
+### zone_chat
 ```json
 {
-  "type": "interact",
-  "targetId": "npc-pip",
-  "kind": "npc"
+  "type": "zone_chat",
+  "text": "Hello, village!"
 }
 ```
-- **Validation:** target NPC must exist in the current zone and be within 2 tiles.
-- **Behavior:** the server attempts to complete an active delivery at that NPC; if no delivery completes, it returns the current quest offers/state for the NPC.
+- **Validation:** authenticated + in a zone; text trimmed and capped at 240 characters;
+  rate-limited to one message per second per character.
+- **Expected response:** `zone_chat` broadcast to every connected player in the same
+  zone (including the sender).
+- **Failure cases:** `INVALID_CHAT` (empty), `CHAT_RATE_LIMIT`, `NOT_IN_ZONE` — each
+  error frame carries `requestType: "zone_chat"` so the client treats it as
+  gameplay feedback rather than a broken connection.
 
 ### search_quest
 ```json
@@ -181,6 +192,8 @@ processes each message independently.
 { "type": "request_inventory" }
 ```
 - **Expected response:** the complete authoritative `inventory_updated` snapshot.
+- **Note:** implemented server-side and on `GameSocket`, but the current client never
+  sends it — inventory snapshots arrive with `zone_state` and every mutation.
 
 ### leave_zone
 ```json
@@ -189,9 +202,11 @@ processes each message independently.
 }
 ```
 - **Validation:** Character must be in a zone (idempotent if not).
-- **Expected response:** `player_left` broadcast to remaining zone clients (if any);
-  client receives a no-op ack or an implicit zone_state for the next zone when re-joining.
+- **Expected response:** `player_left` broadcast to remaining zone clients (if any).
 - **Failure cases:** none.
+- **Note:** implemented server-side and on `GameSocket`, but the current client never
+  sends it — zone switches and shutdown simply drop the connection and rely on the
+  server's 60s reconnect grace.
 
 ---
 
@@ -283,6 +298,19 @@ processes each message independently.
 - **Client action:** interpolate monster positions; update HP bars; hide defeated
   monsters and restore them when they respawn (`alive` flips back).
 
+### zone_chat
+```json
+{
+  "type": "zone_chat",
+  "characterId": 5,
+  "name": "Mochi",
+  "text": "Hello, village!"
+}
+```
+- **Payload:** a chat message broadcast to every connected player in the sender's zone.
+- **Client action:** append the message to the zone chat panel; messages whose
+  `characterId` matches the local courier are the player's own sends.
+
 ### combat_event
 ```json
 {
@@ -307,19 +335,16 @@ processes each message independently.
 ```json
 {
   "type": "player_respawned",
-  "characterId": 5,
   "zoneId": "zone-clover-village",
   "pos": { "x": 15, "y": 13 },
   "hp": 100,
-  "maxHp": 100,
-  "invulnUntil": 1764873600000
+  "maxHp": 100
 }
 ```
-- **Payload:** a player was defeated and respawned at the safe hub with full HP and a
-  short invulnerability window. Broadcast to the defeated player (and to others in the
-  zone for the entity swap).
-- **Client action:** transition the player to the respawn zone/position, restore the HP
-  chip, and show the invuln state.
+- **Payload:** the defeated player was respawned at the safe hub with full HP + a short
+  invulnerability window. Sent to the defeated player's connection only.
+- **Client action:** transition the player to the respawn zone/position and restore the
+  HP chip.
 
 ### npc_interaction
 ```json
@@ -398,17 +423,17 @@ processes each message independently.
   "requestType": "move_intent"
 }
 ```
-- **Payload:** a server-rejected intent, including the original message type and an
-  error code for UI display.
+- **Payload:** a server-rejected intent, including the original message type (when the
+  rejection was a response to a specific intent) and an error code for UI display.
 - **Client action:** trust the server; revert any predicted state; optionally surface a
-  brief error toast.
-- **Error codes (first set):** `INVALID_TOKEN`, `EXPIRED_TOKEN`, `INVALID_TARGET`,
-  `OUT_OF_RANGE`, `COOLDOWN_ACTIVE`, `INSUFFICIENT_RESOURCE`, `TARGET_DEAD`,
-  `MOVE_COLLISION`, `MOVE_TELEPORT_DETECTED`, `QUEST_NOT_AVAILABLE`,
-  `QUEST_PREREQUISITES_NOT_MET`, `QUEST_ALREADY_COMPLETE`, `ITEM_NOT_OWNED`,
-  `INVENTORY_FULL`, `INVALID_SLOT`, `CLASS_RESTRICTED`, `ZONE_FULL`,  `ZONE_NOT_FOUND`, `OUT_OF_RANGE`, `QUEST_NOT_AVAILABLE`, `QUEST_ALREADY_ACTIVE`,
-  `QUEST_ALREADY_COMPLETE`, `QUEST_NOT_ACTIVE`, `QUEST_ITEM_MISSING`,
-  `WRONG_DELIVERY_TARGET`, `INVENTORY_FULL`, `ITEM_NOT_OWNED`, `ITEM_LOCKED`,
-  `ITEM_EQUIPPED`, `INVALID_SLOT`, `SLOT_OCCUPIED`, `CLASS_RESTRICTED`,
-  `LEVEL_REQUIRED`, `NOT_EQUIPPED`, `NOT_AUTHENTICATED`, `NOT_IN_ZONE`,
-  `INTERNAL_ERROR`
+  brief error toast. `requestType` set = gameplay rejection; absent = connection-level
+  failure (the client reserves its "connection failed" panel for those).
+- **Error codes:** auth `INVALID_TOKEN` · session `NOT_AUTHENTICATED`, `NOT_IN_ZONE`,
+  `RATE_LIMITED` · zone `ZONE_NOT_FOUND`, `ZONE_FULL`, `ZONE_UNREACHABLE` · movement `MOVE_COLLISION`,
+  `MOVE_TELEPORT_DETECTED`, `INVALID_DIRECTION`, `COOLDOWN_ACTIVE` · combat
+  `INVALID_TARGET`, `OUT_OF_RANGE`, `TARGET_DEAD` · quests `QUEST_NOT_AVAILABLE`,
+  `QUEST_PREREQUISITES_NOT_MET`, `QUEST_ALREADY_ACTIVE`, `QUEST_ALREADY_COMPLETE`,
+  `QUEST_NOT_ACTIVE`, `QUEST_ITEM_MISSING`, `WRONG_DELIVERY_TARGET`, `INVENTORY_FULL` ·
+  inventory/equipment `ITEM_NOT_OWNED`, `ITEM_LOCKED`, `ITEM_EQUIPPED`, `INVALID_SLOT`,
+  `SLOT_OCCUPIED`, `CLASS_RESTRICTED`, `LEVEL_REQUIRED`, `NOT_EQUIPPED` · chat
+  `INVALID_CHAT`, `CHAT_RATE_LIMIT` · framing `INVALID_MESSAGE`, `INTERNAL_ERROR`

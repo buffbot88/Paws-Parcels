@@ -7,7 +7,13 @@
 import { readFileSync, existsSync } from "node:fs";
 import { resolve, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
-import { validateContent, validateStaticContent } from "../src/systems/ContentValidator.ts";
+import {
+  validateContent,
+  validateStaticContent,
+  validateQuestSearchObjects,
+  validateZoneMapParity,
+  validateMonsterSpawnKeys,
+} from "../src/systems/ContentValidator.ts";
 import type { ContentData, StaticContentData } from "../src/types/ContentData.ts";
 import { validateAllMaps, validateNpcPlacement } from "../src/systems/MapValidator.ts";
 import { MAPS } from "../src/game/Maps.ts";
@@ -45,10 +51,24 @@ const staticData: StaticContentData = {
   monsters: load("monsters.json", "monsters"),
 };
 const staticResult = validateStaticContent(staticData, new Set(data.items.map((item) => item.id)));
-for (const w of result.warnings) console.warn(`  ! ${w}`);
 
-if (!result.ok || !staticResult.ok) {
-  const errors = [...result.errors, ...staticResult.errors];
+// Cross-check quest/map/zone references against the client map registry.
+const interactableIds = new Set<string>();
+for (const map of Object.values(MAPS)) {
+  for (const object of map.interactables) interactableIds.add(object.id);
+}
+const searchResult = validateQuestSearchObjects(data.quests, interactableIds);
+const parityResult = validateZoneMapParity(staticData.zones, MAPS);
+const spawnKeyResult = validateMonsterSpawnKeys(
+  MAPS,
+  new Set(staticData.monsters.map((monster) => monster.key)),
+);
+
+for (const w of [...result.warnings, ...searchResult.warnings]) console.warn(`  ! ${w}`);
+
+const allResults = [result, staticResult, searchResult, parityResult, spawnKeyResult];
+if (allResults.some((r) => !r.ok)) {
+  const errors = allResults.flatMap((r) => r.errors);
   console.error(`Content validation FAILED (${errors.length} error${errors.length > 1 ? "s" : ""}):`);
   for (const e of errors) console.error(`  ✗ ${e}`);
   process.exit(1);

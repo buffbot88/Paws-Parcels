@@ -164,7 +164,7 @@ Per-character quest state machine keyed by the stable JSON quest id.
 The legacy `quest_definitions`, `quest_prerequisites`, and `character_quests` tables are
 retained only for migration compatibility and are no longer populated or read by gameplay.
 
-## 14. friendships (reputation)
+## 13. friendships (reputation)
 
 Per-character reputation with NPCs (0–4 levels, thresholds 3/7/12/18).
 
@@ -247,7 +247,7 @@ zones 1─N dungeon_runs N─1 characters (owner)
 characters 1─N audit_economy_events
 ```
 
-## 19. Authentication & secrets (requirements)
+## 20. Authentication & secrets (requirements)
 
 - **Passwords:** argon2id (preferred) or bcrypt; salted per-user; never stored or logged
   in plain text; never returned by any endpoint.

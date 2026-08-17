@@ -1,6 +1,6 @@
-import { jwtVerify } from "jose";
 import type { IncomingMessage, ServerResponse } from "node:http";
-import { auth as authConfig, oidc as oidcConfig } from "../config/index.ts";
+import { oidc as oidcConfig } from "../config/index.ts";
+import { generateAccessToken } from "../auth/index.ts";
 import {
   exchangeAuthCode,
   getAuthorizationEndpoint,
@@ -152,7 +152,7 @@ export async function oidcCallbackHandler(
     role: identity.role,
   });
 
-  const token = await mintJwt({
+  const token = await generateAccessToken({
     accountId: account.id,
     ashatUserId: identity.sub,
     username: account.username ?? identity.username,
@@ -206,25 +206,3 @@ export async function logoutHandler(
   jsonResponse(res, 200, { ok: true });
 }
 
-async function mintJwt(payload: {
-  accountId: number;
-  ashatUserId: string;
-  username: string;
-  role: string;
-}): Promise<string> {
-  const { SignJWT } = await import("jose");
-  return new SignJWT(payload as unknown as Record<string, unknown>)
-    .setProtectedHeader({ alg: "HS256" })
-    .setIssuedAt()
-    .setExpirationTime(`${authConfig.accessTokenTtlSeconds}s`)
-    .sign(new TextEncoder().encode(authConfig.jwtSecret));
-}
-
-// Re-export for callers that want to inspect a token without minting a new one.
-export async function verifyRequestJwt(token: string): Promise<unknown> {
-  const { payload } = await jwtVerify(
-    token,
-    new TextEncoder().encode(authConfig.jwtSecret),
-  );
-  return payload;
-}

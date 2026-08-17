@@ -1,6 +1,8 @@
 import questsJson from "../../../src/data/quests.json" with { type: "json" };
 import { getDb } from "../db/connection.ts";
 import { getEffectiveSlotCount, getInventoryState } from "./Equipment.ts";
+import { applyExperience } from "./leveling.ts";
+import { isShippedQuest } from "./questFilter.ts";
 
 type SqlRow = Record<string, unknown>;
 
@@ -34,7 +36,7 @@ type QuestContent = {
 };
 
 const CONTENT_QUESTS: QuestContent[] = (questsJson.quests as QuestContent[])
-  .filter((quest) => (quest.chainPosition ?? 0) > 0 || quest.phase === "4B");
+  .filter(isShippedQuest);
 const TUTORIAL_QUESTS: QuestContent[] = CONTENT_QUESTS
   .filter((quest) => (quest.chainPosition ?? 0) > 0)
   .sort((left, right) => (left.chainPosition ?? 0) - (right.chainPosition ?? 0));
@@ -175,14 +177,11 @@ export async function completeDelivery(characterId: number, targetNpcId: string)
   const oldXp = getExperience(characterId);
   const nextXp = oldXp + Math.max(0, active.xpReward ?? 0);
   const levelRow = getDb().prepare("SELECT level, skill_points FROM characters WHERE id = ?").get(characterId) as SqlRow | undefined;
-  let level = Number(levelRow?.level ?? 1);
-  let skillPoints = Number(levelRow?.skill_points ?? 0);
-  let threshold = level * 100;
-  while (nextXp >= threshold) {
-    level += 1;
-    skillPoints += 1;
-    threshold = level * 100;
-  }
+  const { level, skillPoints } = applyExperience(
+    Number(levelRow?.level ?? 1),
+    Number(levelRow?.skill_points ?? 0),
+    nextXp,
+  );
   const newStamps = oldStamps + Math.max(0, active.stampReward);
   const rankReward = active.courierRankReward ?? null;
   const reputationNpcId = active.friendshipNpcId ?? null;
@@ -370,11 +369,18 @@ function acceptedAtMs(raw: string): number {
 
 function ensureCharacterQuestRows(characterId: number): void {
   const db = getDb();
-  const insert = db.prepare(`INSERT OR IGNORE INTO character_quest_progress
-    (character_id, quest_key, state, progress) VALUES (?, ?, 'locked', ?)`);
+  if (CONTENT_QUESTS.length === 0) return;
+  // One batched INSERT OR IGNORE instead of N per-character row writes —
+  // getQuestState runs on every join/interact, so N writes per call would
+  // dominate the quest path for no benefit once rows exist.
+  const placeholders = CONTENT_QUESTS.map(() => "(?, ?, 'locked', ?)").join(",");
+  const values: (string | number)[] = [];
   for (const quest of CONTENT_QUESTS) {
-    insert.run(characterId, quest.id, JSON.stringify({ delivered: 0, found: 0 }));
+    values.push(characterId, quest.id, JSON.stringify({ delivered: 0, found: 0 }));
   }
+  db.prepare(`INSERT OR IGNORE INTO character_quest_progress
+    (character_id, quest_key, state, progress) VALUES ${placeholders}`)
+    .run(...values);
 }
 
 function refreshAvailableStates(characterId: number): void {
@@ -382,18 +388,22 @@ function refreshAvailableStates(characterId: number): void {
   const rows = db.prepare("SELECT quest_key, state FROM character_quest_progress WHERE character_id = ?").all(characterId) as SqlRow[];
   const states = new Map(rows.map((row) => [String(row.quest_key), normalizeState(row.state)]));
   const tutorialComplete = TUTORIAL_QUESTS.every((quest) => states.get(quest.id) === "completed");
-  const update = db.prepare("UPDATE character_quest_progress SET state = 'available' WHERE character_id = ? AND quest_key = ? AND state = 'locked'");
+  // Compute the full unlock set first, then apply it with a single UPDATE … IN
+  // instead of one UPDATE per newly-available quest (same gate logic).
+  const toUnlock: string[] = [];
   for (const quest of CONTENT_QUESTS) {
     if (states.get(quest.id) !== "locked") continue;
     const prerequisitesMet = (quest.prerequisiteIds ?? []).every((id) => states.get(id) === "completed");
     const tutorialGateMet = (quest.chainPosition ?? 0) > 0 || tutorialComplete;
     const friendshipGate = quest.requiresFriendship;
     const friendshipMet = friendshipGate === undefined || getFriendshipLevel(characterId, friendshipGate.npcId) >= friendshipGate.level;
-    if (prerequisitesMet && tutorialGateMet && friendshipMet) {
-      update.run(characterId, quest.id);
-      states.set(quest.id, "available");
-    }
+    if (prerequisitesMet && tutorialGateMet && friendshipMet) toUnlock.push(quest.id);
   }
+  if (toUnlock.length === 0) return;
+  const placeholders = toUnlock.map(() => "?").join(",");
+  db.prepare(`UPDATE character_quest_progress SET state = 'available'
+    WHERE character_id = ? AND quest_key IN (${placeholders}) AND state = 'locked'`)
+    .run(characterId, ...toUnlock);
 }
 
 function findQuestContent(questId: string): QuestContent | null {

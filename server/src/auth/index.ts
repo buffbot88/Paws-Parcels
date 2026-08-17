@@ -1,19 +1,5 @@
-import bcrypt from "bcryptjs";
 import { SignJWT, jwtVerify, type JWTPayload } from "jose";
 import { auth as authConfig } from "../config/index.ts";
-
-/** Hash a plain-text password using bcryptjs. */
-export async function hashPassword(password: string): Promise<string> {
-  return bcrypt.hash(password, authConfig.bcryptRounds);
-}
-
-/** Compare a plain-text password against a stored hash. */
-export async function verifyPassword(
-  password: string,
-  hash: string,
-): Promise<boolean> {
-  return bcrypt.compare(password, hash);
-}
 
 /** Generate the server-authoritative 24-hour session JWT. */
 export async function generateAccessToken(payload: {

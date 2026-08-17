@@ -75,6 +75,9 @@ export class InputSystem {
     scene.input.on("pointermove", this.handlePointerMove, this);
     scene.input.on("pointerup", this.handlePointerUp, this);
     scene.input.on("pointerout", this.handlePointerUp, this);
+    // Browser gesture takeover (e.g. pull-to-refresh) fires pointercancel with
+    // no pointerup — without it the joystick stays stuck.
+    scene.input.on("pointercancel", this.handlePointerUp, this);
   }
 
   /** Removes input listeners (call from the scene's shutdown to avoid leaks on restart). */
@@ -90,6 +93,7 @@ export class InputSystem {
     this.scene.input.off("pointermove", this.handlePointerMove, this);
     this.scene.input.off("pointerup", this.handlePointerUp, this);
     this.scene.input.off("pointerout", this.handlePointerUp, this);
+    this.scene.input.off("pointercancel", this.handlePointerUp, this);
   }
 
   /** Normalized movement vector (-1..1 per axis); joystick wins over keyboard when active. */

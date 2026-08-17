@@ -18,6 +18,7 @@ import { createNpcTalkHandler } from "./npc.ts";
 import { createVisualCaptureHandler } from "./visual-capture.ts";
 import type { GameBrain } from "../ai/GameBrain.ts";
 import { ai as aiConfig } from "../config/index.ts";
+import { jsonResponse } from "../middleware/index.ts";
 
 /** Route handler signature. */
 export type RouteHandler = (
@@ -69,9 +70,16 @@ export class Router {
       const match = path.match(route.pattern);
       if (match) {
         const params: Record<string, string> = {};
-        route.paramNames.forEach((name, i) => {
-          params[name] = decodeURIComponent(match[i + 1]);
-        });
+        try {
+          route.paramNames.forEach((name, i) => {
+            params[name] = decodeURIComponent(match[i + 1]);
+          });
+        } catch {
+          // Malformed %-encoding (e.g. /api/characters/%ff/profile) must 400,
+          // not throw a URIError that crashes the server.
+          jsonResponse(res, 400, { error: "BAD_PATH_ENCODING", message: "Path contains invalid percent-encoding" });
+          return true;
+        }
         await route.handler(req, res, params);
         return true;
       }

@@ -12,6 +12,18 @@ import type { ZoneScene } from "../ai/prompts.ts";
 import type { QuestMutationResult, QuestSnapshot, QuestInventoryItem } from "../models/Quest.ts";
 import type { EquipmentMutationResult, InventoryState } from "../models/Equipment.ts";
 import { logger } from "../middleware/logger.ts";
+import { server as serverConfig } from "../config/index.ts";
+
+/** Cap WS frames — game intents are small JSON; the ws default is 100MiB. */
+const WS_MAX_PAYLOAD = 64 * 1024;
+
+/** Per-connection message budget (design/architecture.md §4: cap messages/sec). */
+const MSG_WINDOW_MS = 10_000;
+const MSG_WINDOW_LIMIT = 60;
+/** Consecutive failed authenticate attempts before the socket is closed. */
+const MAX_AUTH_FAILURES = 5;
+/** Liveness probe cadence — dead peers are terminated, not left half-open. */
+const WS_HEARTBEAT_MS = 30_000;
 
 /** Defaults from design/architecture.md §5/§7 (180 px/s over 48px tiles). */
 const DEFAULT_TICK_MS = 50; // 20 Hz
@@ -97,7 +109,10 @@ interface Session {
   characterId: number | null;
   zoneId: string | null;
   authenticated: boolean;
-  lastMoveAt: number;
+  /** True sliding-window budget: timestamps of frames still inside the window. */
+  msgTimes: number[];
+  /** Consecutive authenticate failures before the connection is dropped. */
+  authFailures: number;
 }
 
 /**
@@ -111,6 +126,8 @@ export class GameServer {
   private monsters = new MonsterStore();
   private sessions = new Map<SocketLike, Session>();
   private tickTimer: NodeJS.Timeout | null = null;
+  private heartbeatTimer: NodeJS.Timeout | null = null;
+  private tickRunning = false;
   private graceTimers = new Map<number, NodeJS.Timeout>();
   private tickMs: number;
   private graceMs: number;
@@ -129,10 +146,32 @@ export class GameServer {
 
   /** Attach to an HTTP server and start the snapshot tick. */
   attach(server: Server): void {
-    this.wss = new WebSocketServer({ server, path: "/ws" });
+    this.wss = new WebSocketServer({
+      server,
+      path: "/ws",
+      maxPayload: WS_MAX_PAYLOAD,
+      // Reject browser upgrades from unlisted origins (CSRF-style hijack);
+      // clients without an Origin header (non-browser) still need a ws-token.
+      verifyClient: (info, done) => {
+        const origin = info.origin ?? "";
+        if (origin !== "" && !serverConfig.isDev && !serverConfig.corsAllowedOrigins.includes(origin)) {
+          done(false, 403, "Origin not allowed");
+          return;
+        }
+        done(true);
+      },
+    });
     this.wss.on("connection", (socket: WebSocket) => this.wireSocket(socket));
     this.tickTimer = setInterval(() => this.runTick(), this.tickMs);
     this.tickTimer.unref?.();
+    // Liveness probe: ping every client; terminate any that never pong back.
+    // A tab that suspends past the grace window otherwise leaves a half-open
+    // connection in the zone until the TCP stack notices.
+    this.heartbeatTimer = setInterval(
+      () => this.heartbeatSweep(this.wss?.clients ?? []),
+      WS_HEARTBEAT_MS,
+    );
+    this.heartbeatTimer.unref?.();
     logger.info("WebSocket game server attached", { path: "/ws" });
   }
 
@@ -141,6 +180,10 @@ export class GameServer {
     if (this.tickTimer !== null) {
       clearInterval(this.tickTimer);
       this.tickTimer = null;
+    }
+    if (this.heartbeatTimer !== null) {
+      clearInterval(this.heartbeatTimer);
+      this.heartbeatTimer = null;
     }
     for (const t of this.graceTimers.values()) clearTimeout(t);
     this.graceTimers.clear();
@@ -158,6 +201,10 @@ export class GameServer {
       },
       close: () => ws.close(),
     };
+    (ws as WebSocket & { isAlive?: boolean }).isAlive = true;
+    ws.on("pong", () => {
+      (ws as WebSocket & { isAlive?: boolean }).isAlive = true;
+    });
     this.registerSocket(socket);
     ws.on("message", (raw: RawData) => {
       void this.onMessage(socket, raw);
@@ -173,12 +220,41 @@ export class GameServer {
       characterId: null,
       zoneId: null,
       authenticated: false,
-      lastMoveAt: 0,
+      msgTimes: [],
+      authFailures: 0,
     });
+  }
+
+  /**
+   * Public for tests: one liveness sweep — ping every peer and terminate any
+   * that failed to pong the previous sweep (half-open connections can't linger).
+   */
+  heartbeatSweep(clients: Iterable<WebSocket>): void {
+    for (const ws of clients) {
+      const alive = (ws as WebSocket & { isAlive?: boolean }).isAlive;
+      if (alive === false) {
+        ws.terminate();
+        continue;
+      }
+      (ws as WebSocket & { isAlive?: boolean }).isAlive = false;
+      ws.ping();
+    }
   }
 
   /** Public for tests: run one snapshot tick. */
   runTick(): void {
+    // Re-entrancy guard: a tick that outlives its interval (slow DB write,
+    // blocking AI call) must not stack a second pass over the same zones.
+    if (this.tickRunning) return;
+    this.tickRunning = true;
+    try {
+      this.runTickInternal();
+    } finally {
+      this.tickRunning = false;
+    }
+  }
+
+  private runTickInternal(): void {
     const now = Date.now();
     for (const zoneId of this.zones.zoneIds()) {
       const players = this.zones.snapshot(zoneId);
@@ -200,9 +276,20 @@ export class GameServer {
       for (const player of this.zones.players(zoneId)) {
         if (!player.connected || !player.dirty) continue;
         if (now - player.lastPersistAt < this.persistIntervalMs) continue;
-        this.persist(player.characterId, zoneId, player.pos);
-        player.dirty = false;
+        // Clear only after the write settles AND the player hasn't moved
+        // since this flush began — clearing before the resolve could drop a
+        // move that landed mid-write; a failed write re-dirties for retry.
+        const flushingPos = { ...player.pos };
         player.lastPersistAt = now;
+        void this.persist(player.characterId, zoneId, flushingPos).then((ok) => {
+          if (!ok) {
+            player.dirty = true;
+            return;
+          }
+          if (player.pos.x === flushingPos.x && player.pos.y === flushingPos.y) {
+            player.dirty = false;
+          }
+        });
       }
     }
   }
@@ -232,6 +319,19 @@ export class GameServer {
   async onMessage(socket: SocketLike, raw: RawData | string): Promise<void> {
     const session = this.sessions.get(socket);
     if (session === undefined) return;
+    // Sliding-window message budget (design/architecture.md §4). Counts every
+    // frame — even garbage — so a spamming peer is dropped, not just errored.
+    // A fixed window that resets at the boundary could be gamed by bursting
+    // just before the reset; keeping the in-window timestamps makes it exact.
+    const now = Date.now();
+    const times = session.msgTimes;
+    while (times.length > 0 && now - times[0] >= MSG_WINDOW_MS) times.shift();
+    if (times.length >= MSG_WINDOW_LIMIT) {
+      this.sendError(session, "RATE_LIMITED", "Too many messages — connection closed");
+      session.socket.close();
+      return;
+    }
+    times.push(now);
     let msg: unknown;
     try {
       msg = JSON.parse(toText(raw)) as unknown;
@@ -329,14 +429,19 @@ export class GameServer {
     }
     const identity = consumeWsToken(token);
     if (identity === null) {
+      session.authFailures += 1;
       this.sendError(session, "INVALID_TOKEN", "WS token is invalid, expired, or already used");
+      if (session.authFailures >= MAX_AUTH_FAILURES) session.socket.close();
       return;
     }
     const character = await this.deps.loadCharacter(identity.characterId);
     if (character === null || character.accountId !== identity.accountId) {
+      session.authFailures += 1;
       this.sendError(session, "INVALID_TOKEN", "Character no longer exists for this account");
+      if (session.authFailures >= MAX_AUTH_FAILURES) session.socket.close();
       return;
     }
+    session.authFailures = 0;
     session.accountId = character.accountId;
     session.characterId = character.characterId;
     session.zoneId = character.zoneId;
@@ -364,8 +469,30 @@ export class GameServer {
     const zoneId = typeof msg.zoneId === "string" ? msg.zoneId : "";
     const zone = this.deps.getZoneData(zoneId);
     if (zone === null) {
-      this.sendError(session, "ZONE_NOT_FOUND", `Unknown zone "${zoneId}"`);
+      this.sendError(session, "ZONE_NOT_FOUND", `Unknown zone "${zoneId}"`, "join_zone");
       return;
+    }
+
+    // Zone transitions are server-validated: a courier may only join a zone
+    // their current zone is actually connected to (the map JSON's transition
+    // list). The initial join (requested === the authenticated zone) always
+    // passes; an unknown current zone (stale saved position) is treated as
+    // lenient so a deleted zone can never strand a player.
+    if (session.zoneId !== null && session.zoneId !== zoneId) {
+      const current = this.deps.getZoneData(session.zoneId);
+      const connected =
+        current === null ||
+        current.transitions.some((t) => t.toZone === zoneId) ||
+        zone.transitions.some((t) => t.toZone === session.zoneId as string);
+      if (!connected) {
+        this.sendError(
+          session,
+          "ZONE_UNREACHABLE",
+          `Zone "${zoneId}" is not connected to "${session.zoneId}"`,
+          "join_zone",
+        );
+        return;
+      }
     }
 
     // Reconnect within the grace window: the character may still be tracked
@@ -397,6 +524,16 @@ export class GameServer {
       existing.dirty = false;
       existing.lastPersistAt = Date.now();
     } else {
+      // Zone capacity: the synced max_players is now enforced. Grace restores
+      // above are always allowed — a reconnecting player owns their slot.
+      const capacity = zone.maxPlayers;
+      const connected = this.zones
+        .players(zoneId)
+        .filter((p) => p.connected).length;
+      if (connected >= capacity) {
+        this.sendError(session, "ZONE_FULL", `Zone "${zoneId}" is at capacity`, "join_zone");
+        return;
+      }
       const now = Date.now();
       const player: ZonePlayer = {
         characterId,
@@ -516,7 +653,7 @@ export class GameServer {
       this.sendError(session, result.reason, "Inventory move rejected", "move_item");
       return;
     }
-    this.sendInventoryState(session, result.inventory);
+    this.sendInventoryState(session, result.inventory, result.message);
   }
 
   private async handleEquipItem(session: Session, msg: Record<string, unknown>): Promise<void> {
@@ -638,12 +775,12 @@ export class GameServer {
     const characterId = session.characterId as number;
     const zoneId = session.zoneId;
     if (zoneId === null) {
-      this.sendError(session, "NOT_IN_ZONE", "join_zone before move_intent");
+      this.sendError(session, "NOT_IN_ZONE", "join_zone before move_intent", "move_intent");
       return;
     }
     const player = this.zones.get(zoneId, characterId);
     if (player === null || !player.connected) {
-      this.sendError(session, "NOT_IN_ZONE", "Character is not in this zone");
+      this.sendError(session, "NOT_IN_ZONE", "Character is not in this zone", "move_intent");
       return;
     }
     const zone = this.deps.getZoneData(zoneId);
@@ -669,7 +806,6 @@ export class GameServer {
     player.pos = verdict.to;
     player.lastMoveAt = Date.now();
     player.dirty = true; // mark for the periodic DB flush
-    session.lastMoveAt = Date.now();
     // No direct reply — the tick broadcasts the authoritative snapshot.
   }
 
@@ -677,12 +813,12 @@ export class GameServer {
     if (!this.requireAuth(session)) return;
     const zoneId = session.zoneId;
     if (zoneId === null) {
-      this.sendError(session, "NOT_IN_ZONE", "join_zone before zone_chat");
+      this.sendError(session, "NOT_IN_ZONE", "join_zone before zone_chat", "zone_chat");
       return;
     }
     const text = typeof msg.text === "string" ? msg.text.trim().slice(0, 240) : "";
     if (text === "") {
-      this.sendError(session, "INVALID_CHAT", "Chat message cannot be empty");
+      this.sendError(session, "INVALID_CHAT", "Chat message cannot be empty", "zone_chat");
       return;
     }
     const now = Date.now();
@@ -690,7 +826,7 @@ export class GameServer {
     if (player === null || !player.connected) return;
     const chatAt = (player as ZonePlayer & { lastChatAt?: number }).lastChatAt ?? 0;
     if (now - chatAt < 1_000) {
-      this.sendError(session, "CHAT_RATE_LIMIT", "Please wait before sending another message");
+      this.sendError(session, "CHAT_RATE_LIMIT", "Please wait before sending another message", "zone_chat");
       return;
     }
     (player as ZonePlayer & { lastChatAt?: number }).lastChatAt = now;
@@ -716,12 +852,12 @@ export class GameServer {
     const characterId = session.characterId as number;
     const zoneId = session.zoneId;
     if (zoneId === null) {
-      this.sendError(session, "NOT_IN_ZONE", "join_zone before attack");
+      this.sendError(session, "NOT_IN_ZONE", "join_zone before attack", "attack");
       return;
     }
     const player = this.zones.get(zoneId, characterId);
     if (player === null || !player.connected) {
-      this.sendError(session, "NOT_IN_ZONE", "Character is not in this zone");
+      this.sendError(session, "NOT_IN_ZONE", "Character is not in this zone", "attack");
       return;
     }
     const targetId = typeof msg.targetEntityId === "string" ? msg.targetEntityId : "";
@@ -868,9 +1004,12 @@ export class GameServer {
     // Respawn at the safe zone's default spawn (the map JSON's spawn tile).
     player.pos = { ...zone.spawn };
     this.zones.join(safeZone, player);
-    this.persist(player.characterId, safeZone, player.pos);
-    this.persistHp(player.characterId, player.hp, player.maxHp);
+    // Keep the session's zone in sync so grace reconnect and chat target the
+    // safe zone, not the zone the player was defeated in.
     const session = this.findSession(player.characterId);
+    if (session !== null) session.zoneId = safeZone;
+    void this.persist(player.characterId, safeZone, player.pos);
+    this.persistHp(player.characterId, player.hp, player.maxHp);
     session?.socket.send({
       type: "player_respawned",
       zoneId: safeZone,
@@ -970,7 +1109,7 @@ export class GameServer {
       if (still !== null && !still.connected) {
         this.zones.leave(zoneId, characterId);
         this.broadcast(zoneId, { type: "player_left", characterId });
-        this.persist(characterId, zoneId, still.pos);
+        void this.persist(characterId, zoneId, still.pos);
       }
     }, this.graceMs);
     timer.unref?.();
@@ -999,23 +1138,27 @@ export class GameServer {
     this.clearGrace(characterId);
     if (removed !== null) {
       this.broadcast(zoneId, { type: "player_left", characterId });
-      this.persist(characterId, zoneId, removed.pos);
+      void this.persist(characterId, zoneId, removed.pos);
     }
   }
 
+  /** Best-effort position write; resolves false when the DB write failed. */
   private persist(
     characterId: number,
     zoneId: string,
     pos: { x: number; y: number },
-  ): void {
+  ): Promise<boolean> {
     const persist = this.deps.persistPosition;
-    if (persist === undefined) return;
-    persist(characterId, zoneId, pos).catch((err: unknown) => {
-      logger.warn("persistPosition failed (best-effort)", {
-        characterId,
-        error: String(err),
+    if (persist === undefined) return Promise.resolve(true);
+    return persist(characterId, zoneId, pos)
+      .then(() => true)
+      .catch((err: unknown) => {
+        logger.warn("persistPosition failed (best-effort)", {
+          characterId,
+          error: String(err),
+        });
+        return false;
       });
-    });
   }
 
   private broadcast(

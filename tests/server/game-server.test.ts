@@ -59,6 +59,8 @@ const TEST_ZONE: ZoneData = {
   isWalkable: (x, y) =>
     x >= 0 && y >= 0 && x < 5 && y < 5 && x !== 3, // wall at x=3
   monsterSpawns: [],
+  maxPlayers: 32,
+  transitions: [],
 };
 
 const CHARACTERS = new Map<number, { accountId: number; name: string; classKey: string }>([
@@ -381,6 +383,11 @@ describe("GameServer", () => {
       expect(persistPosition).toHaveBeenCalledWith(10, "zone-test", { x: 2, y: 1 });
       expect(persistPosition).toHaveBeenCalledTimes(1);
 
+      // Dirty clears only after the write settles (never before the resolve) —
+      // flush the microtask chain so the flag reflects the resolved write.
+      await vi.advanceTimersByTimeAsync(0);
+      expect(server["zones"].get("zone-test", 10)?.dirty).toBe(false);
+
       // Another interval with no movement → dirty is false, no extra write.
       vi.advanceTimersByTime(10_001);
       server.runTick();
@@ -431,6 +438,103 @@ describe("GameServer", () => {
       requestType: "authenticate",
     });
   });
+
+  it("closes a connection that exceeds the per-window message budget", async () => {
+    const server = makeServer();
+    const socket = fakeSocket();
+    server.registerSocket(socket);
+    const limit = 60;
+    for (let i = 0; i < limit; i++) {
+      await server.onMessage(socket, JSON.stringify({ type: "unknown", n: i }));
+    }
+    expect(socket.closed).toBe(false);
+    await server.onMessage(socket, JSON.stringify({ type: "unknown" }));
+    expect(socket.closed).toBe(true);
+    expect(lastOfType(socket, "error")).toMatchObject({ code: "RATE_LIMITED" });
+  });
+
+  it("closes a connection after repeated authenticate failures", async () => {
+    const server = makeServer();
+    const socket = fakeSocket();
+    server.registerSocket(socket);
+    for (let i = 0; i < 5; i++) {
+      await server.onMessage(socket, JSON.stringify({ type: "authenticate", token: "bogus" }));
+    }
+    expect(socket.closed).toBe(true);
+    expect(lastOfType(socket, "error")).toMatchObject({ code: "INVALID_TOKEN" });
+  });
+
+  it("does not stack a second tick while one is already running", async () => {
+    const server = makeServer();
+    const socket = fakeSocket();
+    await connectAndJoin(server, socket);
+    // Force the tick to still be "running" when re-entered.
+    server["tickRunning"] = true;
+    server.runTick();
+    expect(lastOfType(socket, "player_snapshot")).toBeUndefined();
+    server["tickRunning"] = false;
+    server.runTick();
+    expect(lastOfType(socket, "player_snapshot")).toBeDefined();
+  });
+
+  it("rejects a join to a zone the current zone is not connected to", async () => {
+    const server = makeServer();
+    const far = { ...TEST_ZONE, zoneId: "zone-far", transitions: [] };
+    server["deps"] = {
+      ...server["deps"],
+      getZoneData: (zoneId: string) =>
+        zoneId === TEST_ZONE.zoneId ? TEST_ZONE : zoneId === far.zoneId ? far : null,
+    };
+    const socket = fakeSocket();
+    server.registerSocket(socket);
+    const token = issueWsToken(7, 10);
+    await server.onMessage(socket, JSON.stringify({ type: "authenticate", token }));
+    await server.onMessage(socket, JSON.stringify({ type: "join_zone", zoneId: "zone-far" }));
+    const err = lastOfType(socket, "error");
+    expect(err).toMatchObject({ code: "ZONE_UNREACHABLE", requestType: "join_zone" });
+    expect(lastOfType(socket, "zone_state")).toBeUndefined();
+  });
+
+  it("allows a join to a zone connected by a map transition", async () => {
+    const server = makeServer();
+    const next = { ...TEST_ZONE, zoneId: "zone-next", transitions: [] };
+    const current = {
+      ...TEST_ZONE,
+      transitions: [{ x: 4, y: 4, toZone: "zone-next" }],
+    };
+    server["deps"] = {
+      ...server["deps"],
+      getZoneData: (zoneId: string) =>
+        zoneId === TEST_ZONE.zoneId ? current : zoneId === next.zoneId ? next : null,
+    };
+    const socket = fakeSocket();
+    server.registerSocket(socket);
+    const token = issueWsToken(7, 10);
+    await server.onMessage(socket, JSON.stringify({ type: "authenticate", token }));
+    await server.onMessage(socket, JSON.stringify({ type: "join_zone", zoneId: "zone-next" }));
+    expect(lastOfType(socket, "error")).toBeUndefined();
+    expect(lastOfType(socket, "zone_state")).toMatchObject({ zoneId: "zone-next" });
+  });
+
+  it("rejects joining a zone that is at max_players with ZONE_FULL", async () => {
+    const server = makeServer();
+    const zone = server["deps"].getZoneData("zone-test") as ZoneData;
+    // Shrink capacity for the test: two characters exist, cap at one.
+    server["deps"] = {
+      ...server["deps"],
+      getZoneData: (zoneId: string) =>
+        zoneId === TEST_ZONE.zoneId ? { ...zone, maxPlayers: 1 } : null,
+    };
+    const a = fakeSocket();
+    const b = fakeSocket();
+    await connectAndJoin(server, a, 10);
+    await connectAndJoin(server, b, 11);
+    expect(lastOfType(b, "error")).toMatchObject({
+      code: "ZONE_FULL",
+      requestType: "join_zone",
+    });
+    expect(lastOfType(b, "zone_state")).toBeUndefined();
+  });
 });
 
 describe("GameServer — Phase 3 combat", () => {
@@ -461,6 +565,8 @@ describe("GameServer — Phase 3 combat", () => {
     spawn: { x: 3, y: 3 },
     isWalkable: () => true,
     monsterSpawns: [{ id: "spawn-boar", key: "monster-wild-boar", x: 4, y: 4 }],
+    maxPlayers: 32,
+    transitions: [],
   };
 
   function makeCombatServer(overrides: {
@@ -660,5 +766,114 @@ describe("GameServer — Phase 3 combat", () => {
     } finally {
       vi.useRealTimers();
     }
+  });
+});
+
+describe("GameServer — move_item handler", () => {
+  const INVENTORY = {
+    slotCount: 12,
+    stamps: 3,
+    items: [],
+    equipment: [],
+    stats: {
+      attack: 10,
+      defense: 5,
+      speed: 150,
+      critChance: 5,
+      critMultiplier: 1.5,
+      parcelCapacity: 0,
+      movementBonus: 0,
+      fragileProtection: 0,
+      weatherProtection: 0,
+      navigationBonus: 0,
+    },
+  };
+
+  it("requires authentication before move_item", async () => {
+    const server = makeServer();
+    const socket = fakeSocket();
+    server.registerSocket(socket);
+    await server.onMessage(
+      socket,
+      JSON.stringify({ type: "move_item", itemInstanceId: 1, targetSlot: 2 }),
+    );
+    expect(lastOfType(socket, "error")).toMatchObject({ code: "NOT_AUTHENTICATED" });
+  });
+
+  it("forwards a model rejection as an error frame with requestType move_item", async () => {
+    const server = makeServer();
+    const socket = fakeSocket();
+    await connectAndJoin(server, socket);
+    server["deps"].moveInventoryItem = () => ({ ok: false, reason: "INVALID_SLOT" });
+    await server.onMessage(
+      socket,
+      JSON.stringify({ type: "move_item", itemInstanceId: 1, targetSlot: 99 }),
+    );
+    const err = lastOfType(socket, "error");
+    expect(err).toMatchObject({
+      code: "INVALID_SLOT",
+      message: "Inventory move rejected",
+      requestType: "move_item",
+    });
+    expect(lastOfType(socket, "inventory_updated")).toBeUndefined();
+  });
+
+  it("broadcasts inventory_updated with the authoritative state on success", async () => {
+    const server = makeServer();
+    const socket = fakeSocket();
+    await connectAndJoin(server, socket);
+    server["deps"].moveInventoryItem = () => ({
+      ok: true,
+      inventory: INVENTORY,
+      message: "Inventory slot updated.",
+    });
+    await server.onMessage(
+      socket,
+      JSON.stringify({ type: "move_item", itemInstanceId: 1, targetSlot: 3 }),
+    );
+    expect(lastOfType(socket, "error")).toBeUndefined();
+    expect(lastOfType(socket, "inventory_updated")).toMatchObject({
+      slotCount: 12,
+      message: "Inventory slot updated.",
+    });
+  });
+});
+
+describe("GameServer — heartbeat sweep", () => {
+  interface FakeWs {
+    isAlive?: boolean;
+    ping: ReturnType<typeof vi.fn>;
+    terminate: ReturnType<typeof vi.fn>;
+  }
+
+  function fakeWs(alive: boolean | undefined): FakeWs {
+    return { isAlive: alive, ping: vi.fn(), terminate: vi.fn() };
+  }
+
+  it("pings alive peers, arms them, and terminates peers that never ponged", () => {
+    const server = makeServer();
+    const alive = fakeWs(true);
+    const dead = fakeWs(false);
+    const fresh = fakeWs(undefined); // connected between sweeps — treat as alive
+    server.heartbeatSweep(
+      [alive, dead, fresh] as unknown as Iterable<import("ws").WebSocket>,
+    );
+
+    expect(alive.ping).toHaveBeenCalledTimes(1);
+    expect(alive.isAlive).toBe(false); // armed for the next sweep
+    expect(dead.terminate).toHaveBeenCalledTimes(1);
+    expect(dead.ping).not.toHaveBeenCalled();
+    expect(fresh.ping).toHaveBeenCalledTimes(1);
+    expect(fresh.isAlive).toBe(false);
+  });
+
+  it("a peer that ponged between sweeps is kept, not terminated", () => {
+    const server = makeServer();
+    const ws = fakeWs(undefined);
+    server.heartbeatSweep([ws] as unknown as Iterable<import("ws").WebSocket>);
+    ws.isAlive = true; // pong arrives
+    server.heartbeatSweep([ws] as unknown as Iterable<import("ws").WebSocket>);
+    expect(ws.terminate).not.toHaveBeenCalled();
+    expect(ws.ping).toHaveBeenCalledTimes(2);
   });
 });
