@@ -6,6 +6,7 @@ coverage/
 .DS_Store
 /.freebuff
 oraclehost_id_rsa
+.deploy_key
 
 # Scratch / review artifacts (npm cache, ad-hoc notes)
 tmp/
@@ -28,3 +29,4 @@ src/data/*
 !src/data/maps/
 src/data/maps/*
 !src/data/maps/*.json
+Alpha.md

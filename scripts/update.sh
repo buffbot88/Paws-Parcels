@@ -8,6 +8,7 @@ set -euo pipefail
 
 REPO_DIR="$(cd "$(dirname "$0")/.." && pwd)"
 SERVICE="paws-and-parcels.service"
+DEPLOY_KEY="${DEPLOY_KEY:-$REPO_DIR/.deploy_key}"
 
 cd "$REPO_DIR"
 
@@ -17,7 +18,13 @@ echo "    Repo: $REPO_DIR"
 # --- Pull ---
 echo ""
 echo "==> Pulling latest from GitHub..."
-git pull --ff-only
+if [ -f "$DEPLOY_KEY" ]; then
+  echo "    Using deploy key: $DEPLOY_KEY"
+  GIT_SSH_COMMAND="ssh -i $DEPLOY_KEY -o StrictHostKeyChecking=no" git pull --ff-only
+else
+  echo "    No deploy key found at $DEPLOY_KEY — using default SSH."
+  git pull --ff-only
+fi
 
 # --- Install deps (only if package-lock.json changed) ---
 if git diff HEAD@{1} --name-only 2>/dev/null | grep -q "^package-lock\.json$"; then
