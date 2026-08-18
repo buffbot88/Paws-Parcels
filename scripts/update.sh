@@ -1,0 +1,58 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+# Paws & Parcels — deploy updater
+# Pulls latest from GitHub, installs deps, builds the client, restarts the service.
+# Usage: bash scripts/update.sh
+# Run from the project root on the alpha server.
+
+REPO_DIR="$(cd "$(dirname "$0")/.." && pwd)"
+SERVICE="paws-and-parcels.service"
+
+cd "$REPO_DIR"
+
+echo "==> Paws & Parcels updater"
+echo "    Repo: $REPO_DIR"
+
+# --- Pull ---
+echo ""
+echo "==> Pulling latest from GitHub..."
+git pull --ff-only
+
+# --- Install deps (only if package-lock.json changed) ---
+if git diff HEAD@{1} --name-only 2>/dev/null | grep -q "^package-lock\.json$"; then
+  echo ""
+  echo "==> package-lock.json changed — running npm ci..."
+  npm ci
+else
+  echo ""
+  echo "==> No dependency changes — skipping npm ci."
+fi
+
+# --- Build client ---
+echo ""
+echo "==> Building client..."
+npm run build
+
+# --- Restart service ---
+echo ""
+echo "==> Restarting $SERVICE..."
+if systemctl is-active --quiet "$SERVICE" 2>/dev/null; then
+  sudo systemctl restart "$SERVICE"
+  echo "    Service restarted."
+else
+  echo "    Service is not running. Starting..."
+  sudo systemctl start "$SERVICE"
+  echo "    Service started."
+fi
+
+# --- Verify ---
+sleep 2
+if systemctl is-active --quiet "$SERVICE" 2>/dev/null; then
+  echo ""
+  echo "==> Done. Service is running."
+else
+  echo ""
+  echo "==> WARNING: Service failed to start. Check: sudo journalctl -u $SERVICE -n 30"
+  exit 1
+fi
