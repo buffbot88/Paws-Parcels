@@ -88,12 +88,12 @@
       "detail": "/BrowseAssets/api/asset/reference_assets_new_CloverValley_Buildings_garden-prop_png.json"
     },
     {
-      "id": "reference_assets_new_CloverValley_Buildings_hallow-oak_png",
+      "id": "reference_assets_new_CloverValley_Buildings_hollow-oak_png",
       "name": "Hollow Oak Landmark",
-      "filename": "hallow-oak.png",
+      "filename": "hollow-oak.png",
       "description": "Larger quest-critical landmark; deferred from the smaller building identifiers.",
       "category": "landmark",
-      "detail": "/BrowseAssets/api/asset/reference_assets_new_CloverValley_Buildings_hallow-oak_png.json"
+      "detail": "/BrowseAssets/api/asset/reference_assets_new_CloverValley_Buildings_hollow-oak_png.json"
     }
   ]
 }

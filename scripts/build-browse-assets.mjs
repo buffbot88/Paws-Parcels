@@ -17,7 +17,7 @@ const entries = [
   ["cafe-front.png", "Outdoor Café Display", "Exterior table/display for Biscuit."],
   ["research-table.png", "Research Table", "Research prop cluster for Lumi."],
   ["garden-prop.png", "Garden Prop Cluster", "Watering can, tools, and produce basket for Moss."],
-  ["hallow-oak.png", "Hollow Oak Landmark", "Larger quest-critical landmark; deferred from the smaller building identifiers."],
+  ["hollow-oak.png", "Hollow Oak Landmark", "Larger quest-critical landmark; deferred from the smaller building identifiers."],
 ];
 const inventory = JSON.parse(await readFile(join(root, "design", "assets", "asset-inventory.json"), "utf8"));
 const byPath = new Map(inventory.files.map((file) => [file.path, file]));
@@ -25,7 +25,7 @@ const assets = entries.map(([filename, name, description]) => {
   const path = `${sourcePrefix}new/CloverValley/Buildings/${filename}`;
   const file = byPath.get(path);
   if (!file) throw new Error(`Missing inventory entry: ${path}`);
-  return { id: path.replaceAll("/", "_").replaceAll(".", "_"), name, filename, description, path, imageUrl: `${base}/${path}`, category: filename === "hallow-oak.png" ? "landmark" : "building-identifier", width: file.width, height: file.height, bytes: file.bytes, status: file.status };
+  return { id: path.replaceAll("/", "_").replaceAll(".", "_"), name, filename, description, path, imageUrl: `${base}/${path}`, category: filename === "hollow-oak.png" ? "landmark" : "building-identifier", width: file.width, height: file.height, bytes: file.bytes, status: file.status };
 });
 const index = { schemaVersion: 1, title: "Paws & Parcels Asset Catalog", total: assets.length, pageSize: 11, pages: ["/BrowseAssets/api/clover-valley.json"], assets: assets.map(({ id, name, filename, description, category }) => ({ id, name, filename, description, category, detail: `/BrowseAssets/api/asset/${id}.json` })) };
 await mkdir(join(out, "api", "asset"), { recursive: true });

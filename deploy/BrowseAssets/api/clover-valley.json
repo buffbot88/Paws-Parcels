@@ -138,12 +138,12 @@
       "status": "runtime-used"
     },
     {
-      "id": "reference_assets_new_CloverValley_Buildings_hallow-oak_png",
+      "id": "reference_assets_new_CloverValley_Buildings_hollow-oak_png",
       "name": "Hollow Oak Landmark",
-      "filename": "hallow-oak.png",
+      "filename": "hollow-oak.png",
       "description": "Larger quest-critical landmark; deferred from the smaller building identifiers.",
-      "path": "reference/assets/new/CloverValley/Buildings/hallow-oak.png",
-      "imageUrl": "https://pawsandparcels.agpstudios.org/reference/assets/new/CloverValley/Buildings/hallow-oak.png",
+      "path": "reference/assets/new/CloverValley/Buildings/hollow-oak.png",
+      "imageUrl": "https://pawsandparcels.agpstudios.org/reference/assets/new/CloverValley/Buildings/hollow-oak.png",
       "category": "landmark",
       "width": 1086,
       "height": 1448,
