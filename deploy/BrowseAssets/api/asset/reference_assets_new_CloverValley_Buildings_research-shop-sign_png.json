@@ -1,0 +1,13 @@
+{
+  "id": "reference_assets_new_CloverValley_Buildings_research-shop-sign_png",
+  "name": "Research / Shop Sign",
+  "filename": "research-shop-sign.png",
+  "description": "Research-shop identifier for Lumi.",
+  "path": "reference/assets/new/CloverValley/Buildings/research-shop-sign.png",
+  "imageUrl": "https://pawsandparcels.agpstudios.org/reference/assets/new/CloverValley/Buildings/research-shop-sign.png",
+  "category": "building-identifier",
+  "width": 1254,
+  "height": 1254,
+  "bytes": 1584799,
+  "status": "runtime-used"
+}

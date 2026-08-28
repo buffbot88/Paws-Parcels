@@ -1,0 +1,13 @@
+{
+  "id": "reference_assets_new_CloverValley_Buildings_courier-banner_png",
+  "name": "Courier Banner",
+  "filename": "courier-banner.png",
+  "description": "Reusable around the Post Office and route.",
+  "path": "reference/assets/new/CloverValley/Buildings/courier-banner.png",
+  "imageUrl": "https://pawsandparcels.agpstudios.org/reference/assets/new/CloverValley/Buildings/courier-banner.png",
+  "category": "building-identifier",
+  "width": 1254,
+  "height": 1254,
+  "bytes": 1180790,
+  "status": "runtime-used"
+}

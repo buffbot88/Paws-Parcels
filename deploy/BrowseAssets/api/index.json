@@ -1,0 +1,99 @@
+{
+  "schemaVersion": 1,
+  "title": "Paws & Parcels Asset Catalog",
+  "total": 11,
+  "pageSize": 11,
+  "pages": [
+    "/BrowseAssets/api/clover-valley.json"
+  ],
+  "assets": [
+    {
+      "id": "reference_assets_new_CloverValley_Buildings_post-office-sign_png",
+      "name": "Post Office Sign",
+      "filename": "post-office-sign.png",
+      "description": "Pip's storefront identifier.",
+      "category": "building-identifier",
+      "detail": "/BrowseAssets/api/asset/reference_assets_new_CloverValley_Buildings_post-office-sign_png.json"
+    },
+    {
+      "id": "reference_assets_new_CloverValley_Buildings_cafe-sign_png",
+      "name": "Café Sign",
+      "filename": "cafe-sign.png",
+      "description": "Cup/mug and pastry storefront motif.",
+      "category": "building-identifier",
+      "detail": "/BrowseAssets/api/asset/reference_assets_new_CloverValley_Buildings_cafe-sign_png.json"
+    },
+    {
+      "id": "reference_assets_new_CloverValley_Buildings_florist-sign_png",
+      "name": "Florist Sign",
+      "filename": "florist-sign.png",
+      "description": "Flower/bouquet storefront motif.",
+      "category": "building-identifier",
+      "detail": "/BrowseAssets/api/asset/reference_assets_new_CloverValley_Buildings_florist-sign_png.json"
+    },
+    {
+      "id": "reference_assets_new_CloverValley_Buildings_research-shop-sign_png",
+      "name": "Research / Shop Sign",
+      "filename": "research-shop-sign.png",
+      "description": "Research-shop identifier for Lumi.",
+      "category": "building-identifier",
+      "detail": "/BrowseAssets/api/asset/reference_assets_new_CloverValley_Buildings_research-shop-sign_png.json"
+    },
+    {
+      "id": "reference_assets_new_CloverValley_Buildings_courier-banner_png",
+      "name": "Courier Banner",
+      "filename": "courier-banner.png",
+      "description": "Reusable around the Post Office and route.",
+      "category": "building-identifier",
+      "detail": "/BrowseAssets/api/asset/reference_assets_new_CloverValley_Buildings_courier-banner_png.json"
+    },
+    {
+      "id": "reference_assets_new_CloverValley_Buildings_parcels_png",
+      "name": "Outdoor Parcel Stack",
+      "filename": "parcels.png",
+      "description": "Crates, wrapped boxes, and mail sacks.",
+      "category": "building-identifier",
+      "detail": "/BrowseAssets/api/asset/reference_assets_new_CloverValley_Buildings_parcels_png.json"
+    },
+    {
+      "id": "reference_assets_new_CloverValley_Buildings_flower-front_png",
+      "name": "Flower Display",
+      "filename": "flower-front.png",
+      "description": "Exterior display for Maple.",
+      "category": "building-identifier",
+      "detail": "/BrowseAssets/api/asset/reference_assets_new_CloverValley_Buildings_flower-front_png.json"
+    },
+    {
+      "id": "reference_assets_new_CloverValley_Buildings_cafe-front_png",
+      "name": "Outdoor Café Display",
+      "filename": "cafe-front.png",
+      "description": "Exterior table/display for Biscuit.",
+      "category": "building-identifier",
+      "detail": "/BrowseAssets/api/asset/reference_assets_new_CloverValley_Buildings_cafe-front_png.json"
+    },
+    {
+      "id": "reference_assets_new_CloverValley_Buildings_research-table_png",
+      "name": "Research Table",
+      "filename": "research-table.png",
+      "description": "Research prop cluster for Lumi.",
+      "category": "building-identifier",
+      "detail": "/BrowseAssets/api/asset/reference_assets_new_CloverValley_Buildings_research-table_png.json"
+    },
+    {
+      "id": "reference_assets_new_CloverValley_Buildings_garden-prop_png",
+      "name": "Garden Prop Cluster",
+      "filename": "garden-prop.png",
+      "description": "Watering can, tools, and produce basket for Moss.",
+      "category": "building-identifier",
+      "detail": "/BrowseAssets/api/asset/reference_assets_new_CloverValley_Buildings_garden-prop_png.json"
+    },
+    {
+      "id": "reference_assets_new_CloverValley_Buildings_hallow-oak_png",
+      "name": "Hollow Oak Landmark",
+      "filename": "hallow-oak.png",
+      "description": "Larger quest-critical landmark; deferred from the smaller building identifiers.",
+      "category": "landmark",
+      "detail": "/BrowseAssets/api/asset/reference_assets_new_CloverValley_Buildings_hallow-oak_png.json"
+    }
+  ]
+}

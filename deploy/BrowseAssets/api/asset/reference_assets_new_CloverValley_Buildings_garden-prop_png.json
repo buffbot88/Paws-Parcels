@@ -1,0 +1,13 @@
+{
+  "id": "reference_assets_new_CloverValley_Buildings_garden-prop_png",
+  "name": "Garden Prop Cluster",
+  "filename": "garden-prop.png",
+  "description": "Watering can, tools, and produce basket for Moss.",
+  "path": "reference/assets/new/CloverValley/Buildings/garden-prop.png",
+  "imageUrl": "https://pawsandparcels.agpstudios.org/reference/assets/new/CloverValley/Buildings/garden-prop.png",
+  "category": "building-identifier",
+  "width": 1448,
+  "height": 1086,
+  "bytes": 1176164,
+  "status": "runtime-used"
+}

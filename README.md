@@ -38,7 +38,8 @@ Config lives under `ai` in `server_config.json` (see `server_config.example.json
 | `npm test` | Run Vitest unit tests |
 | `npm run validate` | Validate `src/data` content integrity |
 | `npm run assets:inventory` | Rebuild the tracked asset inventory from the committed reference archive |
-| `http://localhost:5173/Asset%20Catalog/` | Open the browsable visual Asset Catalog after `npm run dev` |
+| `npm run assets:browse` | Generate the compact crawler-compatible `/BrowseAssets` catalog |
+| `http://localhost:5173/BrowseAssets/` | Open the compact crawler-compatible asset catalog after `npm run dev` |
 | `npm run visual:review -- --image scripts/tiles-review.png` | Ask the local 450M VL for a dry-run 2.5D visual direction report |
 | `npm run visual:latest` | Find the newest complete `paws-visual-*.png`/`.json` capture pair, review it, and archive the report under `reports/` |
 | `npm run visual:history` | Compare archived Visual Director reports and write recurring issues/trends to `reports/visual-history.json` |

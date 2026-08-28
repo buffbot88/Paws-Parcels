@@ -1,4 +1,6 @@
-# Asset Catalog
+# Legacy Asset Catalog
+
+The public asset catalog is now `/BrowseAssets`. This older local review tool remains for internal visual auditing only; do not publish it as the crawler-facing catalog.
 
 This folder contains the local visual review website for the ignored art archive.
 
@@ -13,7 +15,7 @@ npm run dev
 Then open:
 
 ```text
-http://localhost:5173/Asset%20Catalog/
+http://localhost:5173/BrowseAssets/
 ```
 
 The site loads the tracked metadata from `design/assets/asset-inventory.json` and resolves image previews from the local ignored archive at `reference/assets/`. The source art is intentionally not copied into this folder or committed to Git.

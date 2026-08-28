@@ -1,0 +1,13 @@
+{
+  "id": "reference_assets_new_CloverValley_Buildings_cafe-front_png",
+  "name": "Outdoor Café Display",
+  "filename": "cafe-front.png",
+  "description": "Exterior table/display for Biscuit.",
+  "path": "reference/assets/new/CloverValley/Buildings/cafe-front.png",
+  "imageUrl": "https://pawsandparcels.agpstudios.org/reference/assets/new/CloverValley/Buildings/cafe-front.png",
+  "category": "building-identifier",
+  "width": 1254,
+  "height": 1254,
+  "bytes": 2363124,
+  "status": "runtime-used"
+}

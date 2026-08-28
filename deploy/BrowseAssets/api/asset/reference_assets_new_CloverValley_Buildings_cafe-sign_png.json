@@ -1,0 +1,13 @@
+{
+  "id": "reference_assets_new_CloverValley_Buildings_cafe-sign_png",
+  "name": "Café Sign",
+  "filename": "cafe-sign.png",
+  "description": "Cup/mug and pastry storefront motif.",
+  "path": "reference/assets/new/CloverValley/Buildings/cafe-sign.png",
+  "imageUrl": "https://pawsandparcels.agpstudios.org/reference/assets/new/CloverValley/Buildings/cafe-sign.png",
+  "category": "building-identifier",
+  "width": 1254,
+  "height": 1254,
+  "bytes": 1513484,
+  "status": "runtime-used"
+}

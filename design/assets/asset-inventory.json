@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "generatedAt": "2026-08-15T08:08:02.938Z",
+  "generatedAt": "2026-08-28T05:20:48.744Z",
   "sourceRoot": "reference/assets",
   "policy": {
     "runtimeUsed": "Files matched by the explicit runtime asset rules in scripts/inventory-assets.mjs.",
@@ -8,12 +8,12 @@
     "ignored": "The source asset archive is committed to the repository as reference material."
   },
   "summary": {
-    "files": 6553,
-    "bytes": 1828948968,
-    "runtimeUsed": 336,
-    "runtimeUsedBytes": 14170898,
-    "referenceOnly": 6217,
-    "referenceOnlyBytes": 1814778070
+    "files": 6564,
+    "bytes": 1846613350,
+    "runtimeUsed": 346,
+    "runtimeUsedBytes": 30079891,
+    "referenceOnly": 6218,
+    "referenceOnlyBytes": 1816533459
   },
   "packs": [
     {
@@ -22,6 +22,13 @@
       "bytes": 186842045,
       "runtimeUsed": 230,
       "referenceOnly": 334
+    },
+    {
+      "pack": "CloverValley",
+      "files": 11,
+      "bytes": 17664382,
+      "runtimeUsed": 10,
+      "referenceOnly": 1
     },
     {
       "pack": "loot",
@@ -57491,6 +57498,115 @@
       "width": 767,
       "height": 540,
       "status": "reference-only"
+    },
+    {
+      "path": "reference/assets/new/CloverValley/Buildings/cafe-front.png",
+      "pack": "CloverValley",
+      "extension": ".png",
+      "bytes": 2363124,
+      "width": 1254,
+      "height": 1254,
+      "status": "runtime-used",
+      "usedBy": "Clover Valley new reference identifiers"
+    },
+    {
+      "path": "reference/assets/new/CloverValley/Buildings/cafe-sign.png",
+      "pack": "CloverValley",
+      "extension": ".png",
+      "bytes": 1513484,
+      "width": 1254,
+      "height": 1254,
+      "status": "runtime-used",
+      "usedBy": "Clover Valley new reference identifiers"
+    },
+    {
+      "path": "reference/assets/new/CloverValley/Buildings/courier-banner.png",
+      "pack": "CloverValley",
+      "extension": ".png",
+      "bytes": 1180790,
+      "width": 1254,
+      "height": 1254,
+      "status": "runtime-used",
+      "usedBy": "Clover Valley new reference identifiers"
+    },
+    {
+      "path": "reference/assets/new/CloverValley/Buildings/florist-sign.png",
+      "pack": "CloverValley",
+      "extension": ".png",
+      "bytes": 1606515,
+      "width": 1254,
+      "height": 1254,
+      "status": "runtime-used",
+      "usedBy": "Clover Valley new reference identifiers"
+    },
+    {
+      "path": "reference/assets/new/CloverValley/Buildings/flower-front.png",
+      "pack": "CloverValley",
+      "extension": ".png",
+      "bytes": 2278964,
+      "width": 1254,
+      "height": 1254,
+      "status": "runtime-used",
+      "usedBy": "Clover Valley new reference identifiers"
+    },
+    {
+      "path": "reference/assets/new/CloverValley/Buildings/garden-prop.png",
+      "pack": "CloverValley",
+      "extension": ".png",
+      "bytes": 1176164,
+      "width": 1448,
+      "height": 1086,
+      "status": "runtime-used",
+      "usedBy": "Clover Valley new reference identifiers"
+    },
+    {
+      "path": "reference/assets/new/CloverValley/Buildings/hallow-oak.png",
+      "pack": "CloverValley",
+      "extension": ".png",
+      "bytes": 1755389,
+      "width": 1086,
+      "height": 1448,
+      "status": "reference-only"
+    },
+    {
+      "path": "reference/assets/new/CloverValley/Buildings/parcels.png",
+      "pack": "CloverValley",
+      "extension": ".png",
+      "bytes": 1693945,
+      "width": 1254,
+      "height": 1254,
+      "status": "runtime-used",
+      "usedBy": "Clover Valley new reference identifiers"
+    },
+    {
+      "path": "reference/assets/new/CloverValley/Buildings/post-office-sign.png",
+      "pack": "CloverValley",
+      "extension": ".png",
+      "bytes": 1551717,
+      "width": 1254,
+      "height": 1254,
+      "status": "runtime-used",
+      "usedBy": "Clover Valley new reference identifiers"
+    },
+    {
+      "path": "reference/assets/new/CloverValley/Buildings/research-shop-sign.png",
+      "pack": "CloverValley",
+      "extension": ".png",
+      "bytes": 1584799,
+      "width": 1254,
+      "height": 1254,
+      "status": "runtime-used",
+      "usedBy": "Clover Valley new reference identifiers"
+    },
+    {
+      "path": "reference/assets/new/CloverValley/Buildings/research-table.png",
+      "pack": "CloverValley",
+      "extension": ".png",
+      "bytes": 959491,
+      "width": 1448,
+      "height": 1086,
+      "status": "runtime-used",
+      "usedBy": "Clover Valley new reference identifiers"
     }
   ]
 }

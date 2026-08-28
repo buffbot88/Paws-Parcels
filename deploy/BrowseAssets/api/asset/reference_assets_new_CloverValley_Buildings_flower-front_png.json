@@ -1,0 +1,13 @@
+{
+  "id": "reference_assets_new_CloverValley_Buildings_flower-front_png",
+  "name": "Flower Display",
+  "filename": "flower-front.png",
+  "description": "Exterior display for Maple.",
+  "path": "reference/assets/new/CloverValley/Buildings/flower-front.png",
+  "imageUrl": "https://pawsandparcels.agpstudios.org/reference/assets/new/CloverValley/Buildings/flower-front.png",
+  "category": "building-identifier",
+  "width": 1254,
+  "height": 1254,
+  "bytes": 2278964,
+  "status": "runtime-used"
+}

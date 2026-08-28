@@ -1,0 +1,13 @@
+{
+  "id": "reference_assets_new_CloverValley_Buildings_parcels_png",
+  "name": "Outdoor Parcel Stack",
+  "filename": "parcels.png",
+  "description": "Crates, wrapped boxes, and mail sacks.",
+  "path": "reference/assets/new/CloverValley/Buildings/parcels.png",
+  "imageUrl": "https://pawsandparcels.agpstudios.org/reference/assets/new/CloverValley/Buildings/parcels.png",
+  "category": "building-identifier",
+  "width": 1254,
+  "height": 1254,
+  "bytes": 1693945,
+  "status": "runtime-used"
+}

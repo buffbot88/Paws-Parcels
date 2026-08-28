@@ -1,0 +1,13 @@
+{
+  "id": "reference_assets_new_CloverValley_Buildings_research-table_png",
+  "name": "Research Table",
+  "filename": "research-table.png",
+  "description": "Research prop cluster for Lumi.",
+  "path": "reference/assets/new/CloverValley/Buildings/research-table.png",
+  "imageUrl": "https://pawsandparcels.agpstudios.org/reference/assets/new/CloverValley/Buildings/research-table.png",
+  "category": "building-identifier",
+  "width": 1448,
+  "height": 1086,
+  "bytes": 959491,
+  "status": "runtime-used"
+}

@@ -1,0 +1,13 @@
+{
+  "id": "reference_assets_new_CloverValley_Buildings_florist-sign_png",
+  "name": "Florist Sign",
+  "filename": "florist-sign.png",
+  "description": "Flower/bouquet storefront motif.",
+  "path": "reference/assets/new/CloverValley/Buildings/florist-sign.png",
+  "imageUrl": "https://pawsandparcels.agpstudios.org/reference/assets/new/CloverValley/Buildings/florist-sign.png",
+  "category": "building-identifier",
+  "width": 1254,
+  "height": 1254,
+  "bytes": 1606515,
+  "status": "runtime-used"
+}

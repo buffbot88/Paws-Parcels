@@ -1,0 +1,9 @@
+{
+  "packs": [
+    {
+      "name": "CloverValley",
+      "total": 11,
+      "catalog": "/BrowseAssets/api/clover-valley.json"
+    }
+  ]
+}

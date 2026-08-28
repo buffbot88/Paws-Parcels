@@ -15,6 +15,7 @@ const usedRules = [
   { label: "warrior attack effect", test: /^Classes\/Warrior\/AttackEffects\/PNG\/1\/.*\.png$/i },
   { label: "Clover Village surface/decor", test: /^maps\/CloverVillage\/Map\/PNG\/(land\/land_1|road\/road_5|decor\/(greenery_[123]|stones_[123]|tree_[12]))\.png$/i },
   { label: "Clover Village buildings", test: /^maps\/CloverVillage\/Map\/PNG\/buildings\/building_(1|4|5|10|12|14)\/building_1\.png$/i },
+  { label: "Clover Valley new reference identifiers", test: /^new\/CloverValley\/Buildings\/(cafe-front|cafe-sign|courier-banner|florist-sign|flower-front|garden-prop|parcels|post-office-sign|research-shop-sign|research-table)\.png$/i },
   { label: "Clover Village NPC idle frames", test: /^maps\/CloverVillage\/NPC\/(Artist|Astrologer|Citizen)\/PNG\/Front\/PNG Sequences\/Idle\/.*\.png$/i },
 ];
 
@@ -38,7 +39,8 @@ function dimensions(buffer, extension) {
 }
 
 function packFor(relativePath) {
-  return relativePath.split("/")[0] ?? "unknown";
+  const parts = relativePath.split("/");
+  return parts[0] === "new" && parts[1] ? parts[1] : parts[0] ?? "unknown";
 }
 
 let absoluteFiles = [];

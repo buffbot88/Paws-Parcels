@@ -1,0 +1,13 @@
+{
+  "id": "reference_assets_new_CloverValley_Buildings_post-office-sign_png",
+  "name": "Post Office Sign",
+  "filename": "post-office-sign.png",
+  "description": "Pip's storefront identifier.",
+  "path": "reference/assets/new/CloverValley/Buildings/post-office-sign.png",
+  "imageUrl": "https://pawsandparcels.agpstudios.org/reference/assets/new/CloverValley/Buildings/post-office-sign.png",
+  "category": "building-identifier",
+  "width": 1254,
+  "height": 1254,
+  "bytes": 1551717,
+  "status": "runtime-used"
+}

@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Paws &amp; Parcels — Browse Assets</title>
+  <meta name="description" content="Browse the Paws &amp; Parcels visual asset catalog, including Clover Valley storefront signs, props, and landmarks.">
+  <link rel="canonical" href="https://pawsandparcels.agpstudios.org/BrowseAssets">
+  <style>
+    body { max-width: 70rem; margin: 0 auto; padding: 2rem 1rem; color: #263228; background: #f3f7f1; font: 1rem/1.5 system-ui, sans-serif; }
+    h1, h2 { color: #2e5037; }
+    .notice, .asset { padding: 1rem; border: 1px solid #d9e3d7; border-radius: .75rem; background: #fff; }
+    .notice { margin-bottom: 1.5rem; }
+    .asset-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(16rem, 1fr)); gap: 1rem; }
+    .asset img { display: block; width: 100%; height: 12rem; object-fit: contain; background: #edf3eb; }
+    .asset h3 { margin-bottom: .25rem; }
+    a { color: #2e5037; }
+    small { color: #68766b; }
+  </style>
+</head>
+<body>
+  <h1>Browse Assets</h1>
+  <div class="notice">
+    <p>This is the compact, crawler-friendly asset index. The catalog is paginated so no page or data response needs to contain the entire archive.</p>
+    <p>Machine-readable index: <a href="/BrowseAssets/api/index.json">BrowseAssets/api/index.json</a>. Clover Valley identifiers: <a href="/BrowseAssets/api/clover-valley.json">BrowseAssets/api/clover-valley.json</a>.</p>
+  </div>
+  <h2>New Clover Valley identifiers</h2>
+  <div class="asset-grid">
+    <article class="asset"><img src="/reference/assets/new/CloverValley/Buildings/post-office-sign.png" alt="Post Office sign for Pip's storefront"><h3>Post Office Sign</h3><p>Pip’s storefront identifier.</p></article>
+    <article class="asset"><img src="/reference/assets/new/CloverValley/Buildings/cafe-sign.png" alt="Café sign with cup and pastry motif"><h3>Café Sign</h3><p>Cup/mug and pastry storefront motif.</p></article>
+    <article class="asset"><img src="/reference/assets/new/CloverValley/Buildings/florist-sign.png" alt="Florist sign with flower motif"><h3>Florist Sign</h3><p>Flower/bouquet storefront motif.</p></article>
+    <article class="asset"><img src="/reference/assets/new/CloverValley/Buildings/research-shop-sign.png" alt="Research shop sign for Lumi"><h3>Research / Shop Sign</h3><p>Research-shop identifier for Lumi.</p></article>
+    <article class="asset"><img src="/reference/assets/new/CloverValley/Buildings/courier-banner.png" alt="Reusable courier banner emblem"><h3>Courier Banner</h3><p>Reusable around the Post Office and route.</p></article>
+    <article class="asset"><img src="/reference/assets/new/CloverValley/Buildings/parcels.png" alt="Outdoor parcel stack"><h3>Outdoor Parcel Stack</h3><p>Crates, wrapped boxes, and mail sacks.</p></article>
+    <article class="asset"><img src="/reference/assets/new/CloverValley/Buildings/flower-front.png" alt="Flower display for the florist exterior"><h3>Flower Display</h3><p>Exterior display for Maple.</p></article>
+    <article class="asset"><img src="/reference/assets/new/CloverValley/Buildings/cafe-front.png" alt="Outdoor café table and display"><h3>Outdoor Café Display</h3><p>Exterior table/display for Biscuit.</p></article>
+    <article class="asset"><img src="/reference/assets/new/CloverValley/Buildings/research-table.png" alt="Research table prop cluster"><h3>Research Table</h3><p>Research prop cluster for Lumi.</p></article>
+    <article class="asset"><img src="/reference/assets/new/CloverValley/Buildings/garden-prop.png" alt="Garden prop cluster with watering can and tools"><h3>Garden Prop Cluster</h3><p>Watering can, tools, and produce basket for Moss.</p></article>
+  </div>
+  <h2>Deferred landmark</h2>
+  <p><a href="/reference/assets/new/CloverValley/Buildings/hallow-oak.png">Hollow Oak landmark</a> — larger, quest-critical, and cataloged separately from the smaller building identifiers for now.</p>
+  <h2>Archive indexes</h2>
+  <ul>
+    <li><a href="/BrowseAssets/api/index.json">Catalog index</a></li>
+    <li><a href="/BrowseAssets/api/clover-valley.json">Clover Valley metadata</a></li>
+    <li><a href="/BrowseAssets/api/packs.json">Pack index</a></li>
+  </ul>
+</body>
+</html>
