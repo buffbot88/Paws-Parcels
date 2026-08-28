@@ -1,7 +1,7 @@
 import Phaser from "phaser";
 import { TILE_SIZE } from "../game/GameConfig.ts";
 import { SceneKeys, TextureKeys, ZoneKeys } from "../game/GameConstants.ts";
-import { MAPS, type MapData, type MapInteractable, type MapPoint } from "../game/Maps.ts";
+import { PLAYABLE_MAPS, type MapData, type MapInteractable, type MapPoint } from "../game/Maps.ts";
 import { COLLIDING_TILE_INDICES, TILE_INDEX } from "../game/Tiles.ts";
 import { InputSystem } from "../systems/InputSystem.ts";
 import { NetworkSystem } from "../systems/NetworkSystem.ts";
@@ -25,10 +25,6 @@ import { Minimap } from "../ui/Minimap.ts";
 import { SkillBar } from "../ui/SkillBar.ts";
 import { CharacterProfilePanel } from "../ui/CharacterProfilePanel.ts";
 import { QuestTracker } from "../ui/QuestTracker.ts";
-import {
-  addCloverVillageGround,
-  addCloverVillageSetPieces,
-} from "../game/cloverVillageAssets.ts";
 import type { VisualSceneMetadata } from "../types/VisualSceneMetadata.ts";
 import npcsJson from "../data/npcs.json" with { type: "json" };
 import dialogueJson from "../data/dialogue.json" with { type: "json" };
@@ -114,14 +110,21 @@ export class OverworldScene extends Phaser.Scene {
     const boot = resolveBootTarget(readBootCharacters());
     const requestedZone =
       data?.zoneId ?? this.network.getAuthoritativeZone() ?? boot.zoneId;
-    const map = MAPS[requestedZone];
+    const map = PLAYABLE_MAPS[requestedZone];
     if (!map) {
-      console.warn(
-        `OverworldScene: unknown zone "${requestedZone}" — booting at the hub`,
-      );
+      this.add
+        .text(this.scale.width / 2, this.scale.height / 2, "Maps are offline while the new world is being built.", {
+          fontFamily: "Georgia, serif",
+          fontSize: "20px",
+          color: "#3a5a3a",
+          align: "center",
+          wordWrap: { width: this.scale.width - 48 },
+        })
+        .setOrigin(0.5);
+      return;
     }
-    const zoneId = map ? requestedZone : ZoneKeys.CloverVillage;
-    const resolved = map ?? MAPS[ZoneKeys.CloverVillage];
+    const zoneId = requestedZone;
+    const resolved = map;
     this.mapData = resolved;
     const character = pickCharacter(
       readBootCharacters(),
@@ -135,13 +138,6 @@ export class OverworldScene extends Phaser.Scene {
     if (character !== null) this.network.start(zoneId, character.id);
 
     this.buildTilemap(resolved);
-    if (resolved.id === ZoneKeys.CloverVillage) {
-      this.visualGround = addCloverVillageGround(this, resolved);
-      // The authored surface replaces ordinary grass/path tile art, but the
-      // collision tiles must remain visible. Hiding the whole tilemap leaves
-      // trees and water as invisible solid obstacles in the world.
-    }
-
     // Physics world matches the whole map so the camera + colliders behave.
     this.physics.world.setBounds(
       0,
@@ -177,12 +173,6 @@ export class OverworldScene extends Phaser.Scene {
     }
 
     this.buildNpcs(resolved);
-    if (resolved.id === ZoneKeys.CloverVillage) {
-      this.visualSetPieces = addCloverVillageSetPieces(this);
-      this.visualSetPieceShadows = this.visualSetPieces
-        .map((piece) => piece.getData("cloverVillageShadow"))
-        .filter((shadow): shadow is Phaser.GameObjects.Ellipse => shadow instanceof Phaser.GameObjects.Ellipse);
-    }
     this.visualInteractables = resolved.interactables;
     this.buildObjectMarkers(resolved);
     this.buildInteractionSystem(resolved);

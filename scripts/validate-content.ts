@@ -16,7 +16,7 @@ import {
 } from "../src/systems/ContentValidator.ts";
 import type { ContentData, StaticContentData } from "../src/types/ContentData.ts";
 import { validateAllMaps, validateNpcPlacement } from "../src/systems/MapValidator.ts";
-import { MAPS } from "../src/game/Maps.ts";
+import { ARCHIVED_MAPS } from "../src/game/ArchivedMaps.ts";
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const dataDir = resolve(root, "src", "data");
@@ -54,13 +54,13 @@ const staticResult = validateStaticContent(staticData, new Set(data.items.map((i
 
 // Cross-check quest/map/zone references against the client map registry.
 const interactableIds = new Set<string>();
-for (const map of Object.values(MAPS)) {
+for (const map of Object.values(ARCHIVED_MAPS)) {
   for (const object of map.interactables) interactableIds.add(object.id);
 }
 const searchResult = validateQuestSearchObjects(data.quests, interactableIds);
-const parityResult = validateZoneMapParity(staticData.zones, MAPS);
+const parityResult = validateZoneMapParity(staticData.zones, ARCHIVED_MAPS);
 const spawnKeyResult = validateMonsterSpawnKeys(
-  MAPS,
+  ARCHIVED_MAPS,
   new Set(staticData.monsters.map((monster) => monster.key)),
 );
 
@@ -88,10 +88,10 @@ if (npcPlacement.length > 0) {
   process.exit(1);
 }
 
-const interactableCount = Object.values(MAPS).reduce(
+const interactableCount = Object.values(ARCHIVED_MAPS).reduce(
   (n, m) => n + m.interactables.length,
   0,
 );
 console.log(
-  `Content validation PASSED — ${data.npcs.length} npcs, ${data.items.length} items, ${data.quests.length} quests, ${data.upgrades.length} upgrades, ${data.dialogue.length} dialogue sets; ${staticData.classes.length} classes, ${staticData.skills.length} skills, ${staticData.monsters.length} monsters, ${staticData.zones.length} zones; ${Object.keys(MAPS).length} zone(s) mapped, ${interactableCount} interactable(s).`
+  `Content validation PASSED — ${data.npcs.length} npcs, ${data.items.length} items, ${data.quests.length} quests, ${data.upgrades.length} upgrades, ${data.dialogue.length} dialogue sets; ${staticData.classes.length} classes, ${staticData.skills.length} skills, ${staticData.monsters.length} monsters, ${staticData.zones.length} zones; ${Object.keys(ARCHIVED_MAPS).length} zone(s) mapped, ${interactableCount} interactable(s).`
 );

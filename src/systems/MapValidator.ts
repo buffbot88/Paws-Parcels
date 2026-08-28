@@ -1,5 +1,6 @@
 import { TILES, TILE_INDEX } from "../game/Tiles.ts";
-import { MAPS, MAP_DIMENSIONS, type InteractableKind, type MapData, type MapPoint } from "../game/Maps.ts";
+import { ARCHIVED_MAPS, ARCHIVED_MAP_DIMENSIONS } from "../game/ArchivedMaps.ts";
+import { PLAYABLE_MAPS, type InteractableKind, type MapData, type MapPoint } from "../game/Maps.ts";
 import type { NPC } from "../types/NPCtypes.ts";
 
 /** Allowed interactable kinds (world-map.md `object-*` entries). */
@@ -26,7 +27,7 @@ export function validateMapData(map: MapData): MapValidationResult {
   const errors: string[] = [];
   const id = map.id;
 
-  const expected = MAP_DIMENSIONS[id];
+  const expected = ARCHIVED_MAP_DIMENSIONS[id];
   if (expected) {
     if (map.width !== expected.width) {
       errors.push(`${id}: width ${map.width} != expected ${expected.width} (design/world-map.md)`);
@@ -60,7 +61,7 @@ export function validateMapData(map: MapData): MapValidationResult {
     if (t.toZone === id) {
       errors.push(`${id}: transition "${t.id}" loops into its own zone`);
     }
-    const target = MAPS[t.toZone];
+    const target = ARCHIVED_MAPS[t.toZone];
     if (!target) {
       errors.push(`${id}: transition "${t.id}" targets unknown zone "${t.toZone}"`);
       continue;
@@ -143,9 +144,10 @@ export function sanitizeSpawn(map: MapData, spawn: MapPoint): MapPoint {
  * (Phase 3: NPCs are placed at homeTile and must be reachable on foot).
  */
 export function validateNpcPlacement(npcs: readonly NPC[]): string[] {
+  if (Object.keys(PLAYABLE_MAPS).length === 0) return [];
   const errors: string[] = [];
   for (const npc of npcs) {
-    const map = MAPS[npc.homeZone];
+    const map = ARCHIVED_MAPS[npc.homeZone];
     if (!map) {
       errors.push(`npc ${npc.id}: unknown homeZone "${npc.homeZone}"`);
       continue;
@@ -177,7 +179,7 @@ function checkPoint(map: MapData, point: MapPoint, label: string, errors: string
 
 export function validateAllMaps(): MapValidationResult {
   const errors: string[] = [];
-  for (const map of Object.values(MAPS)) {
+  for (const map of Object.values(ARCHIVED_MAPS)) {
     errors.push(...validateMapData(map).errors);
   }
   return { valid: errors.length === 0, errors };

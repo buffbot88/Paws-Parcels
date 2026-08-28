@@ -1,7 +1,4 @@
 import { ZoneKeys } from "./GameConstants.ts";
-import cloverVillage from "../data/maps/clover-village.json" with { type: "json" };
-import happyValley from "../data/maps/happy-valley.json" with { type: "json" };
-
 /** A tile-coordinate point on a map. */
 export interface MapPoint {
   x: number;
@@ -65,12 +62,8 @@ export interface MapData {
 }
 
 /** Expected dimensions from design/world-map.md (enforced by the map validator). */
-export const MAP_DIMENSIONS: Readonly<Record<string, { width: number; height: number }>> = {
-  [ZoneKeys.CloverVillage]: { width: 75, height: 75 },
-  [ZoneKeys.HappyValley]: { width: 40, height: 26 },
-};
+export const MAP_DIMENSIONS: Readonly<Record<string, { width: number; height: number }>> = {};
 
-export const MAPS: Readonly<Record<string, MapData>> = {
-  [ZoneKeys.CloverVillage]: cloverVillage as MapData,
-  [ZoneKeys.HappyValley]: happyValley as MapData,
-};
+/** No maps are currently enabled; archived maps live in ArchivedMaps.ts. */
+export const MAPS: Readonly<Record<string, MapData>> = {};
+export const PLAYABLE_MAPS: Readonly<Record<string, MapData>> = {};

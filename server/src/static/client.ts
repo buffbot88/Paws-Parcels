@@ -35,9 +35,15 @@ const MIME_TYPES: Record<string, string> = {
  * handled (file served), false when it isn't a client file (caller keeps
  * routing — e.g. falls through to the API 404).
  */
-export function createStaticClientServer(clientDir: string) {
-  // Absolute, normalized root so traversal checks can't be sidestepped.
+export function createStaticClientServer(
+  clientDir: string,
+  mounts: Record<string, string> = {},
+) {
+  // Absolute, normalized roots so traversal checks can't be sidestepped.
   const root = resolve(clientDir);
+  const mountedRoots = new Map(
+    Object.entries(mounts).map(([prefix, directory]) => [prefix.replace(/\/+$/, ""), resolve(directory)]),
+  );
 
   return function serveClientFile(
     req: IncomingMessage,
@@ -56,13 +62,18 @@ export function createStaticClientServer(clientDir: string) {
       return false;
     }
 
+    const mount = [...mountedRoots.entries()].find(([prefix]) =>
+      pathname === prefix || pathname.startsWith(`${prefix}/`),
+    );
+    const mountRoot = mount?.[1] ?? root;
+    const mountPath = mount === undefined ? pathname : pathname.slice(mount[0].length);
     // "/" → index.html; otherwise drop the leading slash.
-    const rel = pathname === "/" ? "index.html" : pathname.replace(/^\/+/, "");
+    const rel = mountPath === "/" || mountPath === "" ? "index.html" : mountPath.replace(/^\/+/, "");
     // Reject separators that URL-normalization won't defuse: a raw backslash
     // (Windows separator) or a null byte must never reach resolve().
     if (rel.includes("\\") || rel.includes("\0")) return false;
-    const filePath = resolve(root, rel);
-    if (filePath !== root && !filePath.startsWith(root + sep)) {
+    const filePath = resolve(mountRoot, rel);
+    if (filePath !== mountRoot && !filePath.startsWith(mountRoot + sep)) {
       // Path traversal — refuse and let the caller respond 404.
       return false;
     }

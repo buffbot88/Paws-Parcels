@@ -15,7 +15,9 @@ tmp/
 # Commit server_config.example.json instead; copy it locally and fill in secrets.
 server_config.json
 
-# The SQLite game database is intentionally tracked for the current Alpha workflow.
+# Keep the live SQLite database outside Git so rebuilds and pulls cannot replace
+# player accounts or characters.
+/persist/
 # Keep this repository private if it contains real account/character data; never
 # commit server_config.json, credentials, tokens, or production secrets.
 # The full raw art archive (reference/assets/) is committed so the whole team has

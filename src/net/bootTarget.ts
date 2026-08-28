@@ -1,5 +1,5 @@
 import { ZoneKeys } from "../game/GameConstants.ts";
-import { MAPS } from "../game/Maps.ts";
+import { PLAYABLE_MAPS } from "../game/Maps.ts";
 
 /** Shape of a character row as stored by the auth flow (paws.auth.characters). */
 export interface BootCharacter {
@@ -19,7 +19,7 @@ export interface BootTarget {
 }
 
 /** The hub zone used whenever the courier has no registered saved zone. */
-export const DEFAULT_BOOT_ZONE = ZoneKeys.CloverVillage;
+export const DEFAULT_BOOT_ZONE = "";
 
 /** Read the bootable characters list (undefined when auth hasn't completed). */
 export function readBootCharacters(): BootCharacter[] | undefined {
@@ -84,15 +84,14 @@ export function resolveBootTarget(
     characters,
     serverSelectedId ?? readSelectedCharacterId(),
   );
-  if (character !== null && MAPS[character.zone_id] !== undefined) {
+  if (character !== null && PLAYABLE_MAPS[character.zone_id] !== undefined) {
     return {
       zoneId: character.zone_id,
       pos: { x: character.pos_x, y: character.pos_y },
     };
   }
-  const hub = MAPS[DEFAULT_BOOT_ZONE];
-  return {
-    zoneId: DEFAULT_BOOT_ZONE,
-    pos: { x: hub.spawn.x, y: hub.spawn.y },
-  };
+  const hub = PLAYABLE_MAPS[DEFAULT_BOOT_ZONE];
+  return hub === undefined
+    ? { zoneId: "", pos: { x: 0, y: 0 } }
+    : { zoneId: DEFAULT_BOOT_ZONE, pos: { x: hub.spawn.x, y: hub.spawn.y } };
 }

@@ -104,7 +104,13 @@ async function main(): Promise<void> {
   // (dev), the API/WS-only server still boots and requests fall through to 404.
   const staticDir = serverConfig.staticDir;
   const serveClientFile =
-    staticDir !== "" ? createStaticClientServer(staticDir) : null;
+    staticDir !== ""
+      ? createStaticClientServer(staticDir, {
+          "/BrowseAssets": "deploy/asset-catalog",
+          "/asset-catalog": "deploy/asset-catalog",
+          "/reference/assets": "reference/assets",
+        })
+      : null;
   if (serveClientFile !== null) {
     if (!existsSync(staticDir)) {
       logger.warn(

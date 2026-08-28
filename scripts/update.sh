@@ -18,18 +18,19 @@ echo "    Repo: $REPO_DIR"
 # --- Pull ---
 echo ""
 echo "==> Pulling latest from GitHub..."
+PREVIOUS_HEAD="$(git rev-parse HEAD)"
 if [ -f "$DEPLOY_KEY" ]; then
   echo "    Using deploy key: $DEPLOY_KEY"
-  GIT_SSH_COMMAND="ssh -i $DEPLOY_KEY -o StrictHostKeyChecking=no" git pull --ff-only
+  GIT_SSH_COMMAND="ssh -i $DEPLOY_KEY -o IdentitiesOnly=yes -o StrictHostKeyChecking=no" git pull --ff-only
 else
   echo "    No deploy key found at $DEPLOY_KEY — using default SSH."
   git pull --ff-only
 fi
 
 # --- Install deps (only if package-lock.json changed) ---
-if git diff HEAD@{1} --name-only 2>/dev/null | grep -q "^package-lock\.json$"; then
+if ! git diff --quiet "$PREVIOUS_HEAD" HEAD -- package-lock.json || [ ! -x node_modules/.bin/vite ]; then
   echo ""
-  echo "==> package-lock.json changed — running npm ci..."
+  echo "==> Installing dependencies..."
   npm ci
 else
   echo ""

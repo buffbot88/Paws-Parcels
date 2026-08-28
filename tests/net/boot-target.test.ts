@@ -12,7 +12,7 @@ function char(overrides: Partial<BootCharacter> = {}): BootCharacter {
     id: 1,
     name: "Birch",
     class_id: 1,
-    zone_id: ZoneKeys.CloverVillage,
+    zone_id: ZoneKeys.HappyValley,
     pos_x: 15,
     pos_y: 13,
     level: 1,
@@ -21,12 +21,14 @@ function char(overrides: Partial<BootCharacter> = {}): BootCharacter {
 }
 
 describe("resolveBootTarget", () => {
-  it("boots into the courier's saved zone and position", () => {
+  it("does not boot into a map while maps are offline", () => {
     const target = resolveBootTarget([char()]);
-    expect(target).toEqual({
-      zoneId: ZoneKeys.CloverVillage,
-      pos: { x: 15, y: 13 },
-    });
+    expect(target).toEqual({ zoneId: "", pos: { x: 0, y: 0 } });
+  });
+
+  it("falls back from archived maps without selecting another map", () => {
+    const target = resolveBootTarget([char({ zone_id: ZoneKeys.CloverVillage })]);
+    expect(target).toEqual({ zoneId: "", pos: { x: 0, y: 0 } });
   });
 
   it("uses the server-selected courier when several exist", () => {
@@ -34,10 +36,7 @@ describe("resolveBootTarget", () => {
       char(),
       char({ id: 2, pos_x: 21, pos_y: 22 }),
     ], 2);
-    expect(target).toEqual({
-      zoneId: ZoneKeys.CloverVillage,
-      pos: { x: 21, y: 22 },
-    });
+    expect(target).toEqual({ zoneId: "", pos: { x: 0, y: 0 } });
   });
 
   it("falls back to the first character when the server selection is stale", () => {
@@ -45,16 +44,13 @@ describe("resolveBootTarget", () => {
       char(),
       char({ id: 2, zone_id: "zone-not-registered" }),
     ], 999);
-    expect(target.zoneId).toBe(ZoneKeys.CloverVillage);
+    expect(target.zoneId).toBe("");
   });
 
   it("falls back to the hub for a saved zone the client does not know", () => {
     const target = resolveBootTarget([char({ zone_id: "zone-not-registered" })]);
     expect(target.zoneId).toBe(DEFAULT_BOOT_ZONE);
-    expect(target.pos).toEqual({
-      x: expect.any(Number),
-      y: expect.any(Number),
-    });
+    expect(target.pos).toEqual({ x: 0, y: 0 });
   });
 
   it("falls back to the hub when there are no characters", () => {

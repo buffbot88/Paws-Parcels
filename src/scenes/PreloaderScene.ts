@@ -4,11 +4,6 @@ import { SceneKeys, TextureKeys } from "../game/GameConstants.ts";
 import { TILES, TILESET_COLUMNS } from "../game/Tiles.ts";
 import { renderTilesetCanvas } from "../game/TileTextures.ts";
 import { queueClassAssets, registerClassAnimations } from "../game/classAssets.ts";
-import { queueCloverVillageAssets } from "../game/cloverVillageAssets.ts";
-import {
-  queueCloverVillageNpcAssets,
-  registerCloverVillageNpcAnimations,
-} from "../game/cloverVillageNpcAssets.ts";
 
 /**
  * Preloader loads the selected class art and generates the remaining
@@ -22,13 +17,10 @@ export class PreloaderScene extends Phaser.Scene {
 
   preload(): void {
     queueClassAssets(this);
-    queueCloverVillageAssets(this);
-    queueCloverVillageNpcAssets(this);
   }
 
   create(): void {
     registerClassAnimations(this);
-    registerCloverVillageNpcAnimations(this);
     this.generatePlaceholderTextures();
     this.showLoadingBar();
     this.time.delayedCall(400, () => this.scene.start(SceneKeys.Overworld));
