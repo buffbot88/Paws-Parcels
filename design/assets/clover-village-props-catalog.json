@@ -60,14 +60,16 @@
     "source": "src/data/maps/clover-village.json",
     "note": "These are gameplay/interactable objects, not proof that matching art exists.",
     "objects": [
-      { "id": "object-counter", "kind": "counter", "label": "Post Office Counter", "tile": [28, 28], "assetStatus": "no_named_prop_asset" },
-      { "id": "object-quest-board", "kind": "quest-board", "label": "Quest Board", "tile": [32, 38], "assetStatus": "no_named_prop_asset; unclassified_decor_may_be_candidate" },
-      { "id": "object-mailbox", "kind": "mailbox", "label": "Mailbox", "tile": [30, 38], "assetStatus": "no_named_prop_asset; unclassified_decor_may_be_candidate" },
-      { "id": "object-shop", "kind": "shop", "label": "Shop Shelf", "tile": [44, 28], "assetStatus": "building_or_interior_role; no_small_prop_asset" },
-      { "id": "object-welcome-sign", "kind": "sign", "label": "Welcome Sign", "tile": [38, 21], "assetStatus": "no_named_prop_asset; unclassified_decor_may_be_candidate" },
-      { "id": "object-post-counter", "kind": "counter", "label": "Counter Corner", "tile": [27, 30], "assetStatus": "no_named_prop_asset" },
-      { "id": "object-rabbit-burrows", "kind": "sign", "label": "Rabbit Burrows", "tile": [12, 17], "assetStatus": "no_named_prop_asset; unclassified_decor_may_be_candidate" },
-      { "id": "object-pond-edge", "kind": "sign", "label": "Pond Edge", "tile": [58, 52], "assetStatus": "no_named_prop_asset; unclassified_decor_may_be_candidate" }
+      { "id": "object-counter", "kind": "counter", "label": "Post Office Counter", "tile": [37, 23], "assetStatus": "no_named_prop_asset" },
+      { "id": "object-post-counter", "kind": "counter", "label": "Counter Corner", "tile": [36, 23], "assetStatus": "no_named_prop_asset" },
+      { "id": "object-quest-board", "kind": "quest-board", "label": "Quest Board", "tile": [41, 30], "assetStatus": "wired_to_decor_9_notice_board" },
+      { "id": "object-mailbox", "kind": "mailbox", "label": "Mailbox", "tile": [33, 30], "assetStatus": "no_named_prop_asset; wired_to_new_CloverValley_mailbox_prop" },
+      { "id": "object-shop", "kind": "shop", "label": "Shop Shelf", "tile": [53, 28], "assetStatus": "building_or_interior_role; no_small_prop_asset" },
+      { "id": "object-welcome-sign", "kind": "sign", "label": "Welcome Sign", "tile": [39, 8], "assetStatus": "no_named_prop_asset; courier_banner_marks_moment" },
+      { "id": "object-rabbit-burrows", "kind": "sign", "label": "Rabbit Burrows", "tile": [18, 11], "assetStatus": "wired_to_rabbit_burrow_landmark_art" },
+      { "id": "object-pond-edge", "kind": "sign", "label": "Pond Edge", "tile": [49, 56], "assetStatus": "wired_to_pond_area_cluster" },
+      { "id": "object-hollow-oak", "kind": "sign", "label": "Hollow Oak", "tile": [14, 59], "assetStatus": "wired_to_hollow_oak_landmark_art" },
+      { "id": "object-picnic-blanket", "kind": "sign", "label": "Picnic Blanket", "tile": [65, 57], "assetStatus": "wired_to_picnic_setup_art" }
     ]
   },
   "requestedCategoryStatus": [
@@ -128,6 +130,19 @@
     "searchedTerms": ["sign", "fence", "bridge", "cart", "lamp", "mailbox", "bench", "barrel", "crate", "notice", "lantern", "street light"],
     "result": "No named Clover Village or OtherAssets prop files matched these terms. This does not classify unnamed decor PNGs."
   },
+  "runtimeWiringUpdate": {
+    "date": "2026-09-05",
+    "note": "Supersedes the original policy statement above: subsequent art passes DID change runtime texture selection. Recorded here so the catalog stays truthful.",
+    "wiredProps": [
+      { "file": "reference/assets/new/CloverValley/Props/quest-items.png", "use": "sheet texture; four named frames cut at load: goldenAcorn, letterOpener, moonNotebook, polishedPebble", "placements": "letterOpener beside Post Office counter; polishedPebble on NW cottage lawn" },
+      { "file": "reference/assets/new/CloverValley/Props/quest-items.2.png", "use": "adventuring still-life cutout", "placements": "picnic clearing, beside picnic-setup" },
+      { "file": "reference/assets/new/CloverValley/Props/fence/fence-post-broken.png", "use": "fence alternate", "placements": "burrow trailhead + NW cottage lawn" },
+      { "file": "reference/assets/new/CloverValley/Props/fence/fence-short-straight.png", "use": "fence alternate", "placements": "burrow trailhead run + NE cottage lawn extension" }
+    ],
+    "examinedAndLeftUnwired": [
+      { "file": "reference/assets/new/CloverValley/Props/route-clutter.png", "reason": "full-bleed opaque painting (~100% opaque), not a transparent cutout — compositing it as a set piece would draw an opaque rectangle over the ground; pack convention (bench, parcels, picnic-setup etc.) is transparent cutouts" }
+    ]
+  },
   "reviewChecklist": [
     "Review decor_1.png through decor_18.png visually and assign only confirmed roles.",
     "Do not import Happy Valley props into Clover Village solely because the filename matches a requested category.",
@@ -140,7 +155,7 @@
     "unclassifiedCloverVillageDecorFiles": 18,
     "namedHappyValleyCandidateFiles": 33,
     "requestedCategories": 12,
-    "runtimePropAssignmentsAdded": 0,
+    "runtimePropAssignmentsAdded": 7,
     "nextStep": "Visually identify the 18 unnamed Clover Village decor assets before assigning any sign, mailbox, fence, bridge, cart, or village-furniture role."
   }
 }

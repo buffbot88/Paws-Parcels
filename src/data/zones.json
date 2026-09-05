@@ -7,7 +7,7 @@
       "mapDataId": "clover-village",
       "widthTiles": 75,
       "heightTiles": 75,
-      "defaultSpawn": { "x": 37, "y": 38 },
+      "defaultSpawn": { "x": 37, "y": 31 },
       "maxPlayers": 32,
       "isSafe": true
     },

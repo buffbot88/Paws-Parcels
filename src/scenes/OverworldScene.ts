@@ -25,6 +25,11 @@ import { Minimap } from "../ui/Minimap.ts";
 import { SkillBar } from "../ui/SkillBar.ts";
 import { CharacterProfilePanel } from "../ui/CharacterProfilePanel.ts";
 import { QuestTracker } from "../ui/QuestTracker.ts";
+import {
+  addCloverVillageGround,
+  addCloverVillageSetPieces,
+} from "../game/cloverVillageAssets.ts";
+import { addHappyValleySetPieces } from "../game/happyValleyAssets.ts";
 import type { VisualSceneMetadata } from "../types/VisualSceneMetadata.ts";
 import npcsJson from "../data/npcs.json" with { type: "json" };
 import dialogueJson from "../data/dialogue.json" with { type: "json" };
@@ -138,6 +143,12 @@ export class OverworldScene extends Phaser.Scene {
     if (character !== null) this.network.start(zoneId, character.id);
 
     this.buildTilemap(resolved);
+    if (resolved.id === ZoneKeys.CloverVillage) {
+      // The authored surface replaces ordinary grass/path tile art, but the
+      // collision tiles must remain visible. Hiding the whole tilemap leaves
+      // trees and water as invisible solid obstacles in the world.
+      this.visualGround = addCloverVillageGround(this, resolved);
+    }
     // Physics world matches the whole map so the camera + colliders behave.
     this.physics.world.setBounds(
       0,
@@ -173,6 +184,17 @@ export class OverworldScene extends Phaser.Scene {
     }
 
     this.buildNpcs(resolved);
+    if (resolved.id === ZoneKeys.CloverVillage) {
+      this.visualSetPieces = addCloverVillageSetPieces(this);
+      this.visualSetPieceShadows = this.visualSetPieces
+        .map((piece) => piece.getData("cloverVillageShadow"))
+        .filter((shadow): shadow is Phaser.GameObjects.Ellipse => shadow instanceof Phaser.GameObjects.Ellipse);
+    } else if (resolved.id === ZoneKeys.HappyValley) {
+      this.visualSetPieces = addHappyValleySetPieces(this);
+      this.visualSetPieceShadows = this.visualSetPieces
+        .map((piece) => piece.getData("happyValleyShadow"))
+        .filter((shadow): shadow is Phaser.GameObjects.Ellipse => shadow instanceof Phaser.GameObjects.Ellipse);
+    }
     this.visualInteractables = resolved.interactables;
     this.buildObjectMarkers(resolved);
     this.buildInteractionSystem(resolved);
@@ -509,7 +531,10 @@ export class OverworldScene extends Phaser.Scene {
           y: piece.y / TILE_SIZE,
           scale: piece.scale,
           depth: piece.depth,
-          asset: piece.getData("cloverVillageAsset") ?? piece.texture.key,
+          asset:
+            piece.getData("cloverVillageAsset") ??
+            piece.getData("happyValleyAsset") ??
+            piece.texture.key,
         })),
         ...this.visualInteractables.map((object) => ({
           id: object.id,

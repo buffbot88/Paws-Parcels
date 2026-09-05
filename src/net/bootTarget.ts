@@ -19,7 +19,7 @@ export interface BootTarget {
 }
 
 /** The hub zone used whenever the courier has no registered saved zone. */
-export const DEFAULT_BOOT_ZONE = "";
+export const DEFAULT_BOOT_ZONE = ZoneKeys.CloverVillage;
 
 /** Read the bootable characters list (undefined when auth hasn't completed). */
 export function readBootCharacters(): BootCharacter[] | undefined {

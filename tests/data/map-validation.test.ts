@@ -82,22 +82,36 @@ describe("map validation — shipped maps", () => {
     }
   });
 
-  it("keeps former authored-building placeholders free of invisible walls", () => {
+  it("blocks every authored building footprint and keeps its door walkable", () => {
     const map = MAPS[ZoneKeys.CloverVillage];
-    const footprints = [
-      { x: 27, y: 26, width: 5, height: 5 },
-      { x: 43, y: 26, width: 5, height: 5 },
-      { x: 19, y: 44, width: 3, height: 3 },
-      { x: 55, y: 44, width: 3, height: 3 },
-      { x: 19, y: 32, width: 3, height: 3 },
-      { x: 55, y: 32, width: 3, height: 3 },
+    const buildings = [
+      { name: "post-office", x0: 33, y0: 15, x1: 41, y1: 22, door: { x: 37, y: 23 } },
+      { name: "cafe", x0: 15, y0: 25, x1: 19, y1: 28, door: { x: 17, y: 29 } },
+      { name: "research-shop", x0: 51, y0: 22, x1: 56, y1: 26, door: { x: 54, y: 27 } },
+      { name: "florist", x0: 55, y0: 35, x1: 59, y1: 38, door: { x: 57, y: 39 } },
+      { name: "cottage-nw", x0: 14, y0: 43, x1: 16, y1: 46, door: { x: 15, y: 47 } },
+      { name: "cottage-ne", x0: 55, y0: 45, x1: 57, y1: 47, door: { x: 56, y: 48 } },
     ];
-    for (const footprint of footprints) {
-      for (let y = footprint.y; y < footprint.y + footprint.height; y++) {
-        for (let x = footprint.x; x < footprint.x + footprint.width; x++) {
-          expect(isWalkableTile(map, x, y), `legacy footprint (${x},${y})`).toBe(true);
+    for (const b of buildings) {
+      for (let y = b.y0; y <= b.y1; y++) {
+        for (let x = b.x0; x <= b.x1; x++) {
+          expect(isWalkableTile(map, x, y), `${b.name} wall (${x},${y})`).toBe(false);
         }
       }
+      expect(isWalkableTile(map, b.door.x, b.door.y), `${b.name} door`).toBe(true);
+    }
+  });
+
+  it("ships the woodland landmark objects for the errand quests", () => {
+    const map = MAPS[ZoneKeys.CloverVillage];
+    const ids = new Set(map.interactables.map((o) => o.id));
+    for (const id of [
+      "object-hollow-oak",
+      "object-rabbit-burrows",
+      "object-pond-edge",
+      "object-picnic-blanket",
+    ]) {
+      expect(ids.has(id), id).toBe(true);
     }
   });
 });
@@ -305,26 +319,26 @@ describe("npc placement", () => {
 
   it("places Pip outside the post office on its south entrance path", () => {
     const pip = (npcsJson.npcs as NPC[]).find((npc) => npc.id === "npc-pip");
-    expect(pip?.homeTile).toEqual({ x: 29, y: 31 });
-    expect(MAPS[ZoneKeys.CloverVillage].rows[31]?.[29]).toBe("P");
+    expect(pip?.homeTile).toEqual({ x: 37, y: 24 });
+    expect(MAPS[ZoneKeys.CloverVillage].rows[24]?.[37]).toBe("P");
   });
 
-  it("places Lumi on the north path near the village edge", () => {
+  it("places Lumi on the research shop's front path", () => {
     const lumi = (npcsJson.npcs as NPC[]).find((npc) => npc.id === "npc-lumi");
-    expect(lumi?.homeTile).toEqual({ x: 45, y: 32 });
-    expect(MAPS[ZoneKeys.CloverVillage].rows[32]?.[45]).toBe("P");
+    expect(lumi?.homeTile).toEqual({ x: 52, y: 28 });
+    expect(MAPS[ZoneKeys.CloverVillage].rows[28]?.[52]).toBe("P");
   });
 
-  it("places Biscuit on the west village path", () => {
+  it("places Biscuit on the café's front path", () => {
     const biscuit = (npcsJson.npcs as NPC[]).find((npc) => npc.id === "npc-biscuit");
-    expect(biscuit?.homeTile).toEqual({ x: 20, y: 35 });
-    expect(MAPS[ZoneKeys.CloverVillage].rows[35]?.[20]).toBe("P");
+    expect(biscuit?.homeTile).toEqual({ x: 19, y: 30 });
+    expect(MAPS[ZoneKeys.CloverVillage].rows[30]?.[19]).toBe("P");
   });
 
-  it("places Maple on the northeast village path", () => {
+  it("places Maple on the florist's front path", () => {
     const maple = (npcsJson.npcs as NPC[]).find((npc) => npc.id === "npc-maple");
-    expect(maple?.homeTile).toEqual({ x: 56, y: 35 });
-    expect(MAPS[ZoneKeys.CloverVillage].rows[35]?.[56]).toBe("P");
+    expect(maple?.homeTile).toEqual({ x: 56, y: 40 });
+    expect(MAPS[ZoneKeys.CloverVillage].rows[40]?.[56]).toBe("P");
   });
 
   it("reports an NPC placed on a colliding tile", () => {

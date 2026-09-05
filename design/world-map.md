@@ -16,7 +16,7 @@
 Tile size **48×48**. Viewport ≈ 20×11.25 tiles at 960×540 (the game zooms to 0.8 for the village, ≈25×14 tiles). All coordinates are in **tile units** (x, y), origin top-left.
 
 ## Zone: Clover Village (hub) — `zone-clover-village`
-Dimensions: **75×75 tiles** (regenerated as one compact world map — see `scripts/generate-clover-village.py`; the original 30×20 sketch is superseded). Village district around a plaza at `(37,38)`, southern road to Happy Valley at `(37,74)`. All five cozy NPCs live here (see `design/npcs.md`).
+Dimensions: **75×75 tiles** (NEW authored layout matching the approved reference overview — generate with `node scripts/generate-clover-village.mjs`, seed 7; the earlier plaza-at-`(37,38)` generation is retired). Courier Square plaza at `(37,28)` with spawn `(37,31)`: two-story Post Office (Building 17) north, Café (Building 16) west, Research Shop (Building 5) east, Florist (Building 3) southeast, a fenced open garden for Moss south of the plaza, two background cottages, NW pond + Rabbit Burrow landmark, SW Hollow Oak clearing, SE pond + picnic clearing, and a lamp-lined southern road through a banner gate to Happy Valley at `(37,74)`. All five cozy NPCs live here (see `design/npcs.md`). Landmark objects: `object-welcome-sign` `(39,8)`, `object-rabbit-burrows` `(18,11)` (adjacent to its landmark art), `object-pond-edge` `(49,56)`, `object-hollow-oak` `(14,59)`, `object-picnic-blanket` `(65,57)`.
 
 ```
 ┌──────────────────────────────────────────────┐
@@ -46,12 +46,23 @@ Key objects (all `interactable`):
 
 Collision: post office building walls, pond water, garden bushes (decorative), border trees.
 
-## Zones: Happy Valley — planned (Phase 3)
+## Zones: Happy Valley — authored meadow zone
 
-The old `zone-bramble-patch` map was removed. The Phase 3 open-world monster map is
-**Happy Valley** (`zone-happy-valley`), seeded from the Happy Valley art pack
-(`reference/assets/maps/HappyValley/`). Full tile sketch lands with the map JSON in Phase 3
-(see `design/monsters.md` for the critter family).
+The old `zone-bramble-patch` map was removed. The open-world monster map is
+**Happy Valley** (`zone-happy-valley`), a 40×26 meadow with Mossy Pond, a blueberry
+patch, and the southern transition to Clover Village (valley entrance at `(20,0)`,
+village gate at `(37,74)`).
+
+**Art pass:** set pieces come exclusively from the valley's own pack
+(`reference/assets/maps/HappyValley/Map/PNG`) — blue banner at the entrance, short
+shore dressing (stump/rocks/bush) beside `object-valley-pond-sign`, a bush cluster
+framing `object-valley-blueberries`, and meadow dressing (campfire, trees, rock).
+Placement tables live in `src/game/happyValleyPlacements.ts` (Phaser-free, imported
+by the parity tests); rendering glue in `src/game/happyValleyAssets.ts`.
+`tests/data/happy-valley-art-parity.test.ts` guarantees every valley interactable
+has dedicated adjacent art, via the shared harness in
+`tests/data/interactable-art-parity-harness.ts` (Clover Village enforces the same
+guarantee through it).
 
 ## Content placement rules
 - Gathering nodes regrow daily (respawn on new in-game day) — set in Phase 4.

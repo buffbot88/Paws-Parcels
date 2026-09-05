@@ -586,7 +586,7 @@ export class GameSocket {
       case "player_respawned": {
         const pos = msg.pos as { x?: unknown; y?: unknown } | undefined;
         this.callbacks.onRespawn?.({
-          zoneId: typeof msg.zoneId === "string" ? msg.zoneId : "",
+          zoneId: typeof msg.zoneId === "string" ? msg.zoneId : "zone-clover-village",
           pos: {
             x: Number(pos?.x ?? 15),
             y: Number(pos?.y ?? 13),

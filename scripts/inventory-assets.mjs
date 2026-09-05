@@ -13,9 +13,13 @@ const usedRules = [
   { label: "archer fire-arrow effect", test: /^Classes\/Archer\/AttackEffects\/Fire Arrow\/PNG\/.*\.png$/i },
   { label: "mage fire-ball effect", test: /^Classes\/Mage\/AttackEffects\/Fire Ball\/PNG\/.*\.png$/i },
   { label: "warrior attack effect", test: /^Classes\/Warrior\/AttackEffects\/PNG\/1\/.*\.png$/i },
-  { label: "Clover Village surface/decor", test: /^maps\/CloverVillage\/Map\/PNG\/(land\/land_1|road\/road_5|decor\/(greenery_[123]|stones_[123]|tree_[12]))\.png$/i },
-  { label: "Clover Village buildings", test: /^maps\/CloverVillage\/Map\/PNG\/buildings\/building_(1|4|5|10|12|14)\/building_1\.png$/i },
-  { label: "Clover Valley new reference identifiers", test: /^new\/CloverValley\/Buildings\/(cafe-front|cafe-sign|courier-banner|florist-sign|flower-front|garden-prop|parcels|post-office-sign|research-shop-sign|research-table)\.png$/i },
+  { label: "Clover Village surface/decor", test: /^maps\/CloverVillage\/Map\/PNG\/(land\/land_1|road\/road_5|decor\/(greenery_[12345]|stones_[123]|tree_[12]))\.png$/i },
+  { label: "Clover Village buildings", test: /^maps\/CloverVillage\/Map\/PNG\/buildings\/building_(3|5|6|7|16|17)\/building_1\.png$/i },
+  { label: "Clover Village sign-family decor (quest board + signpost)", test: /^maps\/CloverVillage\/Map\/PNG\/decor\/decor_(4|9)\.png$/i },
+  { label: "Clover Valley scenery props", test: /^new\/CloverValley\/Props\/(bench|bridge|lamp-post|mailbox|picnic-setup|pond-area|quest-items|quest-items\.2|rabbit-burrow)\.png$/i },
+  { label: "Clover Valley fence kit", test: /^new\/CloverValley\/Props\/fence\/(fence-angle-left|fence-angle-right|fence-corner|fence-gate|fence-long-straight|fence-post|fence-post-broken|fence-short-straight|fence-straight)\.png$/i },
+  { label: "Clover Valley building identifiers", test: /^new\/CloverValley\/Buildings\/(cafe-front|cafe-sign|courier-banner|florist-sign|flower-front|garden-prop|hollow-oak|parcels|post-office-sign|research-shop-sign|research-table)\.png$/i },
+  { label: "Happy Valley authored set pieces", test: /^maps\/HappyValley\/Map\/PNG\/Top-Down Simple Summer_Prop - (Blue Banner|Bushes Large|Bushes Medium|Bushes Small|Campfire|Rock 01|Rock 02|Rock 04|Tree Medium|Tree Small|Tree Stump Short)\.png$/i },
   { label: "Clover Village NPC idle frames", test: /^maps\/CloverVillage\/NPC\/(Artist|Astrologer|Citizen)\/PNG\/Front\/PNG Sequences\/Idle\/.*\.png$/i },
 ];
 

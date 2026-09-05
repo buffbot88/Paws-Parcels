@@ -1,0 +1,115 @@
+import Phaser from "phaser";
+import { TILE_SIZE } from "./GameConfig.ts";
+import { worldDepth } from "./WorldDepth.ts";
+import { HappyValleyTextureKeys, SET_PIECES } from "./happyValleyPlacements.ts";
+
+/**
+ * Authored 2.5D art pass for Happy Valley, the legacy 40×26 meadow zone.
+ *
+ * Composition:
+ *   1. Entrance — a blue banner marking the arrival meadow by the welcome sign
+ *   2. Mossy Pond — short shore dressing around the pond-sign clearing
+ *   3. Blueberry patch — bush cluster framing the flowering bushes
+ *   4. Central meadow — campfire rest stop, framing trees and rocks
+ *
+ * Art comes exclusively from the valley's own pack; collision stays
+ * authoritative in the ASCII map and every set piece is visual-only.
+ * The placement tables live in `happyValleyPlacements.ts` (Phaser-free, so the
+ * shared node-env parity suite can import them); this file is the glue.
+ */
+
+type AssetGlob = Record<string, string>;
+
+const sourceAssets: Readonly<Record<string, AssetGlob>> = {
+  blueBanner: import.meta.glob(
+    "../../reference/assets/maps/HappyValley/Map/PNG/Top-Down Simple Summer_Prop - Blue Banner.png",
+    { eager: true, query: "?url", import: "default" },
+  ) as AssetGlob,
+  treeSmall: import.meta.glob(
+    "../../reference/assets/maps/HappyValley/Map/PNG/Top-Down Simple Summer_Prop - Tree Small.png",
+    { eager: true, query: "?url", import: "default" },
+  ) as AssetGlob,
+  treeMedium: import.meta.glob(
+    "../../reference/assets/maps/HappyValley/Map/PNG/Top-Down Simple Summer_Prop - Tree Medium.png",
+    { eager: true, query: "?url", import: "default" },
+  ) as AssetGlob,
+  bushSmall: import.meta.glob(
+    "../../reference/assets/maps/HappyValley/Map/PNG/Top-Down Simple Summer_Prop - Bushes Small.png",
+    { eager: true, query: "?url", import: "default" },
+  ) as AssetGlob,
+  bushMedium: import.meta.glob(
+    "../../reference/assets/maps/HappyValley/Map/PNG/Top-Down Simple Summer_Prop - Bushes Medium.png",
+    { eager: true, query: "?url", import: "default" },
+  ) as AssetGlob,
+  bushLarge: import.meta.glob(
+    "../../reference/assets/maps/HappyValley/Map/PNG/Top-Down Simple Summer_Prop - Bushes Large.png",
+    { eager: true, query: "?url", import: "default" },
+  ) as AssetGlob,
+  rock01: import.meta.glob(
+    "../../reference/assets/maps/HappyValley/Map/PNG/Top-Down Simple Summer_Prop - Rock 01.png",
+    { eager: true, query: "?url", import: "default" },
+  ) as AssetGlob,
+  rock02: import.meta.glob(
+    "../../reference/assets/maps/HappyValley/Map/PNG/Top-Down Simple Summer_Prop - Rock 02.png",
+    { eager: true, query: "?url", import: "default" },
+  ) as AssetGlob,
+  rock04: import.meta.glob(
+    "../../reference/assets/maps/HappyValley/Map/PNG/Top-Down Simple Summer_Prop - Rock 04.png",
+    { eager: true, query: "?url", import: "default" },
+  ) as AssetGlob,
+  treeStumpShort: import.meta.glob(
+    "../../reference/assets/maps/HappyValley/Map/PNG/Top-Down Simple Summer_Prop - Tree Stump Short.png",
+    { eager: true, query: "?url", import: "default" },
+  ) as AssetGlob,
+  campfire: import.meta.glob(
+    "../../reference/assets/maps/HappyValley/Map/PNG/Top-Down Simple Summer_Prop - Campfire.png",
+    { eager: true, query: "?url", import: "default" },
+  ) as AssetGlob,
+};
+
+function firstUrl(group: AssetGlob): string | null {
+  return Object.values(group)[0] ?? null;
+}
+
+function queueImage(scene: Phaser.Scene, key: string, group: AssetGlob): void {
+  const url = firstUrl(group);
+  if (url !== null && !scene.textures.exists(key)) scene.load.image(key, url);
+}
+
+/** Queue the Happy Valley set-piece art (safe to call alongside other queues). */
+export function queueHappyValleyAssets(scene: Phaser.Scene): void {
+  for (const [name, group] of Object.entries(sourceAssets)) {
+    queueImage(scene, HappyValleyTextureKeys[name as keyof typeof HappyValleyTextureKeys], group);
+  }
+}
+
+/**
+ * Add the curated Happy Valley set pieces. Returns [] on non-valley maps so
+ * the scene can treat the call as unconditional cleanup-safe decoration.
+ */
+export function addHappyValleySetPieces(scene: Phaser.Scene): Phaser.GameObjects.Image[] {
+  const added: Phaser.GameObjects.Image[] = [];
+  for (const piece of SET_PIECES) {
+    if (!scene.textures.exists(piece.texture)) continue;
+    const x = piece.tileX * TILE_SIZE;
+    const y = piece.baseTileY * TILE_SIZE;
+
+    // Soft contact shadow, same convention as the Clover Village pass.
+    const frameWidth = scene.textures.get(piece.texture).getSourceImage().width;
+    const shadowWidth = Math.min(320, Math.max(24, frameWidth * piece.scale * 0.7));
+    const shadow = scene.add
+      .ellipse(x, y - 4, shadowWidth, Math.max(10, shadowWidth * 0.2), 0x263b2a, 0.2)
+      .setDepth(worldDepth(y, -0.04));
+
+    const image = scene.add
+      .image(x, y, piece.texture)
+      .setOrigin(0.5, 1)
+      .setScale(piece.scale)
+      .setDepth(worldDepth(y));
+    if (piece.flipX === true) image.setFlipX(true);
+    image.setData("happyValleyAsset", piece.texture);
+    image.setData("happyValleyShadow", shadow);
+    added.push(image);
+  }
+  return added;
+}

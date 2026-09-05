@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "generatedAt": "2026-08-28T05:20:48.744Z",
+  "generatedAt": "2026-09-05T22:57:34.331Z",
   "sourceRoot": "reference/assets",
   "policy": {
     "runtimeUsed": "Files matched by the explicit runtime asset rules in scripts/inventory-assets.mjs.",
@@ -8,12 +8,12 @@
     "ignored": "The source asset archive is committed to the repository as reference material."
   },
   "summary": {
-    "files": 6564,
-    "bytes": 1846613350,
-    "runtimeUsed": 346,
-    "runtimeUsedBytes": 30079891,
-    "referenceOnly": 6218,
-    "referenceOnlyBytes": 1816533459
+    "files": 6585,
+    "bytes": 1870886154,
+    "runtimeUsed": 380,
+    "runtimeUsedBytes": 53188395,
+    "referenceOnly": 6205,
+    "referenceOnlyBytes": 1817697759
   },
   "packs": [
     {
@@ -25,10 +25,10 @@
     },
     {
       "pack": "CloverValley",
-      "files": 11,
-      "bytes": 17664382,
-      "runtimeUsed": 10,
-      "referenceOnly": 1
+      "files": 32,
+      "bytes": 41937186,
+      "runtimeUsed": 29,
+      "referenceOnly": 3
     },
     {
       "pack": "loot",
@@ -41,8 +41,8 @@
       "pack": "maps",
       "files": 5843,
       "bytes": 1541886255,
-      "runtimeUsed": 106,
-      "referenceOnly": 5737
+      "runtimeUsed": 121,
+      "referenceOnly": 5722
     }
   ],
   "files": [
@@ -6279,8 +6279,7 @@
       "bytes": 109579,
       "width": 516,
       "height": 603,
-      "status": "runtime-used",
-      "usedBy": "Clover Village buildings"
+      "status": "reference-only"
     },
     {
       "path": "reference/assets/maps/CloverVillage/Map/PNG/buildings/building_10/building_2.png",
@@ -6406,8 +6405,7 @@
       "bytes": 109284,
       "width": 326,
       "height": 874,
-      "status": "runtime-used",
-      "usedBy": "Clover Village buildings"
+      "status": "reference-only"
     },
     {
       "path": "reference/assets/maps/CloverVillage/Map/PNG/buildings/building_12/building_2.png",
@@ -6551,8 +6549,7 @@
       "bytes": 191629,
       "width": 626,
       "height": 751,
-      "status": "runtime-used",
-      "usedBy": "Clover Village buildings"
+      "status": "reference-only"
     },
     {
       "path": "reference/assets/maps/CloverVillage/Map/PNG/buildings/building_14/building_2.png",
@@ -6669,7 +6666,8 @@
       "bytes": 109266,
       "width": 492,
       "height": 557,
-      "status": "reference-only"
+      "status": "runtime-used",
+      "usedBy": "Clover Village buildings"
     },
     {
       "path": "reference/assets/maps/CloverVillage/Map/PNG/buildings/building_16/building_2.png",
@@ -6741,7 +6739,8 @@
       "bytes": 217690,
       "width": 843,
       "height": 766,
-      "status": "reference-only"
+      "status": "runtime-used",
+      "usedBy": "Clover Village buildings"
     },
     {
       "path": "reference/assets/maps/CloverVillage/Map/PNG/buildings/building_17/building_10.png",
@@ -6885,8 +6884,7 @@
       "bytes": 92188,
       "width": 476,
       "height": 672,
-      "status": "runtime-used",
-      "usedBy": "Clover Village buildings"
+      "status": "reference-only"
     },
     {
       "path": "reference/assets/maps/CloverVillage/Map/PNG/buildings/building_1/building_10.png",
@@ -7012,7 +7010,8 @@
       "bytes": 43145,
       "width": 404,
       "height": 410,
-      "status": "reference-only"
+      "status": "runtime-used",
+      "usedBy": "Clover Village buildings"
     },
     {
       "path": "reference/assets/maps/CloverVillage/Map/PNG/buildings/building_3/building_2.png",
@@ -7048,8 +7047,7 @@
       "bytes": 94583,
       "width": 595,
       "height": 612,
-      "status": "runtime-used",
-      "usedBy": "Clover Village buildings"
+      "status": "reference-only"
     },
     {
       "path": "reference/assets/maps/CloverVillage/Map/PNG/buildings/building_5/building_1.png",
@@ -7113,7 +7111,8 @@
       "bytes": 123928,
       "width": 515,
       "height": 757,
-      "status": "reference-only"
+      "status": "runtime-used",
+      "usedBy": "Clover Village buildings"
     },
     {
       "path": "reference/assets/maps/CloverVillage/Map/PNG/buildings/building_6/building_2.png",
@@ -7176,7 +7175,8 @@
       "bytes": 184859,
       "width": 515,
       "height": 675,
-      "status": "reference-only"
+      "status": "runtime-used",
+      "usedBy": "Clover Village buildings"
     },
     {
       "path": "reference/assets/maps/CloverVillage/Map/PNG/buildings/building_7/building_2.png",
@@ -7455,7 +7455,8 @@
       "bytes": 18642,
       "width": 157,
       "height": 189,
-      "status": "reference-only"
+      "status": "runtime-used",
+      "usedBy": "Clover Village sign-family decor (quest board + signpost)"
     },
     {
       "path": "reference/assets/maps/CloverVillage/Map/PNG/decor/decor_5.png",
@@ -7500,7 +7501,8 @@
       "bytes": 17735,
       "width": 229,
       "height": 203,
-      "status": "reference-only"
+      "status": "runtime-used",
+      "usedBy": "Clover Village sign-family decor (quest board + signpost)"
     },
     {
       "path": "reference/assets/maps/CloverVillage/Map/PNG/decor/greenery_1.png",
@@ -7539,7 +7541,8 @@
       "bytes": 9882,
       "width": 111,
       "height": 148,
-      "status": "reference-only"
+      "status": "runtime-used",
+      "usedBy": "Clover Village surface/decor"
     },
     {
       "path": "reference/assets/maps/CloverVillage/Map/PNG/decor/greenery_5.png",
@@ -7548,7 +7551,8 @@
       "bytes": 6994,
       "width": 78,
       "height": 97,
-      "status": "reference-only"
+      "status": "runtime-used",
+      "usedBy": "Clover Village surface/decor"
     },
     {
       "path": "reference/assets/maps/CloverVillage/Map/PNG/decor/stones_1.png",
@@ -21453,7 +21457,8 @@
       "bytes": 18726,
       "width": 160,
       "height": 240,
-      "status": "reference-only"
+      "status": "runtime-used",
+      "usedBy": "Happy Valley authored set pieces"
     },
     {
       "path": "reference/assets/maps/HappyValley/Map/PNG/Top-Down Simple Summer_Prop - Bushes Large.png",
@@ -21462,7 +21467,8 @@
       "bytes": 15185,
       "width": 240,
       "height": 140,
-      "status": "reference-only"
+      "status": "runtime-used",
+      "usedBy": "Happy Valley authored set pieces"
     },
     {
       "path": "reference/assets/maps/HappyValley/Map/PNG/Top-Down Simple Summer_Prop - Bushes Medium.png",
@@ -21471,7 +21477,8 @@
       "bytes": 12558,
       "width": 180,
       "height": 140,
-      "status": "reference-only"
+      "status": "runtime-used",
+      "usedBy": "Happy Valley authored set pieces"
     },
     {
       "path": "reference/assets/maps/HappyValley/Map/PNG/Top-Down Simple Summer_Prop - Bushes Small.png",
@@ -21480,7 +21487,8 @@
       "bytes": 9434,
       "width": 140,
       "height": 120,
-      "status": "reference-only"
+      "status": "runtime-used",
+      "usedBy": "Happy Valley authored set pieces"
     },
     {
       "path": "reference/assets/maps/HappyValley/Map/PNG/Top-Down Simple Summer_Prop - Campfire.png",
@@ -21489,7 +21497,8 @@
       "bytes": 23200,
       "width": 200,
       "height": 160,
-      "status": "reference-only"
+      "status": "runtime-used",
+      "usedBy": "Happy Valley authored set pieces"
     },
     {
       "path": "reference/assets/maps/HappyValley/Map/PNG/Top-Down Simple Summer_Prop - Castle Round.png",
@@ -21552,7 +21561,8 @@
       "bytes": 8068,
       "width": 120,
       "height": 100,
-      "status": "reference-only"
+      "status": "runtime-used",
+      "usedBy": "Happy Valley authored set pieces"
     },
     {
       "path": "reference/assets/maps/HappyValley/Map/PNG/Top-Down Simple Summer_Prop - Rock 02.png",
@@ -21561,7 +21571,8 @@
       "bytes": 4817,
       "width": 100,
       "height": 60,
-      "status": "reference-only"
+      "status": "runtime-used",
+      "usedBy": "Happy Valley authored set pieces"
     },
     {
       "path": "reference/assets/maps/HappyValley/Map/PNG/Top-Down Simple Summer_Prop - Rock 03.png",
@@ -21579,7 +21590,8 @@
       "bytes": 3150,
       "width": 60,
       "height": 60,
-      "status": "reference-only"
+      "status": "runtime-used",
+      "usedBy": "Happy Valley authored set pieces"
     },
     {
       "path": "reference/assets/maps/HappyValley/Map/PNG/Top-Down Simple Summer_Prop - Rock 05.png",
@@ -21615,7 +21627,8 @@
       "bytes": 39861,
       "width": 360,
       "height": 400,
-      "status": "reference-only"
+      "status": "runtime-used",
+      "usedBy": "Happy Valley authored set pieces"
     },
     {
       "path": "reference/assets/maps/HappyValley/Map/PNG/Top-Down Simple Summer_Prop - Tree Small.png",
@@ -21624,7 +21637,8 @@
       "bytes": 23777,
       "width": 240,
       "height": 280,
-      "status": "reference-only"
+      "status": "runtime-used",
+      "usedBy": "Happy Valley authored set pieces"
     },
     {
       "path": "reference/assets/maps/HappyValley/Map/PNG/Top-Down Simple Summer_Prop - Tree Stump Short.png",
@@ -21633,7 +21647,8 @@
       "bytes": 9826,
       "width": 120,
       "height": 100,
-      "status": "reference-only"
+      "status": "runtime-used",
+      "usedBy": "Happy Valley authored set pieces"
     },
     {
       "path": "reference/assets/maps/HappyValley/Map/PNG/Top-Down Simple Summer_Prop - Tree Stump Tall.png",
@@ -57507,7 +57522,7 @@
       "width": 1254,
       "height": 1254,
       "status": "runtime-used",
-      "usedBy": "Clover Valley new reference identifiers"
+      "usedBy": "Clover Valley building identifiers"
     },
     {
       "path": "reference/assets/new/CloverValley/Buildings/cafe-sign.png",
@@ -57517,7 +57532,7 @@
       "width": 1254,
       "height": 1254,
       "status": "runtime-used",
-      "usedBy": "Clover Valley new reference identifiers"
+      "usedBy": "Clover Valley building identifiers"
     },
     {
       "path": "reference/assets/new/CloverValley/Buildings/courier-banner.png",
@@ -57527,7 +57542,7 @@
       "width": 1254,
       "height": 1254,
       "status": "runtime-used",
-      "usedBy": "Clover Valley new reference identifiers"
+      "usedBy": "Clover Valley building identifiers"
     },
     {
       "path": "reference/assets/new/CloverValley/Buildings/florist-sign.png",
@@ -57537,7 +57552,7 @@
       "width": 1254,
       "height": 1254,
       "status": "runtime-used",
-      "usedBy": "Clover Valley new reference identifiers"
+      "usedBy": "Clover Valley building identifiers"
     },
     {
       "path": "reference/assets/new/CloverValley/Buildings/flower-front.png",
@@ -57547,7 +57562,7 @@
       "width": 1254,
       "height": 1254,
       "status": "runtime-used",
-      "usedBy": "Clover Valley new reference identifiers"
+      "usedBy": "Clover Valley building identifiers"
     },
     {
       "path": "reference/assets/new/CloverValley/Buildings/garden-prop.png",
@@ -57557,7 +57572,7 @@
       "width": 1448,
       "height": 1086,
       "status": "runtime-used",
-      "usedBy": "Clover Valley new reference identifiers"
+      "usedBy": "Clover Valley building identifiers"
     },
     {
       "path": "reference/assets/new/CloverValley/Buildings/hollow-oak.png",
@@ -57566,7 +57581,8 @@
       "bytes": 1755389,
       "width": 1086,
       "height": 1448,
-      "status": "reference-only"
+      "status": "runtime-used",
+      "usedBy": "Clover Valley building identifiers"
     },
     {
       "path": "reference/assets/new/CloverValley/Buildings/parcels.png",
@@ -57576,7 +57592,7 @@
       "width": 1254,
       "height": 1254,
       "status": "runtime-used",
-      "usedBy": "Clover Valley new reference identifiers"
+      "usedBy": "Clover Valley building identifiers"
     },
     {
       "path": "reference/assets/new/CloverValley/Buildings/post-office-sign.png",
@@ -57586,7 +57602,7 @@
       "width": 1254,
       "height": 1254,
       "status": "runtime-used",
-      "usedBy": "Clover Valley new reference identifiers"
+      "usedBy": "Clover Valley building identifiers"
     },
     {
       "path": "reference/assets/new/CloverValley/Buildings/research-shop-sign.png",
@@ -57596,7 +57612,7 @@
       "width": 1254,
       "height": 1254,
       "status": "runtime-used",
-      "usedBy": "Clover Valley new reference identifiers"
+      "usedBy": "Clover Valley building identifiers"
     },
     {
       "path": "reference/assets/new/CloverValley/Buildings/research-table.png",
@@ -57606,7 +57622,212 @@
       "width": 1448,
       "height": 1086,
       "status": "runtime-used",
-      "usedBy": "Clover Valley new reference identifiers"
+      "usedBy": "Clover Valley building identifiers"
+    },
+    {
+      "path": "reference/assets/new/CloverValley/Props/bench.png",
+      "pack": "CloverValley",
+      "extension": ".png",
+      "bytes": 2051400,
+      "width": 1536,
+      "height": 1024,
+      "status": "runtime-used",
+      "usedBy": "Clover Valley scenery props"
+    },
+    {
+      "path": "reference/assets/new/CloverValley/Props/bridge.png",
+      "pack": "CloverValley",
+      "extension": ".png",
+      "bytes": 2239837,
+      "width": 1536,
+      "height": 1024,
+      "status": "runtime-used",
+      "usedBy": "Clover Valley scenery props"
+    },
+    {
+      "path": "reference/assets/new/CloverValley/Props/fence/fence-angle-left.png",
+      "pack": "CloverValley",
+      "extension": ".png",
+      "bytes": 179766,
+      "width": 344,
+      "height": 295,
+      "status": "runtime-used",
+      "usedBy": "Clover Valley fence kit"
+    },
+    {
+      "path": "reference/assets/new/CloverValley/Props/fence/fence-angle-right.png",
+      "pack": "CloverValley",
+      "extension": ".png",
+      "bytes": 221454,
+      "width": 455,
+      "height": 304,
+      "status": "runtime-used",
+      "usedBy": "Clover Valley fence kit"
+    },
+    {
+      "path": "reference/assets/new/CloverValley/Props/fence/fence-corner.png",
+      "pack": "CloverValley",
+      "extension": ".png",
+      "bytes": 317747,
+      "width": 573,
+      "height": 349,
+      "status": "runtime-used",
+      "usedBy": "Clover Valley fence kit"
+    },
+    {
+      "path": "reference/assets/new/CloverValley/Props/fence/fence-gate.png",
+      "pack": "CloverValley",
+      "extension": ".png",
+      "bytes": 487094,
+      "width": 640,
+      "height": 414,
+      "status": "runtime-used",
+      "usedBy": "Clover Valley fence kit"
+    },
+    {
+      "path": "reference/assets/new/CloverValley/Props/fence/fence-long-straight.png",
+      "pack": "CloverValley",
+      "extension": ".png",
+      "bytes": 372576,
+      "width": 799,
+      "height": 317,
+      "status": "runtime-used",
+      "usedBy": "Clover Valley fence kit"
+    },
+    {
+      "path": "reference/assets/new/CloverValley/Props/fence/fence-post-broken.png",
+      "pack": "CloverValley",
+      "extension": ".png",
+      "bytes": 104634,
+      "width": 215,
+      "height": 290,
+      "status": "runtime-used",
+      "usedBy": "Clover Valley fence kit"
+    },
+    {
+      "path": "reference/assets/new/CloverValley/Props/fence/fence-post.png",
+      "pack": "CloverValley",
+      "extension": ".png",
+      "bytes": 112632,
+      "width": 193,
+      "height": 334,
+      "status": "runtime-used",
+      "usedBy": "Clover Valley fence kit"
+    },
+    {
+      "path": "reference/assets/new/CloverValley/Props/fence/fence-short-straight.png",
+      "pack": "CloverValley",
+      "extension": ".png",
+      "bytes": 162007,
+      "width": 407,
+      "height": 252,
+      "status": "runtime-used",
+      "usedBy": "Clover Valley fence kit"
+    },
+    {
+      "path": "reference/assets/new/CloverValley/Props/fence/fence-straight.png",
+      "pack": "CloverValley",
+      "extension": ".png",
+      "bytes": 244399,
+      "width": 605,
+      "height": 282,
+      "status": "runtime-used",
+      "usedBy": "Clover Valley fence kit"
+    },
+    {
+      "path": "reference/assets/new/CloverValley/Props/lamp-post.png",
+      "pack": "CloverValley",
+      "extension": ".png",
+      "bytes": 1367892,
+      "width": 1536,
+      "height": 1024,
+      "status": "runtime-used",
+      "usedBy": "Clover Valley scenery props"
+    },
+    {
+      "path": "reference/assets/new/CloverValley/Props/mailbox.png",
+      "pack": "CloverValley",
+      "extension": ".png",
+      "bytes": 19146,
+      "width": 1536,
+      "height": 1024,
+      "status": "runtime-used",
+      "usedBy": "Clover Valley scenery props"
+    },
+    {
+      "path": "reference/assets/new/CloverValley/Props/picnic-setup.png",
+      "pack": "CloverValley",
+      "extension": ".png",
+      "bytes": 2796099,
+      "width": 1536,
+      "height": 1024,
+      "status": "runtime-used",
+      "usedBy": "Clover Valley scenery props"
+    },
+    {
+      "path": "reference/assets/new/CloverValley/Props/pond-area.png",
+      "pack": "CloverValley",
+      "extension": ".png",
+      "bytes": 2644502,
+      "width": 1536,
+      "height": 1024,
+      "status": "runtime-used",
+      "usedBy": "Clover Valley scenery props"
+    },
+    {
+      "path": "reference/assets/new/CloverValley/Props/props.md",
+      "pack": "CloverValley",
+      "extension": ".md",
+      "bytes": 1526,
+      "status": "reference-only"
+    },
+    {
+      "path": "reference/assets/new/CloverValley/Props/quest-items.2.png",
+      "pack": "CloverValley",
+      "extension": ".png",
+      "bytes": 2665310,
+      "width": 1536,
+      "height": 1024,
+      "status": "runtime-used",
+      "usedBy": "Clover Valley scenery props"
+    },
+    {
+      "path": "reference/assets/new/CloverValley/Props/quest-items.png",
+      "pack": "CloverValley",
+      "extension": ".png",
+      "bytes": 2760853,
+      "width": 1536,
+      "height": 1024,
+      "status": "runtime-used",
+      "usedBy": "Clover Valley scenery props"
+    },
+    {
+      "path": "reference/assets/new/CloverValley/Props/quest-items/dragon-egg.png",
+      "pack": "CloverValley",
+      "extension": ".png",
+      "bytes": 343491,
+      "width": 471,
+      "height": 420,
+      "status": "reference-only"
+    },
+    {
+      "path": "reference/assets/new/CloverValley/Props/rabbit-burrow.png",
+      "pack": "CloverValley",
+      "extension": ".png",
+      "bytes": 2302287,
+      "width": 1133,
+      "height": 1388,
+      "status": "runtime-used",
+      "usedBy": "Clover Valley scenery props"
+    },
+    {
+      "path": "reference/assets/new/CloverValley/Props/route-clutter.png",
+      "pack": "CloverValley",
+      "extension": ".png",
+      "bytes": 2878152,
+      "width": 1536,
+      "height": 1024,
+      "status": "reference-only"
     }
   ]
 }

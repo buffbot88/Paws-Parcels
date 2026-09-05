@@ -1,0 +1,30 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Paws &amp; Parcels — World Preview (dev only)</title>
+    <style>
+      body { margin: 0; background: #2a3b2e; }
+      #game-container { width: 960px; height: 540px; margin: 0 auto; }
+      .preview-note {
+        font-family: Georgia, serif;
+        color: #cfe6c9;
+        text-align: center;
+        padding: 12px 0 4px;
+        font-size: 14px;
+      }
+      .preview-note code { color: #a8d8a0; }
+    </style>
+  </head>
+  <body>
+    <p class="preview-note">
+      Dev-only world preview — boots the real scenes without the auth gate.
+      WASD/arrows to move · E to interact · <code>npm run dev</code> then open
+      <code>/preview.html</code>.
+    </p>
+    <div id="game-container"></div>
+    <div id="ui-overlay"></div>
+    <script type="module" src="/src/preview.ts"></script>
+  </body>
+</html>

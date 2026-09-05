@@ -58,11 +58,8 @@ const MAPS_DIR = resolve(
 );
 
 /** Load zone geometry for a zone id, or null when the map is unknown. */
-export function loadZoneData(_zoneId: string): ZoneData | null {
-  // Maps are intentionally offline while the replacement world is built.
-  return null;
-
-  const file = resolve(MAPS_DIR, `${_zoneId.replace(/^zone-/, "")}.json`);
+export function loadZoneData(zoneId: string): ZoneData | null {
+  const file = resolve(MAPS_DIR, `${zoneId.replace(/^zone-/, "")}.json`);
   let map: MapFile;
   try {
     map = JSON.parse(readFileSync(file, "utf8")) as MapFile;
@@ -78,13 +75,13 @@ export function loadZoneData(_zoneId: string): ZoneData | null {
     return null;
   }
   return {
-    zoneId: _zoneId,
+    zoneId,
     width: map.width,
     height: map.height,
     spawn: map.spawn ?? { x: 0, y: 0 },
     isWalkable: (x, y) => isWalkableTile(map, x, y),
     monsterSpawns: normalizeSpawns(map.monsterSpawns),
-    maxPlayers: ZONE_CAPACITY.get(_zoneId) ?? 32,
+    maxPlayers: ZONE_CAPACITY.get(zoneId) ?? 32,
     transitions: normalizeTransitions(map.transitions),
   };
 }

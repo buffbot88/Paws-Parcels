@@ -73,7 +73,7 @@ describe("SQLite persistence layer", () => {
     const zone = await getZoneByKey("zone-clover-village");
     expect(zone?.key).toBe("zone-clover-village");
     expect(zone?.default_spawn_x).toBe(37);
-    expect(zone?.default_spawn_y).toBe(38);
+    expect(zone?.default_spawn_y).toBe(31);
     expect(zone?.is_safe).toBe(true);
 
     const classes = await getCharacterClasses();
@@ -248,7 +248,7 @@ describe("SQLite persistence layer", () => {
     const session = await getCharacterWithClass(created.character.id);
     expect(session?.class_key).toBe("fox-archer");
     expect(session?.pos_x).toBe(37);
-    expect(session?.pos_y).toBe(38);
+    expect(session?.pos_y).toBe(31);
 
     await updateCharacterPosition(created.character.id, "zone-clover-village", 4, 7);
     const after = await getCharacterWithClass(created.character.id);

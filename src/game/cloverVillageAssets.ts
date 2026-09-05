@@ -2,32 +2,42 @@ import Phaser from "phaser";
 import { TILE_SIZE } from "./GameConfig.ts";
 import { worldDepth } from "./WorldDepth.ts";
 import type { MapData } from "./Maps.ts";
+import {
+  CLOVER_VILLAGE_QUEST_ITEM_FRAMES,
+  CloverVillageTextureKeys,
+  SET_PIECES,
+  type CloverVillageSetPieceDefinition,
+} from "./cloverVillagePlacements.ts";
 
-/** Texture keys for the curated Clover Village set-piece art pass. */
-export const CloverVillageTextureKeys = {
-  ground: "clover-village-ground-authored",
-  road: "clover-village-road-authored",
-  greeneryAlt: "clover-village-greenery-alt",
-  greeneryThird: "clover-village-greenery-third",
-  stonesAlt: "clover-village-stones-alt",
-  stonesThird: "clover-village-stones-third",
-  postOffice: "clover-village-building-post-office",
-  shop: "clover-village-building-shop",
-  cafe: "clover-village-building-cafe",
-  florist: "clover-village-building-florist",
-  cottageNorthWest: "clover-village-building-cottage-north-west",
-  cottageNorthEast: "clover-village-building-cottage-north-east",
-  tree: "clover-village-tree",
-  treeAlt: "clover-village-tree-alt",
-  greenery: "clover-village-greenery",
-  stones: "clover-village-stones",
-} as const;
+/**
+ * Authored 2.5D art pass for the NEW Clover Village layout.
+ *
+ * Composition (matching the approved reference overview):
+ *   1. Courier Square — plaza with flower bed, bench, banners, lanterns
+ *   2. Four professions — Café (16), Florist (3), Research Shop (5), Garden
+ *   3. Post Office — the two-story Building 17 headquarters
+ *   4. Woodland landmarks — Rabbit Burrow, Hollow Oak, two ponds
+ *   5. Residential cottages — background worldbuilding
+ *   6. Happy Valley road — lamp-lit route through the southern gate
+ *
+ * Repetition rules: major landmarks once, buildings once, benches 3-5,
+ * lanterns 8-15, fences many, vegetation heavily repeated with scale/position
+ * variation. Collision stays authoritative in the ASCII map; every set piece
+ * here is visual-only.
+ *
+ * The placement tables (texture keys, set-piece coordinates, fence runs) live
+ * in `cloverVillagePlacements.ts` — a Phaser-free module so the node test env
+ * can import them for the interactable-art parity check. This file owns only
+ * the Phaser glue: asset queueing, ground/road tiling, and depth-sorted
+ * rendering.
+ */
 
 type AssetGlob = Record<string, string>;
 
 /**
  * Authored 2.5D source art. Land and road textures form the opaque visible
- * surface; buildings and decor remain transparent set-piece overlays.
+ * surface; buildings, landmarks, and decor remain transparent set-piece
+ * overlays depth-sorted against the couriers.
  */
 const sourceAssets: Readonly<Record<string, AssetGlob>> = {
   ground: import.meta.glob(
@@ -38,46 +48,159 @@ const sourceAssets: Readonly<Record<string, AssetGlob>> = {
     "../../reference/assets/maps/CloverVillage/Map/PNG/road/road_5.png",
     { eager: true, query: "?url", import: "default" },
   ) as AssetGlob,
-  greeneryAlt: import.meta.glob(
-    "../../reference/assets/maps/CloverVillage/Map/PNG/decor/greenery_2.png",
-    { eager: true, query: "?url", import: "default" },
-  ) as AssetGlob,
-  greeneryThird: import.meta.glob(
-    "../../reference/assets/maps/CloverVillage/Map/PNG/decor/greenery_3.png",
-    { eager: true, query: "?url", import: "default" },
-  ) as AssetGlob,
-  stonesAlt: import.meta.glob(
-    "../../reference/assets/maps/CloverVillage/Map/PNG/decor/stones_2.png",
-    { eager: true, query: "?url", import: "default" },
-  ) as AssetGlob,
-  stonesThird: import.meta.glob(
-    "../../reference/assets/maps/CloverVillage/Map/PNG/decor/stones_3.png",
-    { eager: true, query: "?url", import: "default" },
-  ) as AssetGlob,
+
   postOffice: import.meta.glob(
-    "../../reference/assets/maps/CloverVillage/Map/PNG/buildings/building_1/building_1.png",
+    "../../reference/assets/maps/CloverVillage/Map/PNG/buildings/building_17/building_1.png",
     { eager: true, query: "?url", import: "default" },
   ) as AssetGlob,
   shop: import.meta.glob(
-    "../../reference/assets/maps/CloverVillage/Map/PNG/buildings/building_4/building_1.png",
-    { eager: true, query: "?url", import: "default" },
-  ) as AssetGlob,
-  cafe: import.meta.glob(
-    "../../reference/assets/maps/CloverVillage/Map/PNG/buildings/building_10/building_1.png",
-    { eager: true, query: "?url", import: "default" },
-  ) as AssetGlob,
-  florist: import.meta.glob(
-    "../../reference/assets/maps/CloverVillage/Map/PNG/buildings/building_12/building_1.png",
-    { eager: true, query: "?url", import: "default" },
-  ) as AssetGlob,
-  cottageNorthWest: import.meta.glob(
     "../../reference/assets/maps/CloverVillage/Map/PNG/buildings/building_5/building_1.png",
     { eager: true, query: "?url", import: "default" },
   ) as AssetGlob,
-  cottageNorthEast: import.meta.glob(
-    "../../reference/assets/maps/CloverVillage/Map/PNG/buildings/building_14/building_1.png",
+  cafe: import.meta.glob(
+    "../../reference/assets/maps/CloverVillage/Map/PNG/buildings/building_16/building_1.png",
     { eager: true, query: "?url", import: "default" },
   ) as AssetGlob,
+  florist: import.meta.glob(
+    "../../reference/assets/maps/CloverVillage/Map/PNG/buildings/building_3/building_1.png",
+    { eager: true, query: "?url", import: "default" },
+  ) as AssetGlob,
+  cottageNorthWest: import.meta.glob(
+    "../../reference/assets/maps/CloverVillage/Map/PNG/buildings/building_6/building_1.png",
+    { eager: true, query: "?url", import: "default" },
+  ) as AssetGlob,
+  cottageNorthEast: import.meta.glob(
+    "../../reference/assets/maps/CloverVillage/Map/PNG/buildings/building_7/building_1.png",
+    { eager: true, query: "?url", import: "default" },
+  ) as AssetGlob,
+
+  postOfficeSign: import.meta.glob(
+    "../../reference/assets/new/CloverValley/Buildings/post-office-sign.png",
+    { eager: true, query: "?url", import: "default" },
+  ) as AssetGlob,
+  parcels: import.meta.glob(
+    "../../reference/assets/new/CloverValley/Buildings/parcels.png",
+    { eager: true, query: "?url", import: "default" },
+  ) as AssetGlob,
+  courierBanner: import.meta.glob(
+    "../../reference/assets/new/CloverValley/Buildings/courier-banner.png",
+    { eager: true, query: "?url", import: "default" },
+  ) as AssetGlob,
+  cafeSign: import.meta.glob(
+    "../../reference/assets/new/CloverValley/Buildings/cafe-sign.png",
+    { eager: true, query: "?url", import: "default" },
+  ) as AssetGlob,
+  cafeFront: import.meta.glob(
+    "../../reference/assets/new/CloverValley/Buildings/cafe-front.png",
+    { eager: true, query: "?url", import: "default" },
+  ) as AssetGlob,
+  researchSign: import.meta.glob(
+    "../../reference/assets/new/CloverValley/Buildings/research-shop-sign.png",
+    { eager: true, query: "?url", import: "default" },
+  ) as AssetGlob,
+  researchTable: import.meta.glob(
+    "../../reference/assets/new/CloverValley/Buildings/research-table.png",
+    { eager: true, query: "?url", import: "default" },
+  ) as AssetGlob,
+  floristSign: import.meta.glob(
+    "../../reference/assets/new/CloverValley/Buildings/florist-sign.png",
+    { eager: true, query: "?url", import: "default" },
+  ) as AssetGlob,
+  flowerFront: import.meta.glob(
+    "../../reference/assets/new/CloverValley/Buildings/flower-front.png",
+    { eager: true, query: "?url", import: "default" },
+  ) as AssetGlob,
+  gardenProp: import.meta.glob(
+    "../../reference/assets/new/CloverValley/Buildings/garden-prop.png",
+    { eager: true, query: "?url", import: "default" },
+  ) as AssetGlob,
+  hollowOak: import.meta.glob(
+    "../../reference/assets/new/CloverValley/Buildings/hollow-oak.png",
+    { eager: true, query: "?url", import: "default" },
+  ) as AssetGlob,
+
+  rabbitBurrow: import.meta.glob(
+    "../../reference/assets/new/CloverValley/Props/rabbit-burrow.png",
+    { eager: true, query: "?url", import: "default" },
+  ) as AssetGlob,
+  bench: import.meta.glob(
+    "../../reference/assets/new/CloverValley/Props/bench.png",
+    { eager: true, query: "?url", import: "default" },
+  ) as AssetGlob,
+  bridge: import.meta.glob(
+    "../../reference/assets/new/CloverValley/Props/bridge.png",
+    { eager: true, query: "?url", import: "default" },
+  ) as AssetGlob,
+  lampPost: import.meta.glob(
+    "../../reference/assets/new/CloverValley/Props/lamp-post.png",
+    { eager: true, query: "?url", import: "default" },
+  ) as AssetGlob,
+  mailbox: import.meta.glob(
+    "../../reference/assets/new/CloverValley/Props/mailbox.png",
+    { eager: true, query: "?url", import: "default" },
+  ) as AssetGlob,
+  picnic: import.meta.glob(
+    "../../reference/assets/new/CloverValley/Props/picnic-setup.png",
+    { eager: true, query: "?url", import: "default" },
+  ) as AssetGlob,
+  pondArea: import.meta.glob(
+    "../../reference/assets/new/CloverValley/Props/pond-area.png",
+    { eager: true, query: "?url", import: "default" },
+  ) as AssetGlob,
+  questItems: import.meta.glob(
+    "../../reference/assets/new/CloverValley/Props/quest-items.png",
+    { eager: true, query: "?url", import: "default" },
+  ) as AssetGlob,
+  questItemsAlt: import.meta.glob(
+    "../../reference/assets/new/CloverValley/Props/quest-items.2.png",
+    { eager: true, query: "?url", import: "default" },
+  ) as AssetGlob,
+
+  fenceStraight: import.meta.glob(
+    "../../reference/assets/new/CloverValley/Props/fence/fence-straight.png",
+    { eager: true, query: "?url", import: "default" },
+  ) as AssetGlob,
+  fenceLongStraight: import.meta.glob(
+    "../../reference/assets/new/CloverValley/Props/fence/fence-long-straight.png",
+    { eager: true, query: "?url", import: "default" },
+  ) as AssetGlob,
+  fenceCorner: import.meta.glob(
+    "../../reference/assets/new/CloverValley/Props/fence/fence-corner.png",
+    { eager: true, query: "?url", import: "default" },
+  ) as AssetGlob,
+  fenceAngleLeft: import.meta.glob(
+    "../../reference/assets/new/CloverValley/Props/fence/fence-angle-left.png",
+    { eager: true, query: "?url", import: "default" },
+  ) as AssetGlob,
+  fenceAngleRight: import.meta.glob(
+    "../../reference/assets/new/CloverValley/Props/fence/fence-angle-right.png",
+    { eager: true, query: "?url", import: "default" },
+  ) as AssetGlob,
+  fencePost: import.meta.glob(
+    "../../reference/assets/new/CloverValley/Props/fence/fence-post.png",
+    { eager: true, query: "?url", import: "default" },
+  ) as AssetGlob,
+  fencePostBroken: import.meta.glob(
+    "../../reference/assets/new/CloverValley/Props/fence/fence-post-broken.png",
+    { eager: true, query: "?url", import: "default" },
+  ) as AssetGlob,
+  fenceShortStraight: import.meta.glob(
+    "../../reference/assets/new/CloverValley/Props/fence/fence-short-straight.png",
+    { eager: true, query: "?url", import: "default" },
+  ) as AssetGlob,
+  fenceGate: import.meta.glob(
+    "../../reference/assets/new/CloverValley/Props/fence/fence-gate.png",
+    { eager: true, query: "?url", import: "default" },
+  ) as AssetGlob,
+  questBoard: import.meta.glob(
+    "../../reference/assets/maps/CloverVillage/Map/PNG/decor/decor_9.png",
+    { eager: true, query: "?url", import: "default" },
+  ) as AssetGlob,
+  signpost: import.meta.glob(
+    "../../reference/assets/maps/CloverVillage/Map/PNG/decor/decor_4.png",
+    { eager: true, query: "?url", import: "default" },
+  ) as AssetGlob,
+
   tree: import.meta.glob(
     "../../reference/assets/maps/CloverVillage/Map/PNG/decor/tree_1.png",
     { eager: true, query: "?url", import: "default" },
@@ -90,8 +213,32 @@ const sourceAssets: Readonly<Record<string, AssetGlob>> = {
     "../../reference/assets/maps/CloverVillage/Map/PNG/decor/greenery_1.png",
     { eager: true, query: "?url", import: "default" },
   ) as AssetGlob,
+  greeneryAlt: import.meta.glob(
+    "../../reference/assets/maps/CloverVillage/Map/PNG/decor/greenery_2.png",
+    { eager: true, query: "?url", import: "default" },
+  ) as AssetGlob,
+  greeneryThird: import.meta.glob(
+    "../../reference/assets/maps/CloverVillage/Map/PNG/decor/greenery_3.png",
+    { eager: true, query: "?url", import: "default" },
+  ) as AssetGlob,
+  greeneryFourth: import.meta.glob(
+    "../../reference/assets/maps/CloverVillage/Map/PNG/decor/greenery_4.png",
+    { eager: true, query: "?url", import: "default" },
+  ) as AssetGlob,
+  greeneryFifth: import.meta.glob(
+    "../../reference/assets/maps/CloverVillage/Map/PNG/decor/greenery_5.png",
+    { eager: true, query: "?url", import: "default" },
+  ) as AssetGlob,
   stones: import.meta.glob(
     "../../reference/assets/maps/CloverVillage/Map/PNG/decor/stones_1.png",
+    { eager: true, query: "?url", import: "default" },
+  ) as AssetGlob,
+  stonesAlt: import.meta.glob(
+    "../../reference/assets/maps/CloverVillage/Map/PNG/decor/stones_2.png",
+    { eager: true, query: "?url", import: "default" },
+  ) as AssetGlob,
+  stonesThird: import.meta.glob(
+    "../../reference/assets/maps/CloverVillage/Map/PNG/decor/stones_3.png",
     { eager: true, query: "?url", import: "default" },
   ) as AssetGlob,
 };
@@ -105,6 +252,23 @@ function queueImage(scene: Phaser.Scene, key: string, group: AssetGlob): void {
   if (url !== null && !scene.textures.exists(key)) scene.load.image(key, url);
 }
 
+/**
+ * After the loader finishes, cut the named item frames out of the multi-item
+ * quest-items sheet. Frames are registered as regular texture frames so the
+ * set-piece renderer can treat each item as standalone art (correct origin,
+ * sizing, and depth math) without rasterizing new files. Idempotent; called
+ * from addCloverVillageSetPieces, which only runs once assets are loaded.
+ */
+function registerQuestItemFrames(scene: Phaser.Scene): void {
+  const key = CloverVillageTextureKeys.questItems;
+  if (!scene.textures.exists(key)) return;
+  const texture = scene.textures.get(key);
+  for (const [name, rect] of Object.entries(CLOVER_VILLAGE_QUEST_ITEM_FRAMES)) {
+    if (texture.has(name)) continue;
+    texture.add(name, 0, rect.x, rect.y, rect.width, rect.height);
+  }
+}
+
 /** Queue the authored Clover Village surface and transparent set-piece art. */
 export function queueCloverVillageAssets(scene: Phaser.Scene): void {
   for (const [name, group] of Object.entries(sourceAssets)) {
@@ -112,86 +276,26 @@ export function queueCloverVillageAssets(scene: Phaser.Scene): void {
   }
 }
 
-export interface CloverVillageSetPieceDefinition {
-  texture: string;
-  /** Center X tile. */
-  tileX: number;
-  /** Tile row immediately above the art's ground/base line. */
-  baseTileY: number;
-  scale: number;
-  depthOffset?: number;
-}
-
-/**
- * Anchors follow the authored set-piece placement around the village paths.
- * The ASCII map remains authoritative for collision; stale placeholder
- * building footprints have been converted to walkable terrain in the map data.
- */
-const SET_PIECES: readonly CloverVillageSetPieceDefinition[] = [
-  {
-    texture: CloverVillageTextureKeys.postOffice,
-    tileX: 29,
-    baseTileY: 31,
-    scale: 0.5,
-  },
-  {
-    texture: CloverVillageTextureKeys.shop,
-    tileX: 45,
-    baseTileY: 31,
-    scale: 0.4,
-  },
-  {
-    texture: CloverVillageTextureKeys.cafe,
-    tileX: 20,
-    baseTileY: 35,
-    scale: 0.28,
-  },
-  {
-    texture: CloverVillageTextureKeys.florist,
-    tileX: 56,
-    baseTileY: 35,
-    scale: 0.28,
-  },
-  {
-    texture: CloverVillageTextureKeys.cottageNorthWest,
-    tileX: 20,
-    baseTileY: 47,
-    scale: 0.22,
-  },
-  {
-    texture: CloverVillageTextureKeys.cottageNorthEast,
-    tileX: 56,
-    baseTileY: 47,
-    scale: 0.18,
-  },
-  { texture: CloverVillageTextureKeys.tree, tileX: 8, baseTileY: 16, scale: 0.27 },
-  { texture: CloverVillageTextureKeys.treeAlt, tileX: 66, baseTileY: 21, scale: 0.29 },
-  { texture: CloverVillageTextureKeys.tree, tileX: 12, baseTileY: 64, scale: 0.25 },
-  { texture: CloverVillageTextureKeys.treeAlt, tileX: 64, baseTileY: 64, scale: 0.25 },
-  // A storybook frame around the central route: these clusters deliberately
-  // sit beside, rather than on top of, interaction tiles and building doors.
-  { texture: CloverVillageTextureKeys.greenery, tileX: 19, baseTileY: 27, scale: 0.42 },
-  { texture: CloverVillageTextureKeys.greeneryAlt, tileX: 24, baseTileY: 33, scale: 0.34 },
-  { texture: CloverVillageTextureKeys.greeneryThird, tileX: 51, baseTileY: 33, scale: 0.36 },
-  { texture: CloverVillageTextureKeys.greenery, tileX: 61, baseTileY: 35, scale: 0.42 },
-  { texture: CloverVillageTextureKeys.greeneryAlt, tileX: 24, baseTileY: 45, scale: 0.32 },
-  { texture: CloverVillageTextureKeys.greeneryThird, tileX: 51, baseTileY: 45, scale: 0.32 },
-  { texture: CloverVillageTextureKeys.greeneryAlt, tileX: 16, baseTileY: 52, scale: 0.36 },
-  { texture: CloverVillageTextureKeys.greeneryThird, tileX: 60, baseTileY: 52, scale: 0.36 },
-  { texture: CloverVillageTextureKeys.stones, tileX: 34, baseTileY: 22, scale: 0.55, depthOffset: 0.01 },
-  { texture: CloverVillageTextureKeys.stonesAlt, tileX: 22, baseTileY: 40, scale: 0.34, depthOffset: 0.01 },
-  { texture: CloverVillageTextureKeys.stonesThird, tileX: 47, baseTileY: 39, scale: 0.32, depthOffset: 0.01 },
-];
-
-/** Return the curated set-piece definitions for visual review metadata. */
-export function getCloverVillageSetPieceDefinitions(): readonly CloverVillageSetPieceDefinition[] {
-  return SET_PIECES;
+/** Resolve the texture key + optional frame for a set-piece definition. */
+function resolveTexture(
+  scene: Phaser.Scene,
+  piece: CloverVillageSetPieceDefinition,
+): { key: string; frame?: string } | null {
+  if (piece.frame !== undefined) {
+    // A frame placement needs both the sheet texture and its registered frame.
+    if (!scene.textures.exists(piece.texture)) return null;
+    const texture = scene.textures.get(piece.texture);
+    if (!texture.has(piece.frame)) return null;
+    return { key: piece.texture, frame: piece.frame };
+  }
+  if (!scene.textures.exists(piece.texture)) return null;
+  return { key: piece.texture };
 }
 
 /**
  * Build the authored visible surface for Clover Village. The collision tilemap
  * remains authoritative underneath; this layer replaces its procedural visual
- * language with the supplied tropical-medieval land and road art.
+ * language with the supplied land and road art.
  */
 export function addCloverVillageGround(
   scene: Phaser.Scene,
@@ -216,36 +320,46 @@ export function addCloverVillageGround(
         .setDisplaySize(TILE_SIZE, TILE_SIZE)
         .setDepth(-15);
       added.push(road);
-
     }
   }
   return added;
 }
 
-/** Add the curated buildings and decor for Clover Village. */
+/** Add the curated buildings, landmarks, and decor for Clover Village. */
 export function addCloverVillageSetPieces(scene: Phaser.Scene): Phaser.GameObjects.Image[] {
+  registerQuestItemFrames(scene);
   const added: Phaser.GameObjects.Image[] = [];
   for (const piece of SET_PIECES) {
-    if (!scene.textures.exists(piece.texture)) continue;
-    const x = piece.tileX * TILE_SIZE + TILE_SIZE / 2;
+    const resolved = resolveTexture(scene, piece);
+    if (resolved === null) continue;
+    const { key, frame } = resolved;
+    const x = piece.tileX * TILE_SIZE;
     const y = piece.baseTileY * TILE_SIZE;
 
-    // A soft contact shadow keeps authored overlays grounded against the
-    // continuous field without turning them into blocky tile art.
-    const shadowWidth = Math.min(150, Math.max(54, 180 * piece.scale));
+    // A soft contact shadow sized from the actual art keeps authored overlays
+    // grounded against the continuous field without blocky tile artifacts.
+    // cutWidth covers both plain textures and manually added sheet frames.
+    const source = scene.textures.get(key).get(frame);
+    const frameWidth = source.cutWidth;
+    const shadowWidth = Math.min(320, Math.max(24, frameWidth * piece.scale * 0.7));
     const shadow = scene.add
-      .ellipse(x, y - 4, shadowWidth, Math.max(12, shadowWidth * 0.22), 0x263b2a, 0.2)
+      .ellipse(x, y - 4, shadowWidth, Math.max(10, shadowWidth * 0.2), 0x263b2a, 0.2)
       .setDepth(worldDepth(y, -0.04));
 
     const image = scene.add
-      .image(x, y, piece.texture)
+      .image(x, y, key, frame)
       .setOrigin(0.5, 1)
       .setScale(piece.scale)
       .setDepth(worldDepth(y, piece.depthOffset ?? 0));
+    if (piece.rotation !== undefined && piece.rotation !== 0) {
+      image.setRotation(piece.rotation);
+    }
+    if (piece.flipX === true) image.setFlipX(true);
     // Keep presentation metadata attached to the successfully loaded image;
     // capture review must not infer assets from a positional array index.
     image.setData("cloverVillageAsset", piece.texture);
-    image.setData("cloverVillageShadow", shadow); 
+    if (frame !== undefined) image.setData("cloverVillageFrame", frame);
+    image.setData("cloverVillageShadow", shadow);
     added.push(image);
   }
   return added;
