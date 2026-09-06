@@ -44,6 +44,7 @@ vi.mock("../../server/src/config/index.ts", () => ({
   },
 }));
 
+import { readFileSync } from "node:fs";
 import { runMigrations } from "../../server/src/db/migrate.ts";
 import { closeDb, getDb } from "../../server/src/db/connection.ts";
 import { findOrCreateAccountByAshatId } from "../../server/src/models/Account.ts";
@@ -92,6 +93,39 @@ describe("SQLite persistence layer", () => {
     await runMigrations();
     const zone = await getZoneByKey("zone-clover-village");
     expect(zone).not.toBeNull();
+  });
+
+  it("migration 013 snaps retired-layout village couriers to the new plaza spawn", async () => {
+    await runMigrations();
+    const account = await findOrCreateAccountByAshatId({
+      ashatUserId: "u-mig013",
+      username: "birch",
+      displayName: "Birch",
+      role: "Member",
+    });
+    const cls = (await getCharacterClasses())[0];
+    const village = await createCharacter({ accountId: account.id, name: "Birch", classId: cls.id, appearance: {}, cls });
+    const valley = await createCharacter({ accountId: account.id, name: "Rowan", classId: cls.id, appearance: {}, cls });
+    expect(village.ok && valley.ok).toBe(true);
+    if (!village.ok || !valley.ok) return;
+
+    // Seed the retired-layout state: the old plaza quest-board tile (32,38).
+    // The Happy Valley courier must be left untouched by the migration.
+    await updateCharacterPosition(village.character.id, "zone-clover-village", 32, 38);
+    await updateCharacterPosition(valley.character.id, "zone-happy-valley", 5, 5);
+
+    // Re-run the real migration file: clear its ledger record, then let the
+    // runner apply it fresh (same code path production uses).
+    getDb().prepare("DELETE FROM schema_version WHERE version = '013_clover_village_new_layout'").run();
+    await runMigrations();
+
+    const snapped = await getCharacterById(village.character.id);
+    expect(snapped?.pos_x).toBe(37);
+    expect(snapped?.pos_y).toBe(31);
+    const untouched = await getCharacterById(valley.character.id);
+    expect(untouched?.zone_id).toBe("zone-happy-valley");
+    expect(untouched?.pos_x).toBe(5);
+    expect(untouched?.pos_y).toBe(5);
   });
 
   it("upserts an account by ashat_user_id and syncs the display name", async () => {
