@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "generatedAt": "2026-09-05T22:57:34.331Z",
+  "generatedAt": "2026-09-06T08:42:28.665Z",
   "sourceRoot": "reference/assets",
   "policy": {
     "runtimeUsed": "Files matched by the explicit runtime asset rules in scripts/inventory-assets.mjs.",
@@ -8,12 +8,12 @@
     "ignored": "The source asset archive is committed to the repository as reference material."
   },
   "summary": {
-    "files": 6585,
-    "bytes": 1870886154,
+    "files": 6587,
+    "bytes": 1870998646,
     "runtimeUsed": 380,
-    "runtimeUsedBytes": 53188395,
-    "referenceOnly": 6205,
-    "referenceOnlyBytes": 1817697759
+    "runtimeUsedBytes": 53271832,
+    "referenceOnly": 6207,
+    "referenceOnlyBytes": 1817726814
   },
   "packs": [
     {
@@ -25,9 +25,9 @@
     },
     {
       "pack": "CloverValley",
-      "files": 32,
-      "bytes": 41937186,
-      "runtimeUsed": 29,
+      "files": 34,
+      "bytes": 42049678,
+      "runtimeUsed": 31,
       "referenceOnly": 3
     },
     {
@@ -41,8 +41,8 @@
       "pack": "maps",
       "files": 5843,
       "bytes": 1541886255,
-      "runtimeUsed": 121,
-      "referenceOnly": 5722
+      "runtimeUsed": 119,
+      "referenceOnly": 5724
     }
   ],
   "files": [
@@ -7647,8 +7647,7 @@
       "bytes": 24143,
       "width": 256,
       "height": 256,
-      "status": "runtime-used",
-      "usedBy": "Clover Village surface/decor"
+      "status": "reference-only"
     },
     {
       "path": "reference/assets/maps/CloverVillage/Map/PNG/land/land_10.png",
@@ -7990,8 +7989,7 @@
       "bytes": 4912,
       "width": 64,
       "height": 64,
-      "status": "runtime-used",
-      "usedBy": "Clover Village surface/decor"
+      "status": "reference-only"
     },
     {
       "path": "reference/assets/maps/CloverVillage/Map/PNG/road/road_6.png",
@@ -57623,6 +57621,26 @@
       "height": 1086,
       "status": "runtime-used",
       "usedBy": "Clover Valley building identifiers"
+    },
+    {
+      "path": "reference/assets/new/CloverValley/Ground/meadow.png",
+      "pack": "CloverValley",
+      "extension": ".png",
+      "bytes": 103846,
+      "width": 256,
+      "height": 256,
+      "status": "runtime-used",
+      "usedBy": "Clover Village authored ground"
+    },
+    {
+      "path": "reference/assets/new/CloverValley/Ground/road.png",
+      "pack": "CloverValley",
+      "extension": ".png",
+      "bytes": 8646,
+      "width": 64,
+      "height": 64,
+      "status": "runtime-used",
+      "usedBy": "Clover Village authored ground"
     },
     {
       "path": "reference/assets/new/CloverValley/Props/bench.png",

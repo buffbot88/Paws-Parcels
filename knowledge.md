@@ -81,3 +81,4 @@ A game-owned **LFM2.5-VL-450M** (Q8 + vision projector) llama-server instance ba
 - **Vows 5:** mechanical work (searches, lints, single-file edits, test runs) acts immediately; anything warranting a plan gets exactly ONE deliberate planning pass, shown to the user for approval first
 - A server is now required — no more offline-only game.
 - The old `SaveData` / `localStorage` progression model is superseded by SQLite persistence.
+- **Clover Village ground art:** the pack's land_1/road_5 tiles render flat/blocky in-engine. `scripts/generate-ground-assets.mjs` derives two new seamless textures (meadow from re-lit land_1, road from de-featured road_5) into `reference/assets/new/CloverValley/Ground/`; regenerate with `node scripts/generate-ground-assets.mjs` (deterministic), then `npm run assets:inventory`.

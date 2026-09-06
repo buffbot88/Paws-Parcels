@@ -41,11 +41,11 @@ type AssetGlob = Record<string, string>;
  */
 const sourceAssets: Readonly<Record<string, AssetGlob>> = {
   ground: import.meta.glob(
-    "../../reference/assets/maps/CloverVillage/Map/PNG/land/land_1.png",
+    "../../reference/assets/new/CloverValley/Ground/meadow.png",
     { eager: true, query: "?url", import: "default" },
   ) as AssetGlob,
   road: import.meta.glob(
-    "../../reference/assets/maps/CloverVillage/Map/PNG/road/road_5.png",
+    "../../reference/assets/new/CloverValley/Ground/road.png",
     { eager: true, query: "?url", import: "default" },
   ) as AssetGlob,
 
