@@ -137,6 +137,7 @@ function writeToken(
 
 /** Drop the persistent auth and any legacy tab-scoped credentials. */
 export function clearAuthStorage(): void {
+  void fetch(apiPath("/api/auth/logout"), { method: "POST", credentials: "include" });
   for (const storage of [persistentStore(), tabStore()]) {
     try {
       storage?.removeItem(TOKEN_KEY);
@@ -275,7 +276,7 @@ export class LoginOverlay {
     try {
       const res = await fetch(
         apiPath(`/api/auth/login-url?state=${encodeURIComponent(state)}&code_challenge=${encodeURIComponent(challenge)}`),
-        { credentials: "omit" },
+        { credentials: "include" },
       );
       if (res.ok) {
         const body = (await res.json()) as { url?: string };
@@ -312,7 +313,7 @@ export class LoginOverlay {
     try {
       const res = await fetch(apiPath("/api/auth/me"), {
         headers: { Authorization: `Bearer ${token}` },
-        credentials: "omit",
+        credentials: "include",
       });
       if (res.status === 200) {
         const body = (await res.json()) as {

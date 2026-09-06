@@ -17,9 +17,50 @@ body {
   color: #3a5a3a;
   font-family: Georgia, "Times New Roman", serif;
   display: flex;
+  flex-direction: column;
   align-items: center;
-  justify-content: center;
-  min-width: 320px; /* Spec: minimum supported width 320px */
+  min-width: 320px;
+}
+
+.top-navbar {
+  width: 100%;
+  min-height: 3.25rem;
+  padding: 0.65rem 1rem;
+  display: flex;
+  align-items: center;
+  gap: 1.25rem;
+  background: #3a5a3a;
+  color: #fff;
+}
+
+.top-navbar a {
+  color: inherit;
+  text-decoration: none;
+}
+
+.top-navbar__brand {
+  font-weight: 700;
+}
+
+.top-navbar nav {
+  display: flex;
+  gap: 1rem;
+}
+
+.top-navbar__account {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.top-navbar button {
+  border: 1px solid rgba(255, 255, 255, 0.7);
+  border-radius: 0.4rem;
+  padding: 0.35rem 0.6rem;
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
 }
 
 #game-container {

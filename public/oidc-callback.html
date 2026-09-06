@@ -133,7 +133,7 @@
             return fetch(API_BASE + "/api/auth/oidc/callback", {
               method: "POST",
               headers: { "Content-Type": "application/json" },
-              credentials: "omit",
+              credentials: "include",
               body: JSON.stringify({ code: code, state: state, code_verifier: verifier }),
             });
           })
@@ -154,12 +154,12 @@
             // Never redirect without credentials: storage-blocked browsers
             // would otherwise loop back to the login screen indefinitely.
             try {
-              sessionStorage.setItem("paws.auth.token", result.body.token);
-              sessionStorage.setItem(
+              localStorage.setItem("paws.auth.token", result.body.token);
+              localStorage.setItem(
                 "paws.auth.account",
                 JSON.stringify(result.body.account),
               );
-              sessionStorage.setItem(
+              localStorage.setItem(
                 "paws.auth.characters",
                 JSON.stringify(result.body.characters),
               );
@@ -174,7 +174,7 @@
             // Redirect back to the game (relative path handles subpath deploys).
             // bootAfterAuth validates the stored JWT and boots the game or
             // shows the maintenance screen.
-            window.location.replace("./");
+            window.location.replace(new URL("/", window.location.origin).href);
           })
           .catch(function () {
             fail("network error", "The post office is unreachable right now.");

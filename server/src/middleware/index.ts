@@ -16,6 +16,7 @@ export function middleware(
     if (allowOrigin) {
       res.setHeader("Access-Control-Allow-Origin", allowOrigin);
       res.setHeader("Vary", "Origin");
+      res.setHeader("Access-Control-Allow-Credentials", "true");
     }
     res.setHeader("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS");
     res.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization");

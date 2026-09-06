@@ -14,7 +14,8 @@ export function fitGameWindow(): void {
   if (container === null) return;
 
   const viewportWidth = window.visualViewport?.width ?? window.innerWidth;
-  const viewportHeight = window.visualViewport?.height ?? window.innerHeight;
+  const viewportHeight = (window.visualViewport?.height ?? window.innerHeight) -
+    (document.getElementById("top-navbar")?.offsetHeight ?? 0);
   const scale = Math.min(
     viewportWidth / GAME_WIDTH,
     viewportHeight / GAME_HEIGHT,

@@ -46,6 +46,22 @@ const desk = new CharacterDesk();
 const menu = new CharacterMenu();
 const profilePanel = new CharacterProfilePanel();
 
+function updateNavbar(account: AuthFinishDetail["account"]): void {
+  const name = document.getElementById("navbar-account");
+  const signOut = document.getElementById("navbar-sign-out");
+  if (name !== null) {
+    name.textContent = account.display_name;
+    name.removeAttribute("hidden");
+  }
+  if (signOut !== null) {
+    signOut.removeAttribute("hidden");
+    signOut.addEventListener("click", () => {
+      clearAuthStorage();
+      window.location.reload();
+    }, { once: true });
+  }
+}
+
 /** Keep startup failures visible instead of leaving a silent offline canvas. */
 function showConnectionDiagnostic(title: string, detail: string): void {
   const container = document.getElementById("game-container");
@@ -81,6 +97,7 @@ function startGame(
   selectedId: number | null,
 ): void {
   win.pawsAccount = detail.account;
+  updateNavbar(detail.account);
   win.pawsCharacters = characters;
   win.pawsSelectedCharacterId = selectedId;
   // Resolve one authoritative courier for this boot and persist that exact id
@@ -237,6 +254,7 @@ async function bootAfterAuth(): Promise<void> {
     if (existing !== null) {
       // Maintenance mode — show the maintenance screen instead of booting.
       if (isMaintenance()) {
+        updateNavbar(existing.account);
         showMaintenance(existing);
         return;
       }

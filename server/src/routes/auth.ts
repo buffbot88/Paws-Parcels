@@ -1,6 +1,7 @@
 import type { IncomingMessage, ServerResponse } from "node:http";
 import { oidc as oidcConfig } from "../config/index.ts";
 import { generateAccessToken } from "../auth/index.ts";
+import { clearSessionCookie, sessionCookie } from "../auth/sessionCookie.ts";
 import {
   exchangeAuthCode,
   getAuthorizationEndpoint,
@@ -166,6 +167,7 @@ export async function oidcCallbackHandler(
   });
 
   const characters = await getCharactersByAccountId(account.id);
+  res.setHeader("Set-Cookie", sessionCookie(token));
   jsonResponse(res, 200, {
     token,
     account: toPublicAccount(account),
@@ -203,6 +205,7 @@ export async function logoutHandler(
   _req: IncomingMessage,
   res: ServerResponse,
 ): Promise<void> {
+  res.setHeader("Set-Cookie", clearSessionCookie());
   jsonResponse(res, 200, { ok: true });
 }
 

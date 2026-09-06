@@ -1,5 +1,6 @@
 import type { IncomingMessage, ServerResponse } from "node:http";
 import { extractBearerToken, verifyAccessToken } from "../auth/index.ts";
+import { readSessionCookie } from "../auth/sessionCookie.ts";
 import { getAccountByAshatId, type AccountRow } from "../models/Account.ts";
 import { errorResponse } from "./index.ts";
 
@@ -27,11 +28,11 @@ export async function requireAccount(
   res: ServerResponse,
 ): Promise<AccountRow | null> {
   const authHeader = req.headers["authorization"];
-  const token = extractBearerToken(
-    typeof authHeader === "string" ? authHeader : undefined,
-  );
+  const token =
+    extractBearerToken(typeof authHeader === "string" ? authHeader : undefined) ??
+    readSessionCookie(req.headers.cookie);
   if (token === null) {
-    errorResponse(res, 401, "UNAUTHORIZED", "Bearer token required");
+    errorResponse(res, 401, "UNAUTHORIZED", "Session cookie or Bearer token required");
     return null;
   }
   const payload = await verifyAccessToken(token);
