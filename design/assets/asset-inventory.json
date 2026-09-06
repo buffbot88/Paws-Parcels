@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "generatedAt": "2026-09-06T08:42:28.665Z",
+  "generatedAt": "2026-09-06T08:56:31.250Z",
   "sourceRoot": "reference/assets",
   "policy": {
     "runtimeUsed": "Files matched by the explicit runtime asset rules in scripts/inventory-assets.mjs.",
@@ -9,9 +9,9 @@
   },
   "summary": {
     "files": 6587,
-    "bytes": 1870998646,
+    "bytes": 1870996449,
     "runtimeUsed": 380,
-    "runtimeUsedBytes": 53271832,
+    "runtimeUsedBytes": 53269635,
     "referenceOnly": 6207,
     "referenceOnlyBytes": 1817726814
   },
@@ -26,7 +26,7 @@
     {
       "pack": "CloverValley",
       "files": 34,
-      "bytes": 42049678,
+      "bytes": 42047481,
       "runtimeUsed": 31,
       "referenceOnly": 3
     },
@@ -57626,7 +57626,7 @@
       "path": "reference/assets/new/CloverValley/Ground/meadow.png",
       "pack": "CloverValley",
       "extension": ".png",
-      "bytes": 103846,
+      "bytes": 101649,
       "width": 256,
       "height": 256,
       "status": "runtime-used",

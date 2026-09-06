@@ -215,7 +215,11 @@ function generateMeadow() {
     const hsl = rgbToHsl(r, g, b);
     let l = remap(hsl.l);
     l = Math.min(0.6, Math.max(0.38, l));
-    const s = Math.min(1, hsl.s);
+    // Tempered saturation: the pack's painted style is soft/pastel (sage
+    // fields, cream papers, muted warm woods). Full-chroma green overreaches;
+    // scale the original painting's own saturation down so the meadow reads
+    // painted rather than synthetic.
+    const s = Math.min(1, hsl.s * 0.72);
     const c = hslToRgb(hsl.h, s, l);
     out[i * 4] = c.r;
     out[i * 4 + 1] = c.g;
