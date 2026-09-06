@@ -13,6 +13,9 @@
  */
 
 export const HappyValleyTextureKeys = {
+  // Authored ground (generated, same pipeline as the Clover Village meadow/road).
+  ground: "happy-valley-ground-authored",
+  path: "happy-valley-path-authored",
   // Entrance + route framing.
   blueBanner: "happy-valley-blue-banner",
   treeSmall: "happy-valley-tree-small",

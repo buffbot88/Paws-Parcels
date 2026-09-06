@@ -29,7 +29,7 @@ import {
   addCloverVillageGround,
   addCloverVillageSetPieces,
 } from "../game/cloverVillageAssets.ts";
-import { addHappyValleySetPieces } from "../game/happyValleyAssets.ts";
+import { addHappyValleyGround, addHappyValleySetPieces } from "../game/happyValleyAssets.ts";
 import type { VisualSceneMetadata } from "../types/VisualSceneMetadata.ts";
 import npcsJson from "../data/npcs.json" with { type: "json" };
 import dialogueJson from "../data/dialogue.json" with { type: "json" };
@@ -148,6 +148,8 @@ export class OverworldScene extends Phaser.Scene {
       // collision tiles must remain visible. Hiding the whole tilemap leaves
       // trees and water as invisible solid obstacles in the world.
       this.visualGround = addCloverVillageGround(this, resolved);
+    } else if (resolved.id === ZoneKeys.HappyValley) {
+      this.visualGround = addHappyValleyGround(this, resolved);
     }
     // Physics world matches the whole map so the camera + colliders behave.
     this.physics.world.setBounds(

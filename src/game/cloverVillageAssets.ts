@@ -48,6 +48,10 @@ const sourceAssets: Readonly<Record<string, AssetGlob>> = {
     "../../reference/assets/new/CloverValley/Ground/road.png",
     { eager: true, query: "?url", import: "default" },
   ) as AssetGlob,
+  plaza: import.meta.glob(
+    "../../reference/assets/new/CloverValley/Ground/plaza.png",
+    { eager: true, query: "?url", import: "default" },
+  ) as AssetGlob,
 
   postOffice: import.meta.glob(
     "../../reference/assets/maps/CloverVillage/Map/PNG/buildings/building_17/building_1.png",
@@ -311,15 +315,20 @@ export function addCloverVillageGround(
   added.push(ground);
 
   if (!scene.textures.exists(CloverVillageTextureKeys.road)) return added;
+  // Courier Square is paved (reference look: cobblestone plaza in front of
+  // the Post Office); the rest of the path network keeps the warm earth road.
+  const isPlaza = (x: number, y: number) =>
+    x >= 29 && x <= 44 && y >= 25 && y <= 35 && scene.textures.exists(CloverVillageTextureKeys.plaza);
   for (let y = 0; y < map.height; y++) {
     const row = map.rows[y] ?? "";
     for (let x = 0; x < map.width; x++) {
       if (row[x] !== "P") continue;
-      const road = scene.add
-        .image(x * TILE_SIZE + TILE_SIZE / 2, y * TILE_SIZE + TILE_SIZE / 2, CloverVillageTextureKeys.road)
+      const key = isPlaza(x, y) ? CloverVillageTextureKeys.plaza : CloverVillageTextureKeys.road;
+      const tile = scene.add
+        .image(x * TILE_SIZE + TILE_SIZE / 2, y * TILE_SIZE + TILE_SIZE / 2, key)
         .setDisplaySize(TILE_SIZE, TILE_SIZE)
         .setDepth(-15);
-      added.push(road);
+      added.push(tile);
     }
   }
   return added;

@@ -20,7 +20,7 @@ describeInteractableArtParity({
   allTextureKeys: Object.values(CloverVillageTextureKeys),
   // ground/road are the authored surface drawn by addCloverVillageGround,
   // deliberately not set pieces — everything else must appear in the world.
-  surfaceKeys: [CloverVillageTextureKeys.ground, CloverVillageTextureKeys.road],
+  surfaceKeys: [CloverVillageTextureKeys.ground, CloverVillageTextureKeys.road, CloverVillageTextureKeys.plaza],
   artMappings: {
     // Post Office counter + corner share the building's art.
     "object-counter": [CloverVillageTextureKeys.postOffice],

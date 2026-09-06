@@ -15,6 +15,7 @@ describeInteractableArtParity({
   mapName: "happy valley",
   interactables: happyValleyJson.interactables,
   allTextureKeys: Object.values(HappyValleyTextureKeys),
+  surfaceKeys: [HappyValleyTextureKeys.ground, HappyValleyTextureKeys.path],
   artMappings: {
     // The arrival meadow is announced by the blue banner beside the sign.
     "object-valley-welcome": [HappyValleyTextureKeys.blueBanner],
