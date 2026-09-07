@@ -151,6 +151,27 @@ const sourceAssets: Readonly<Record<string, AssetGlob>> = {
     "../../reference/assets/new/CloverValley/Props/pond-area.png",
     { eager: true, query: "?url", import: "default" },
   ) as AssetGlob,
+  // Authored reference set pieces (scripts/generate-clover-valley-props.mjs).
+  cafeTable: import.meta.glob(
+    "../../reference/assets/new/CloverValley/Props/cafe-table.png",
+    { eager: true, query: "?url", import: "default" },
+  ) as AssetGlob,
+  gardenBed: import.meta.glob(
+    "../../reference/assets/new/CloverValley/Props/garden-bed.png",
+    { eager: true, query: "?url", import: "default" },
+  ) as AssetGlob,
+  clothesline: import.meta.glob(
+    "../../reference/assets/new/CloverValley/Props/clothesline.png",
+    { eager: true, query: "?url", import: "default" },
+  ) as AssetGlob,
+  entranceArch: import.meta.glob(
+    "../../reference/assets/new/CloverValley/Props/entrance-arch.png",
+    { eager: true, query: "?url", import: "default" },
+  ) as AssetGlob,
+  lilyPads: import.meta.glob(
+    "../../reference/assets/new/CloverValley/Props/lily-pads.png",
+    { eager: true, query: "?url", import: "default" },
+  ) as AssetGlob,
   questItems: import.meta.glob(
     "../../reference/assets/new/CloverValley/Props/quest-items.png",
     { eager: true, query: "?url", import: "default" },

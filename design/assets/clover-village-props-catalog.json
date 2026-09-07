@@ -141,7 +141,18 @@
     ],
     "examinedAndLeftUnwired": [
       { "file": "reference/assets/new/CloverValley/Props/route-clutter.png", "reason": "full-bleed opaque painting (~100% opaque), not a transparent cutout — compositing it as a set piece would draw an opaque rectangle over the ground; pack convention (bench, parcels, picnic-setup etc.) is transparent cutouts" }
-    ]
+    ],
+    "generatedToCloseDescopes": {
+      "date": "2026-09-06",
+      "note": "The five reference set pieces the pack had no art for (café seating, raised garden beds, cottage clotheslines, the grand south gate, and pond lily pads) are now authored cutouts painted in the pack's pastel language by scripts/generate-clover-valley-props.mjs — deterministic, regenerated with the same command.",
+      "files": [
+        { "file": "reference/assets/new/CloverValley/Props/cafe-table.png", "use": "outdoor café table + stools cutout", "placements": "3 tables on the lawn in front of the Café" },
+        { "file": "reference/assets/new/CloverValley/Props/garden-bed.png", "use": "raised vegetable bed cutout", "placements": "4 beds inside Moss's fenced garden" },
+        { "file": "reference/assets/new/CloverValley/Props/clothesline.png", "use": "two-post laundry line cutout", "placements": "one by each cottage lawn" },
+        { "file": "reference/assets/new/CloverValley/Props/entrance-arch.png", "use": "grand wooden gate arch (stone bases, lanterns, clover banner)", "placements": "southern approach framing the Happy Valley exit at (37,72.5)" },
+        { "file": "reference/assets/new/CloverValley/Props/lily-pads.png", "use": "floating lily-pad cluster with bloom", "placements": "3 on the NW pond, 3 on the SE pond" }
+      ]
+    }
   },
   "reviewChecklist": [
     "Review decor_1.png through decor_18.png visually and assign only confirmed roles.",

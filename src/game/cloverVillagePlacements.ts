@@ -48,6 +48,14 @@ export const CloverVillageTextureKeys = {
   mailbox: "clover-valley-mailbox",
   picnic: "clover-valley-picnic-setup",
   pondArea: "clover-valley-pond-area",
+  // Reference set pieces the pack lacked — authored cutouts (see
+  // scripts/generate-clover-valley-props.mjs): café seating, raised garden
+  // beds, cottage clotheslines, the grand south gate, and pond lily pads.
+  cafeTable: "clover-valley-cafe-table",
+  gardenBed: "clover-valley-garden-bed",
+  clothesline: "clover-valley-clothesline",
+  entranceArch: "clover-valley-entrance-arch",
+  lilyPads: "clover-valley-lily-pads",
   // Quest-item sheet (new CloverValley pack) — individual items are addressed
   // via SHEET_FRAMES below; the texture key here is the whole sheet.
   questItems: "clover-valley-quest-items",
@@ -135,6 +143,11 @@ export const SET_PIECES: CloverVillageSetPieceDefinition[] = [
   { texture: CloverVillageTextureKeys.cafe, tileX: 17.5, baseTileY: 29, scale: 0.49 },
   { texture: CloverVillageTextureKeys.cafeSign, tileX: 19.7, baseTileY: 29, scale: 0.2502, depthOffset: 0.02 },
   { texture: CloverVillageTextureKeys.cafeFront, tileX: 13.3, baseTileY: 30, scale: 0.2498 },
+  // Outdoor café seating (reference look): round tables with stools on the
+  // lawn in front of the café.
+  { texture: CloverVillageTextureKeys.cafeTable, tileX: 12.8, baseTileY: 31.4, scale: 0.2499, depthOffset: 0.02 },
+  { texture: CloverVillageTextureKeys.cafeTable, tileX: 14.8, baseTileY: 31.8, scale: 0.2499, depthOffset: 0.02 },
+  { texture: CloverVillageTextureKeys.cafeTable, tileX: 14.2, baseTileY: 33, scale: 0.2499, depthOffset: 0.02, flipX: true },
   // Research Shop — Building 5 low-roof hall (footprint x51-56, y22-26).
   { texture: CloverVillageTextureKeys.shop, tileX: 54, baseTileY: 27, scale: 0.42 },
   { texture: CloverVillageTextureKeys.researchSign, tileX: 51.3, baseTileY: 27, scale: 0.2502, depthOffset: 0.02 },
@@ -146,6 +159,9 @@ export const SET_PIECES: CloverVillageSetPieceDefinition[] = [
   // Cottages — background residences.
   { texture: CloverVillageTextureKeys.cottageNorthWest, tileX: 15.5, baseTileY: 47, scale: 0.28 },
   { texture: CloverVillageTextureKeys.cottageNorthEast, tileX: 56.5, baseTileY: 48, scale: 0.28 },
+  // Cottage clotheslines (reference look: laundry airing by each home).
+  { texture: CloverVillageTextureKeys.clothesline, tileX: 13.8, baseTileY: 49.2, scale: 0.2499, depthOffset: 0.02 },
+  { texture: CloverVillageTextureKeys.clothesline, tileX: 58.8, baseTileY: 49.3, scale: 0.2499, depthOffset: 0.02, flipX: true },
 
   // --- 2. Courier Square (plaza at 37,28 r7.6; spawn 37,31 stays clear) ----
   { texture: CloverVillageTextureKeys.bench, tileX: 34.6, baseTileY: 27.9, scale: 0.2499 },
@@ -187,6 +203,9 @@ export const SET_PIECES: CloverVillageSetPieceDefinition[] = [
   { texture: CloverVillageTextureKeys.courierBanner, tileX: 40.6, baseTileY: 69.2, scale: 0.25 },
   { texture: CloverVillageTextureKeys.lampPost, tileX: 34.2, baseTileY: 69.4, scale: 0.2501 },
   { texture: CloverVillageTextureKeys.lampPost, tileX: 41.8, baseTileY: 69.4, scale: 0.2501 },
+  // Grand wooden gate arch (reference look) framing the Happy Valley exit —
+  // stone pillar bases, lanterns, white banner with the clover emblem.
+  { texture: CloverVillageTextureKeys.entranceArch, tileX: 37.5, baseTileY: 72.5, scale: 0.2999, depthOffset: 0.03 },
   // Directional Signpost — LAST, on the south verge beside the Happy Valley
   // transition tile (37,74). Wired from decor_4 (the catalog's only signpost).
   { texture: CloverVillageTextureKeys.signpost, tileX: 34.9, baseTileY: 72.6, scale: 0.4, flipX: true },
@@ -197,6 +216,11 @@ export const SET_PIECES: CloverVillageSetPieceDefinition[] = [
 
   // --- 4. Moss's Garden — open fenced garden (x40-52, y40-47) --------------
   { texture: CloverVillageTextureKeys.gardenProp, tileX: 45, baseTileY: 44, scale: 0.2497 },
+  // Raised vegetable beds (reference look: fenced garden with rows of crops).
+  { texture: CloverVillageTextureKeys.gardenBed, tileX: 44, baseTileY: 43.4, scale: 0.2498, depthOffset: 0.02 },
+  { texture: CloverVillageTextureKeys.gardenBed, tileX: 48.2, baseTileY: 43.5, scale: 0.2498, depthOffset: 0.02, flipX: true },
+  { texture: CloverVillageTextureKeys.gardenBed, tileX: 46.8, baseTileY: 44.4, scale: 0.2498, depthOffset: 0.02 },
+  { texture: CloverVillageTextureKeys.gardenBed, tileX: 49, baseTileY: 46.2, scale: 0.2498, depthOffset: 0.02, flipX: true },
   { texture: CloverVillageTextureKeys.greeneryAlt, tileX: 42.2, baseTileY: 41.4, scale: 0.65 },
   { texture: CloverVillageTextureKeys.greeneryFourth, tileX: 49.8, baseTileY: 45.8, scale: 0.9 },
   { texture: CloverVillageTextureKeys.greeneryFifth, tileX: 50.6, baseTileY: 41.6, scale: 1.1 },
@@ -205,6 +229,10 @@ export const SET_PIECES: CloverVillageSetPieceDefinition[] = [
   // --- 5. NW pond + Rabbit Burrow clearing ---------------------------------
   { texture: CloverVillageTextureKeys.pondArea, tileX: 7.5, baseTileY: 11.8, scale: 0.2498 },
   { texture: CloverVillageTextureKeys.bridge, tileX: 8.5, baseTileY: 12.3, scale: 0.25 },
+  // Lily pads floating on the pond water (reference look).
+  { texture: CloverVillageTextureKeys.lilyPads, tileX: 8.5, baseTileY: 9.5, scale: 0.2, depthOffset: 0.015 },
+  { texture: CloverVillageTextureKeys.lilyPads, tileX: 9.6, baseTileY: 6.4, scale: 0.2, depthOffset: 0.015, flipX: true },
+  { texture: CloverVillageTextureKeys.lilyPads, tileX: 7.5, baseTileY: 10.5, scale: 0.2, depthOffset: 0.015 },
   { texture: CloverVillageTextureKeys.pondArea, tileX: 10.4, baseTileY: 5.2, scale: 0.2029 },
   { texture: CloverVillageTextureKeys.rabbitBurrow, tileX: 18.6, baseTileY: 11.4, scale: 0.2499 },
   { texture: CloverVillageTextureKeys.greenery, tileX: 20.8, baseTileY: 9.6, scale: 1.0 },
@@ -230,6 +258,10 @@ export const SET_PIECES: CloverVillageSetPieceDefinition[] = [
   { texture: CloverVillageTextureKeys.pondArea, tileX: 53, baseTileY: 57.6, scale: 0.2498 },
   { texture: CloverVillageTextureKeys.pondArea, tileX: 58.5, baseTileY: 68.6, scale: 0.2341 },
   { texture: CloverVillageTextureKeys.bridge, tileX: 52.4, baseTileY: 57.4, scale: 0.2143 },
+  // Lily pads on the pond water (reference look).
+  { texture: CloverVillageTextureKeys.lilyPads, tileX: 55.5, baseTileY: 58.5, scale: 0.2, depthOffset: 0.015 },
+  { texture: CloverVillageTextureKeys.lilyPads, tileX: 53.5, baseTileY: 60.5, scale: 0.2, depthOffset: 0.015, flipX: true },
+  { texture: CloverVillageTextureKeys.lilyPads, tileX: 57.5, baseTileY: 60.5, scale: 0.2, depthOffset: 0.015 },
   { texture: CloverVillageTextureKeys.picnic, tileX: 65.5, baseTileY: 57.8, scale: 0.2499 },
   { texture: CloverVillageTextureKeys.treeAlt, tileX: 68.5, baseTileY: 54.5, scale: 0.26 },
   { texture: CloverVillageTextureKeys.greeneryAlt, tileX: 62.4, baseTileY: 56.2, scale: 0.7 },

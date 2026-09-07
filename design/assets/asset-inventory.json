@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "generatedAt": "2026-09-06T22:09:55.605Z",
+  "generatedAt": "2026-09-07T02:50:11.195Z",
   "sourceRoot": "reference/assets",
   "policy": {
     "runtimeUsed": "Files matched by the explicit runtime asset rules in scripts/inventory-assets.mjs.",
@@ -8,10 +8,10 @@
     "ignored": "The source asset archive is committed to the repository as reference material."
   },
   "summary": {
-    "files": 6590,
-    "bytes": 1840555205,
-    "runtimeUsed": 383,
-    "runtimeUsedBytes": 22828391,
+    "files": 6595,
+    "bytes": 1840631641,
+    "runtimeUsed": 388,
+    "runtimeUsedBytes": 22904827,
     "referenceOnly": 6207,
     "referenceOnlyBytes": 1817726814
   },
@@ -25,9 +25,9 @@
     },
     {
       "pack": "CloverValley",
-      "files": 35,
-      "bytes": 11495571,
-      "runtimeUsed": 32,
+      "files": 40,
+      "bytes": 11572007,
+      "runtimeUsed": 37,
       "referenceOnly": 3
     },
     {
@@ -57680,6 +57680,36 @@
       "usedBy": "Clover Valley scenery props"
     },
     {
+      "path": "reference/assets/new/CloverValley/Props/cafe-table.png",
+      "pack": "CloverValley",
+      "extension": ".png",
+      "bytes": 23301,
+      "width": 224,
+      "height": 176,
+      "status": "runtime-used",
+      "usedBy": "Clover Valley scenery props"
+    },
+    {
+      "path": "reference/assets/new/CloverValley/Props/clothesline.png",
+      "pack": "CloverValley",
+      "extension": ".png",
+      "bytes": 2542,
+      "width": 288,
+      "height": 224,
+      "status": "runtime-used",
+      "usedBy": "Clover Valley scenery props"
+    },
+    {
+      "path": "reference/assets/new/CloverValley/Props/entrance-arch.png",
+      "pack": "CloverValley",
+      "extension": ".png",
+      "bytes": 9549,
+      "width": 384,
+      "height": 448,
+      "status": "runtime-used",
+      "usedBy": "Clover Valley scenery props"
+    },
+    {
       "path": "reference/assets/new/CloverValley/Props/fence/fence-angle-left.png",
       "pack": "CloverValley",
       "extension": ".png",
@@ -57770,12 +57800,32 @@
       "usedBy": "Clover Valley fence kit"
     },
     {
+      "path": "reference/assets/new/CloverValley/Props/garden-bed.png",
+      "pack": "CloverValley",
+      "extension": ".png",
+      "bytes": 23644,
+      "width": 320,
+      "height": 192,
+      "status": "runtime-used",
+      "usedBy": "Clover Valley scenery props"
+    },
+    {
       "path": "reference/assets/new/CloverValley/Props/lamp-post.png",
       "pack": "CloverValley",
       "extension": ".png",
       "bytes": 81492,
       "width": 522,
       "height": 348,
+      "status": "runtime-used",
+      "usedBy": "Clover Valley scenery props"
+    },
+    {
+      "path": "reference/assets/new/CloverValley/Props/lily-pads.png",
+      "pack": "CloverValley",
+      "extension": ".png",
+      "bytes": 17400,
+      "width": 192,
+      "height": 96,
       "status": "runtime-used",
       "usedBy": "Clover Valley scenery props"
     },
