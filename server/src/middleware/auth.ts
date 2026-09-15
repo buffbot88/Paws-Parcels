@@ -5,6 +5,12 @@ import { getAccountByAshatId, type AccountRow } from "../models/Account.ts";
 import { errorResponse } from "./index.ts";
 
 /**
+ * Accounts carrying this status are locked out of the game and the API —
+ * suspension and bans are enforced at both the HTTP and WS auth paths.
+ */
+const BLOCKED_ACCOUNT_STATUSES = new Set(["suspended", "banned"]);
+
+/**
  * Authenticate an HTTP request: extract the Bearer JWT, verify it, and load
  * the linked account row. On success returns the account; on failure writes
  * the appropriate 401 response and returns null (callers must return).
@@ -50,5 +56,28 @@ export async function requireAccount(
     );
     return null;
   }
+  const status = await getAccountStatus(account.id);
+  if (status !== null && BLOCKED_ACCOUNT_STATUSES.has(status)) {
+    errorResponse(
+      res,
+      403,
+      "ACCOUNT_SUSPENDED",
+      status === "banned" ? "This account is banned" : "This account is suspended",
+    );
+    return null;
+  }
   return account;
+}
+
+/** Read the account status column (migration 001) for ban enforcement. */
+async function getAccountStatus(accountId: number): Promise<string | null> {
+  try {
+    const { getDb } = await import("../db/connection.ts");
+    const row = getDb()
+      .prepare("SELECT status FROM accounts WHERE id = ? LIMIT 1")
+      .get(accountId) as { status?: unknown } | undefined;
+    return row === undefined || row.status === undefined ? null : String(row.status);
+  } catch {
+    return null;
+  }
 }

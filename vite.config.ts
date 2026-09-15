@@ -1,3 +1,4 @@
+import { resolve } from "node:path";
 import { defineConfig } from "vite";
 
 export default defineConfig({
@@ -17,12 +18,15 @@ export default defineConfig({
       // relative URLs everywhere. Production hosts the API on the same origin
       // — no proxy needed.
       "/api": {
-        target: "http://localhost:3001",
+        // 127.0.0.1 (not 'localhost'): on hosts where localhost resolves to
+        // ::1 first and the game server binds IPv4, the proxy must not rely
+        // on OS resolution order.
+        target: "http://127.0.0.1:3001",
         changeOrigin: true,
       },
       // Phase 2 — WebSocket game server (ws://host/ws → game server).
       "/ws": {
-        target: "ws://localhost:3001",
+        target: "ws://127.0.0.1:3001",
         ws: true,
       },
     },
@@ -41,7 +45,12 @@ export default defineConfig({
     chunkSizeWarningLimit: 2500,
     // The server (Node-only) is intentionally excluded from the client bundle.
     rollupOptions: {
-      input: "index.html",
+      input: {
+        // Two entries: the Phaser game (index.html) and the Admin Control
+        // Panel (admin.html) — separate bundles, same origin, shared /api.
+        main: resolve(__dirname, "index.html"),
+        admin: resolve(__dirname, "admin.html"),
+      },
       external: [
         /^node:.*/,
         "bcryptjs",

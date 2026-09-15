@@ -4,8 +4,10 @@ import { resolve } from "node:path";
 
 /** Extract Vite's hashed JavaScript entry from a built index document. */
 export function findClientEntry(index) {
+  // The multi-entry build (index.html + admin.html) hashes entries as
+  // main-*.js / admin-*.js; the game client is index.html's entry (main-*).
   const match = index.match(
-    /<script[^>]+src="(?:\.\/)?((?:[^"/]+\/)?index-[A-Za-z0-9_-]+\.js)"/i,
+    /<script[^>]+src="(?:\.\/)?((?:[^"/]+\/)?(?:index|main)-[A-Za-z0-9_-]+\.js)"/i,
   );
   return match?.[1] ?? null;
 }

@@ -40,6 +40,8 @@ import {
   searchQuest,
 } from "./models/Quest.ts";
 import { getInventoryState, moveInventoryItem, equipItem, unequipItem } from "./models/Equipment.ts";
+import { createAdminRuntime } from "./ws/adminRuntime.ts";
+import { setAdminRuntime } from "./routes/admin.ts";
 
 async function main(): Promise<void> {
 
@@ -121,6 +123,10 @@ async function main(): Promise<void> {
     }
   }
 
+  // Admin Control Panel: bridge live WS state (online counts, kicks) into the
+  // admin API routes. Done after GameServer construction below; declared here
+  // so the static-dir probe result can be shared.
+
   // Phase 2 — WebSocket game server (authoritative presence + movement).
   // Position persistence is best-effort: gameplay continues in memory if the
   // DB write fails (design/architecture.md §9 fail-soft).
@@ -173,6 +179,12 @@ async function main(): Promise<void> {
     unequipItem,
     monsterBrain,
   });
+
+  const adminRuntime = createAdminRuntime(gameServer, {
+    aiEnabled: modelInstance !== null,
+    staticDirPresent: serveClientFile !== null && existsSync(staticDir),
+  });
+  setAdminRuntime(adminRuntime);
 
   const server = createServer(async (req: IncomingMessage, res: ServerResponse) => {
     try {

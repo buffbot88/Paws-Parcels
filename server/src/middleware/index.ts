@@ -2,7 +2,23 @@ import type { IncomingMessage, ServerResponse } from "node:http";
 import { randomUUID } from "node:crypto";
 import { server as serverConfig } from "../config/index.ts";
 
-/** CORS + JSON body parser + request logging middleware. */
+/** Paths that count as admin API surface for CSRF enforcement. */
+export function isAdminApiPath(pathname: string): boolean {
+  return pathname.startsWith("/api/admin/") && pathname !== "/api/admin/csrf";
+}
+
+/**
+ * Read a cookie value from the request's Cookie header (best-effort; the
+ * session cookie reader stays the single source for paws_session).
+ */
+function readCookie(cookieHeader: string | undefined, name: string): string | null {
+  if (cookieHeader === undefined) return null;
+  const pair = cookieHeader.split(";").map((part) => part.trim()).find((part) => part.startsWith(`${name}=`));
+  if (pair === undefined) return null;
+  return decodeURIComponent(pair.slice(name.length + 1));
+}
+
+/** CORS + JSON body parser + request logging + admin CSRF middleware. */
 export function middleware(
   req: IncomingMessage,
   res: ServerResponse,
@@ -19,7 +35,7 @@ export function middleware(
       res.setHeader("Access-Control-Allow-Credentials", "true");
     }
     res.setHeader("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS");
-    res.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization");
+    res.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization, X-Admin-CSRF");
     res.setHeader("Access-Control-Max-Age", "86400");
 
     if (req.method === "OPTIONS") {
@@ -31,6 +47,40 @@ export function middleware(
 
     // Attach request ID
     res.setHeader("X-Request-Id", randomUUID().slice(0, 8));
+
+    // Admin CSRF (double-submit cookie + header). GETs mint the cookie so the
+    // panel can echo it back; mutations on /api/admin/* must present a match.
+    let pathname = "/";
+    try {
+      pathname = new URL(req.url ?? "/", "http://localhost").pathname;
+    } catch {
+      // malformed URL falls through to routing (404)
+    }
+    if (isAdminApiPath(pathname)) {
+      // Lazy import avoids a config-loader cycle at module init.
+      void import("../auth/adminHardening.ts").then(({ CSRF_COOKIE, CSRF_HEADER, issueCsrfToken, csrfMatches }) => {
+        const cookieValue = readCookie(req.headers.cookie, CSRF_COOKIE);
+        if (req.method === "GET" || req.method === "HEAD") {
+          const issued = issueCsrfToken(cookieValue);
+          if (issued !== cookieValue) {
+            res.setHeader("Set-Cookie", `${CSRF_COOKIE}=${issued}; Path=/; Max-Age=86400; SameSite=Strict`);
+          }
+          resolve();
+          return;
+        }
+        const headerValue = typeof req.headers[CSRF_HEADER] === "string" ? (req.headers[CSRF_HEADER] as string) : null;
+        if (!csrfMatches(cookieValue, headerValue)) {
+          errorResponse(res, 403, "CSRF_CHECK_FAILED", "Missing or mismatched X-Admin-CSRF header");
+          resolve();
+          return;
+        }
+        resolve();
+      }).catch(() => {
+        // hardening module failure must not silently pass mutations
+        errorResponse(res, 500, "INTERNAL_ERROR", "Security middleware failure");
+      });
+      return;
+    }
 
     resolve();
   });

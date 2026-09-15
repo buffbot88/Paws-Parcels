@@ -3,6 +3,7 @@ import { getDb } from "../db/connection.ts";
 import { getEffectiveSlotCount, getInventoryState } from "./Equipment.ts";
 import { applyExperience } from "./leveling.ts";
 import { isShippedQuest } from "./questFilter.ts";
+import { getGameplayRates } from "./GameplayRates.ts";
 
 type SqlRow = Record<string, unknown>;
 
@@ -175,7 +176,10 @@ export async function completeDelivery(characterId: number, targetNpcId: string)
 
   const oldStamps = getStamps(characterId);
   const oldXp = getExperience(characterId);
-  const nextXp = oldXp + Math.max(0, active.xpReward ?? 0);
+  // exp_rate server setting (spec §59) scales quest XP rewards too; admin
+  // EXP adjustments intentionally bypass it (they are explicit amounts).
+  const xpReward = Math.round((active.xpReward ?? 0) * getGameplayRates().expRate);
+  const nextXp = oldXp + Math.max(0, xpReward);
   const levelRow = getDb().prepare("SELECT level, skill_points FROM characters WHERE id = ?").get(characterId) as SqlRow | undefined;
   const { level, skillPoints } = applyExperience(
     Number(levelRow?.level ?? 1),

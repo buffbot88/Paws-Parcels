@@ -16,6 +16,27 @@ import {
 import { wsTokenHandler } from "./ws-token.ts";
 import { createNpcTalkHandler } from "./npc.ts";
 import { createVisualCaptureHandler } from "./visual-capture.ts";
+import {
+  adminOverviewHandler,
+  adminHealthHandler,
+  adminZoneStatusHandler,
+  adminPlayersHandler,
+  adminPlayerDetailHandler,
+  adminPlayerStatusHandler,
+  adminGrantItemHandler,
+  adminAdjustHandler,
+  adminTeleportHandler,
+  adminKickHandler,
+  adminInventoryHandler,
+  adminAuditHandler,
+  adminSettingsHandler,
+  adminTierHandler,
+  adminRolesHandler,
+  adminRolePermissionsHandler,
+  adminRoleAssignmentsHandler,
+  adminUsersHandler,
+  adminStepUpHandler,
+} from "./admin.ts";
 import type { GameBrain } from "../ai/GameBrain.ts";
 import { ai as aiConfig } from "../config/index.ts";
 import { jsonResponse } from "../middleware/index.ts";
@@ -42,6 +63,10 @@ export class Router {
 
   post(path: string, handler: RouteHandler): void {
     this.add("POST", path, handler);
+  }
+
+  put(path: string, handler: RouteHandler): void {
+    this.add("PUT", path, handler);
   }
 
   private add(method: string, path: string, handler: RouteHandler): void {
@@ -118,6 +143,31 @@ export function createRouter(deps?: RouterDeps): Router {
 
   // Phase 4 experimental — AI game engine: dynamic NPC dialogue.
   router.post("/api/admin/visual-capture", createVisualCaptureHandler());
+
+  // Admin Control Panel (foundation + player tools). All handlers resolve the
+  // caller's admin tier internally; every mutation writes admin_audit_log.
+  router.get("/api/admin/tier", adminTierHandler);
+  router.get("/api/admin/overview", adminOverviewHandler);
+  router.get("/api/admin/health", adminHealthHandler);
+  router.get("/api/admin/zones/status", adminZoneStatusHandler);
+  router.get("/api/admin/players", adminPlayersHandler);
+  router.get("/api/admin/players/:accountId", adminPlayerDetailHandler);
+  router.post("/api/admin/players/:accountId/status", adminPlayerStatusHandler);
+  router.post("/api/admin/players/:accountId/grant-item", adminGrantItemHandler);
+  router.post("/api/admin/players/:accountId/adjust", adminAdjustHandler);
+  router.post("/api/admin/players/:accountId/teleport", adminTeleportHandler);
+  router.post("/api/admin/players/:accountId/kick", adminKickHandler);
+  router.post("/api/admin/inventory/:instanceId", adminInventoryHandler);
+  router.get("/api/admin/audit", adminAuditHandler);
+  router.get("/api/admin/audit/:auditId", adminAuditHandler);
+  router.get("/api/admin/settings", adminSettingsHandler);
+  router.put("/api/admin/settings", adminSettingsHandler);
+  router.get("/api/admin/roles", adminRolesHandler);
+  router.put("/api/admin/roles/:roleKey", adminRolePermissionsHandler);
+  router.get("/api/admin/roles/assignments/:accountId", adminRoleAssignmentsHandler);
+  router.put("/api/admin/roles/assignments/:accountId", adminRoleAssignmentsHandler);
+  router.get("/api/admin/admin-users", adminUsersHandler);
+  router.post("/api/admin/step-up", adminStepUpHandler);
 
   router.post(
     "/api/npc/talk",

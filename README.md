@@ -52,6 +52,7 @@ Config lives under `ai` in `server_config.json` (see `server_config.example.json
 | `npm run tiles:loop` | Render tiles then review them in one pass |
 | `npm run tiles:tune` | Auto-tune tile render parameters |
 | `npm run migrate` | Apply SQLite migrations + seeds (`server/data/paws-and-parcels.sqlite`) |
+| `http://localhost:<port>/admin.html` | **Admin Control Panel** — served by the game server in production; under `npm run dev` use `http://localhost:5173/admin.html` (same session as the game, admin tiers from the ASHAT Hub role) |
 
 The current Alpha workflow keeps `server/data/paws-and-parcels.sqlite` in the repository so the database can be transferred through GitHub. Keep the repository private when it contains real account or character data; GitHub is not a safe public production-database backup or concurrent database service.
 
@@ -91,6 +92,7 @@ npm run dev:server   # API + WebSocket on localhost:3001
 public/            Static web assets (favicon, OIDC callback, client config)
 reference/assets/  Raw art archive (PNGs, Aseprite/Illustrator/EPS sources, map sources); three >100 MB vector sources are Git LFS
 Asset Catalog/     Browsable local image catalog and classification review site
+admin.html         Admin Control Panel entry (second Vite build entry)
 src/
   data/            Content JSON (npcs, items, quests, upgrades, dialogue) + maps/
   entities/        Player, NPC (placeholder blobs + name tags)
@@ -99,12 +101,19 @@ src/
   styles/          global.css + game-ui.css (responsive DOM layout, UI overlay)
   systems/         ContentValidator + MapValidator + InputSystem + InteractionSystem + DialogueService
   ui/              DialoguePanel (DOM overlay)
+  admin/           Admin Control Panel (screens, router, API client, design tokens)
   types/           Typed data models matching src/data schemas
 tests/             Vitest suites (content, map, systems)
 scripts/           Content validation and asset-inventory CLIs
 design/            Locked decisions, world map, NPC cards, architecture, DB schema, protocol, classes, etc.
 server/            Node/TS game server (HTTP + WebSocket, SQLite persistence, migrations)
+  src/admin/       Admin barrel (tiers, audit model, runtime bridge)
+  src/routes/admin.ts  Admin API handlers (tier-gated, fully audited)
 ```
+
+## Admin Control Panel
+
+Internal management surface for the live game (foundation + player tools slice). Access is derived from the ASHAT Hub account role (`admin.roleTiers` in `server_config.json` maps roles → tiers: none < support < moderator < admin < developer). Every mutation writes to the append-only `admin_audit_log` with before/after state, reason, environment, and request ID. Suspend/ban immediately blocks HTTP + WS auth for the account and disconnects live sessions. Dangerous actions require typed confirmation (`BAN <username>`); settings changes require a reason + confirm.
 
 ## Phase status
 

@@ -72,6 +72,11 @@ export interface OidcConfig {
   jwksTtlSeconds: number;
 }
 
+export interface AdminConfig {
+  /** ASHAT Hub role -> admin tier overrides (merged over defaults). */
+  roleTiers: Record<string, string>;
+}
+
 export interface AiConfig {
   /** Master switch — when false the AI game engine is inert (default). */
   enabled: boolean;
@@ -102,6 +107,7 @@ function validateAndNormalize(raw: unknown): {
   db: DbConfig;
   auth: AuthConfig;
   oidc: OidcConfig;
+  admin: AdminConfig;
   ai: AiConfig;
 } {
   const errors: string[] = [];
@@ -118,6 +124,7 @@ function validateAndNormalize(raw: unknown): {
   const authRaw = (obj.auth ?? {}) as Record<string, unknown>;
   const oidcRaw = (obj.oidc ?? {}) as Record<string, unknown>;
   const aiRaw = (obj.ai ?? {}) as Record<string, unknown>;
+  const adminRaw = (obj.admin ?? {}) as Record<string, unknown>;
 
   // server
   const configuredPort = num(serverRaw.port, 3001, errors, "server.port");
@@ -195,6 +202,20 @@ function validateAndNormalize(raw: unknown): {
     errors.push(
       `oidc.jwksTtlSeconds must be 30-86400 (got ${jwksTtlSeconds}).`,
     );
+  }
+
+  // admin — role-tier mapping (values are validated leniently: unknown tier
+  // strings simply resolve to 'none' at the call site).
+  let roleTiers: Record<string, string> = {};
+  const roleTiersRaw = adminRaw.roleTiers;
+  if (roleTiersRaw !== undefined) {
+    if (typeof roleTiersRaw !== "object" || roleTiersRaw === null || Array.isArray(roleTiersRaw)) {
+      errors.push("admin.roleTiers must be an object of { role: tier }.");
+    } else {
+      roleTiers = Object.fromEntries(
+        Object.entries(roleTiersRaw as Record<string, unknown>).map(([k, v]) => [k, String(v)]),
+      );
+    }
   }
 
   if (errors.length > 0) {
@@ -281,6 +302,9 @@ function validateAndNormalize(raw: unknown): {
       maxTokensNpc,
       npcTalkMinIntervalMs,
     },
+    admin: {
+      roleTiers,
+    },
   };
 }
 
@@ -364,3 +388,4 @@ export const db: DbConfig = cfg.db;
 export const auth: AuthConfig = cfg.auth;
 export const oidc: OidcConfig = cfg.oidc;
 export const ai: AiConfig = cfg.ai;
+export const admin: AdminConfig = cfg.admin;

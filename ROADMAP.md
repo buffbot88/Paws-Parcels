@@ -146,6 +146,21 @@ Initial vertical slice implemented:
 
 Remaining polish: weather-system integration and deeper navigation/parcel-condition rules.
 
+### Admin Control Panel — Foundation + Player Tools ✅ (new)
+Goal: internal management surface for operating the live game (spec: "Admin Control Panel — UI/UX Design Specification", phases 1–2 of 7).
+
+Built:
+- **Backend** (`server/src/admin/`, `server/src/routes/admin.ts`, `server/src/models/Admin.ts`, migration `014_admin_panel.sql`): admin tier mapping from ASHAT Hub roles (Developer→developer, Admin→admin, GM/Moderator→moderator, Support/LiveOps→support; overridable via `server_config.json` → `admin.roleTiers`), append-only `admin_audit_log` (action/category/target/before/after/reason/request-id/IP/environment), `server_settings` key-value store (exp/drop/honor rates, max concurrent players, level cap), and suspend/ban enforcement in the HTTP auth path (403 `ACCOUNT_SUSPENDED`)
+- **Admin API** (all tier-gated, every mutation audited): `GET /api/admin/{tier,overview,health,zones/status,players,players/:id,audit,audit/:id,settings}`, `POST …/players/:id/{status,grant-item,adjust,teleport,kick}`, `POST /api/admin/inventory/:instanceId`, `PUT /api/admin/settings`
+- **Live runtime bridge** (`server/src/ws/adminRuntime.ts` + `GameServer.onlineCount/zonePlayerCounts/disconnectCharacter`): real online counts, per-zone player counts, admin kicks, and disconnect-on-ban/suspend/teleport
+- **Frontend** (`admin.html` + `src/admin/`, vanilla TS DOM like the game UI, built as a second Vite entry): hash-routed panel at `/admin.html` with the spec's design tokens (forest-green sidebar, warm near-white surface, clover/parcel-gold accents, LIVE banner), dashboard (KPIs, server health, zone status, recent activity), players list (search/filters/bulk-select/pagination), player profile (tabs: Overview/Character/Inventory/Quests/Account/Admin History; action rail: grant item, adjust EXP/stamps, teleport, kick; danger zone with Level-3 typed confirmation for suspend/ban), audit log with detail drawer, and server settings cards with reason+confirm (Level 2)
+
+### Admin Control Panel — Roles & Permissions + Session Hardening ✅ (new)
+- **Roles & permissions (spec §70–71):** migration `015_admin_roles.sql` (`admin_roles`, `admin_role_permissions`, `admin_user_roles`) seeded with the six default roles; per-role permission matrix stored in SQLite and editable live (guardrail: a system role can never lose its last `manage_roles` holder); `resolveActorWithPermission` layers fine-grained checks on top of the tier baseline; Roles & Permissions matrix screen + Admin Users role-assignment screen in the panel; every matrix/assignment change is audited.
+- **Session hardening:** CSRF double-submit protection on all admin mutations (`paws_csrf` cookie + `X-Admin-CSRF` header, enforced in middleware); short-TTL (5-min) single-use HMAC step-up tokens minted via `POST /api/admin/step-up` with mandatory reason (audited); Level 3 operations (suspend/ban) server-side require the `X-Admin-Step-Up` header (401 `STEP_UP_REQUIRED` / 403 `STEP_UP_REPLAYED` on replay); panel UX chains typed-phrase → re-auth reason modal → step-up → mutation.
+
+Deferred to later admin phases: content editors (items/mobs/drops/NPCs/quests/dialogue), draft→review→publish versioning, market/seasons/events/zones management, global Ctrl+K search, node-based quest designer.
+
 ### Phase 6 — First Dungeon and Crafting
 Goal: instanced dungeon + crafting station with recipes.
 
@@ -169,6 +184,7 @@ Summary of phases:
 - **Phase 4B:** Village Side Quests — ✅ complete (initial slice)
 - **JSON content migration:** Items, classes, monsters, loot tables, zones, and skills — ✅ complete
 - **Phase 5:** Inventory and Equipment — 🔄 vertical slice in progress
+- **Admin Control Panel (Phases 1–2):** Foundation + Player Tools — ✅ complete (see §2); Roles & Permissions + session hardening — ✅ complete
 - **Phase 6:** First Dungeon and Crafting
 - **Phase 7:** 2.5D Presentation and Content
 - **Phase 8:** Testing and Online Release

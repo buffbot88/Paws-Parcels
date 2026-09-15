@@ -35,6 +35,15 @@
     "_comment_jwksTtlSeconds": "How long the JWKS + discovery documents are cached before re-fetching (seconds).",
     "jwksTtlSeconds": 600
   },
+  "admin": {
+    "_comment_roleTiers": "Maps ASHAT Hub account roles to admin-panel tiers (none < support < moderator < admin < developer). Roles not listed resolve to 'none' (no panel access). Defaults: Developer=developer, Admin=admin, Game Master/GM/Moderator=moderator, Support/LiveOps=support.",
+    "roleTiers": {
+      "Developer": "developer",
+      "Admin": "admin",
+      "Game Master": "moderator",
+      "Support": "support"
+    }
+  },
   "ai": {
     "_comment": "AI game engine (optional). A game-owned LFM2.5-VL-450M llama-server instance on its own port, power-managed: spins down after idleMs without requests and spins back up on demand (monster decisions + NPC dialogue with vision). Set enabled=false (or omit) to run the game without AI — deterministic monster AI and canned dialogue remain the fallbacks.",
     "enabled": false,

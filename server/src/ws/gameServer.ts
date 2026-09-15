@@ -13,6 +13,7 @@ import type { QuestMutationResult, QuestSnapshot, QuestInventoryItem } from "../
 import type { EquipmentMutationResult, InventoryState } from "../models/Equipment.ts";
 import { logger } from "../middleware/logger.ts";
 import { server as serverConfig } from "../config/index.ts";
+import { getGameplayRates } from "../models/GameplayRates.ts";
 
 /** Cap WS frames — game intents are small JSON; the ws default is 100MiB. */
 const WS_MAX_PAYLOAD = 64 * 1024;
@@ -173,6 +174,47 @@ export class GameServer {
     );
     this.heartbeatTimer.unref?.();
     logger.info("WebSocket game server attached", { path: "/ws" });
+  }
+
+  /** Total connected, authenticated players across all zones. */
+  onlineCount(): number {
+    let count = 0;
+    for (const session of this.sessions.values()) {
+      if (session.authenticated && session.characterId !== null) count += 1;
+    }
+    return count;
+  }
+
+  /** Connected player count per zone id (zones with zero players omitted). */
+  zonePlayerCounts(): Record<string, number> {
+    const counts: Record<string, number> = {};
+    for (const zoneId of this.zones.zoneIds()) {
+      const connected = this.zones.players(zoneId).filter((p) => p.connected).length;
+      if (connected > 0) counts[zoneId] = connected;
+    }
+    return counts;
+  }
+
+  /**
+   * Admin kick: close every live session bound to the character. Returns the
+   * number of sockets closed; the zone broadcast happens via the close event.
+   */
+  disconnectCharacter(characterId: number): number {
+    let closed = 0;
+    for (const [socket, session] of [...this.sessions]) {
+      if (session.characterId !== characterId) continue;
+      session.authenticated = false;
+      this.sessions.delete(socket);
+      socket.close();
+      closed += 1;
+    }
+    // Remove from all zones immediately so snapshots stop including them.
+    for (const zoneId of this.zones.zoneIds()) {
+      if (this.zones.get(zoneId, characterId) !== null) {
+        this.removeFromZone(zoneId, characterId);
+      }
+    }
+    return closed;
   }
 
   /** Stop the tick loop and timers (graceful shutdown / tests). */
@@ -939,9 +981,10 @@ export class GameServer {
   ): Promise<void> {
     const monster = this.monsters.get(zoneId, monsterId);
     if (monster === null) return;
-    // Loot roll (design/monsters.md §6) — broadcast so the killer sees it;
-    // actual inventory grants land with Phase 5.
-    const loot = rollLoot(monster.lootTable);
+    // Server rates (spec §59): exp_rate scales monster XP, drop_rate scales
+    // loot chances — both are read from the cached gameplay-rates snapshot.
+    const { expRate, dropRate } = getGameplayRates();
+    const loot = rollLoot(monster.lootTable, dropRate);
     if (loot.length > 0) {
       if (this.deps.grantInventory !== undefined) {
         try {
@@ -956,7 +999,7 @@ export class GameServer {
         items: loot,
       });
     }
-    const xp = monster.experienceReward;
+    const xp = Math.round(monster.experienceReward * expRate);
     if (xp > 0 && this.deps.grantXp !== undefined) {
       try {
         await this.deps.grantXp(killerId, xp);
@@ -1256,13 +1299,26 @@ function monsterSnapshot(m: {
   };
 }
 
-/** Roll a loot table deterministically-ish (design/monsters.md §6). */
+/**
+ * Roll a loot table deterministically-ish (design/monsters.md §6).
+ * `dropRate` (server setting) scales each entry's chance, capped at 1 so a
+ * 3× event weekend guarantees rather than multi-drops an entry.
+ */
 function rollLoot(
   lootTable: { key: string; chance: number; quantity: number }[],
+  dropRate = 1,
+): { itemKey: string; quantity: number }[] {
+  return rollLootForTest(lootTable, dropRate);
+}
+
+/** Exported for tests: the deterministic loot-roll math. */
+export function rollLootForTest(
+  lootTable: { key: string; chance: number; quantity: number }[],
+  dropRate = 1,
 ): { itemKey: string; quantity: number }[] {
   const out: { itemKey: string; quantity: number }[] = [];
   for (const entry of lootTable) {
-    if (Math.random() < entry.chance) {
+    if (Math.random() < Math.min(1, Math.max(0, entry.chance) * dropRate)) {
       out.push({ itemKey: entry.key, quantity: Math.max(1, entry.quantity) });
     }
   }
