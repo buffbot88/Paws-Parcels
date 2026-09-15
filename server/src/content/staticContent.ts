@@ -108,10 +108,20 @@ function syncZones(): void {
 
 function syncItems(): void {
   const db = getDb();
+  // Item rows the admin panel authored (spec §25–26) are authoritative: skip
+  // them so a deploy/reload never clobbers an editor change. The panel badges
+  // them as admin content, and archiving flips `source` too, so an archived
+  // catalog item is never resurrected by this sync.
+  const adminOwned = new Set(
+    (db.prepare("SELECT `key` FROM item_definitions WHERE source = 'admin'").all() as SqlRow[]).map(
+      (row) => String(row.key),
+    ),
+  );
   const statement = db.prepare(`INSERT INTO item_definitions
     (key, name, description, category, max_stack, icon, base_stats, rarity, value,
-     equipment_slot, equipment_stats, courier_effects, required_class, required_level)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+     equipment_slot, equipment_stats, courier_effects, required_class, required_level,
+     source, updated_at, updated_by)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'content', ?, 'content-sync')
     ON CONFLICT(key) DO UPDATE SET
       name = excluded.name,
       description = excluded.description,
@@ -125,8 +135,12 @@ function syncItems(): void {
       equipment_stats = excluded.equipment_stats,
       courier_effects = excluded.courier_effects,
       required_class = excluded.required_class,
-      required_level = excluded.required_level`);
+      required_level = excluded.required_level,
+      updated_at = excluded.updated_at,
+      updated_by = excluded.updated_by`);
+  const syncedAt = new Date().toISOString();
   for (const item of itemsJson.items as StaticItem[]) {
+    if (adminOwned.has(item.id)) continue;
     statement.run(
       item.id,
       item.name,
@@ -142,6 +156,7 @@ function syncItems(): void {
       JSON.stringify(item.courierEffects ?? {}),
       item.requiredClass ?? null,
       item.requiredLevel ?? 1,
+      syncedAt,
     );
   }
 }

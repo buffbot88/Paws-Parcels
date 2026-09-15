@@ -225,7 +225,8 @@ export async function grantInventoryItems(characterId: number, items: { itemKey:
   const inventory = db.prepare("SELECT slot_count FROM inventories WHERE character_id = ?").get(characterId) as SqlRow | undefined;
   if (inventory === undefined) return;
   const effectiveSlotCount = getEffectiveSlotCount(characterId);
-  const findDef = db.prepare("SELECT id, max_stack FROM item_definitions WHERE key = ? LIMIT 1");
+  // Archived items (admin panel, spec §25–26) are no longer granted.
+  const findDef = db.prepare("SELECT id, max_stack FROM item_definitions WHERE key = ? AND is_deleted = 0 LIMIT 1");
   const findStacks = db.prepare("SELECT id, quantity FROM inventory_items WHERE character_id = ? AND item_definition_id = ? AND quantity < ? ORDER BY id ASC");
   const findSlot = db.prepare("SELECT slot FROM inventory_items WHERE character_id = ? AND slot IS NOT NULL");
   const insert = db.prepare("INSERT INTO inventory_items (character_id, item_definition_id, slot, quantity) VALUES (?, ?, ?, ?)");

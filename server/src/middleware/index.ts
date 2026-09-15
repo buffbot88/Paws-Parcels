@@ -35,7 +35,7 @@ export function middleware(
       res.setHeader("Access-Control-Allow-Credentials", "true");
     }
     res.setHeader("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS");
-    res.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization, X-Admin-CSRF");
+    res.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization, X-Admin-CSRF, X-Admin-Step-Up");
     res.setHeader("Access-Control-Max-Age", "86400");
 
     if (req.method === "OPTIONS") {

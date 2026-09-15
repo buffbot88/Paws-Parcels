@@ -215,6 +215,7 @@ export type AdminPermission =
   | "view_players"
   | "ban_player"
   | "edit_inventory"
+  | "edit_items"
   | "edit_quests"
   | "publish_quests"
   | "publish_quests_limited"
@@ -227,6 +228,7 @@ export const ALL_PERMISSIONS: AdminPermission[] = [
   "view_players",
   "ban_player",
   "edit_inventory",
+  "edit_items",
   "edit_quests",
   "publish_quests",
   "publish_quests_limited",
@@ -338,6 +340,7 @@ export function tierHasPermission(tier: AdminTier, permission: AdminPermission):
       return order >= TIER_ORDER.indexOf("support");
     case "edit_quests":
     case "publish_quests":
+    case "edit_items":
       return order >= TIER_ORDER.indexOf("admin");
   }
 }

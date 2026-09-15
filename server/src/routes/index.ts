@@ -36,6 +36,13 @@ import {
   adminRoleAssignmentsHandler,
   adminUsersHandler,
   adminStepUpHandler,
+  adminItemsHandler,
+  adminItemsMetaHandler,
+  adminItemCreateHandler,
+  adminItemUpdateHandler,
+  adminItemDuplicateHandler,
+  adminItemArchiveHandler,
+  adminItemRestoreHandler,
 } from "./admin.ts";
 import type { GameBrain } from "../ai/GameBrain.ts";
 import { ai as aiConfig } from "../config/index.ts";
@@ -67,6 +74,10 @@ export class Router {
 
   put(path: string, handler: RouteHandler): void {
     this.add("PUT", path, handler);
+  }
+
+  delete(path: string, handler: RouteHandler): void {
+    this.add("DELETE", path, handler);
   }
 
   private add(method: string, path: string, handler: RouteHandler): void {
@@ -168,6 +179,17 @@ export function createRouter(deps?: RouterDeps): Router {
   router.put("/api/admin/roles/assignments/:accountId", adminRoleAssignmentsHandler);
   router.get("/api/admin/admin-users", adminUsersHandler);
   router.post("/api/admin/step-up", adminStepUpHandler);
+
+  // Item Database + Item Editor (spec §25–26). `/items/meta` is registered
+  // before `/items/:itemId` so the literal path wins.
+  router.get("/api/admin/items/meta", adminItemsMetaHandler);
+  router.get("/api/admin/items", adminItemsHandler);
+  router.post("/api/admin/items", adminItemCreateHandler);
+  router.get("/api/admin/items/:itemId", adminItemsHandler);
+  router.put("/api/admin/items/:itemId", adminItemUpdateHandler);
+  router.delete("/api/admin/items/:itemId", adminItemArchiveHandler);
+  router.post("/api/admin/items/:itemId/duplicate", adminItemDuplicateHandler);
+  router.post("/api/admin/items/:itemId/restore", adminItemRestoreHandler);
 
   router.post(
     "/api/npc/talk",

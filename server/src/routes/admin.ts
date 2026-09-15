@@ -36,6 +36,22 @@ import {
   getCharacterById,
 } from "../models/Character.ts";
 import { auditInventoryEvent, getInventoryState } from "../models/Equipment.ts";
+import {
+  COURIER_EFFECT_KEYS,
+  EQUIPMENT_SLOTS,
+  EQUIPMENT_STAT_KEYS,
+  ITEM_CATEGORIES,
+  ITEM_RARITIES,
+  archiveItem,
+  classKeys,
+  createItem,
+  getItemById,
+  getItemReferences,
+  listItems,
+  restoreItem,
+  updateItem,
+  validateItemFields,
+} from "../models/ItemCatalog.ts";
 import { getDb, pingDb } from "../db/connection.ts";
 import {
   mintStepUpToken,
@@ -580,9 +596,15 @@ export async function adminGrantItemHandler(
     errorResponse(res, 404, "CHARACTER_NOT_FOUND", "No such character on this account");
     return;
   }
-  const def = getDb().prepare("SELECT id, name, max_stack FROM item_definitions WHERE key = ? LIMIT 1").get(itemKey) as SqlRow | undefined;
+  const def = getDb()
+    .prepare("SELECT id, name, max_stack, is_deleted FROM item_definitions WHERE key = ? LIMIT 1")
+    .get(itemKey) as SqlRow | undefined;
   if (def === undefined) {
     errorResponse(res, 404, "ITEM_NOT_FOUND", `No item with key "${itemKey}"`);
+    return;
+  }
+  if (Number(def.is_deleted ?? 0) === 1) {
+    errorResponse(res, 409, "ITEM_ARCHIVED", `"${String(def.name ?? itemKey)}" is archived — restore it in the Item Editor first`);
     return;
   }
   await grantInventoryItems(characterId, [{ itemKey, quantity }]);
@@ -1177,4 +1199,320 @@ export async function adminUsersHandler(req: IncomingMessage, res: ServerRespons
     }),
     callerAccountId: actor.accountId,
   });
+}
+
+// ---- Item Database & Item Editor (spec §25–26) ----
+
+const ITEM_SORTS = new Set(["key", "name", "category", "rarity", "value", "stack", "updated"]);
+
+/** Authoring vocabulary the editor form renders (mirrors ContentValidator). */
+function itemEditorMeta(): Record<string, unknown> {
+  return {
+    categories: ITEM_CATEGORIES,
+    equipmentSlots: EQUIPMENT_SLOTS,
+    rarities: ITEM_RARITIES,
+    statKeys: EQUIPMENT_STAT_KEYS,
+    courierEffectKeys: COURIER_EFFECT_KEYS,
+    classes: classKeys(),
+  };
+}
+
+/** Read the editor payload from a request body (flat or nested under `item`). */
+function itemFieldsOf(body: Record<string, unknown>): Record<string, unknown> {
+  const nested = body.item;
+  return typeof nested === "object" && nested !== null && !Array.isArray(nested)
+    ? (nested as Record<string, unknown>)
+    : body;
+}
+
+/** GET /api/admin/items — catalog list; GET /api/admin/items/:itemId — detail. */
+export async function adminItemsHandler(
+  req: IncomingMessage,
+  res: ServerResponse,
+  params?: Record<string, string>,
+): Promise<void> {
+  const actor = await resolveActor(req, res, "support");
+  if (actor === null) return;
+
+  if (params?.itemId !== undefined) {
+    const itemId = intField(params.itemId);
+    if (itemId === undefined) {
+      errorResponse(res, 400, "INVALID_ITEM_ID", "itemId must be a positive integer");
+      return;
+    }
+    const item = getItemById(itemId);
+    if (item === null) {
+      errorResponse(res, 404, "ITEM_NOT_FOUND", "No item with that id");
+      return;
+    }
+    jsonResponse(res, 200, {
+      item,
+      references: getItemReferences(item.key),
+      meta: itemEditorMeta(),
+      canEdit: actorHasPermission(actor, "edit_items"),
+    });
+    return;
+  }
+
+  const url = new URL(req.url ?? "/", `http://${req.headers.host ?? "localhost"}`);
+  const sort = url.searchParams.get("sort") ?? "key";
+  const dir = url.searchParams.get("dir") ?? "asc";
+  const result = listItems({
+    search: url.searchParams.get("search") ?? undefined,
+    category: url.searchParams.get("category") ?? undefined,
+    rarity: url.searchParams.get("rarity") ?? undefined,
+    source: url.searchParams.get("source") ?? undefined,
+    includeArchived: url.searchParams.get("archived") === "1",
+    sort: ITEM_SORTS.has(sort) ? sort : "key",
+    dir,
+    limit: intField(url.searchParams.get("limit")),
+    offset: intField(url.searchParams.get("offset")),
+  });
+  jsonResponse(res, 200, { ...result, canEdit: actorHasPermission(actor, "edit_items") });
+}
+
+/** GET /api/admin/items/meta — authoring vocabulary for the editor form. */
+export async function adminItemsMetaHandler(req: IncomingMessage, res: ServerResponse): Promise<void> {
+  const actor = await resolveActor(req, res, "support");
+  if (actor === null) return;
+  jsonResponse(res, 200, { meta: itemEditorMeta(), canEdit: actorHasPermission(actor, "edit_items") });
+}
+
+/** POST /api/admin/items — author a new item (spec §26). */
+export async function adminItemCreateHandler(req: IncomingMessage, res: ServerResponse): Promise<void> {
+  const actor = await resolveActorWithPermission(req, res, "support", "edit_items");
+  if (actor === null) return;
+  const body = bodyOf(req);
+  const reason = typeof body.reason === "string" ? body.reason.trim() : "";
+  if (reason.length < 3) {
+    errorResponse(res, 400, "REASON_REQUIRED", "A reason of at least 3 characters is required");
+    return;
+  }
+  const validation = validateItemFields(itemFieldsOf(body), { keyEditable: true });
+  if (!validation.ok) {
+    errorResponse(res, 400, "VALIDATION_FAILED", validation.issues.map((i) => i.message).join("; "));
+    return;
+  }
+  const result = createItem(validation.value, actor.username);
+  if (!result.ok) {
+    const message = result.reason === "KEY_TAKEN" ? `An item with key "${validation.value.key}" already exists` : "Item key is required";
+    errorResponse(res, result.reason === "KEY_TAKEN" ? 409 : 400, result.reason, message);
+    return;
+  }
+  writeAuditLog(actor, {
+    action: "item_created",
+    category: "content",
+    targetType: "item",
+    targetId: result.item.key,
+    targetLabel: result.item.name,
+    reason,
+    afterState: result.item,
+    requestId: requestIdOf(req),
+    ip: ipOf(req),
+  });
+  logger.info("Admin item created", { admin: actor.username, key: result.item.key });
+  jsonResponse(res, 201, { ok: true, item: result.item });
+}
+
+/** PUT /api/admin/items/:itemId — edit an item (spec §26). */
+export async function adminItemUpdateHandler(
+  req: IncomingMessage,
+  res: ServerResponse,
+  params?: Record<string, string>,
+): Promise<void> {
+  const actor = await resolveActorWithPermission(req, res, "support", "edit_items");
+  if (actor === null) return;
+  const itemId = intParam(params, "itemId");
+  if (itemId === undefined) {
+    errorResponse(res, 400, "INVALID_ITEM_ID", "itemId must be a positive integer");
+    return;
+  }
+  const body = bodyOf(req);
+  const reason = typeof body.reason === "string" ? body.reason.trim() : "";
+  if (reason.length < 3) {
+    errorResponse(res, 400, "REASON_REQUIRED", "A reason of at least 3 characters is required");
+    return;
+  }
+  const before = getItemById(itemId);
+  if (before === null) {
+    errorResponse(res, 404, "ITEM_NOT_FOUND", "No item with that id");
+    return;
+  }
+  const fields = itemFieldsOf(body);
+  const submittedKey = typeof fields.key === "string" ? fields.key.trim() : "";
+  if (submittedKey !== "" && submittedKey !== before.key) {
+    errorResponse(res, 400, "KEY_IMMUTABLE", "An item key cannot change after creation — duplicate the item instead");
+    return;
+  }
+  const validation = validateItemFields({ ...fields, key: before.key }, { keyEditable: false });
+  if (!validation.ok) {
+    errorResponse(res, 400, "VALIDATION_FAILED", validation.issues.map((i) => i.message).join("; "));
+    return;
+  }
+  const result = updateItem(itemId, validation.value, actor.username);
+  if (!result.ok) {
+    errorResponse(res, 409, result.reason, "Another item already uses that key");
+    return;
+  }
+  writeAuditLog(actor, {
+    action: "item_updated",
+    category: "content",
+    targetType: "item",
+    targetId: result.item.key,
+    targetLabel: result.item.name,
+    reason,
+    beforeState: before,
+    afterState: result.item,
+    requestId: requestIdOf(req),
+    ip: ipOf(req),
+  });
+  jsonResponse(res, 200, { ok: true, item: result.item });
+}
+
+/** POST /api/admin/items/:itemId/duplicate — clone with a new key. */
+export async function adminItemDuplicateHandler(
+  req: IncomingMessage,
+  res: ServerResponse,
+  params?: Record<string, string>,
+): Promise<void> {
+  const actor = await resolveActorWithPermission(req, res, "support", "edit_items");
+  if (actor === null) return;
+  const itemId = intParam(params, "itemId");
+  if (itemId === undefined) {
+    errorResponse(res, 400, "INVALID_ITEM_ID", "itemId must be a positive integer");
+    return;
+  }
+  const source = getItemById(itemId);
+  if (source === null) {
+    errorResponse(res, 404, "ITEM_NOT_FOUND", "No item with that id");
+    return;
+  }
+  const body = bodyOf(req);
+  const reason = typeof body.reason === "string" ? body.reason.trim() : "";
+  if (reason.length < 3) {
+    errorResponse(res, 400, "REASON_REQUIRED", "A reason of at least 3 characters is required");
+    return;
+  }
+  const newKey = typeof body.newKey === "string" ? body.newKey.trim() : "";
+  if (newKey === "") {
+    errorResponse(res, 400, "KEY_REQUIRED", "newKey is required");
+    return;
+  }
+  const newName = typeof body.newName === "string" && body.newName.trim() !== ""
+    ? body.newName.trim()
+    : `${source.name} (Copy)`;
+  const validation = validateItemFields({ ...source, key: newKey, name: newName }, { keyEditable: true });
+  if (!validation.ok) {
+    errorResponse(res, 400, "VALIDATION_FAILED", validation.issues.map((i) => i.message).join("; "));
+    return;
+  }
+  const result = createItem(validation.value, actor.username);
+  if (!result.ok) {
+    errorResponse(res, 409, result.reason, `An item with key "${newKey}" already exists`);
+    return;
+  }
+  writeAuditLog(actor, {
+    action: "item_duplicated",
+    category: "content",
+    targetType: "item",
+    targetId: result.item.key,
+    targetLabel: result.item.name,
+    reason,
+    beforeState: { duplicatedFrom: source.key },
+    afterState: result.item,
+    requestId: requestIdOf(req),
+    ip: ipOf(req),
+  });
+  jsonResponse(res, 201, { ok: true, item: result.item });
+}
+
+/**
+ * DELETE /api/admin/items/:itemId — archive an item.
+ * Level 3 (spec §72): archiving pulls an item out of the live game, so it
+ * needs a fresh step-up token on top of the reason and edit_items permission.
+ */
+export async function adminItemArchiveHandler(
+  req: IncomingMessage,
+  res: ServerResponse,
+  params?: Record<string, string>,
+): Promise<void> {
+  const actor = await resolveActorWithPermission(req, res, "support", "edit_items");
+  if (actor === null) return;
+  const itemId = intParam(params, "itemId");
+  if (itemId === undefined) {
+    errorResponse(res, 400, "INVALID_ITEM_ID", "itemId must be a positive integer");
+    return;
+  }
+  const body = bodyOf(req);
+  const reason = typeof body.reason === "string" ? body.reason.trim() : "";
+  if (reason.length < 3) {
+    errorResponse(res, 400, "REASON_REQUIRED", "A reason of at least 3 characters is required");
+    return;
+  }
+  if (!requireStepUp(req, actor, res)) return;
+  const before = getItemById(itemId);
+  if (before === null) {
+    errorResponse(res, 404, "ITEM_NOT_FOUND", "No item with that id");
+    return;
+  }
+  if (before.isDeleted) {
+    errorResponse(res, 409, "ALREADY_ARCHIVED", `"${before.name}" is already archived`);
+    return;
+  }
+  const references = getItemReferences(before.key);
+  const after = archiveItem(itemId, actor.username);
+  writeAuditLog(actor, {
+    action: "item_archived",
+    category: "content",
+    targetType: "item",
+    targetId: before.key,
+    targetLabel: before.name,
+    reason,
+    beforeState: { ...before, references },
+    afterState: { isDeleted: true },
+    requestId: requestIdOf(req),
+    ip: ipOf(req),
+  });
+  logger.info("Admin item archived", { admin: actor.username, key: before.key, references: references.inventoryCount });
+  jsonResponse(res, 200, { ok: true, item: after });
+}
+
+/** POST /api/admin/items/:itemId/restore — un-archive an item. */
+export async function adminItemRestoreHandler(
+  req: IncomingMessage,
+  res: ServerResponse,
+  params?: Record<string, string>,
+): Promise<void> {
+  const actor = await resolveActorWithPermission(req, res, "support", "edit_items");
+  if (actor === null) return;
+  const itemId = intParam(params, "itemId");
+  if (itemId === undefined) {
+    errorResponse(res, 400, "INVALID_ITEM_ID", "itemId must be a positive integer");
+    return;
+  }
+  const body = bodyOf(req);
+  const reason = typeof body.reason === "string" ? body.reason.trim() : "";
+  if (reason.length < 3) {
+    errorResponse(res, 400, "REASON_REQUIRED", "A reason of at least 3 characters is required");
+    return;
+  }
+  const before = getItemById(itemId);
+  if (before === null) {
+    errorResponse(res, 404, "ITEM_NOT_FOUND", "No item with that id");
+    return;
+  }
+  const after = restoreItem(itemId, actor.username);
+  writeAuditLog(actor, {
+    action: "item_restored",
+    category: "content",
+    targetType: "item",
+    targetId: before.key,
+    targetLabel: before.name,
+    reason,
+    beforeState: { isDeleted: before.isDeleted },
+    afterState: { isDeleted: false },
+    requestId: requestIdOf(req),
+    ip: ipOf(req),
+  });
+  jsonResponse(res, 200, { ok: true, item: after });
 }

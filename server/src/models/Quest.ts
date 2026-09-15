@@ -115,7 +115,8 @@ export async function acceptQuest(characterId: number, questId: string): Promise
   db.exec("BEGIN");
   try {
     if (quest.type === "delivery") {
-      const item = db.prepare("SELECT id FROM item_definitions WHERE key = ? LIMIT 1").get(quest.requiredItemId ?? "") as SqlRow | undefined;
+      // Archived items (admin panel) can no longer satisfy a quest hand-in.
+      const item = db.prepare("SELECT id FROM item_definitions WHERE key = ? AND is_deleted = 0 LIMIT 1").get(quest.requiredItemId ?? "") as SqlRow | undefined;
       if (item === undefined || !insertInventoryItem(characterId, Number(item.id), 1, { questId: quest.id, locked: true, condition: quest.parcelCondition ?? "normal" })) {
         db.exec("ROLLBACK");
         return { ok: false, reason: item === undefined ? "QUEST_ITEM_MISSING" : "INVENTORY_FULL" };
@@ -161,7 +162,7 @@ export async function completeDelivery(characterId: number, targetNpcId: string)
   const requiredQuantity = Math.max(1, active.requiredQuantity ?? 1);
   const itemDefinition = active.requiredItemId === undefined
     ? undefined
-    : getDb().prepare("SELECT id FROM item_definitions WHERE key = ? LIMIT 1").get(active.requiredItemId) as SqlRow | undefined;
+    : getDb().prepare("SELECT id FROM item_definitions WHERE key = ? AND is_deleted = 0 LIMIT 1").get(active.requiredItemId) as SqlRow | undefined;
   if (active.requiredItemId !== undefined && itemDefinition === undefined) return { ok: false, reason: "QUEST_ITEM_MISSING" };
   const item = itemDefinition === undefined
     ? undefined
@@ -201,7 +202,7 @@ export async function completeDelivery(characterId: number, targetNpcId: string)
     }
     let rewardItemDefinitionId: number | null = null;
     if (active.rewardItemId !== undefined) {
-      const reward = db.prepare("SELECT id FROM item_definitions WHERE key = ? LIMIT 1").get(active.rewardItemId) as SqlRow | undefined;
+      const reward = db.prepare("SELECT id FROM item_definitions WHERE key = ? AND is_deleted = 0 LIMIT 1").get(active.rewardItemId) as SqlRow | undefined;
       if (reward === undefined || !insertInventoryItem(characterId, Number(reward.id), 1, { questReward: active.id })) {
         db.exec("ROLLBACK");
         return { ok: false, reason: reward === undefined ? "QUEST_ITEM_MISSING" : "INVENTORY_FULL" };
@@ -259,7 +260,7 @@ export async function searchQuest(characterId: number, objectId: string): Promis
   const progress = getQuestProgress(characterId, active.id);
   if (progress !== null && hasFoundObjective(progress.progress)) return { ok: false, reason: "QUEST_ALREADY_ACTIVE" };
   if (active.requiredItemId === undefined) return { ok: false, reason: "QUEST_ITEM_MISSING" };
-  const item = getDb().prepare("SELECT id FROM item_definitions WHERE key = ? LIMIT 1").get(active.requiredItemId) as SqlRow | undefined;
+  const item = getDb().prepare("SELECT id FROM item_definitions WHERE key = ? AND is_deleted = 0 LIMIT 1").get(active.requiredItemId) as SqlRow | undefined;
   if (item === undefined) return { ok: false, reason: "QUEST_ITEM_MISSING" };
   const db = getDb();
   db.exec("BEGIN");
