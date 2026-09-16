@@ -149,7 +149,7 @@ export class CharacterProfilePanel {
     content.className = "profile-panel__content";
     card.append(header, tabs, status, content);
     root.append(backdrop, card);
-    document.getElementById("game-container")?.appendChild(root);
+    document.getElementById("hud-overlays")?.appendChild(root);
     this.root = root;
     this.content = content;
     this.status = status;

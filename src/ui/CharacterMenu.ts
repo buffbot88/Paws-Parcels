@@ -44,7 +44,8 @@ export class CharacterMenu {
     if (this.root !== null) return;
     const root = document.createElement("div");
     root.className = "character-menu";
-    document.getElementById("game-container")?.appendChild(root);
+    document.getElementById("hud-overlays")?.appendChild(root);
+    if (this.root === null) this.root = root;
     this.root = root;
   }
 

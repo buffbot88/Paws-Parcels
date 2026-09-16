@@ -37,7 +37,7 @@ body {
   box-shadow: 0 3px 12px rgba(31, 48, 35, 0.22);
   position: relative;
   z-index: 200;
-  overflow: hidden;
+  overflow: visible;
 }
 
 .top-navbar::after {
@@ -180,6 +180,7 @@ body {
 
 #game-container {
   position: relative;
+  isolation: isolate;
   /* Filled by src/ui/gameWindow.ts to the largest 16:9 box that fits the
      viewport (auto-scale on any device); these are just the no-JS fallback. */
   width: 100%;
@@ -194,4 +195,15 @@ body {
   display: block;
   width: 100%;
   height: 100%;
+  position: relative;
+  z-index: 0;
 }
+
+#hud-overlays {
+  position: fixed;
+  inset: 0;
+  z-index: 3000;
+  pointer-events: none;
+}
+
+#hud-overlays > * { pointer-events: auto; }

@@ -50,6 +50,9 @@ function updateNavbar(account: AuthFinishDetail["account"]): void {
   const name = document.getElementById("navbar-account");
   const accountMenu = document.getElementById("navbar-account-menu");
   const signOut = document.getElementById("navbar-sign-out");
+  if (accountMenu !== null) {
+    document.getElementById("hud-overlays")?.appendChild(accountMenu);
+  }
   if (name instanceof HTMLButtonElement) {
     name.textContent = `${account.display_name}${account.role === "Admin" ? " ▾" : ""}`;
     name.removeAttribute("hidden");
@@ -59,6 +62,18 @@ function updateNavbar(account: AuthFinishDetail["account"]): void {
         const isOpen = !accountMenu.hidden;
         accountMenu.hidden = isOpen;
         name.setAttribute("aria-expanded", String(!isOpen));
+      });
+      document.addEventListener("pointerdown", (event) => {
+        if (accountMenu === null || name.contains(event.target as Node)) return;
+        if (!accountMenu.contains(event.target as Node)) {
+          accountMenu.hidden = true;
+          name.setAttribute("aria-expanded", "false");
+        }
+      });
+      document.addEventListener("keydown", (event) => {
+        if (event.key !== "Escape" || accountMenu === null) return;
+        accountMenu.hidden = true;
+        name.setAttribute("aria-expanded", "false");
       });
     } else {
       name.removeAttribute("aria-haspopup");

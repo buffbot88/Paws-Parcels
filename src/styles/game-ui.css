@@ -2003,6 +2003,115 @@
   #game-container[data-orientation="portrait"] .skill-slot { width: 2.8rem; height: 2.8rem; }
 }
 
+/* ================================================================
+   HUD v3 — Compact Cozy Layout
+   Base HUD stays inside the playfield; menus and windows use #hud-overlays.
+   ================================================================ */
+#hud-overlays .character-menu {
+  position: fixed;
+  top: calc(var(--topbar-height, 68px) + 12px);
+  left: 20px;
+  z-index: 500;
+}
+#hud-overlays .character-menu__panel {
+  position: fixed;
+  top: calc(var(--topbar-height, 68px) + 48px);
+  left: 20px;
+  z-index: 500;
+  width: 260px;
+  max-height: min(520px, calc(100vh - 90px));
+  overflow-y: auto;
+}
+.profile-panel { position: fixed; inset: 0; z-index: 700; }
+
+#player-hp {
+  top: 20px; left: 20px; width: 320px; min-height: 120px; height: 120px;
+  padding: 12px 14px; border-radius: 16px; gap: 10px;
+}
+.player-hp__portrait { flex-basis: 76px; height: 76px; border-width: 5px; font-size: 2.6rem; }
+.player-hp__name { font-size: 1.25rem; }
+.player-hp__health { font-size: .76rem; }
+.player-hp__stats { gap: 18px; font-size: .82rem; }
+
+.quest-tracker {
+  top: 152px; left: 20px; width: 320px; min-height: 148px; height: 148px;
+  padding: 22px 14px 12px; gap: 6px; border-radius: 16px;
+}
+.quest-tracker__title { font-size: 1.1rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.quest-tracker__objective { display: -webkit-box; overflow: hidden; font-size: .8rem; line-height: 1.35; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
+.quest-tracker__status { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: .7rem; }
+.quest-tracker::before { top: 0; left: 12px; transform: translateY(-50%); padding: 6px 12px; font-size: .78rem; }
+
+.minimap {
+  top: 20px; right: 20px; width: 290px !important; height: 220px;
+  border-radius: 16px; overflow: hidden !important;
+}
+.minimap__header { height: 34px; padding: 7px 10px; border-radius: 13px 13px 0 0; }
+.minimap__body { height: 154px !important; padding: 5px; overflow: hidden; }
+.minimap__body canvas { width: 100% !important; height: 144px !important; max-height: 144px !important; object-fit: fill; }
+.minimap__dyn { height: 144px !important; max-height: 144px !important; }
+.minimap__footer { height: 30px; padding: 6px 10px; border-radius: 0 0 13px 13px; }
+.minimap__server { max-width: 120px; overflow: hidden; text-overflow: ellipsis; }
+
+.chat-box {
+  left: 20px; bottom: 20px; width: 340px; height: 180px; max-height: 180px;
+  border-radius: 16px;
+}
+.chat-box__header { height: 34px; padding: 8px 10px; }
+.chat-box__log { min-height: 0; max-height: 98px; flex: 1; padding: 6px 10px; }
+.chat-box__composer { height: 48px; padding: 7px; }
+
+.skill-bar {
+  left: 50%; bottom: 20px; width: 420px; height: 84px; max-width: calc(100% - 40px);
+  justify-content: center; padding: 10px 12px; border-radius: 16px; gap: 8px;
+}
+.skill-bar__slots { gap: 5px; }
+.skill-slot { width: 54px; height: 54px; }
+.skill-slot__key { font-size: 11px; }
+.skill-bar__hint { min-width: 74px; font-size: 11px; }
+
+.quick-inventory {
+  right: 20px; bottom: 20px; width: 170px; min-width: 170px; height: 60px;
+  padding: 8px 12px; border-radius: 16px; font-size: .9rem;
+}
+.quick-inventory__key { width: 34px; height: 34px; }
+
+/* Fixed overlay menus must escape the game canvas' clipping and stacking contexts. */
+#hud-overlays .navbar-account-menu {
+  position: fixed; top: calc(var(--topbar-height, 68px) + 8px); right: 120px; z-index: 500;
+  min-width: 190px; max-height: calc(100vh - 90px); overflow-y: auto;
+}
+#hud-overlays .profile-panel__card { overflow: hidden; max-height: calc(100vh - 40px); }
+
+@media (max-width: 900px) {
+  #player-hp, .quest-tracker { left: 12px; width: 280px; }
+  #player-hp { height: 104px; min-height: 104px; }
+  .quest-tracker { top: 132px; width: 280px; }
+  .minimap { right: 12px; top: 12px; width: 250px !important; }
+  .chat-box { left: 12px; bottom: 12px; width: 300px; }
+  .skill-bar { bottom: 12px; width: 360px; }
+  .quick-inventory { right: 12px; bottom: 12px; width: 150px; min-width: 150px; }
+}
+@media (max-width: 620px) {
+  .top-navbar__brand-copy small, .top-navbar__world { display: none; }
+  #player-hp { width: 220px; height: 84px; min-height: 84px; padding: 8px; }
+  .player-hp__portrait { flex-basis: 52px; height: 52px; font-size: 1.8rem; }
+  .player-hp__name { font-size: 1rem; }
+  .player-hp__stats { gap: 8px; font-size: .7rem; }
+  .quest-tracker { top: 108px; width: 220px; height: 118px; min-height: 118px; padding: 20px 10px 8px; }
+  .quest-tracker__objective { font-size: .7rem; }
+  .minimap { width: 190px !important; height: 170px; }
+  .minimap__body { height: 104px; }
+  .minimap__footer { height: 28px; font-size: .65rem; }
+  .chat-box { width: 220px; height: 130px; max-height: 130px; }
+  .chat-box__log { max-height: 55px; }
+  .skill-bar { width: auto; height: 62px; padding: 5px; }
+  .skill-slot { width: 38px; height: 48px; }
+  .skill-bar__hint { display: none; }
+  .quick-inventory { width: 54px; min-width: 54px; height: 50px; padding: 5px; font-size: 0; }
+  .quick-inventory__icon { font-size: 1.15rem; }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .minimap__server[data-status="connecting"]::before,
   .minimap__server[data-status="authenticating"]::before,
