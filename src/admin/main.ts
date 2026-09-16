@@ -12,6 +12,8 @@ import { renderAudit } from "./screens/audit.ts";
 import { renderSettings } from "./screens/settings.ts";
 import { renderRoles } from "./screens/roles.ts";
 import { renderAdminUsers } from "./screens/adminUsers.ts";
+import { renderItems } from "./screens/items.ts";
+import { renderItemEditor } from "./screens/itemEditor.ts";
 
 function renderAccessDenied(container: HTMLElement, message: string): void {
   container.replaceChildren(
@@ -104,6 +106,17 @@ async function boot(): Promise<void> {
   });
   router.add("#/admin-users", () => {
     route(shell.content(), ["Admin Users"], "#/admin-users", () => renderAdminUsers(shell.content()));
+  });
+  router.add("#/items", () => {
+    route(shell.content(), ["Item Database"], "#/items", () => renderItems(shell.content()));
+  });
+  // `new` is registered before the :itemId pattern so the literal route wins.
+  router.add("#/items/new", () => {
+    route(shell.content(), ["Item Database", "New Item"], "#/items/new", () => renderItemEditor(shell.content()));
+  });
+  router.add("#/items/:itemId", (params) => {
+    const id = params.itemId ?? "";
+    route(shell.content(), ["Item Database", `Item #${id}`], `#/items/${id}`, () => renderItemEditor(shell.content(), id));
   });
 
   if (!router.resolve()) {

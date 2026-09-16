@@ -24,6 +24,7 @@ import {
   type AdminActor,
   type AdminPermission,
   type AdminTier,
+  type RoleMutationFailureReason,
   type SettingKey,
 } from "../models/Admin.ts";
 import {
@@ -1045,7 +1046,9 @@ export async function adminRolePermissionsHandler(
   const before = getRolePermissions(roleKey);
   const result = updateRolePermissions(roleKey, permissions);
   if (!result.ok) {
-    const status = result.reason === "ROLE_NOT_FOUND" ? 404 : 409;
+    // ROLE_NOT_FOUND → 404, a bad key → 400 (the route pre-validates, so the
+    // model only catches callers that bypass HTTP), guardrail refusals → 409.
+    const status = result.reason === "ROLE_NOT_FOUND" ? 404 : result.reason === "INVALID_PERMISSION" ? 400 : 409;
     errorResponse(res, status, result.reason, roleMutationMessage(result.reason));
     return;
   }
@@ -1064,12 +1067,17 @@ export async function adminRolePermissionsHandler(
   jsonResponse(res, 200, { ok: true, roleKey, permissions });
 }
 
-function roleMutationMessage(reason: string): string {
+function roleMutationMessage(reason: RoleMutationFailureReason): string {
   switch (reason) {
     case "ROLE_NOT_FOUND": return "No role with that key";
+    case "INVALID_PERMISSION": return "That permission is not recognised";
     case "LAST_MANAGE_ROLES": return "Cannot remove manage_roles from the last role that holds it — the panel would lock itself out";
-    case "SYSTEM_ROLE_LOCKED": return "This system role cannot be modified";
-    default: return "Role update rejected";
+    default: {
+      // Exhaustiveness guard: a new failure reason will not compile until it is
+      // handled above and this branch narrows back to `never`.
+      const unhandled: never = reason;
+      return `Role update rejected (${String(unhandled)})`;
+    }
   }
 }
 

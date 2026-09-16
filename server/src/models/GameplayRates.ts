@@ -9,8 +9,10 @@ type SqlRow = Record<string, unknown>;
  * in memory with a short TTL instead of hitting SQLite every combat tick.
  * The cache is refreshed in three ways:
  * - TTL expiry (10s) — catches out-of-band DB edits (other processes, SQL).
- * - `setServerSetting` (same process) calls `invalidateGameplayRates()`.
- * - `refreshGameplayRates()` — explicit, used after admin settings writes.
+ * - `setServerSetting()` (the admin settings write path) calls
+ *   `refreshGameplayRates()` inline, so a panel change applies to the very next
+ *   kill/loot/quest hand-in rather than waiting for the TTL.
+ * - `invalidateGameplayRates()` — explicit drop (tests, manual invalidation).
  *
  * All values are fail-safe: a missing/corrupt table or non-numeric value
  * falls back to 1.0× so gameplay never breaks because of a settings typo.

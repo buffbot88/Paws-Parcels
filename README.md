@@ -113,7 +113,9 @@ server/            Node/TS game server (HTTP + WebSocket, SQLite persistence, mi
 
 ## Admin Control Panel
 
-Internal management surface for the live game (foundation + player tools slice). Access is derived from the ASHAT Hub account role (`admin.roleTiers` in `server_config.json` maps roles → tiers: none < support < moderator < admin < developer). Every mutation writes to the append-only `admin_audit_log` with before/after state, reason, environment, and request ID. Suspend/ban immediately blocks HTTP + WS auth for the account and disconnects live sessions. Dangerous actions require typed confirmation (`BAN <username>`); settings changes require a reason + confirm.
+Internal management surface for the live game (foundation + player tools slice). Access is derived from the ASHAT Hub account role (`admin.roleTiers` in `server_config.json` maps roles → tiers: none < support < moderator < admin < developer), layered with the per-role permission matrix (Roles & Permissions screen). Every mutation writes to the append-only `admin_audit_log` with before/after state, reason, environment, and request ID. Suspend/ban immediately blocks HTTP + WS auth for the account and disconnects live sessions. Dangerous actions require typed confirmation (`BAN <username>`) and, for Level 3 operations (suspend/ban, item archive), a fresh single-use step-up token behind a re-auth prompt; admin mutations are CSRF-checked and settings changes require a reason + confirm.
+
+The **Item Database** and **Item Editor** screens author the item catalog directly: search/filter the catalog, edit presentation and equipment stats, see an item's usage blast radius, and archive/restore with full audit. Panel edits live in `item_definitions` and survive the boot-time JSON sync, and archived items stop dropping and no longer satisfy quest hand-ins.
 
 ## Phase status
 

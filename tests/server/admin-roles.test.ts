@@ -45,6 +45,7 @@ import { getDb, closeDb } from "../../server/src/db/connection.ts";
 import { runMigrations } from "../../server/src/db/migrate.ts";
 import {
   listAdminRoles,
+  getRolePermissions,
   getAssignedRoles,
   setRoleAssignment,
   actorHasPermission,
@@ -196,6 +197,47 @@ describe("role permission guardrails", () => {
     expect(dev?.permissions).toEqual(["view_players"]);
   });
 
+  it("edits roles that never held manage_roles while only one role holds it", async () => {
+    await seeded();
+    // Regression: the guardrail used to fire for ANY role whose new permission
+    // set omitted manage_roles, which froze the whole matrix on a fresh install
+    // (only `developer` holds it) — every other role became uneditable.
+    const holders = listAdminRoles().filter((r) => r.permissions.includes("manage_roles"));
+    expect(holders.map((r) => r.roleKey)).toEqual(["developer"]);
+
+    expect(updateRolePermissions("support", ["view_players", "edit_inventory", "edit_market"])).toEqual({ ok: true });
+    expect(updateRolePermissions("game-master", ["view_players"])).toEqual({ ok: true });
+    expect(updateRolePermissions("content-designer", ["edit_items"])).toEqual({ ok: true });
+
+    const support = listAdminRoles().find((r) => r.roleKey === "support");
+    expect(support?.permissions).toEqual(["edit_inventory", "edit_market", "view_players"]);
+    // The anti-lockout invariant still holds: developer keeps manage_roles.
+    const dev = listAdminRoles().find((r) => r.roleKey === "developer");
+    expect(dev?.permissions).toContain("manage_roles");
+  });
+
+  it("keeps built-in roles editable — is_system is a badge, not a lock", async () => {
+    await seeded();
+    // Every seeded role is a system row, and those rows ARE the spec §71 matrix:
+    // treating is_system as immutability would make the whole matrix read-only.
+    expect(listAdminRoles().every((r) => r.isSystem)).toBe(true);
+    expect(updateRolePermissions("liveops", ["server_settings_limited", "edit_market", "edit_items"])).toEqual({ ok: true });
+    expect(updateRolePermissions("support", [])).toEqual({ ok: true });
+    expect(getRolePermissions("support")).toEqual([]);
+    expect(getRolePermissions("liveops")).toEqual(["edit_items", "edit_market", "server_settings_limited"]);
+  });
+
+  it("rejects an unknown permission key without touching the stored set", async () => {
+    await seeded();
+    const before = getRolePermissions("support");
+    // The HTTP layer pre-validates, but the model is the last line of defence for
+    // callers that skip it (seeds, scripts) — nothing may persist a key the
+    // panel cannot render.
+    const result = updateRolePermissions("support", ["view_players", "fly" as AdminPermission]);
+    expect(result).toEqual({ ok: false, reason: "INVALID_PERMISSION" });
+    expect(getRolePermissions("support")).toEqual(before);
+  });
+
   it("404s on an unknown role", async () => {
     await seeded();
     expect(updateRolePermissions("bogus-role", ["view_players"])).toEqual({ ok: false, reason: "ROLE_NOT_FOUND" });
@@ -256,6 +298,23 @@ describe("roles API", () => {
     const audit = listAuditEntries({ category: "roles" });
     expect(audit.entries[0]?.action).toBe("role_permissions_updated");
     expect(audit.entries[0]?.beforeState).toBeDefined();
+  });
+
+  it("maps a guardrail refusal onto the API response", async () => {
+    await seeded();
+    const res = makeRes();
+    await adminRolePermissionsHandler(
+      makeReq({ method: "PUT", token: adminToken, body: { permissions: ["view_players"], reason: "strip manage_roles" } }),
+      asRes(res),
+      { roleKey: "developer" },
+    );
+    expect(res._status).toBe(409);
+    expect(res._body).toMatchObject({ error: "LAST_MANAGE_ROLES" });
+    const message = (res._body as { message?: string }).message ?? "";
+    expect(message).toContain("lock itself out");
+    // Nothing was written, and no audit row was produced for the refusal.
+    expect(getRolePermissions("developer")).toContain("manage_roles");
+    expect(listAuditEntries({ category: "roles" }).entries).toHaveLength(0);
   });
 
   it("rejects unknown permission keys", async () => {

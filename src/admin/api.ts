@@ -125,7 +125,8 @@ async function request<T>(
 export const api = {
   get: <T>(path: string) => request<T>("GET", path),
   post: <T>(path: string, body?: unknown, extraHeaders?: Record<string, string>) => request<T>("POST", path, body ?? {}, extraHeaders),
-  put: <T>(path: string, body?: unknown) => request<T>("PUT", path, body ?? {}),
+  put: <T>(path: string, body?: unknown, extraHeaders?: Record<string, string>) => request<T>("PUT", path, body ?? {}, extraHeaders),
+  del: <T>(path: string, body?: unknown, extraHeaders?: Record<string, string>) => request<T>("DELETE", path, body ?? {}, extraHeaders),
 
   /**
    * Mint a short-TTL step-up token for a Level 3 operation. The token is
@@ -259,6 +260,82 @@ export interface RolesResponse {
     assignedRoles: string[];
     canManageRoles: boolean;
   };
+}
+
+// ---- item database & editor (spec §25–26) ----
+
+export interface ItemRow {
+  id: number;
+  key: string;
+  name: string;
+  description: string;
+  category: string;
+  maxStack: number;
+  icon: string;
+  rarity: string;
+  value: number;
+  equipmentSlot: string | null;
+  stats: Record<string, number>;
+  courierEffects: Record<string, number>;
+  requiredClass: string | null;
+  requiredLevel: number;
+  source: "content" | "admin";
+  isDeleted: boolean;
+  updatedAt: string | null;
+  updatedBy: string;
+}
+
+/** Editable payload the editor form submits (mirrors ItemFields server-side). */
+export interface ItemInput {
+  key: string;
+  name: string;
+  description: string;
+  category: string;
+  maxStack: number;
+  icon: string;
+  rarity: string;
+  value: number;
+  equipmentSlot: string | null;
+  stats: Record<string, number>;
+  courierEffects: Record<string, number>;
+  requiredClass: string | null;
+  requiredLevel: number;
+}
+
+export interface ItemFacet {
+  value: string;
+  count: number;
+}
+
+export interface ItemListResponse {
+  items: ItemRow[];
+  total: number;
+  facets: { categories: ItemFacet[]; rarities: ItemFacet[]; sources: ItemFacet[] };
+  canEdit: boolean;
+}
+
+export interface ItemReferences {
+  inventoryCount: number;
+  equippedCount: number;
+  charactersOwning: number;
+  quests: { id: string; title: string; role: "required" | "reward" }[];
+  monsters: { key: string; name: string }[];
+}
+
+export interface ItemMeta {
+  categories: string[];
+  equipmentSlots: string[];
+  rarities: string[];
+  statKeys: string[];
+  courierEffectKeys: string[];
+  classes: string[];
+}
+
+export interface ItemDetailResponse {
+  item: ItemRow;
+  references: ItemReferences;
+  meta: ItemMeta;
+  canEdit: boolean;
 }
 
 export interface AdminUserRow {

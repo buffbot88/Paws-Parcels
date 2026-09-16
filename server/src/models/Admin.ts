@@ -361,19 +361,46 @@ export function setRolePermissions(roleKey: string, permissions: AdminPermission
   }
 }
 
-/** Admin-role model error reasons. */
-export type RoleMutationResult =
-  | { ok: true }
-  | { ok: false; reason: "ROLE_NOT_FOUND" | "SYSTEM_ROLE_LOCKED" | "INVALID_PERMISSION" | "LAST_MANAGE_ROLES" };
+/**
+ * Why a role mutation was refused. These are the only outcomes
+ * `updateRolePermissions` can return; `roleMutationMessage` in the admin routes
+ * is exhaustive over them, so adding a member is a compile error there until it
+ * is handled.
+ */
+export type RoleMutationFailureReason = "ROLE_NOT_FOUND" | "INVALID_PERMISSION" | "LAST_MANAGE_ROLES";
 
-/** Update a role's permission set with guardrails (spec §70: defaults exist). */
+/** Admin-role model error reasons. */
+export type RoleMutationResult = { ok: true } | { ok: false; reason: RoleMutationFailureReason };
+
+/**
+ * Update a role's permission set with guardrails (spec §70: defaults exist).
+ *
+ * Built-in roles stay editable on purpose: all six seeded rows are
+ * `is_system = 1` and they *are* the spec §71 matrix, so treating that flag as
+ * an immutability lock would make the whole matrix read-only. `is_system` is
+ * catalog metadata (the panel badges the row as "system"); the protection that
+ * actually matters is the last-`manage_roles` guardrail below, which makes an
+ * administrative lockout impossible. There is deliberately no "system role is
+ * immutable" failure mode.
+ */
 export function updateRolePermissions(roleKey: string, permissions: AdminPermission[]): RoleMutationResult {
   const db = getDb();
-  const role = db.prepare("SELECT is_system FROM admin_roles WHERE role_key = ? LIMIT 1").get(roleKey) as SqlRow | undefined;
-  if (role === undefined) return { ok: false, reason: "ROLE_NOT_FOUND" };
-  // Guardrail: the last role holding manage_roles can never lose it, so the
-  // panel can never lock out role administration.
-  if (!permissions.includes("manage_roles")) {
+  const exists = db.prepare("SELECT 1 AS found FROM admin_roles WHERE role_key = ? LIMIT 1").get(roleKey) as SqlRow | undefined;
+  if (exists === undefined) return { ok: false, reason: "ROLE_NOT_FOUND" };
+  // Validate keys before writing. The HTTP layer rejects unknown permissions
+  // with a friendlier message, but no caller (seed, script, future CLI) should
+  // be able to persist a key the panel cannot render.
+  const known = new Set<string>(ALL_PERMISSIONS);
+  for (const permission of permissions) {
+    if (!known.has(permission)) return { ok: false, reason: "INVALID_PERMISSION" };
+  }
+  // Guardrail: the *last* role holding manage_roles can never lose it, so the
+  // panel can never lock itself out of role administration. The check only
+  // applies when this role actually holds manage_roles today — otherwise a
+  // fresh install (where just one role holds it) could not edit any of the
+  // other roles at all.
+  const holdsManageRoles = getRolePermissions(roleKey).includes("manage_roles");
+  if (holdsManageRoles && !permissions.includes("manage_roles")) {
     const holders = db.prepare(
       "SELECT COUNT(DISTINCT p.role_key) AS n FROM admin_role_permissions p WHERE p.permission = 'manage_roles'",
     ).get() as SqlRow;

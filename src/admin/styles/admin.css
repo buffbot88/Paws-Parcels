@@ -635,6 +635,98 @@ table.admin-table {
 .admin-detail-list dt { color: var(--adm-text-2); font-weight: 600; }
 .admin-detail-list dd { margin: 0; }
 
+/* ---------- page head with an action ---------- */
+
+.admin-page-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+/* ---------- item database / editor (spec §25–§26) ---------- */
+
+.admin-page-head + *,
+.admin-item-editor > .admin-page-head { margin-bottom: 0; }
+
+.admin-item-editor {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+.admin-item-editor__head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.admin-item-editor .admin-card__title { margin-top: 0; }
+.admin-item-editor > .admin-card { margin-top: 0; }
+.admin-item-editor .admin-section-title { margin: 16px 0 8px; }
+
+.admin-item-editor__savebar {
+  position: sticky;
+  bottom: 0;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  background: var(--adm-surface);
+  border: 1px solid var(--adm-border);
+  border-radius: var(--adm-radius);
+  padding: 12px 14px;
+  box-shadow: 0 -6px 16px rgba(37, 51, 45, 0.06);
+}
+
+.admin-card--danger { border-color: #eccfcf; }
+.admin-card--danger .admin-card__title { color: var(--adm-danger); }
+.admin-card[hidden] { display: none; }
+
+.admin-mono {
+  font-family: ui-monospace, "Cascadia Code", Consolas, monospace;
+  font-size: 12.5px;
+}
+
+.admin-table__sub { font-size: 11.5px; color: var(--adm-text-3); }
+
+.admin-icon-swatch {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 8px;
+  background: #f1efe6;
+  border: 1px solid var(--adm-border);
+  font-size: 14px;
+}
+
+.admin-form-grid__wide { grid-column: 1 / -1; }
+
+.admin-form-hint--warning { color: var(--adm-warning); }
+
+.admin-badge--content { color: #43576d; background: #e6eef5; }
+.admin-badge--admin { color: #2c6e46; background: #e3f2e8; }
+.admin-badge--archived { color: #8f2f2f; background: #f8dede; margin-left: 6px; }
+
+.admin-badge--rarity-common { color: #5c6660; background: #eceae1; }
+.admin-badge--rarity-uncommon { color: #2c6e46; background: #e3f2e8; }
+.admin-badge--rarity-rare { color: #2f5f8f; background: #e2edf8; }
+.admin-badge--rarity-epic { color: #6a3f8f; background: #f0e6f8; }
+.admin-badge--rarity-legendary { color: #8a5d13; background: #f7e8c8; }
+
+.admin-kv-editor { display: flex; flex-direction: column; gap: 8px; align-items: flex-start; }
+.admin-kv-editor__row {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  width: 100%;
+  max-width: 460px;
+}
+.admin-kv-editor__row .admin-select { flex: 1; min-width: 0; }
+.admin-kv-editor__row .admin-input { width: 110px; }
+
 .admin-diff {
   font-family: ui-monospace, "Cascadia Code", Consolas, monospace;
   font-size: 12.5px;

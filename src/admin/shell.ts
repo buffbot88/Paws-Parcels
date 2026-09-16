@@ -20,6 +20,10 @@ const NAV: NavGroup[] = [
     items: [{ label: "Players", hash: "#/players" }],
   },
   {
+    label: "Content",
+    items: [{ label: "Item Database", hash: "#/items" }],
+  },
+  {
     label: "Administration",
     items: [
       { label: "Admin Users", hash: "#/admin-users" },
