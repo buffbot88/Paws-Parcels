@@ -2077,10 +2077,32 @@
 .quick-inventory__key { width: 34px; height: 34px; }
 
 /* Fixed overlay menus must escape the game canvas' clipping and stacking contexts. */
+#hud-overlays .navbar-account-menu,
+#hud-overlays .character-menu__panel {
+  background: linear-gradient(135deg, rgba(24, 70, 44, .94), rgba(31, 82, 50, .84));
+  color: #f7efd9;
+  border-color: rgba(221, 190, 105, .68);
+  -webkit-backdrop-filter: blur(16px) saturate(125%);
+  backdrop-filter: blur(16px) saturate(125%);
+  box-shadow: 0 12px 34px rgba(18, 35, 22, .32), inset 0 1px 0 rgba(255, 255, 255, .1);
+}
 #hud-overlays .navbar-account-menu {
   position: fixed; top: calc(var(--topbar-height, 68px) + 8px); right: 120px; z-index: 500;
   min-width: 190px; max-height: calc(100vh - 90px); overflow-y: auto;
 }
+#hud-overlays .navbar-account-menu__link,
+#hud-overlays .character-menu__action,
+#hud-overlays .character-menu__account,
+#hud-overlays .character-menu__courier {
+  color: #f7efd9;
+}
+#hud-overlays .navbar-account-menu__link:hover,
+#hud-overlays .character-menu__action:hover,
+#hud-overlays .character-menu__courier:hover:not(:disabled) {
+  color: #203b2d;
+  background: rgba(255, 231, 166, .82);
+}
+#hud-overlays .character-menu__divider { background: rgba(221, 190, 105, .42); }
 #hud-overlays .profile-panel__card { overflow: hidden; max-height: calc(100vh - 40px); }
 
 @media (max-width: 900px) {
