@@ -2134,6 +2134,44 @@
   .quick-inventory__icon { font-size: 1.15rem; }
 }
 
+/* ================================================================
+   Clover Village local map — parchment storybook screen (M)
+   ================================================================ */
+.local-map-panel { position: fixed; inset: 0; z-index: 900; display: grid; place-items: center; padding: 20px; color: #3b2719; font-family: Georgia, "Times New Roman", serif; }
+.local-map-panel[hidden] { display: none; }
+.local-map-panel__backdrop { position: absolute; inset: 0; border: 0; background: rgba(18, 43, 28, .68); backdrop-filter: blur(7px) saturate(80%); cursor: pointer; }
+.local-map-panel__shell { position: relative; display: flex; flex-direction: column; width: min(1480px, 100%); max-height: min(900px, calc(100vh - 40px)); overflow: hidden; background: #f7ebcb; border: 3px solid #c08b38; border-radius: 18px; box-shadow: 0 0 0 4px rgba(255, 246, 214, .75) inset, 0 20px 60px rgba(12, 31, 18, .42); }
+.local-map-panel__header { display: flex; align-items: center; justify-content: space-between; padding: 14px 22px; background: linear-gradient(90deg, #183f2b, #28583b); color: #fff7e4; border-bottom: 2px solid #ddbd69; }
+.local-map-panel__eyebrow { color: #b8cb9d; font: 700 10px/1.2 "Trebuchet MS", Arial, sans-serif; letter-spacing: .14em; }
+.local-map-panel__title { margin: 3px 0 0; font-size: clamp(1.5rem, 3vw, 2.3rem); }
+.local-map-panel__subtitle { margin: 2px 0 0; color: #e7d39b; font-size: .95rem; }
+.local-map-panel__close { width: 42px; height: 42px; border: 1px solid #d6b464; border-radius: 50%; color: #fff7e4; background: rgba(255, 255, 255, .1); font-size: 28px; cursor: pointer; }
+.local-map-panel__body { display: grid; grid-template-columns: 230px minmax(0, 1fr) 270px; gap: 14px; min-height: 0; padding: 14px; overflow: hidden; }
+.local-map-panel__sidebar, .local-map-panel__details { min-height: 0; padding: 16px; background: rgba(255, 250, 232, .74); border: 1px solid #d5ae68; border-radius: 12px; }
+.local-map-panel__search { width: 100%; margin: 12px 0; padding: 10px 12px; border: 1px solid #c4a269; border-radius: 18px; background: #fff9e9; color: #3b2719; font: .85rem Georgia, serif; }
+.local-map-panel__locations { display: grid; gap: 4px; }
+.local-map-panel__location { display: flex; align-items: center; gap: 9px; width: 100%; padding: 9px 7px; border: 0; border-radius: 8px; color: #3b2719; background: transparent; font: .9rem Georgia, serif; text-align: left; cursor: pointer; }
+.local-map-panel__location:hover { background: #e2eecb; }
+.local-map-panel__location span { width: 24px; text-align: center; font-size: 1.1rem; }
+.local-map-panel__map-frame { position: relative; min-height: 440px; display: grid; place-items: center; overflow: hidden; padding: 14px; background: #d8e1ad; border: 2px solid #b38b45; border-radius: 14px; }
+.local-map-panel__map-image { display: block; width: 100%; height: 100%; max-height: 620px; object-fit: contain; filter: saturate(1.06) contrast(.98); }
+.local-map-panel__map-label { position: absolute; top: 19px; left: 50%; z-index: 1; display: grid; gap: 2px; min-width: 200px; padding: 8px 16px; transform: translateX(-50%); color: #3b2719; background: rgba(255, 239, 194, .93); border: 1px solid #ba8b45; border-radius: 8px; box-shadow: 0 3px 7px rgba(54, 38, 18, .18); text-align: center; }
+.local-map-panel__map-label span { font-size: .75rem; }
+.local-map-panel__map-fallback { color: #496b3f; font-size: 1.15rem; }
+.local-map-panel__details h2 { margin: 6px 0 10px; font-size: 1.55rem; }
+.local-map-panel__details p { font-size: .85rem; line-height: 1.45; }
+.local-map-panel__chips { display: flex; flex-wrap: wrap; gap: 5px; }
+.local-map-panel__chips span { padding: 5px 8px; border-radius: 12px; background: #e5e8d6; font: .72rem "Trebuchet MS", sans-serif; }
+.local-map-panel__details hr { border: 0; border-top: 1px solid #d3b67f; margin: 16px 0; }
+.local-map-panel__details ul { display: grid; gap: 8px; padding: 0; list-style: none; font-size: .85rem; }
+.local-map-panel__details li { display: flex; justify-content: space-between; }
+.local-map-panel__waypoint { width: 100%; margin-top: 16px; padding: 11px; border: 2px solid #c4933f; border-radius: 9px; color: #fff8e7; background: #245638; font: 700 .9rem Georgia, serif; cursor: pointer; }
+.local-map-panel__footer { display: flex; justify-content: center; gap: 28px; padding: 10px; border-top: 1px solid #d5ae68; background: rgba(255, 248, 225, .82); font-size: .78rem; }
+.local-map-panel__footer kbd { display: inline-grid; place-items: center; min-width: 20px; margin: 0 2px; padding: 2px 4px; border: 1px solid #9c7b45; border-radius: 4px; background: #fffdf2; font: 700 .7rem Arial, sans-serif; }
+body.map-open #game-container { filter: blur(2px) saturate(.75); }
+@media (max-width: 900px) { .local-map-panel { padding: 10px; } .local-map-panel__body { grid-template-columns: 180px minmax(0, 1fr); } .local-map-panel__details { display: none; } }
+@media (max-width: 620px) { .local-map-panel__body { grid-template-columns: 1fr; overflow: auto; } .local-map-panel__sidebar { order: 2; } .local-map-panel__map-frame { min-height: 310px; } .local-map-panel__footer { flex-wrap: wrap; gap: 8px 14px; } }
+
 @media (prefers-reduced-motion: reduce) {
   .minimap__server[data-status="connecting"]::before,
   .minimap__server[data-status="authenticating"]::before,

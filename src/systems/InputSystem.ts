@@ -172,7 +172,7 @@ export class InputSystem {
     if (active instanceof HTMLInputElement || active instanceof HTMLTextAreaElement || active instanceof HTMLSelectElement || (active instanceof HTMLElement && active.isContentEditable)) return true;
     // Modal DOM panels pause gameplay shortcuts even when focus is on the
     // canvas/body or on a tab/button rather than a text field.
-    return document.querySelector<HTMLElement>(".profile-panel:not([hidden])") !== null;
+    return document.querySelector<HTMLElement>(".profile-panel:not([hidden]), .local-map-panel:not([hidden])") !== null;
   }
 
   private handlePointerDown(pointer: Phaser.Input.Pointer): void {

@@ -25,6 +25,7 @@ import { Minimap } from "../ui/Minimap.ts";
 import { SkillBar } from "../ui/SkillBar.ts";
 import { CharacterProfilePanel } from "../ui/CharacterProfilePanel.ts";
 import { QuestTracker } from "../ui/QuestTracker.ts";
+import { LocalMapPanel } from "../ui/LocalMapPanel.ts";
 import {
   addCloverVillageGround,
   addCloverVillageSetPieces,
@@ -83,6 +84,7 @@ export class OverworldScene extends Phaser.Scene {
   private skillBar!: SkillBar;
   private chatBox!: ChatBox;
   private questTracker!: QuestTracker;
+  private localMap!: LocalMapPanel;
   private lastTileX = -1;
   private lastTileY = -1;
   private isTransitioning = false;
@@ -213,6 +215,8 @@ export class OverworldScene extends Phaser.Scene {
 
     this.addUi();
     this.buildQuickMenu();
+    this.localMap = new LocalMapPanel();
+    this.localMap.attach(resolved);
     this.buildPrompt();
 
     // Phase 4 — world minimap: pre-renders this zone's terrain once and
@@ -336,6 +340,7 @@ export class OverworldScene extends Phaser.Scene {
       this.skillBar.destroy();
       this.chatBox.destroy();
       this.questTracker.destroy();
+      this.localMap.destroy();
       this.network.detach();
     });
   }
