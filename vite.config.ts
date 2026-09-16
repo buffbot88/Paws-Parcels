@@ -48,8 +48,8 @@ export default defineConfig({
       input: {
         // Two entries: the Phaser game (index.html) and the Admin Control
         // Panel (admin.html) — separate bundles, same origin, shared /api.
-        main: resolve(__dirname, "index.html"),
-        admin: resolve(__dirname, "admin.html"),
+        main: resolve(import.meta.dirname, "index.html"),
+        admin: resolve(import.meta.dirname, "admin.html"),
       },
       external: [
         /^node:.*/,
