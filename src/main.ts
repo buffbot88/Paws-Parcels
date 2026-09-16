@@ -48,10 +48,39 @@ const profilePanel = new CharacterProfilePanel();
 
 function updateNavbar(account: AuthFinishDetail["account"]): void {
   const name = document.getElementById("navbar-account");
+  const accountMenu = document.getElementById("navbar-account-menu");
   const signOut = document.getElementById("navbar-sign-out");
-  if (name !== null) {
-    name.textContent = account.display_name;
+  if (name instanceof HTMLButtonElement) {
+    name.textContent = `${account.display_name}${account.role === "Admin" ? " ▾" : ""}`;
     name.removeAttribute("hidden");
+    if (account.role === "Admin") {
+      name.addEventListener("click", () => {
+        if (accountMenu === null) return;
+        const isOpen = !accountMenu.hidden;
+        accountMenu.hidden = isOpen;
+        name.setAttribute("aria-expanded", String(!isOpen));
+      });
+    } else {
+      name.removeAttribute("aria-haspopup");
+    }
+  }
+  if (accountMenu !== null) {
+    accountMenu.replaceChildren();
+    // The server remains the authority for /admin.html access. This client
+    // gate keeps the link out of ordinary players' menus as well.
+    if (account.role === "Admin") {
+      const adminLink = document.createElement("a");
+      adminLink.href = "/admin.html";
+      adminLink.className = "navbar-account-menu__link";
+      adminLink.setAttribute("role", "menuitem");
+      adminLink.textContent = "⚙ Admin Control Panel";
+      adminLink.addEventListener("click", () => {
+        accountMenu.hidden = true;
+        name?.setAttribute("aria-expanded", "false");
+      });
+      accountMenu.appendChild(adminLink);
+    }
+    accountMenu.hidden = account.role !== "Admin";
   }
   if (signOut !== null) {
     signOut.removeAttribute("hidden");

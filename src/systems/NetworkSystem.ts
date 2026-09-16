@@ -722,18 +722,39 @@ export class NetworkSystem {
 
   private ensureHpChip(): void {
     if (this.hpChip !== null) return;
-    const chip = document.createElement("div");
+    const chip = document.createElement("section");
     chip.id = "player-hp";
     chip.className = "player-hp";
+    chip.setAttribute("aria-label", "Courier status");
+    const portrait = document.createElement("div");
+    portrait.className = "player-hp__portrait";
+    portrait.textContent = "🧑🏻";
+    portrait.setAttribute("aria-hidden", "true");
+    const details = document.createElement("div");
+    details.className = "player-hp__details";
+    const name = document.createElement("strong");
+    name.className = "player-hp__name";
+    const character = pickCharacter(readBootCharacters(), readSelectedCharacterId());
+    name.textContent = character?.name ?? "Courier";
+    const health = document.createElement("div");
+    health.className = "player-hp__health";
     const label = document.createElement("span");
     label.className = "player-hp-label";
-    label.textContent = "HP";
+    label.textContent = "♥ HP";
+    const track = document.createElement("div");
+    track.className = "player-hp__track";
     const fill = document.createElement("div");
     fill.className = "player-hp-fill";
+    track.append(fill);
     const text = document.createElement("span");
     text.className = "player-hp-text";
     text.textContent = "–";
-    chip.append(label, fill, text);
+    health.append(label, track, text);
+    const stats = document.createElement("div");
+    stats.className = "player-hp__stats";
+    stats.innerHTML = '<span>🪙 <b>1,240</b></span><span>🍃 <b>Lv. 5</b></span>';
+    details.append(name, health, stats);
+    chip.append(portrait, details);
     document.getElementById("game-container")?.appendChild(chip);
     this.hpChip = chip;
   }

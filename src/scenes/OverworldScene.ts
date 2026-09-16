@@ -212,6 +212,7 @@ export class OverworldScene extends Phaser.Scene {
     camera.startFollow(this.player, false, 0.12, 0.12);
 
     this.addUi();
+    this.buildQuickMenu();
     this.buildPrompt();
 
     // Phase 4 — world minimap: pre-renders this zone's terrain once and
@@ -634,26 +635,36 @@ export class OverworldScene extends Phaser.Scene {
 
   /** Cozy hint bar shown above the player when something is in range. */
   private buildPrompt(): void {
-    const bg = this.add.rectangle(0, 0, 210, 28, 0xffffff, 0.85);
-    const text = this.add.text(0, 0, "", {
-      fontFamily: "Georgia, serif",
-      fontSize: "14px",
-      color: "#3a5a3a",
+    const bg = this.add.rectangle(0, 0, 230, 34, 0xfff8e8, 0.97);
+    bg.setStrokeStyle(2, 0xc99a4a, 0.95);
+    const keycap = this.add.rectangle(-88, 0, 28, 24, 0x203b2d, 1);
+    keycap.setStrokeStyle(1, 0xe7c979, 0.9);
+    const keyLabel = this.add.text(-88, 0, "E", {
+      fontFamily: "Trebuchet MS, Arial, sans-serif",
+      fontSize: "13px",
+      color: "#fff8e8",
+      fontStyle: "bold",
+    }).setOrigin(0.5);
+    const text = this.add.text(12, 0, "", {
+      fontFamily: "Trebuchet MS, Arial, sans-serif",
+      fontSize: "13px",
+      color: "#203b2d",
+      fontStyle: "bold",
     });
     text.setOrigin(0.5);
-    this.prompt = this.add.container(0, 0, [bg, text]).setDepth(100);
+    this.prompt = this.add.container(0, 0, [bg, keycap, keyLabel, text]).setDepth(120);
     this.prompt.setVisible(false);
   }
 
   private updatePrompt(focused: InteractionTarget | null): void {
-    const text = this.prompt.list[1] as Phaser.GameObjects.Text;
+    const text = this.prompt.list[3] as Phaser.GameObjects.Text;
     if (!focused) {
       this.prompt.setVisible(false);
       return;
     }
     const touch = this.sys.game.device.input.touch;
     const verb = touch ? "Tap" : "Press E";
-    text.setText(`${verb} to talk to ${focused.label}`);
+    text.setText(`${verb === "Press E" ? "Talk" : "Tap"}   ${focused.label}`);
     this.prompt.setPosition(this.player.x, this.player.y - 36);
   }
 
@@ -758,16 +769,23 @@ export class OverworldScene extends Phaser.Scene {
   }
 
   private addUi(): void {
-    this.add
-      .text(12, this.scale.height - 32, "WASD / arrows / drag to move · E or tap to talk", {
-        fontFamily: "Georgia, serif",
-        fontSize: "15px",
-        color: "#3a5a3a",
-        backgroundColor: "#ffffff99",
-        padding: { x: 8, y: 4 },
-      })
-      .setScrollFactor(0)
-      .setDepth(100);
+    // Controls are communicated by the persistent HUD now; keep the world
+    // clear so the reference composition reads as a game, not a debug canvas.
+  }
+
+  private buildQuickMenu(): void {
+    const button = document.createElement("button");
+    button.type = "button";
+    button.className = "quick-inventory";
+    button.setAttribute("aria-label", "Open inventory");
+    button.innerHTML = '<span class="quick-inventory__key">I</span><span class="quick-inventory__icon" aria-hidden="true">🎒</span><span>Inventory</span>';
+    button.addEventListener("click", () => {
+      const panel = CharacterProfilePanel.instance;
+      const token = readAuthToken();
+      const character = pickCharacter(readBootCharacters(), readSelectedCharacterId());
+      if (panel !== null && token !== null && character != null) panel.open(character.id, token);
+    });
+    document.getElementById("game-container")?.appendChild(button);
   }
 
   /** Snap the courier to a server-authoritative tile (join/reconnect restore). */
