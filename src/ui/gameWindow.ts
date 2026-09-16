@@ -13,24 +13,29 @@ export function fitGameWindow(): void {
   const container = document.getElementById("game-container");
   if (container === null) return;
 
-  const viewportWidth = window.visualViewport?.width ?? window.innerWidth;
-  const viewportHeight = (window.visualViewport?.height ?? window.innerHeight) -
-    (document.getElementById("top-navbar")?.offsetHeight ?? 0);
-  const scale = Math.min(
-    viewportWidth / GAME_WIDTH,
-    viewportHeight / GAME_HEIGHT,
-  );
-  let width = Math.round(GAME_WIDTH * scale);
-  let height = Math.round(GAME_HEIGHT * scale);
+  const viewport = window.visualViewport;
+  const viewportWidth = Math.max(1, viewport?.width ?? document.documentElement.clientWidth ?? window.innerWidth);
+  const viewportHeight = Math.max(1, (viewport?.height ?? document.documentElement.clientHeight ?? window.innerHeight) -
+    (document.getElementById("top-navbar")?.offsetHeight ?? 0));
+  const safeScale = Math.min(viewportWidth / GAME_WIDTH, viewportHeight / GAME_HEIGHT);
+  const orientation = viewportWidth >= viewportHeight ? "landscape" : "portrait";
+  let width = Math.floor(GAME_WIDTH * safeScale);
+  let height = Math.floor(GAME_HEIGHT * safeScale);
 
-  // Keep the game usable on very narrow screens (never below the spec floor).
-  if (width < MIN_WINDOW_WIDTH) {
+  // Do not force the old minimum on a narrow phone: it would create horizontal
+  // scrolling. Phaser and the HUD both remain readable at the actual viewport
+  // size, with the portrait media rules handling the denser composition.
+  if (viewportWidth >= MIN_WINDOW_WIDTH && width < MIN_WINDOW_WIDTH) {
     width = MIN_WINDOW_WIDTH;
-    height = Math.round((MIN_WINDOW_WIDTH * GAME_HEIGHT) / GAME_WIDTH);
+    height = Math.floor((MIN_WINDOW_WIDTH * GAME_HEIGHT) / GAME_WIDTH);
   }
+  width = Math.min(width, Math.floor(viewportWidth));
+  height = Math.min(height, Math.floor(viewportHeight));
 
-  container.style.width = `${width}px`;
-  container.style.height = `${height}px`;
+  container.dataset.orientation = orientation;
+  container.style.setProperty("--game-scale", String(safeScale));
+  container.style.width = `${Math.max(1, width)}px`;
+  container.style.height = `${Math.max(1, height)}px`;
 }
 
 /** Attach the resize listeners; also runs once immediately (pre-boot). */

@@ -1968,6 +1968,41 @@
 .quick-inventory__icon { font-size: 1.35rem; }
 @media (max-width: 700px) { #player-hp { width: 20rem; min-height: 6.6rem; } .player-hp__portrait { flex-basis: 4.7rem; height: 4.7rem; font-size: 2.5rem; } .quest-tracker { top: 9rem; width: 20rem; } .quick-inventory { right: 1rem; bottom: 1rem; min-width: auto; } }
 
+/* Glass material pass: retain the warm fantasy palette while letting the world
+   show through the HUD instead of using fully opaque cards. */
+#player-hp,
+.quest-tracker,
+.minimap,
+.quick-inventory,
+.skill-bar {
+  background: linear-gradient(145deg, rgba(255, 249, 233, .78), rgba(240, 223, 184, .62));
+  border-color: rgba(255, 230, 158, .88);
+  box-shadow: 0 0 0 1px rgba(255, 255, 255, .46) inset, 0 8px 24px rgba(42, 31, 17, .24);
+  -webkit-backdrop-filter: blur(10px) saturate(125%);
+  backdrop-filter: blur(10px) saturate(125%);
+}
+#player-hp::before,
+.quest-tracker::after,
+.quick-inventory::before {
+  opacity: .7;
+}
+.minimap__header { background: rgba(255, 248, 232, .42); backdrop-filter: blur(8px); }
+.minimap__footer { background: rgba(246, 236, 216, .44); }
+.skill-slot { background: rgba(255, 253, 246, .62); backdrop-filter: blur(6px); }
+.character-menu__button,
+.navbar-account-menu {
+  background: rgba(255, 248, 232, .76);
+  -webkit-backdrop-filter: blur(10px) saturate(125%);
+  backdrop-filter: blur(10px) saturate(125%);
+}
+
+@media (max-width: 700px) {
+  #game-container[data-orientation="portrait"] .quest-tracker { top: 8.5rem; }
+  #game-container[data-orientation="portrait"] .minimap { width: min(15rem, calc(100% - 2rem)) !important; }
+  #game-container[data-orientation="portrait"] .chat-box { width: min(20rem, calc(100% - 2rem)); max-height: 11rem; }
+  #game-container[data-orientation="portrait"] .skill-slot { width: 2.8rem; height: 2.8rem; }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .minimap__server[data-status="connecting"]::before,
   .minimap__server[data-status="authenticating"]::before,

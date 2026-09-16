@@ -29,8 +29,10 @@ body {
   display: flex;
   align-items: center;
   gap: 1.25rem;
-  background: #203b2d;
+  background: linear-gradient(110deg, rgba(20, 52, 36, .92), rgba(34, 73, 48, .78));
   color: #fff8e9;
+  -webkit-backdrop-filter: blur(14px) saturate(130%);
+  backdrop-filter: blur(14px) saturate(130%);
   border-bottom: 2px solid #c99a4a;
   box-shadow: 0 3px 12px rgba(31, 48, 35, 0.22);
   position: relative;
