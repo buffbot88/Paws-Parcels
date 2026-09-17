@@ -1,0 +1,240 @@
+/* HUD v4 component primitives — every panel builds from these so the whole
+   UI changes together. Consumes tokens.css only. */
+
+/* ---------- Panel ---------- */
+.hud-panel {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  color: var(--brown-900);
+  background: linear-gradient(150deg, rgba(255, 249, 232, 0.94), rgba(247, 235, 203, 0.88));
+  -webkit-backdrop-filter: blur(10px) saturate(125%);
+  backdrop-filter: blur(10px) saturate(125%);
+  border: var(--panel-border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--panel-shadow);
+  font-family: var(--font-body);
+  animation: hud-panel-in var(--motion-panel);
+}
+
+.hud-panel--dark {
+  color: var(--cream-50);
+  background: rgba(23, 54, 31, 0.92);
+  box-shadow: var(--panel-shadow-dark);
+  -webkit-backdrop-filter: blur(10px);
+  backdrop-filter: blur(10px);
+}
+
+.hud-panel[hidden] {
+  display: none;
+}
+
+@keyframes hud-panel-in {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.hud-panel__header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 14px;
+  font-family: var(--font-display);
+  font-size: 15px;
+  font-weight: 700;
+}
+
+.hud-panel__body {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 12px 14px 14px;
+  min-height: 0;
+  min-width: 0;
+}
+
+/* Corner foliage ornament — decorative only, never over text. */
+.hud-panel__leaf {
+  position: absolute;
+  color: var(--forest-600);
+  opacity: 0.35;
+  pointer-events: none;
+}
+.hud-panel__leaf--tl { top: 4px; left: 6px; }
+.hud-panel__leaf--tr { top: 4px; right: 6px; transform: scaleX(-1); }
+.hud-panel__leaf--bl { bottom: 4px; left: 6px; transform: scaleY(-1); }
+.hud-panel__leaf--br { bottom: 4px; right: 6px; transform: scale(-1); }
+
+/* ---------- Pill ---------- */
+.hud-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 12px;
+  color: var(--cream-50);
+  background: var(--forest-800);
+  border: 1px solid rgba(186, 145, 62, 0.45);
+  border-radius: var(--radius-pill);
+  font-family: var(--font-display);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  white-space: nowrap;
+}
+
+.hud-pill--gold {
+  color: var(--forest-950);
+  background: linear-gradient(150deg, var(--gold-400), var(--gold-500));
+}
+
+.hud-pill--quiet {
+  color: var(--sage-300);
+  background: rgba(35, 72, 42, 0.55);
+}
+
+/* ---------- KeyHint (inset keycap) ---------- */
+.hud-key {
+  display: inline-grid;
+  place-items: center;
+  min-width: 20px;
+  height: 20px;
+  padding: 0 5px;
+  color: var(--brown-900);
+  background: var(--cream-50);
+  border: 1px solid rgba(128, 103, 75, 0.55);
+  border-radius: 6px;
+  box-shadow: inset 0 -2px 0 rgba(128, 103, 75, 0.28);
+  font-family: var(--font-body);
+  font-size: 10px;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.hud-key--dark {
+  color: var(--cream-50);
+  background: rgba(255, 249, 232, 0.12);
+  border-color: rgba(231, 188, 85, 0.4);
+  box-shadow: inset 0 -2px 0 rgba(0, 0, 0, 0.25);
+}
+
+/* ---------- IconButton ---------- */
+.hud-icon-btn {
+  display: inline-grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  padding: 0;
+  color: var(--brown-600);
+  background: transparent;
+  border: none;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: background var(--motion-hover), color var(--motion-hover), transform var(--motion-hover);
+}
+.hud-icon-btn:hover { color: var(--brown-900); background: rgba(201, 154, 50, 0.16); }
+.hud-icon-btn:active { transform: scale(0.97); }
+.hud-icon-btn:focus-visible { outline: 2px solid var(--gold-500); outline-offset: 1px; }
+
+.hud-icon-btn--dark {
+  color: rgba(247, 235, 203, 0.75);
+}
+.hud-icon-btn--dark:hover { color: var(--cream-50); background: rgba(231, 188, 85, 0.18); }
+
+/* ---------- ProgressBar ---------- */
+.hud-progress {
+  position: relative;
+  flex: 1;
+  height: 14px;
+  overflow: hidden;
+  background: rgba(73, 53, 31, 0.18);
+  border-radius: var(--radius-pill);
+  box-shadow: inset 0 2px 3px rgba(57, 31, 19, 0.2);
+}
+
+.hud-progress__fill {
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, var(--hp), #f0907e);
+  transition: width var(--motion-hp);
+}
+
+.hud-progress__fill--success {
+  background: linear-gradient(90deg, var(--success), #9dc07f);
+}
+
+/* ---------- Avatar ---------- */
+.hud-avatar {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 84px;
+  height: 84px;
+  color: var(--forest-950);
+  background: radial-gradient(circle at 38% 30%, var(--cream-50), var(--cream-200));
+  border: 4px solid var(--gold-500);
+  border-radius: 50%;
+  box-shadow: 0 3px 6px rgba(49, 29, 15, 0.25);
+  font-size: 38px;
+  user-select: none;
+}
+
+.hud-avatar--sm {
+  width: 34px;
+  height: 34px;
+  border-width: 2px;
+  font-size: 17px;
+}
+
+/* ---------- Divider ---------- */
+.hud-divider {
+  height: 1px;
+  border: 0;
+  margin: 4px 0;
+  background: rgba(186, 145, 62, 0.35);
+}
+
+.hud-panel--dark .hud-divider {
+  background: rgba(231, 188, 85, 0.22);
+}
+
+/* ---------- HUDButton (shared card action) ---------- */
+.hud-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  padding: 9px 16px;
+  color: var(--cream-50);
+  background: var(--forest-800);
+  border: 1px solid var(--gold-500);
+  border-radius: var(--radius-sm);
+  font-family: var(--font-body);
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: filter var(--motion-hover), transform var(--motion-hover);
+}
+.hud-button:hover:not(:disabled) { filter: brightness(1.12); }
+.hud-button:active:not(:disabled) { transform: scale(0.97); }
+.hud-button:focus-visible { outline: 2px solid var(--gold-500); outline-offset: 1px; }
+.hud-button:disabled { cursor: not-allowed; opacity: 0.55; }
+
+.hud-button--outlined {
+  color: var(--cream-50);
+  background: transparent;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hud-panel,
+  .hud-button,
+  .hud-icon-btn {
+    animation: none;
+    transition: none;
+  }
+}

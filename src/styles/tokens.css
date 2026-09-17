@@ -1,0 +1,84 @@
+/* Paws & Parcels design tokens — HUD v4 (single source of truth).
+   Component styles consume tokens only; no raw hex outside this file. */
+
+@font-face {
+  font-family: "Lora";
+  font-style: normal;
+  font-weight: 600;
+  font-display: swap;
+  src: url("/fonts/lora-latin-600.woff2") format("woff2");
+}
+@font-face {
+  font-family: "Lora";
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: url("/fonts/lora-latin-700.woff2") format("woff2");
+}
+@font-face {
+  font-family: "Nunito Sans";
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("/fonts/nunito-sans-latin-400.woff2") format("woff2");
+}
+@font-face {
+  font-family: "Nunito Sans";
+  font-style: normal;
+  font-weight: 600;
+  font-display: swap;
+  src: url("/fonts/nunito-sans-latin-600.woff2") format("woff2");
+}
+@font-face {
+  font-family: "Nunito Sans";
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: url("/fonts/nunito-sans-latin-700.woff2") format("woff2");
+}
+
+:root {
+  /* Color system (cozy-fantasy spec §2) */
+  --forest-950: #18351f;
+  --forest-900: #23482a;
+  --forest-800: #315e37;
+  --forest-600: #5c824a;
+  --sage-300: #afc58c;
+  --cream-50: #fff9e8;
+  --cream-100: #f7ebcb;
+  --cream-200: #ead7a6;
+  --gold-400: #e7bc55;
+  --gold-500: #c99a32;
+  --brown-900: #49351f;
+  --brown-600: #80674b;
+  --hp: #e85f57;
+  --success: #6f9d58;
+
+  /* Corner radius */
+  --radius-sm: 10px;
+  --radius-md: 16px;
+  --radius-lg: 22px;
+  --radius-pill: 999px;
+
+  /* Depth — the shared "raised soft card" recipe */
+  --panel-border: 1px solid rgba(186, 145, 62, 0.45);
+  --panel-shadow:
+    0 8px 18px rgba(43, 40, 24, 0.18),
+    inset 0 1px 0 rgba(255, 255, 255, 0.75);
+  --panel-shadow-dark:
+    0 10px 24px rgba(12, 24, 15, 0.32),
+    inset 0 1px 0 rgba(255, 255, 255, 0.08);
+
+  /* Typography */
+  --font-display: "Lora", Georgia, "Times New Roman", serif;
+  --font-body: "Nunito Sans", "Segoe UI", Arial, sans-serif;
+
+  /* Motion */
+  --motion-panel: 180ms ease-out;
+  --motion-hover: 120ms ease;
+  --motion-hp: 300ms ease;
+
+  /* Layout */
+  --hud-gap: 20px;
+  --topbar-height: 72px;
+}
