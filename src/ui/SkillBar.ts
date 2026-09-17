@@ -13,7 +13,11 @@ const SKILLS: readonly SkillBarAction[] = [
   { id: "skill-4", label: "Skill 4", shortcut: "4", icon: "✧", available: false },
 ];
 
-/** Bottom-center combat bar; only server-backed skills are enabled. */
+/**
+ * HUD v4 action hotbar (bottom center): one physical cream tray with leaf
+ * anchors, 58–64px slots, keycap labels at the lower-right of each slot, and
+ * a gold active edge. Only server-backed skills are enabled.
+ */
 export class SkillBar {
   private readonly root: HTMLElement;
   private readonly activeSlot: HTMLButtonElement;
@@ -27,6 +31,12 @@ export class SkillBar {
     root.className = "skill-bar";
     root.setAttribute("role", "toolbar");
     root.setAttribute("aria-label", "Courier skills");
+    root.classList.add("hud-tray");
+
+    const leafLeft = document.createElement("span");
+    leafLeft.className = "hud-tray__leaf";
+    leafLeft.setAttribute("aria-hidden", "true");
+    leafLeft.textContent = "🌿";
 
     const slots = document.createElement("div");
     slots.className = "skill-bar__slots";
@@ -39,9 +49,15 @@ export class SkillBar {
     this.activeSlot = active!;
 
     const hint = document.createElement("span");
-    hint.className = "skill-bar__hint";
+    hint.className = "skill-bar__hint hud-key";
     hint.textContent = "J · attack";
-    root.append(slots, hint);
+
+    const leafRight = document.createElement("span");
+    leafRight.className = "hud-tray__leaf";
+    leafRight.setAttribute("aria-hidden", "true");
+    leafRight.textContent = "🌿";
+
+    root.append(leafLeft, slots, leafRight, hint);
     document.getElementById("game-container")?.appendChild(root);
 
     this.root = root;
@@ -88,7 +104,7 @@ export class SkillBar {
     icon.setAttribute("aria-hidden", "true");
     icon.textContent = skill.icon;
     const key = document.createElement("span");
-    key.className = "skill-slot__key";
+    key.className = "hud-key skill-slot__key";
     key.textContent = skill.shortcut;
     const cooldown = document.createElement("span");
     cooldown.className = "skill-slot__cooldown";

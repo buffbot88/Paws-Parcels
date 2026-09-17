@@ -1,6 +1,8 @@
 import type { MapData } from "../game/Maps.ts";
 import { TILES } from "../game/Tiles.ts";
 import type { NPC as NPCDefinition } from "../types/NPCtypes.ts";
+import { createIcon } from "./hud/icons.ts";
+import { createIconButton, createPanel } from "./hud/primitives.ts";
 
 /** Terrain fill colors per tile code (`#rrggbb` for canvas), derived from the tile catalog. */
 const TERRAIN_COLORS: Readonly<Record<string, string>> = Object.fromEntries(
@@ -17,7 +19,7 @@ const OBJECT_COLOR = "#c98a2e";
 const TRANSITION_COLOR = "#2ba0b8";
 
 /** Max displayed width of the minimap (px); height follows the map aspect. */
-const MAX_WIDTH = 172;
+const MAX_WIDTH = 300;
 
 /** A position in tile units (fractional allowed). */
 export interface MinimapPoint {
@@ -33,21 +35,20 @@ export interface MinimapFrame {
 }
 
 /**
- * DOM-over-Canvas minimap (Phase 4): a small canvas layered above the game that
- * pre-renders the zone's terrain + landmarks once and redraws a live layer —
- * own courier, other couriers, monsters — every frame. Lives in #game-container
- * like the other HUD chips; the header toggles it open/closed.
+ * HUD v4 minimap (top-right, ~330×285): green-framed map canvas, expand
+ * button, collapse chevron, location label, and live tile coordinates.
+ * Server/debug text moved out of the header — connection state lives in a
+ * footer status dot with a tooltip (spec §8: no server text in the polished HUD).
  */
 export class Minimap {
   /** Collapsed preference shared across scene restarts / zone changes. */
   private static collapsed = false;
 
   private readonly root: HTMLElement;
-  private readonly headerTitle: HTMLElement;
   private readonly caret: HTMLElement;
   private readonly zoneLabel: HTMLElement;
   private readonly coordsLabel: HTMLElement;
-  private readonly serverStatus: HTMLElement;
+  private readonly statusDot: HTMLElement;
   private readonly baseCanvas: HTMLCanvasElement;
   private readonly dynCanvas: HTMLCanvasElement;
   private readonly baseCtx: CanvasRenderingContext2D | null;
@@ -66,18 +67,14 @@ export class Minimap {
     header.title = "Toggle map";
     header.setAttribute("aria-expanded", "true");
     header.setAttribute("aria-controls", "minimap-body");
+    const pin = createIcon("map-pin", { size: 14, className: "minimap__pin" });
     const title = document.createElement("span");
     title.className = "minimap__title";
     title.textContent = "Map";
-    const caret = document.createElement("span");
-    caret.className = "minimap__caret";
-    caret.textContent = "▾";
-    const server = document.createElement("span");
-    server.className = "minimap__server";
-    server.dataset.status = "idle";
-    server.setAttribute("aria-live", "polite");
-    server.textContent = "Server · offline";
-    header.append(title, server, caret);
+    this.caret = document.createElement("span");
+    this.caret.className = "minimap__caret";
+    this.caret.appendChild(createIcon("chevron-down", { size: 14 }));
+    header.append(pin, title, this.caret);
 
     const body = document.createElement("div");
     body.className = "minimap__body";
@@ -88,27 +85,29 @@ export class Minimap {
     dyn.className = "minimap__dyn";
     body.append(base, dyn);
 
-    // Caption bar under the map: zone label + live tile coordinates.
+    // Footer: zone label + coordinates + connection status dot (tooltip only).
     const footer = document.createElement("div");
     footer.className = "minimap__footer";
     const zone = document.createElement("span");
     zone.className = "minimap__zone";
     zone.textContent = "Map";
-    const coords = document.createElement("span");
-    coords.className = "minimap__coords";
-    coords.textContent = "–, –";
-    footer.append(zone, coords);
+    this.coordsLabel = document.createElement("span");
+    this.coordsLabel.className = "minimap__coords";
+    this.coordsLabel.textContent = "–, –";
+    this.statusDot = document.createElement("span");
+    this.statusDot.className = "minimap__server";
+    this.statusDot.dataset.status = "idle";
+    this.statusDot.setAttribute("role", "img");
+    this.statusDot.setAttribute("aria-label", "Server offline");
+    this.statusDot.title = "Server · offline";
+    footer.append(zone, this.coordsLabel, this.statusDot);
 
     root.append(header, body, footer);
     header.addEventListener("click", () => this.toggle());
     document.getElementById("game-container")?.appendChild(root);
 
     this.root = root;
-    this.headerTitle = title;
-    this.caret = caret;
     this.zoneLabel = zone;
-    this.coordsLabel = coords;
-    this.serverStatus = server;
     this.baseCanvas = base;
     this.dynCanvas = dyn;
     this.baseCtx = base.getContext("2d");
@@ -124,17 +123,14 @@ export class Minimap {
     const aspect = map.height / map.width;
     let width = MAX_WIDTH;
     let height = width * aspect;
-    if (height > MAX_WIDTH * 1.2) {
-      height = MAX_WIDTH * 1.2;
+    if (height > MAX_WIDTH * 0.95) {
+      height = MAX_WIDTH * 0.95;
       width = height / aspect;
     }
     this.root.style.width = `${Math.round(width)}px`;
     this.expanded = !Minimap.collapsed;
     this.root.classList.toggle("minimap--collapsed", Minimap.collapsed);
-    this.caret.textContent = this.expanded ? "▾" : "▸";
-    const header = this.root.querySelector<HTMLButtonElement>(".minimap__header");
-    header?.setAttribute("aria-expanded", String(this.expanded));
-    this.headerTitle.textContent = map.name;
+    this.setCaret();
     this.zoneLabel.textContent = map.name;
     this.coordsLabel.textContent = "–, –";
 
@@ -197,7 +193,7 @@ export class Minimap {
       `${Math.floor(frame.player.x)}, ${Math.floor(frame.player.y)}`;
   }
 
-  /** Mirror the courier WebSocket state inside the minimap header. */
+  /** Mirror the courier WebSocket state in the footer status dot. */
   setServerStatus(status: string, detail?: string): void {
     const known = [
       "idle",
@@ -218,8 +214,9 @@ export class Minimap {
       reconnecting: "Server · reconnecting",
       closed: "Server · offline",
     };
-    this.serverStatus.dataset.status = normalized;
-    this.serverStatus.textContent = labels[normalized] ?? "Server · offline";
+    this.statusDot.dataset.status = normalized;
+    this.statusDot.setAttribute("aria-label", labels[normalized] ?? "Server · offline");
+    this.statusDot.title = labels[normalized] ?? "Server · offline";
     this.root.classList.toggle("minimap--server-online", normalized === "joined");
   }
 
@@ -232,7 +229,11 @@ export class Minimap {
     this.expanded = !this.expanded;
     Minimap.collapsed = !this.expanded;
     this.root.classList.toggle("minimap--collapsed", !this.expanded);
-    this.caret.textContent = this.expanded ? "▾" : "▸";
+    this.setCaret();
+  }
+
+  private setCaret(): void {
+    this.caret.replaceChildren(createIcon(this.expanded ? "chevron-down" : "chevron-up", { size: 14 }));
     const header = this.root.querySelector<HTMLButtonElement>(".minimap__header");
     header?.setAttribute("aria-expanded", String(this.expanded));
   }

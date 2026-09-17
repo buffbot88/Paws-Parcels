@@ -1,5 +1,7 @@
 import Phaser from "phaser";
+import "./styles/tokens.css";
 import "./styles/global.css";
+import "./styles/primitives.css";
 import "./styles/game-ui.css";
 import { initClientUpdateMonitor } from "./clientUpdate.ts";
 import { gameConfig } from "./game/GameConfig.ts";
@@ -14,6 +16,7 @@ import {
 import { CharacterDesk } from "./ui/CharacterDesk.ts";
 import { CharacterMenu } from "./ui/CharacterMenu.ts";
 import { CharacterProfilePanel } from "./ui/CharacterProfilePanel.ts";
+import { TopBar } from "./ui/TopBar.ts";
 import { deskStepFor } from "./ui/characterFlow.ts";
 import {
   pickCharacter,
@@ -42,6 +45,7 @@ type GameWindow = Window & {
 const win = window as GameWindow;
 
 /** One desk + one HUD menu, reused across boot and in-game switch flows. */
+new TopBar();
 const desk = new CharacterDesk();
 const menu = new CharacterMenu();
 const profilePanel = new CharacterProfilePanel();

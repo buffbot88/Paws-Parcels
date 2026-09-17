@@ -24,6 +24,7 @@ import { TILE_SIZE } from "../game/GameConfig.ts";
 import type { MapPoint } from "../game/Maps.ts";
 import { apiPath, getWsUrl } from "../config.ts";
 import { classKeyFromId, classSpeedFromId, playAttackEffect } from "../game/classAssets.ts";
+import { PlayerStatusCard } from "../ui/PlayerStatusCard.ts";
 import {
   isNewerSnapshotSequence,
   isSnapshotForZone,
@@ -79,7 +80,7 @@ export class NetworkSystem {
   private players = new Map<number, RemotePlayer>();
   private monsters = new Map<string, Monster>();
   private myCharacterId: number | null = null;
-  private hpChip: HTMLElement | null = null;
+  private statusCard: PlayerStatusCard | null = null;
   private myHp = 0;
   private myMaxHp = 0;
   /** Callback when the server confirms this courier has been defeated. */
@@ -130,7 +131,7 @@ export class NetworkSystem {
   private authoritativeZone: string | null = null;
 
   private constructor() {
-    this.ensureHpChip();
+    this.ensureStatusCard();
   }
 
   /** Bind to the current scene (call from scene.create). */
@@ -138,9 +139,9 @@ export class NetworkSystem {
     if (zoneId !== undefined) this.expectedZoneId = zoneId;
     this.destroyEntities();
     this.scene = scene;
-    // shutdown() removes the HP chip; re-create it on every scene attach so
+    // shutdown() removes the status card; re-create it on every scene attach so
     // a character switch (singleton reuse) never loses the HUD bar.
-    this.ensureHpChip();
+    this.ensureStatusCard();
     // The socket can now be started before Phaser finishes loading art. If the
     // server answered during the preloader, replay that authoritative snapshot
     // into the newly attached scene instead of losing the initial world state.
@@ -388,8 +389,8 @@ export class NetworkSystem {
     this.latestSnapshotSequence.clear();
     this.expectedZoneId = null;
     this.destroyEntities();
-    this.hpChip?.remove();
-    this.hpChip = null;
+    this.statusCard?.destroy();
+    this.statusCard = null;
   }
 
   /**
@@ -468,12 +469,18 @@ export class NetworkSystem {
     socket.callbacks.onChatMessage = (message) => this.onChatMessage?.(message);
     socket.callbacks.onNpcInteraction = (npcId, quests) => this.onNpcInteraction?.(npcId, quests);
     socket.callbacks.onQuestState = (quests) => this.onQuestState?.(quests);
-    socket.callbacks.onQuestUpdated = (payload) => this.onQuestUpdated?.(payload);
+    socket.callbacks.onQuestUpdated = (payload) => {
+      // Quest rewards carry the post-grant Stamps + level (XP may level up).
+      this.statusCard?.setStatus({ stamps: payload.stamps });
+      this.onQuestUpdated?.(payload);
+    };
     socket.callbacks.onQuestNotice = (message) => this.onQuestNotice?.(message);
     socket.callbacks.onInventoryUpdated = (items, stamps, state) => {
       // Speed gear changes the server's accepted move cadence — keep the
       // client's intent throttle in sync so the bonus isn't dead weight.
       this.applyInventorySpeed(state);
+      // The HUD status card always mirrors the authoritative economy state.
+      this.statusCard?.setStatus({ stamps });
       this.onInventoryUpdated?.(items, stamps, state);
     };
     socket.callbacks.onCombatEvent = (event) => this.handleCombatEvent(event);
@@ -528,6 +535,8 @@ export class NetworkSystem {
       }
       this.spawnPlayer(p, true);
     }
+    // The courier's zone is authoritative — mirror it in the top bar capsule.
+    this.setTopBarZone(zoneId);
     this.monsters.clear();
     for (const m of monsters) this.spawnMonster(m, true);
     this.currentZoneId = zoneId;
@@ -718,45 +727,18 @@ export class NetworkSystem {
     });
   }
 
-  // --- DOM HUD (status chip + player HP bar) ---
+  // --- DOM HUD (player status card + HP bar) ---
 
-  private ensureHpChip(): void {
-    if (this.hpChip !== null) return;
-    const chip = document.createElement("section");
-    chip.id = "player-hp";
-    chip.className = "player-hp";
-    chip.setAttribute("aria-label", "Courier status");
-    const portrait = document.createElement("div");
-    portrait.className = "player-hp__portrait";
-    portrait.textContent = "🧑🏻";
-    portrait.setAttribute("aria-hidden", "true");
-    const details = document.createElement("div");
-    details.className = "player-hp__details";
-    const name = document.createElement("strong");
-    name.className = "player-hp__name";
+  private ensureStatusCard(): void {
+    if (this.statusCard !== null) return;
+    this.statusCard = new PlayerStatusCard();
     const character = pickCharacter(readBootCharacters(), readSelectedCharacterId());
-    name.textContent = character?.name ?? "Courier";
-    const health = document.createElement("div");
-    health.className = "player-hp__health";
-    const label = document.createElement("span");
-    label.className = "player-hp-label";
-    label.textContent = "♥ HP";
-    const track = document.createElement("div");
-    track.className = "player-hp__track";
-    const fill = document.createElement("div");
-    fill.className = "player-hp-fill";
-    track.append(fill);
-    const text = document.createElement("span");
-    text.className = "player-hp-text";
-    text.textContent = "–";
-    health.append(label, track, text);
-    const stats = document.createElement("div");
-    stats.className = "player-hp__stats";
-    stats.innerHTML = '<span>🪙 <b>1,240</b></span><span>🍃 <b>Lv. 5</b></span>';
-    details.append(name, health, stats);
-    chip.append(portrait, details);
-    document.getElementById("game-container")?.appendChild(chip);
-    this.hpChip = chip;
+    this.statusCard.setStatus({
+      name: character?.name ?? "Courier",
+      level: character?.level,
+    });
+    // Restore any HP the socket already knows (reconnect / scene restart).
+    this.renderHp();
   }
 
   /** Set the player's HP (from the server on join / defeat). */
@@ -767,14 +749,14 @@ export class NetworkSystem {
   }
 
   private renderHp(): void {
-    if (this.hpChip === null) return;
-    const fill = this.hpChip.querySelector(".player-hp-fill");
-    const text = this.hpChip.querySelector(".player-hp-text");
-    const ratio = this.myMaxHp > 0 ? this.myHp / this.myMaxHp : 0;
-    if (fill instanceof HTMLElement) {
-      fill.style.width = `${Math.max(0, Math.min(100, ratio * 100))}%`;
-    }
-    if (text) text.textContent = `${this.myHp} / ${this.myMaxHp}`;
+    if (this.statusCard === null) return;
+    this.statusCard.setHp(this.myHp, this.myMaxHp);
+  }
+
+  /** Reflect the authoritative zone name in the HUD top bar. */
+  private setTopBarZone(zoneId: string): void {
+    const label = zoneId === "zone-happy-valley" ? "Happy Valley" : "Clover Village";
+    document.querySelector<HTMLElement>(".top-navbar__zone")?.replaceChildren(document.createTextNode(label));
   }
 
 }

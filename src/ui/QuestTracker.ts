@@ -1,44 +1,64 @@
 import type { NetQuestSnapshot } from "../net/GameSocket.ts";
+import { createIcon } from "./hud/icons.ts";
+import { createPanel, createPill, createKeyHint, createDivider } from "./hud/primitives.ts";
 
-/** Small DOM quest tracker for the safe-hub tutorial; the server owns all state. */
+/** HUD v4 quest tracker: tab pill on the card edge, dominant title, objective row. */
 export class QuestTracker {
   private readonly root: HTMLElement;
+  private readonly panelBody: HTMLElement;
   private readonly title: HTMLElement;
   private readonly objective: HTMLElement;
   private readonly action: HTMLButtonElement;
   private readonly status: HTMLElement;
+  private readonly toggle: HTMLButtonElement;
   private quests: NetQuestSnapshot[] = [];
   private offeredQuestId: string | null = null;
   private readonly onAccept: (questId: string) => void;
   private readonly countdownTimer: number;
+  private collapsed = false;
 
   constructor(onAccept: (questId: string) => void) {
     this.onAccept = onAccept;
-    const root = document.createElement("section");
-    root.className = "quest-tracker";
-    root.setAttribute("aria-label", "Village tutorial quest");
-    const eyebrow = document.createElement("span");
-    eyebrow.className = "quest-tracker__eyebrow";
-    eyebrow.textContent = "CLOVER VILLAGE TUTORIAL";
-    const title = document.createElement("strong");
-    title.className = "quest-tracker__title";
-    const objective = document.createElement("span");
-    objective.className = "quest-tracker__objective";
-    const status = document.createElement("span");
-    status.className = "quest-tracker__status";
-    const action = document.createElement("button");
-    action.type = "button";
-    action.className = "quest-tracker__action";
-    action.addEventListener("click", () => {
+    const panel = createPanel({ className: "quest-tracker" });
+    this.root = panel.root;
+    this.panelBody = panel.body;
+
+    // Category tab attached to the top edge.
+    const tab = createPill("Main Quest", { icon: "book-open" });
+    tab.classList.add("quest-tracker__tab");
+
+    // Header row: title + collapse chevron.
+    const header = document.createElement("div");
+    header.className = "quest-tracker__header";
+    this.title = document.createElement("strong");
+    this.title.className = "quest-tracker__title";
+    this.toggle = document.createElement("button");
+    this.toggle.type = "button";
+    this.toggle.className = "hud-icon-btn quest-tracker__toggle";
+    this.toggle.setAttribute("aria-label", "Collapse quest tracker");
+    this.toggle.setAttribute("aria-expanded", "true");
+    this.toggle.appendChild(createIcon("chevron-up", { size: 14 }));
+    this.toggle.addEventListener("click", () => this.setCollapsed(!this.collapsed));
+    header.append(this.title, this.toggle);
+
+    this.objective = document.createElement("span");
+    this.objective.className = "quest-tracker__objective";
+    this.status = document.createElement("span");
+    this.status.className = "quest-tracker__status";
+    this.action = document.createElement("button");
+    this.action.type = "button";
+    this.action.className = "hud-button quest-tracker__action";
+    this.action.addEventListener("click", () => {
       if (this.offeredQuestId !== null) this.onAccept(this.offeredQuestId);
     });
-    root.append(eyebrow, title, objective, status, action);
-    document.getElementById("game-container")?.appendChild(root);
-    this.root = root;
-    this.title = title;
-    this.objective = objective;
-    this.action = action;
-    this.status = status;
+
+    const objectiveRow = document.createElement("div");
+    objectiveRow.className = "quest-tracker__row";
+    objectiveRow.append(this.status, createKeyHint("E"));
+
+    this.panelBody.append(header, this.objective, createDivider(), objectiveRow, this.action);
+    this.root.prepend(tab);
+    document.getElementById("game-container")?.appendChild(this.root);
     this.countdownTimer = window.setInterval(() => {
       if (this.quests.some((quest) => quest.state === "active" && quest.deadlineAt !== null)) this.render();
     }, 1000);
@@ -72,6 +92,14 @@ export class QuestTracker {
   destroy(): void {
     window.clearInterval(this.countdownTimer);
     this.root.remove();
+  }
+
+  private setCollapsed(collapsed: boolean): void {
+    this.collapsed = collapsed;
+    this.root.classList.toggle("quest-tracker--collapsed", collapsed);
+    this.toggle.setAttribute("aria-expanded", String(!collapsed));
+    this.toggle.setAttribute("aria-label", collapsed ? "Expand quest tracker" : "Collapse quest tracker");
+    this.toggle.replaceChildren(createIcon(collapsed ? "chevron-down" : "chevron-up", { size: 14 }));
   }
 
   private render(): void {

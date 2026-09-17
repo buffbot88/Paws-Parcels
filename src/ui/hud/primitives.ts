@@ -56,10 +56,17 @@ export function createIconButton(
 }
 
 /** Rounded meter with animated fill; ratio is clamped 0..1. */
+export interface ProgressBarApi {
+  root: HTMLElement;
+  fill: HTMLElement;
+  /** Update without re-creating nodes so the width transition animates. */
+  setRatio(value: number, ariaLabel?: string): void;
+}
+
 export function createProgressBar(
   ratio: number,
   options: { variant?: "hp" | "success" } = {},
-): { root: HTMLElement; fill: HTMLElement } {
+): ProgressBarApi {
   const root = document.createElement("div");
   root.className = "hud-progress";
   root.setAttribute("role", "progressbar");

@@ -25,6 +25,7 @@ import { Minimap } from "../ui/Minimap.ts";
 import { SkillBar } from "../ui/SkillBar.ts";
 import { CharacterProfilePanel } from "../ui/CharacterProfilePanel.ts";
 import { QuestTracker } from "../ui/QuestTracker.ts";
+import { InventoryButton } from "../ui/InventoryButton.ts";
 import { LocalMapPanel } from "../ui/LocalMapPanel.ts";
 import {
   addCloverVillageGround,
@@ -84,6 +85,7 @@ export class OverworldScene extends Phaser.Scene {
   private skillBar!: SkillBar;
   private chatBox!: ChatBox;
   private questTracker!: QuestTracker;
+  private inventoryButton!: InventoryButton;
   private localMap!: LocalMapPanel;
   private lastTileX = -1;
   private lastTileY = -1;
@@ -226,6 +228,7 @@ export class OverworldScene extends Phaser.Scene {
     this.skillBar = new SkillBar(() => this.requestBasicAttack());
     this.chatBox = new ChatBox((text) => this.network.chat(text));
     this.questTracker = new QuestTracker((questId) => this.network.acceptQuest(questId));
+    this.inventoryButton = new InventoryButton(() => this.openInventory());
     this.network.onQuestState = (quests) => this.questTracker.setQuests(quests);
     this.network.onNpcInteraction = (npcId, quests) => {
       this.questTracker.setQuests(quests);
@@ -340,6 +343,7 @@ export class OverworldScene extends Phaser.Scene {
       this.skillBar.destroy();
       this.chatBox.destroy();
       this.questTracker.destroy();
+      this.inventoryButton.destroy();
       this.localMap.destroy();
       this.network.detach();
     });
