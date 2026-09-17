@@ -24,7 +24,6 @@ import { DialoguePanel } from "../ui/DialoguePanel.ts";
 import { Minimap } from "../ui/Minimap.ts";
 import { SkillBar } from "../ui/SkillBar.ts";
 import { CharacterProfilePanel } from "../ui/CharacterProfilePanel.ts";
-import { dialoguePanel } from "../ui/DialoguePanel.ts";
 import { QuestTracker } from "../ui/QuestTracker.ts";
 import { InventoryButton } from "../ui/InventoryButton.ts";
 import { LocalMapPanel } from "../ui/LocalMapPanel.ts";
@@ -440,7 +439,7 @@ export class OverworldScene extends Phaser.Scene {
     const token = readAuthToken();
     const characterId = this.network.getCharacterId();
     if (token === null || token === "" || characterId === null) return;
-    this.profilePanel.open(characterId, token);
+    CharacterProfilePanel.instance?.open(characterId, token);
   }
 
   private requestBasicAttack(): void {
@@ -791,19 +790,9 @@ export class OverworldScene extends Phaser.Scene {
     // clear so the reference composition reads as a game, not a debug canvas.
   }
 
+  /** The quick inventory button lives in InventoryButton (HUD v4); kept for API parity. */
   private buildQuickMenu(): void {
-    const button = document.createElement("button");
-    button.type = "button";
-    button.className = "quick-inventory";
-    button.setAttribute("aria-label", "Open inventory");
-    button.innerHTML = '<span class="quick-inventory__key">I</span><span class="quick-inventory__icon" aria-hidden="true">🎒</span><span>Inventory</span>';
-    button.addEventListener("click", () => {
-      const panel = CharacterProfilePanel.instance;
-      const token = readAuthToken();
-      const character = pickCharacter(readBootCharacters(), readSelectedCharacterId());
-      if (panel !== null && token !== null && character != null) panel.open(character.id, token);
-    });
-    document.getElementById("game-container")?.appendChild(button);
+    // no-op — InventoryButton is constructed with the other HUD components.
   }
 
   /** Snap the courier to a server-authoritative tile (join/reconnect restore). */

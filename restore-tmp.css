@@ -1,0 +1,205 @@
+/* ============================================================== */
+/* Phase 2 — In-game courier menu (HUD button + popover)          */
+/* ============================================================== */
+
+.character-menu {
+  position: absolute;
+  top: 12px;
+  left: 14px;
+  z-index: 60;
+  font-family: Georgia, "Times New Roman", serif;
+  animation: login-fade-in 200ms ease-out;
+}
+
+.character-menu__button {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 6px 12px 6px 9px;
+  border-radius: 999px;
+  border: 1px solid rgba(176, 138, 95, 0.6);
+  background: rgba(255, 248, 236, 0.92);
+  color: var(--login-ink, #3a5a3a);
+  font-family: inherit;
+  font-size: 13px;
+  cursor: pointer;
+  box-shadow: 0 2px 8px rgba(58, 58, 40, 0.18);
+  transition:
+    transform 120ms ease,
+    box-shadow 120ms ease,
+    background 120ms ease;
+}
+
+.character-menu__button:hover {
+  transform: translateY(-1px);
+  background: #fffdf6;
+  box-shadow: 0 3px 10px rgba(58, 58, 40, 0.22);
+}
+
+.character-menu__button:focus-visible {
+  outline: 3px solid var(--login-warm);
+  outline-offset: 2px;
+}
+
+.character-menu__paw {
+  font-size: 15px;
+  line-height: 1;
+}
+
+.character-menu__name {
+  max-width: 120px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.character-menu__caret {
+  color: var(--login-ink-soft);
+  font-size: 11px;
+}
+
+.character-menu__panel {
+  position: absolute;
+  top: calc(100% + 8px);
+  left: 0;
+  width: min(260px, calc(100vw - 40px));
+  background: var(--login-cream-soft);
+  border: 2px solid var(--login-leaf-deep);
+  border-radius: 14px;
+  box-shadow: 0 10px 24px rgba(58, 90, 58, 0.2);
+  padding: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  animation: login-card-rise 160ms cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+.character-menu__panel[hidden] {
+  display: none;
+}
+
+.character-menu__account {
+  margin: 0 6px 6px;
+  font-size: 12px;
+  font-style: italic;
+  color: var(--login-ink-soft);
+  border-bottom: 1px solid rgba(176, 138, 95, 0.35);
+  padding-bottom: 6px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.character-menu__courier {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  width: 100%;
+  padding: 8px 10px;
+  border: none;
+  background: transparent;
+  border-radius: 10px;
+  font-family: inherit;
+  color: var(--login-ink);
+  text-align: left;
+  cursor: pointer;
+  transition:
+    background 120ms ease,
+    transform 120ms ease;
+}
+
+.character-menu__courier:hover:not(:disabled) {
+  background: rgba(143, 201, 138, 0.22);
+}
+
+.character-menu__courier:focus-visible {
+  outline: 3px solid var(--login-warm);
+  outline-offset: 1px;
+}
+
+.character-menu__courier:disabled {
+  cursor: default;
+  opacity: 1;
+}
+
+.character-menu__courier--current {
+  background: rgba(143, 201, 138, 0.18);
+  border: 1px solid rgba(109, 165, 107, 0.55);
+}
+
+.character-menu__badge {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: radial-gradient(
+    circle at 35% 30%,
+    rgba(143, 201, 138, 0.55),
+    rgba(109, 165, 107, 0.25)
+  );
+  border: 1px solid rgba(109, 165, 107, 0.5);
+  font-size: 15px;
+}
+
+.character-menu__courier-info {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  min-width: 0;
+}
+
+.character-menu__courier-name {
+  font-weight: bold;
+  font-size: 13px;
+}
+
+.character-menu__courier-meta {
+  font-size: 11px;
+  color: var(--login-ink-soft);
+}
+
+.character-menu__divider {
+  height: 1px;
+  background: rgba(176, 138, 95, 0.35);
+  margin: 4px 2px;
+}
+
+.character-menu__action {
+  display: block;
+  width: 100%;
+  padding: 8px 10px;
+  border: none;
+  background: transparent;
+  border-radius: 10px;
+  font-family: inherit;
+  font-size: 13px;
+  color: var(--login-leaf-deep);
+  text-align: left;
+  text-decoration: none;
+  cursor: pointer;
+  transition: background 120ms ease;
+}
+
+.character-menu__action:hover {
+  background: rgba(143, 201, 138, 0.22);
+}
+
+.character-menu__action--link:visited {
+  color: var(--login-leaf-deep);
+}
+
+.character-menu__action:focus-visible {
+  outline: 3px solid var(--login-warm);
+  outline-offset: 1px;
+}
+
+.character-menu__action--danger {
+  color: var(--login-error);
+}
+
+.character-menu__action--danger:hover {
+  background: rgba(179, 66, 42, 0.1);
+}
+
