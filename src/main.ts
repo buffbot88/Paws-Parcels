@@ -322,7 +322,8 @@ async function bootAfterAuth(): Promise<void> {
     console.warn("Phase 3 auth check failed; showing login overlay", err);
   }
 
-  overlay.show();
+  // No Paws JWT: start OIDC immediately so an existing Hub session is reused.
+  await overlay.openLogin();
 }
 
 void bootAfterAuth();
