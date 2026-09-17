@@ -117,7 +117,7 @@ Goal: first monster map, basic combat, class system.
   player HP chip, defeat/respawn handling
 - Gate: combat math server-side; monster + player respawn work; damage validated
 
-### Phase 4A — Clover Village Tutorial Quest Chain
+### Phase 4A — Clover Village Tutorial Quest Chain ✅
 Goal: teach movement, interaction, quest acceptance, parcel carrying, and local deliveries entirely inside the safe hub.
 - Five-step `Clover Village Courier Circuit`: Pip → Biscuit → Maple → Lumi → Moss → Pip
 - Server-bound parcels with normal, fragile, and urgent tutorial conditions

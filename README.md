@@ -148,6 +148,8 @@ The **Item Database** and **Item Editor** screens author the item catalog direct
 | [`design/monsters.md`](design/monsters.md) | Happy Valley critter family, spawn, loot, respawn |
 | [`design/dungeons.md`](design/dungeons.md) | Instance lifecycle, encounters, rewards |
 | [`design/crafting.md`](design/crafting.md) | Materials, recipes, station, validation |
+| [`design/equipment.md`](design/equipment.md) | Inventory, six gear slots, equip/unequip validation, courier effects |
+| [`design/engine-evaluation.md`](design/engine-evaluation.md) | 3D engine path evaluation (isometric Phaser recommended) |
 
 
 - `VOWS.md` — development practices that bind all work here
