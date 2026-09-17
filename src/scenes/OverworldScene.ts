@@ -24,6 +24,7 @@ import { DialoguePanel } from "../ui/DialoguePanel.ts";
 import { Minimap } from "../ui/Minimap.ts";
 import { SkillBar } from "../ui/SkillBar.ts";
 import { CharacterProfilePanel } from "../ui/CharacterProfilePanel.ts";
+import { dialoguePanel } from "../ui/DialoguePanel.ts";
 import { QuestTracker } from "../ui/QuestTracker.ts";
 import { InventoryButton } from "../ui/InventoryButton.ts";
 import { LocalMapPanel } from "../ui/LocalMapPanel.ts";
@@ -432,6 +433,14 @@ export class OverworldScene extends Phaser.Scene {
     }
 
     this.checkTransition();
+  }
+
+  /** Open the courier ledger (inventory/equipment) for the active courier. */
+  private openInventory(): void {
+    const token = readAuthToken();
+    const characterId = this.network.getCharacterId();
+    if (token === null || token === "" || characterId === null) return;
+    this.profilePanel.open(characterId, token);
   }
 
   private requestBasicAttack(): void {
