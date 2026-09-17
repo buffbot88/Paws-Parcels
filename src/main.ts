@@ -322,8 +322,8 @@ async function bootAfterAuth(): Promise<void> {
     console.warn("Phase 3 auth check failed; showing login overlay", err);
   }
 
-  // No Paws JWT: start OIDC immediately so an existing Hub session is reused.
-  await overlay.openLogin();
+  // Keep the game gate behind the styled AGP login, never the raw OIDC page.
+  window.location.assign("https://www.agpstudios.org/#login");
 }
 
 void bootAfterAuth();
