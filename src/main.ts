@@ -322,8 +322,12 @@ async function bootAfterAuth(): Promise<void> {
     console.warn("Phase 3 auth check failed; showing login overlay", err);
   }
 
-  // Keep the game gate behind the styled AGP login, never the raw OIDC page.
-  window.location.assign("https://www.agpstudios.org/#login");
+  // Direct visits use the styled AGP login; Play returns with an OIDC handoff.
+  if (new URLSearchParams(window.location.search).get("auth") === "1") {
+    await overlay.openLogin();
+  } else {
+    window.location.assign("https://www.agpstudios.org/#login");
+  }
 }
 
 void bootAfterAuth();
