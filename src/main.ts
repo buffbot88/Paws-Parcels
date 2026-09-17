@@ -273,7 +273,7 @@ function showMaintenance(detail: AuthFinishDetail): void {
   signOutBtn.textContent = "Sign out";
   signOutBtn.addEventListener("click", () => {
     clearAuthStorage();
-    window.location.reload();
+    window.location.assign("https://www.agpstudios.org/");
   });
 
   actions.append(refreshBtn, signOutBtn);
