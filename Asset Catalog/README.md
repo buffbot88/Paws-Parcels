@@ -1,5 +1,7 @@
 # Legacy Asset Catalog
 
+> The deployed output under `deploy/asset-catalog/` is generated. Edit these source templates or the metadata under `design/assets/`, then run `npm run assets:catalog`; do not hand-edit generated deployment files.
+
 The public asset catalog is now `/BrowseAssets`. This older local review tool remains for internal visual auditing only; do not publish it as the crawler-facing catalog.
 
 This folder contains the local visual review website for the ignored art archive.

@@ -100,9 +100,9 @@ src/
   entities/        Player, NPC (placeholder blobs + name tags)
   game/            GameConfig, ErrorLog, GameConstants, Maps registry, Tiles catalog
   scenes/          Boot → Preloader → Overworld (zone-capable world scene)
-  styles/          global.css + game-ui.css (responsive DOM layout, UI overlay)
+  styles/          tokens, global/primitives, game UI, profile/map/login/admin CSS
   systems/         ContentValidator + MapValidator + InputSystem + InteractionSystem + DialogueService
-  ui/              DialoguePanel (DOM overlay)
+  ui/              DOM panels, menus, inventory, map, dialogue, HUD, and account flows
   admin/           Admin Control Panel (screens, router, API client, design tokens)
   types/           Typed data models matching src/data schemas
 tests/             Vitest suites (content, map, systems)
@@ -152,6 +152,8 @@ The **Item Database** and **Item Editor** screens author the item catalog direct
 | [`design/crafting.md`](design/crafting.md) | Materials, recipes, station, validation |
 | [`design/equipment.md`](design/equipment.md) | Inventory, six gear slots, equip/unequip validation, courier effects |
 | [`design/engine-evaluation.md`](design/engine-evaluation.md) | 3D engine path evaluation (isometric Phaser recommended) |
+| [`design/AI-HANDOFF.md`](design/AI-HANDOFF.md) | Current implementation, incomplete systems, protected boundaries, and safe next areas for visual iteration |
+| [`AGENTS.md`](AGENTS.md) | Repository rules for future AI and engineering changes |
 
 
 - `VOWS.md` — development practices that bind all work here

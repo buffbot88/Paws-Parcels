@@ -233,6 +233,6 @@
   decided: Node + `ws` (see `server/src/ws/`), remaining questions deferred.
 - Zone capacity exact number and snapshot rate (16–32 players, 10–20 Hz) — tunable at
   load test (Phase 8).
-- Account identity: email-only vs. username+email — Phase 1 detail.
+- Account identity: delegated to ASHAT Hub OIDC; the game stores the Hub user id and does not implement local-password accounts.
 - Whether existing `src/data` JSON remains the content source of truth or migrates to
   SQLite seed data — lean: JSON stays, SQLite mirrors it (content ≠ player state).

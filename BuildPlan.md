@@ -199,10 +199,9 @@ See [`design/crafting.md`](design/crafting.md). Summary:
 
 ## 15. Authentication Requirements
 
-- Register + login with email/password; **passwords never stored in plain text**
-  (argon2/bcrypt hashing).
-- Session model: short-lived JWT/access token (HTTP) + refresh token (server-held,
-  rotated); WebSocket authenticated with the same session token.
+- Authentication is delegated to ASHAT Hub OIDC: authorization-code + PKCE, JWKS-verified identity tokens, and server-issued JWT sessions; this server does not store local passwords.
+- Session model: short-lived JWT/access token (HTTP) + server-side session validation;
+  WebSocket is authenticated with the same server-issued session token.
 - Token handling, revocation, and secret management: see
   [`design/database-schema.md`](design/database-schema.md) (§Auth) and
   [`design/architecture.md`](design/architecture.md) (§Auth flow).
@@ -246,7 +245,7 @@ See [`design/crafting.md`](design/crafting.md). Summary:
 - Client input untrusted everywhere; server validates all intents.
 - No direct DB access from browser; CORS + CSP on HTTP; origin checks on WS.
 - Rate limiting on auth endpoints and message spam; input length limits.
-- Password hashing (argon2id/bcrypt), token rotation, expiry, revocation.
+- OIDC token verification, JWT expiry, session handling, revocation strategy, and secret rotation.
 - Economy/ownership validation: every item/currency mutation is server-validated and
   audited.
 - Secrets managed via env/secrets store, never committed.

@@ -38,6 +38,8 @@ The internal management surface lives at **`/admin.html`** (second Vite entry al
 - `BuildPlan.md` — **authoritative build plan**: architecture, phases, scope, ownership rules, quality gates
 - `ROADMAP.md` — status of what's built vs. what's next (online phases)
 - `design/decisions.md` — locked decisions (2.5D isometric, server-authoritative, class system, SQLite persistence, safe hub)
+- `design/AI-HANDOFF.md` — authoritative implementation status and protected boundaries for the next AI
+- `AGENTS.md` — repository-specific contribution rules
 - `design/architecture.md` — client/server/SQLite responsibilities, HTTP + WebSocket, auth flow, reconnection, tick model
 - `design/database-schema.md` — SQLite entities (accounts, characters, inventory, quests, dungeons, audit), PK/FK, ownership, auth handling
 - `design/network-protocol.md` — WS messages (13 C→S intents + 15 S→C frames), payload shapes, validation rules, failure cases
