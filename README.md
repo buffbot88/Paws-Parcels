@@ -144,6 +144,7 @@ The **Item Database** and **Item Editor** screens author the item catalog direct
 | [`design/architecture.md`](design/architecture.md) | Client/server/SQLite responsibilities, HTTP, WS, lifecycle |
 | [`design/database-schema.md`](design/database-schema.md) | SQLite entities, PK/FK, ownership, auth/secrets |
 | [`design/network-protocol.md`](design/network-protocol.md) | WS/HTTP messages (13 C→S + 15 S→C), payload shapes, validation, failure cases |
+| [`design/network-ownership.md`](design/network-ownership.md) | Transport vs. game-facing network ownership and staged extraction boundaries |
 | [`design/classes.md`](design/classes.md) | Bear Warrior · Cat Mage · Fox Archer cards |
 | [`design/combat.md`](design/combat.md) | Damage, health, defeat, respawn, validation |
 | [`design/quests.md`](design/quests.md) | Quest chains, prerequisites, gated deliveries |

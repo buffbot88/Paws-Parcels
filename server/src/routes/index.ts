@@ -43,7 +43,7 @@ import {
   adminItemDuplicateHandler,
   adminItemArchiveHandler,
   adminItemRestoreHandler,
-} from "./admin.ts";
+} from "./admin/index.ts";
 import type { GameBrain } from "../ai/GameBrain.ts";
 import { ai as aiConfig } from "../config/index.ts";
 import { jsonResponse } from "../middleware/index.ts";

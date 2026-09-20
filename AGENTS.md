@@ -52,7 +52,7 @@ Before changing architecture or gameplay, read:
 ## Important current boundaries
 
 - Authentication is delegated to ASHAT Hub OIDC; the game server verifies Hub tokens and issues its session JWT. Do not add a parallel local-password flow without an explicit architecture decision.
-- `server/src/net` does not exist: client transport lives in `src/net/GameSocket.ts`, while game-facing synchronization belongs in `src/systems/NetworkSystem.ts`.
+- Client transport lives in `src/net/GameSocket.ts`, while game-facing synchronization belongs in `src/systems/NetworkSystem.ts`; see `design/network-ownership.md`.
 - Dungeons and crafting remain planned Phase 6 systems; do not present them as implemented.
 - The local map panel is intentionally incomplete. Do not restore dead waypoint, pan, or zoom claims without implementing and testing them.
 - The AI game engine and Visual Director are experimental and must retain deterministic fallbacks and dry-run boundaries.

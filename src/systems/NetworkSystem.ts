@@ -54,8 +54,8 @@ function wsUrl(): string {
 }
 
 /**
- * Singleton network layer for the overworld. Owns the GameSocket and renders
- * other players' avatars and monsters into whichever Phaser scene is attached.
+ * Game-facing network integration for the overworld. Owns scene/entity reconciliation,
+ * HUD callbacks, and authoritative snapshot application; GameSocket owns transport/protocol.
  * The scene calls `attach`, `start`, `joinZone`, `moveIntent`, `attack` and
  * `update` each frame.
  */

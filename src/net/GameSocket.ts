@@ -1,7 +1,9 @@
 import { apiPath } from "../config.ts";
 
 /**
- * Browser WebSocket client for the Phase 2 game server (design/network-protocol.md).
+ * Transport/protocol boundary for the Phase 2 game server (design/network-protocol.md).
+ * This class owns WebSocket lifecycle, framing, normalization, and intent dispatch;
+ * Phaser entities and game-facing state belong to NetworkSystem.
  *
  * Lifecycle:
  *   1. fetch GET /api/ws-token?characterId=N using the stored JWT
