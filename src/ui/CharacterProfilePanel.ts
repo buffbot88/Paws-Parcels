@@ -325,9 +325,9 @@ export class CharacterProfilePanel {
     grid.className = "inventory-grid";
     for (let slot = 0; slot < profile.inventory.slotCount; slot += 1) {
       const item = profile.inventory.items.find((entry) => entry.slot === slot);
-      const cell = document.createElement("button");
-      cell.type = "button";
+      const cell = document.createElement("div");
       cell.className = "inventory-slot";
+      cell.setAttribute("role", "group");
       if (item === undefined) {
         cell.classList.add("inventory-slot--empty");
         cell.setAttribute("aria-label", `Empty slot ${slot + 1} — drop an item here`);

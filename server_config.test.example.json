@@ -1,0 +1,31 @@
+{
+  "server": {
+    "port": 3001,
+    "host": "127.0.0.1",
+    "nodeEnv": "test",
+    "corsAllowedOrigins": ["http://localhost:5173"],
+    "staticDir": "",
+    "debug": false
+  },
+  "db": {
+    "file": ":memory:"
+  },
+  "auth": {
+    "jwtSecret": "test-only-jwt-secret-32-characters-long",
+    "accessTokenTtlSeconds": 900
+  },
+  "oidc": {
+    "clientId": "test-client",
+    "redirectUri": "http://localhost:5173/oidc-callback.html",
+    "scopes": "openid profile",
+    "discoveryUrl": "https://issuer.test/.well-known/openid-configuration",
+    "issuer": "https://issuer.test",
+    "jwksTtlSeconds": 600
+  },
+  "admin": {
+    "roleTiers": {}
+  },
+  "ai": {
+    "enabled": false
+  }
+}

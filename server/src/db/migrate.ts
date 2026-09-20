@@ -1,3 +1,4 @@
+import { createHash } from "node:crypto";
 import { readFileSync, readdirSync } from "node:fs";
 import { resolve, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -10,6 +11,16 @@ const __dirname = dirname(fileURLToPath(import.meta.url));
 // migrate.ts lives in server/src/db; the SQL files live one level up in
 // server/src/migrations.
 const MIGRATIONS_DIR = resolve(__dirname, "../migrations");
+
+/** Return the SHA-256 checksum stored for newly applied migrations. */
+export function migrationChecksum(content: string): string {
+  return createHash("sha256").update(content, "utf8").digest("hex");
+}
+
+/** Legacy databases stored the migration source length as a decimal string. */
+export function isLegacyMigrationChecksum(checksum: string): boolean {
+  return /^\d+$/.test(checksum);
+}
 
 export async function runMigrations(): Promise<void> {
   const db = getDb();
@@ -36,10 +47,13 @@ export async function runMigrations(): Promise<void> {
 
     // Check if already applied
     const applied = db
-      .prepare("SELECT 1 FROM schema_version WHERE version = ?")
-      .get(version);
+      .prepare("SELECT checksum FROM schema_version WHERE version = ?")
+      .get(version) as { checksum: string } | undefined;
     if (applied !== undefined) {
-      logger.debug(`Migration already applied: ${version}`);
+      logger.debug(
+        `Migration already applied: ${version}`,
+        { checksumFormat: isLegacyMigrationChecksum(applied.checksum) ? "legacy-length" : "sha256" },
+      );
       continue;
     }
 
@@ -66,10 +80,11 @@ export async function runMigrations(): Promise<void> {
         }
       }
 
-      // Simple checksum: the file content length.
+      // New records use SHA-256. Existing databases may contain decimal
+      // length checksums; those rows remain valid and are never rewritten.
       db.prepare("INSERT INTO schema_version (version, checksum) VALUES (?, ?)").run(
         version,
-        String(content.length),
+        migrationChecksum(content),
       );
       db.exec("COMMIT");
       logger.info(`Migration applied: ${version}`);

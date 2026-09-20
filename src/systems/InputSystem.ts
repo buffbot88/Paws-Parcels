@@ -24,6 +24,8 @@ interface KeyMap {
   SPACE: Phaser.Input.Keyboard.Key;
   /** Phase 3 — basic attack (J). */
   J: Phaser.Input.Keyboard.Key;
+  /** Open the courier inventory/profile panel (I). */
+  I: Phaser.Input.Keyboard.Key;
   /** Developer-only visual review capture (Ctrl+Shift+V). */
   V: Phaser.Input.Keyboard.Key;
 }
@@ -55,6 +57,7 @@ export class InputSystem {
   private tapQueue: Tap | null = null;
   private interactQueued = false;
   private attackQueued = false;
+  private inventoryQueued = false;
   private captureQueued = false;
   private readonly devAccess: boolean;
 
@@ -62,13 +65,14 @@ export class InputSystem {
     this.devAccess = options.devAccess === true;
     this.scene = scene;
     this.keys = scene.input.keyboard!.addKeys(
-      "W,A,S,D,UP,DOWN,LEFT,RIGHT,E,SPACE,J,V",
+      "W,A,S,D,UP,DOWN,LEFT,RIGHT,E,SPACE,J,I,V",
     ) as unknown as KeyMap;
 
     const kb = scene.input.keyboard!;
     kb.on("keydown-E", this.queueInteract, this);
     kb.on("keydown-SPACE", this.queueInteract, this);
     kb.on("keydown-J", this.queueAttack, this);
+    kb.on("keydown-I", this.queueInventory, this);
     kb.on("keydown-V", this.queueCapture, this);
 
     scene.input.on("pointerdown", this.handlePointerDown, this);
@@ -87,6 +91,7 @@ export class InputSystem {
       kb.off("keydown-E", this.queueInteract, this);
       kb.off("keydown-SPACE", this.queueInteract, this);
       kb.off("keydown-J", this.queueAttack, this);
+      kb.off("keydown-I", this.queueInventory, this);
       kb.off("keydown-V", this.queueCapture, this);
     }
     this.scene.input.off("pointerdown", this.handlePointerDown, this);
@@ -136,6 +141,13 @@ export class InputSystem {
     return v;
   }
 
+  /** True exactly once per I press (edge-triggered). */
+  consumeInventory(): boolean {
+    const v = this.inventoryQueued;
+    this.inventoryQueued = false;
+    return v;
+  }
+
   /** True exactly once per Ctrl+Shift+V press (developer visual capture). */
   consumeCapture(): boolean {
     const v = this.captureQueued;
@@ -158,6 +170,11 @@ export class InputSystem {
   private queueAttack(): void {
     if (this.isDomTextInputFocused()) return;
     this.attackQueued = true;
+  }
+
+  private queueInventory(): void {
+    if (this.isDomTextInputFocused()) return;
+    this.inventoryQueued = true;
   }
 
   private queueCapture(event: KeyboardEvent): void {

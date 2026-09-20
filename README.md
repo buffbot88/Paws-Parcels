@@ -7,7 +7,7 @@ friendships. Server-authoritative, multiplayer, and always cozy.
 - **Engine:** Phaser 4 (Canvas/WebGL, depth-sorted isometric/pseudo-3D)
 - **Language/Tooling:** TypeScript, Vite 8
 - **UI:** DOM-over-Canvas (HTML/CSS layered above the game canvas)
-- **Persistence:** SQLite (server-side) — the current Alpha database file is intentionally tracked; auth sessions persist locally for 24 hours while gameplay state never lives in browser storage
+- **Persistence:** SQLite (server-side) — runtime/player databases live outside Git under the configured `persist/` path; auth sessions persist locally for 24 hours while gameplay state never lives in browser storage
 - **Server:** Node/TS (separate process; HTTP + WebSocket, SQLite persistence)
 - **Tests:** Vitest (client) + server test suite
 - **Hosting:** single-process hosting — one Node server serves the built client + API + WebSocket on one port (Render/Fly.io/VPS/Oracle Always-Free; Vercel can host the client alone but not the game server — serverless can't hold long-lived WebSockets or write SQLite)
@@ -30,6 +30,7 @@ Config lives under `ai` in `server_config.json` (see `server_config.example.json
 
 | Command | Action |
 |---|---|
+| `npm ci` | Install the locked dependency set (CI/clean checkout) |
 | `npm install` | Install dependencies |
 | `npm run dev` | Start the Vite dev server (localhost:5173) |
 | `npm run build` | Production build to `dist/` |
@@ -37,6 +38,7 @@ Config lives under `ai` in `server_config.json` (see `server_config.example.json
 | `npm run typecheck` | TypeScript check (`tsc --noEmit`) |
 | `npm test` | Run Vitest unit tests |
 | `npm run validate` | Validate `src/data` content integrity |
+| `npm run verify` | Run typecheck, tests, content validation, and production build |
 | `npm run assets:inventory` | Rebuild the tracked asset inventory from the committed reference archive |
 | `npm run assets:browse` | Generate the compact crawler-compatible `/BrowseAssets` catalog |
 | `http://localhost:5173/BrowseAssets/` | Open the compact crawler-compatible asset catalog after `npm run dev` |
@@ -51,10 +53,10 @@ Config lives under `ai` in `server_config.json` (see `server_config.example.json
 | `npm run tiles:review` | Ask the local AI for a tile-render review |
 | `npm run tiles:loop` | Render tiles then review them in one pass |
 | `npm run tiles:tune` | Auto-tune tile render parameters |
-| `npm run migrate` | Apply SQLite migrations + seeds (`server/data/paws-and-parcels.sqlite`) |
+| `npm run migrate` | Apply SQLite migrations + static-content synchronization to the configured database |
 | `http://localhost:<port>/admin.html` | **Admin Control Panel** — served by the game server in production; under `npm run dev` use `http://localhost:5173/admin.html` (same session as the game, admin tiers from the ASHAT Hub role) |
 
-The current Alpha workflow keeps `server/data/paws-and-parcels.sqlite` in the repository so the database can be transferred through GitHub. Keep the repository private when it contains real account or character data; GitHub is not a safe public production-database backup or concurrent database service.
+Runtime SQLite databases are created and migrated outside Git at the path configured in `server_config.json` (the example uses `persist/paws-and-parcels.sqlite`). Never commit production databases, account data, tokens, or secrets; Git is source control, not a production database backup or concurrent database service.
 
 ## For developers (first-time setup)
 
@@ -72,8 +74,8 @@ npm install
 
 # 4. Create your local server config with real secrets
 cp server_config.example.json server_config.json
-# Edit server_config.json: fill in db.password, auth.jwtSecret (ask the repo owner
-# for these — they are never committed), and the OIDC client details.
+# Edit server_config.json: fill in auth.jwtSecret (ask the repo owner
+# for this — it is never committed), and the OIDC client details.
 
 # 5. Run
 npm run dev          # client on localhost:5173

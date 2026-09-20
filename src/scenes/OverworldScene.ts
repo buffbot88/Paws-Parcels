@@ -389,6 +389,12 @@ export class OverworldScene extends Phaser.Scene {
       this.network.moveIntent(0, Math.sign(vector.y));
     }
 
+    // Inventory: I opens the same server-backed profile panel as the HUD
+    // button; InputSystem only queues the shortcut and does not own the UI.
+    if (this.inputSystem.consumeInventory()) {
+      this.openInventory();
+    }
+
     // Phase 3 — attack: J targets the nearest monster in class range (the
     // server re-validates range + cooldown and rejects anything untrustworthy).
     if (this.inputSystem.consumeAttack()) {

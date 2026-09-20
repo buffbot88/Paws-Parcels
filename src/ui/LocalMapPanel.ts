@@ -96,13 +96,13 @@ export class LocalMapPanel {
       <hr>
       <strong>Available here</strong>
       <ul><li>👥 NPCs <b>6</b></li><li>❕ Quests <b>5</b></li><li>✉ Deliveries <b>8</b></li><li>🏪 Shops <b>1</b></li></ul>
-      <button class="local-map-panel__waypoint" type="button">⌖ Set Waypoint</button>
+      <button class="local-map-panel__waypoint" type="button" disabled title="Waypoint support is not implemented yet">⌖ Set Waypoint — Coming Soon</button>
     `;
 
     body.append(sidebar, mapFrame, details);
     const footer = document.createElement("footer");
     footer.className = "local-map-panel__footer";
-    footer.innerHTML = "<span><kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> / Drag to pan</span><span>🖱 Scroll to zoom</span><span><kbd>M</kbd> Close map</span>";
+    footer.innerHTML = "<span>Location details are informational while map interaction is in development.</span><span><kbd>M</kbd> Close map</span>";
     shell.append(header, body, footer);
     root.append(backdrop, shell);
     document.getElementById("hud-overlays")?.appendChild(root);

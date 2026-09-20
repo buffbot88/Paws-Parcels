@@ -247,6 +247,7 @@ characters 1─N audit_economy_events
 - **Secret management:** `JWT_SECRET`, DB credentials, OIDC `clientId`/`discoveryUrl`/
   `issuer` (public PKCE client — no client secret) in environment / secrets store (never
   committed). `.env.example` documents names only, no values.
-- **Backups:** the SQLite file is committed to the repo (git is the backup); restore is
-  copy-in-place; `audit_economy_events` retained
-  per retention policy.
+- **Runtime files:** SQLite databases are created outside Git at the configured runtime
+  path (the example uses `persist/paws-and-parcels.sqlite`). Never commit production
+  account data or use Git as a live database backup. Restore procedures belong to the
+  deployment environment; `audit_economy_events` is retained per retention policy.

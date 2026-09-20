@@ -3,6 +3,7 @@ import "./styles/tokens.css";
 import "./styles/global.css";
 import "./styles/primitives.css";
 import "./styles/game-ui.css";
+import "./styles/character-menu.css";
 import { initClientUpdateMonitor } from "./clientUpdate.ts";
 import { gameConfig } from "./game/GameConfig.ts";
 import { initErrorLogging } from "./game/ErrorLog.ts";
@@ -45,70 +46,15 @@ type GameWindow = Window & {
 const win = window as GameWindow;
 
 /** One desk + one HUD menu, reused across boot and in-game switch flows. */
-new TopBar();
+const topBar = new TopBar({
+  onSignOut: () => {
+    clearAuthStorage();
+    window.location.reload();
+  },
+});
 const desk = new CharacterDesk();
 const menu = new CharacterMenu();
 const profilePanel = new CharacterProfilePanel();
-
-function updateNavbar(account: AuthFinishDetail["account"]): void {
-  const name = document.getElementById("navbar-account");
-  const accountMenu = document.getElementById("navbar-account-menu");
-  const signOut = document.getElementById("navbar-sign-out");
-  if (accountMenu !== null) {
-    document.getElementById("hud-overlays")?.appendChild(accountMenu);
-  }
-  if (name instanceof HTMLButtonElement) {
-    name.textContent = `${account.display_name}${account.role === "Admin" ? " ▾" : ""}`;
-    name.removeAttribute("hidden");
-    if (account.role === "Admin") {
-      name.addEventListener("click", () => {
-        if (accountMenu === null) return;
-        const isOpen = !accountMenu.hidden;
-        accountMenu.hidden = isOpen;
-        name.setAttribute("aria-expanded", String(!isOpen));
-      });
-      document.addEventListener("pointerdown", (event) => {
-        if (accountMenu === null || name.contains(event.target as Node)) return;
-        if (!accountMenu.contains(event.target as Node)) {
-          accountMenu.hidden = true;
-          name.setAttribute("aria-expanded", "false");
-        }
-      });
-      document.addEventListener("keydown", (event) => {
-        if (event.key !== "Escape" || accountMenu === null) return;
-        accountMenu.hidden = true;
-        name.setAttribute("aria-expanded", "false");
-      });
-    } else {
-      name.removeAttribute("aria-haspopup");
-    }
-  }
-  if (accountMenu !== null) {
-    accountMenu.replaceChildren();
-    // The server remains the authority for /admin.html access. This client
-    // gate keeps the link out of ordinary players' menus as well.
-    if (account.role === "Admin") {
-      const adminLink = document.createElement("a");
-      adminLink.href = "/admin.html";
-      adminLink.className = "navbar-account-menu__link";
-      adminLink.setAttribute("role", "menuitem");
-      adminLink.textContent = "⚙ Admin Control Panel";
-      adminLink.addEventListener("click", () => {
-        accountMenu.hidden = true;
-        name?.setAttribute("aria-expanded", "false");
-      });
-      accountMenu.appendChild(adminLink);
-    }
-    accountMenu.hidden = account.role !== "Admin";
-  }
-  if (signOut !== null) {
-    signOut.removeAttribute("hidden");
-    signOut.addEventListener("click", () => {
-      clearAuthStorage();
-      window.location.reload();
-    }, { once: true });
-  }
-}
 
 /** Keep startup failures visible instead of leaving a silent offline canvas. */
 function showConnectionDiagnostic(title: string, detail: string): void {
@@ -145,7 +91,7 @@ function startGame(
   selectedId: number | null,
 ): void {
   win.pawsAccount = detail.account;
-  updateNavbar(detail.account);
+  topBar.setAccount(detail.account);
   win.pawsCharacters = characters;
   win.pawsSelectedCharacterId = selectedId;
   // Resolve one authoritative courier for this boot and persist that exact id
@@ -302,7 +248,7 @@ async function bootAfterAuth(): Promise<void> {
     if (existing !== null) {
       // Maintenance mode — show the maintenance screen instead of booting.
       if (isMaintenance()) {
-        updateNavbar(existing.account);
+        topBar.setAccount(existing.account);
         showMaintenance(existing);
         return;
       }

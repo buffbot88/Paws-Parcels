@@ -102,7 +102,7 @@ export interface AiConfig {
 const RAW = loadConfigFromDisk();
 const cfg = validateAndNormalize(RAW);
 
-function validateAndNormalize(raw: unknown): {
+export function validateAndNormalize(raw: unknown): {
   server: ServerConfig;
   db: DbConfig;
   auth: AuthConfig;
@@ -218,12 +218,6 @@ function validateAndNormalize(raw: unknown): {
     }
   }
 
-  if (errors.length > 0) {
-    throw new ConfigLoadError(
-      `Invalid ${CONFIG_RELATIVE_PATH}:\n  - ${errors.join("\n  - ")}`,
-    );
-  }
-
   // ai — AI game engine (Phase 4 experimental: power-managed 450M VL)
   const aiEnabled = bool(aiRaw.enabled, false, errors, "ai.enabled");
   const aiPort = num(aiRaw.port, 3101, errors, "ai.port");
@@ -269,6 +263,12 @@ function validateAndNormalize(raw: unknown): {
   if (npcTalkMinIntervalMs < 1000) {
     errors.push(
       `ai.npcTalkMinIntervalMs must be at least 1000ms (got ${npcTalkMinIntervalMs}).`,
+    );
+  }
+
+  if (errors.length > 0) {
+    throw new ConfigLoadError(
+      `Invalid ${CONFIG_RELATIVE_PATH}:\n  - ${errors.join("\n  - ")}`,
     );
   }
 
