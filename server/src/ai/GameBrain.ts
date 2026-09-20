@@ -5,6 +5,9 @@
  * throws to callers.
  */
 import { ModelInstance } from "./ModelInstance.ts";
+import { RemoteModelInstance } from "./RemoteModelInstance.ts";
+
+type BrainModel = ModelInstance | RemoteModelInstance;
 
 export interface BrainTextPart {
   type: "text";
@@ -37,8 +40,9 @@ export class GameBrain {
   private breakerUntil = 0;
 
   constructor(
-    private readonly instance: ModelInstance,
+    private readonly instance: BrainModel,
     opts: GameBrainOptions,
+    private readonly visionInstance: BrainModel | null = null,
   ) {
     this.requestTimeoutMs = opts.requestTimeoutMs;
     this.breakerThreshold = opts.breakerThreshold ?? BREAKER_THRESHOLD;
@@ -55,16 +59,21 @@ export class GameBrain {
     maxTokens: number,
   ): Promise<string | null> {
     if (Date.now() < this.breakerUntil) return null;
-    const ready = await this.instance.ensureWarm();
+    const hasImage = Array.isArray(user) && user.some((part) => part.type === "image_url");
+    const instance = hasImage && this.visionInstance !== null ? this.visionInstance : this.instance;
+    const ready = await instance.ensureWarm();
     if (!ready) return null;
-    this.instance.markUsed();
+    instance.markUsed();
 
     const content =
       typeof user === "string" ? user : user.map(partToChatContent);
+    const endpoint = "baseUrl" in instance
+      ? `${instance.baseUrl}/v1/chat/completions`
+      : `http://127.0.0.1:${instance.port}/v1/chat/completions`;
     const controller = new AbortController();
     const timer = setTimeout(() => controller.abort(), this.requestTimeoutMs);
     try {
-      const res = await fetch(`http://127.0.0.1:${this.instance.port}/v1/chat/completions`, {
+      const res = await fetch(endpoint, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         signal: controller.signal,
@@ -104,6 +113,7 @@ export class GameBrain {
   /** Fire-and-forget warm-up so the first real call isn't cold. */
   prewarm(): void {
     void this.instance.ensureWarm();
+    if (this.visionInstance !== null) void this.visionInstance.ensureWarm();
   }
 
   /** Chat expecting a JSON object; returns the parsed value or null. */

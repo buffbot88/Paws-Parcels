@@ -82,6 +82,20 @@ describe("GameBrain", () => {
     expect(fetchMock.mock.calls.length).toBe(callsAfterBreaker);
   });
 
+  it("routes image requests to the vision endpoint", async () => {
+    const vision = {
+      baseUrl: "http://vision",
+      ensureWarm: vi.fn(async () => true),
+      markUsed: vi.fn(),
+      stop: vi.fn(async () => undefined),
+    };
+    const fetchMock = vi.fn(async (_url: string) => okChatResponse("seen"));
+    vi.stubGlobal("fetch", fetchMock);
+    const brain = new GameBrain(fakeInstance(), { requestTimeoutMs: 1000 }, vision);
+    await brain.chat("s", [{ type: "image_url", image_url: { url: "data:image/png;base64,x" } }], 8);
+    expect(fetchMock.mock.calls[0][0]).toBe("http://vision/v1/chat/completions");
+  });
+
   it("marks the instance used on success", async () => {
     const instance = fakeInstance();
     vi.stubGlobal("fetch", vi.fn(async () => okChatResponse("ok")));

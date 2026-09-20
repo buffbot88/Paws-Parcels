@@ -48,6 +48,8 @@
     "_comment": "AI game engine (optional). A game-owned LFM2.5-VL-450M llama-server instance on its own port, power-managed: spins down after idleMs without requests and spins back up on demand (monster decisions + NPC dialogue with vision). Set enabled=false (or omit) to run the game without AI — deterministic monster AI and canned dialogue remain the fallbacks.",
     "enabled": false,
     "port": 3101,
+    "textEndpoint": "",
+    "visionEndpoint": "",
     "modelPath": "/absolute/path/to/LFM2.5-VL-450M-Q8_0.gguf",
     "mmprojPath": "/absolute/path/to/mmproj-LFM2.5-VL-450m-Q8_0.gguf",
     "idleMs": 600000,

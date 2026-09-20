@@ -7,6 +7,7 @@ import happyValleyMap from "../../src/data/maps/happy-valley.json" with { type: 
 // server_config.json fails fast before main() runs.
 import { server as serverConfig, ai as aiConfig } from "./config/index.ts";
 import { ModelInstance } from "./ai/ModelInstance.ts";
+import { RemoteModelInstance } from "./ai/RemoteModelInstance.ts";
 import { GameBrain } from "./ai/GameBrain.ts";
 import { MonsterBrain } from "./ai/MonsterBrain.ts";
 import { getDb, closeDb, pingDb } from "./db/connection.ts";
@@ -71,20 +72,28 @@ async function main(): Promise<void> {
   // stopped on shutdown. When disabled (or on failure) the game falls back
   // to deterministic monster AI + canned dialogue.
   const modelInstance = aiConfig.enabled
-    ? new ModelInstance({
-        port: aiConfig.port,
-        modelPath: aiConfig.modelPath,
-        mmprojPath: aiConfig.mmprojPath,
-        idleMs: aiConfig.idleMs,
-        warmupTimeoutMs: aiConfig.warmupTimeoutMs,
-      })
+    ? aiConfig.textEndpoint
+      ? new RemoteModelInstance(aiConfig.textEndpoint)
+      : new ModelInstance({
+          port: aiConfig.port,
+          modelPath: aiConfig.modelPath,
+          mmprojPath: aiConfig.mmprojPath,
+          idleMs: aiConfig.idleMs,
+          warmupTimeoutMs: aiConfig.warmupTimeoutMs,
+        })
     : null;
+  const visionInstance =
+    modelInstance !== null && aiConfig.visionEndpoint
+      ? new RemoteModelInstance(aiConfig.visionEndpoint)
+      : null;
   const gameBrain =
     modelInstance === null
       ? null
-      : new GameBrain(modelInstance, {
-          requestTimeoutMs: aiConfig.requestTimeoutMs,
-        });
+      : new GameBrain(
+          modelInstance,
+          { requestTimeoutMs: aiConfig.requestTimeoutMs },
+          visionInstance,
+        );
   const monsterBrain =
     gameBrain === null
       ? null
@@ -93,9 +102,9 @@ async function main(): Promise<void> {
           maxTokens: aiConfig.maxTokensMonster,
         });
   if (modelInstance !== null) {
-    logger.info("AI game engine enabled — model instance is power-managed", {
-      port: aiConfig.port,
-      idleMs: aiConfig.idleMs,
+    logger.info("AI game engine enabled", {
+      textEndpoint: aiConfig.textEndpoint || `local:${aiConfig.port}`,
+      visionEndpoint: aiConfig.visionEndpoint || `local:${aiConfig.port}`,
     });
   }
 

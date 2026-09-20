@@ -80,8 +80,11 @@ export interface AdminConfig {
 export interface AiConfig {
   /** Master switch — when false the AI game engine is inert (default). */
   enabled: boolean;
-  /** Port for the game-owned llama-server instance (separate from the Hub's). */
+  /** Local fallback port for the game-owned llama-server instance. */
   port: number;
+  /** OpenAI-compatible Omega endpoints for text and vision requests. */
+  textEndpoint: string;
+  visionEndpoint: string;
   /** Path to the GGUF model (LFM2.5-VL-450M) and its vision projector. */
   modelPath: string;
   mmprojPath: string;
@@ -221,6 +224,8 @@ export function validateAndNormalize(raw: unknown): {
   // ai — AI game engine (Phase 4 experimental: power-managed 450M VL)
   const aiEnabled = bool(aiRaw.enabled, false, errors, "ai.enabled");
   const aiPort = num(aiRaw.port, 3101, errors, "ai.port");
+  const textEndpoint = str(aiRaw.textEndpoint, "", errors, "ai.textEndpoint").replace(/\/$/, "");
+  const visionEndpoint = str(aiRaw.visionEndpoint, "", errors, "ai.visionEndpoint").replace(/\/$/, "");
   const modelPath = aiEnabled
     ? reqStr(aiRaw.modelPath, "ai.modelPath", "", errors)
     : str(aiRaw.modelPath, "", errors, "ai.modelPath");
@@ -292,6 +297,8 @@ export function validateAndNormalize(raw: unknown): {
     ai: {
       enabled: aiEnabled,
       port: aiPort,
+      textEndpoint,
+      visionEndpoint,
       modelPath,
       mmprojPath,
       idleMs,
