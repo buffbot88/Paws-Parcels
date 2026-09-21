@@ -2,6 +2,9 @@ import Phaser from "phaser";
 import "./styles/tokens.css";
 import "./styles/global.css";
 import "./styles/primitives.css";
+// HUD v4 world HUD (canvas-relative panels). Must load with the other HUD
+// layers so every panel is positioned before its component mounts.
+import "./styles/hud.css";
 import "./styles/game-ui.css";
 import "./styles/character-menu.css";
 import { initClientUpdateMonitor } from "./clientUpdate.ts";

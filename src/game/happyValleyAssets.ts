@@ -1,7 +1,8 @@
 import Phaser from "phaser";
 import { TILE_SIZE } from "./GameConfig.ts";
-import { worldDepth } from "./WorldDepth.ts";
-import type { MapData } from "./Maps.ts";
+import { DEPTH_OFFSET, worldDepth } from "./WorldDepth.ts";
+import { HAPPY_VALLEY_PROP_SIZING, footprintWidthPx } from "./propSizing.ts";
+import { shadowRecipe } from "./lighting.ts";
 import { HappyValleyTextureKeys, SET_PIECES } from "./happyValleyPlacements.ts";
 
 /**
@@ -94,39 +95,6 @@ export function queueHappyValleyAssets(scene: Phaser.Scene): void {
 }
 
 /**
- * Authored ground for Happy Valley — the same continuous meadow + path
- * surface treatment the village got, replacing the placeholder flat-color
- * tileset while keeping collision tiles (water/trees) visible on the tilemap.
- */
-export function addHappyValleyGround(
-  scene: Phaser.Scene,
-  map: MapData,
-): Phaser.GameObjects.GameObject[] {
-  if (!scene.textures.exists(HappyValleyTextureKeys.ground)) return [];
-  const added: Phaser.GameObjects.GameObject[] = [];
-  const worldWidth = map.width * TILE_SIZE;
-  const worldHeight = map.height * TILE_SIZE;
-  const ground = scene.add
-    .tileSprite(worldWidth / 2, worldHeight / 2, worldWidth, worldHeight, HappyValleyTextureKeys.ground)
-    .setDepth(-20);
-  added.push(ground);
-
-  if (!scene.textures.exists(HappyValleyTextureKeys.path)) return added;
-  for (let y = 0; y < map.height; y++) {
-    const row = map.rows[y] ?? "";
-    for (let x = 0; x < map.width; x++) {
-      if (row[x] !== "P") continue;
-      const path = scene.add
-        .image(x * TILE_SIZE + TILE_SIZE / 2, y * TILE_SIZE + TILE_SIZE / 2, HappyValleyTextureKeys.path)
-        .setDisplaySize(TILE_SIZE, TILE_SIZE)
-        .setDepth(-15);
-      added.push(path);
-    }
-  }
-  return added;
-}
-
-/**
  * Add the curated Happy Valley set pieces. Returns [] on non-valley maps so
  * the scene can treat the call as unconditional cleanup-safe decoration.
  */
@@ -137,12 +105,21 @@ export function addHappyValleySetPieces(scene: Phaser.Scene): Phaser.GameObjects
     const x = piece.tileX * TILE_SIZE;
     const y = piece.baseTileY * TILE_SIZE;
 
-    // Soft contact shadow, same convention as the Clover Village pass.
-    const frameWidth = scene.textures.get(piece.texture).getSourceImage().width;
-    const shadowWidth = Math.min(320, Math.max(24, frameWidth * piece.scale * 0.7));
+    // Soft contact shadow from the shared lighting recipe, so the valley agrees
+    // with the village about where the light is and how much ground a bush,
+    // rock or tree touches.
+    const spec = HAPPY_VALLEY_PROP_SIZING[piece.texture];
+    const recipe = shadowRecipe(spec === undefined ? 40 : footprintWidthPx(spec, piece.scale));
     const shadow = scene.add
-      .ellipse(x, y - 4, shadowWidth, Math.max(10, shadowWidth * 0.2), 0x263b2a, 0.2)
-      .setDepth(worldDepth(y, -0.04));
+      .ellipse(
+        x + recipe.offsetXPx,
+        y + recipe.offsetYPx,
+        recipe.widthPx,
+        recipe.heightPx,
+        recipe.color,
+        recipe.alpha,
+      )
+      .setDepth(worldDepth(y, DEPTH_OFFSET.contactShadow));
 
     const image = scene.add
       .image(x, y, piece.texture)

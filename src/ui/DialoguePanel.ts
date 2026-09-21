@@ -118,7 +118,10 @@ export class DialoguePanel {
     this.onClose = null;
     cb?.();
     // Return focus to the game canvas so keyboard navigation resumes there.
-    const canvas = document.querySelector("#game-container canvas");
+    // Direct child, not a descendant: the HUD layer holds the minimap's own
+    // canvas earlier in the DOM, and focusing that would silently swallow the
+    // keyboard focus the player expects back on the world.
+    const canvas = document.querySelector("#game-container > canvas");
     if (canvas instanceof HTMLElement) canvas.focus();
   }
 

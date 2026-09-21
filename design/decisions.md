@@ -44,6 +44,185 @@
 - **Consequences:** Map authoring continues in tile units; viewport stays.
 - **Status:** ✅ built.
 
+### Prop size bands — one scale convention, in tiles
+- **Decision:** Every placed prop declares an intended rendered height **in tiles**,
+  measured as `sourceHeightPx * scale / 48`, and belongs to a named band (`decal`,
+  `propSmall`, `propMedium`, `propTall`, `structure`, `canopy`, `building`, `landmark`,
+  `surface`). The courier is the yardstick: class idle frames render **1.0 tile**, so one
+  tile is one courier. The bands live in `src/game/propSizing.ts` and every placement in
+  both zones is audited against them in `tests/data/prop-sizing.test.ts`.
+- **Reason:** Each prop previously carried a bare `scale:` literal with no convention
+  behind it — the entity classes disagreed with each other too (courier 1.33, NPC art
+  0.095, monsters 1.1) — so "the props don't all feel like the same world" could neither
+  be proven nor fixed. The audit immediately found real defects: a grass tuft drawn at
+  4.65 tiles (taller than the canopy trees and larger than the shop), trees at 3.1–3.5
+  tiles (below the buildings), the pond art at four different sizes (2.13–3.42 tiles)
+  from one file, and a 2.5-tile flower front.
+- **Consequences:** New props and art packs must declare a sizing row; the Post Office
+  stays the tallest thing in the village and the canopy stays above every shrub, both
+  asserted. `scripts/downscale-clover-valley-props.mjs` derives its factors from these
+  placements, so it is now a dry run by default, requires `--write` to apply, and refuses
+  to upscale art whose rendered size grew — the change that would otherwise silently undo
+  a hand-tuned scale. **Open question (⚠):** the valley's own pack is authored about a
+  third of the village's size for equivalent objects (its "tree" renders ~1.8 tiles
+  against the village's 5.4); no single zone's audit can catch that, and it is left as a
+  deliberate choice rather than silently rescaled.
+- **Status:** ✅ built (Pass 3). Final judgement of how the sizes *look* is
+  `REQUIRES SEELLE/BROWSER VERIFICATION`.
+
+### Composition bands — deliberate density instead of even scatter
+- **Decision:** The scattered layers (canopy, grass islands) draw their odds from a
+  **composition plan** (`src/game/terrainComposition.ts`), not from one probability applied
+  to every eligible tile. 12×12-tile cells take a seeded density class (open / light /
+  normal / dense, with west-neighbour adoption so classes form regions), the outer five
+  tiles of every map are always the **treeline**, and each way into the plaza gets a
+  **framing cluster** — an arc of planting on the grass just outside the mouth. NPCs, the
+  spawn, transitions and interactables are **reserved**: no decoration lands on them or
+  within two tiles, and a framing cluster outranks the scatter it would displace.
+- **Reason:** Even odds cannot compose a place — they produced the "sparse in some areas
+  and cluttered in others" note, because a uniform probability has no way to make a
+  clearing or a thicket. Measured on the generated village the bands give 0.000 / 0.024 /
+  0.051 / 0.099 canopy pieces per tile (open → dense), and the boundary treeline has no
+  gap wider than 1.41 tiles against a 1.6 tile spacing floor.
+- **Consequences:** Zone decoration must declare its reserved set (`reservedTilesFor`); a
+  new zone with a plaza automatically gets framed entrances. Grass islands remain
+  spacing-limited, so their counts barely move with the band — recorded rather than
+  papered over.
+- **Status:** ✅ built (Pass 4).
+
+### Depth bands and a foreground layer
+- **Decision:** Depth offsets are **named** (`DEPTH_OFFSET.contactShadow / piece /
+  overlay` in `WorldDepth.ts`) instead of bare literals, and pieces the courier walks
+  *under* — the southern entrance arch and the canopy trees framing the square — are
+  placed on a **foreground layer** (`foregroundDepth`, base 400) that draws above every
+  entity on every map while still Y-sorting within itself. Terrain gains restrained
+  **edge darkening**: three stepped bands of decreasing alpha (0.085 → 0.022) at the map
+  boundary, drawn above the terrain stack and far below entities.
+- **Reason:** Depth was expressed as scattered magic numbers, so nothing said what a
+  depth meant, and canopy layered by Y alone cannot overlap the courier the way the
+  reference illustration frames them.
+- **Consequences:** `foreground: true` is a per-placement opt-in reserved for pieces the
+  courier walks under — a piece the courier should be able to stand in front of must stay
+  Y-sorted. **Open question (⚠):** true elevation (cliffs, ledges, stairs) still needs art
+  the archive does not contain; this pass delivers foreground layering only.
+- **Status:** ✅ built (Pass 5).
+
+### One lighting recipe, derived from the footprint
+- **Decision:** Every cast shadow comes from `shadowRecipe()` in
+  `src/game/lighting.ts`: light from the **north-west**, so shadows fall south-east;
+  width, thickness, offset and alpha all derived from the piece's **ground-contact
+  footprint** (`footprintWidthPx`, the same helper the composition clearance rule uses),
+  with alpha easing from 0.26 on a small prop to 0.15 on a large mass.
+- **Reason:** Both set-piece renderers baked their own numbers — fixed 0.2 alpha, fixed
+  `y - 4` offset, `frameWidth * scale * 0.7` width — so a bench and a building cast the
+  same shape of shadow scaled up, and the props disagreed with the courier's own shadow
+  (which sits below the sprite). Nothing in the village agreed where the light was.
+- **Consequences:** Adding a prop means adding a sizing row (`propSizing.ts`), which then
+  supplies its shadow automatically. The courier's shadow image keeps its own offset and
+  now agrees in direction.
+- **Status:** ✅ built (Pass 6). Appearance is `REQUIRES SEELLE/BROWSER VERIFICATION`.
+
+### One size rule for the cast, measured by its figures
+- **Decision:** The tile-based size convention now covers entities, not just props.
+  `src/game/entitySizing.ts` declares, for every courier class, every authored NPC
+  pack, and the generated placeholder art: the art's canvas, the alpha-bounds box of
+  the *figure* inside it (height, width, and how far the feet sit below the canvas
+  centre), a named band, and an intended rendered height in tiles. Scale, contact box,
+  cast shadow, feet offset and name-tag height are all derived from that row, so no
+  entity file contains a `setScale` literal any more (asserted by test).
+- **Reason:** Pass 3 fixed the props but left the three entity classes on private
+  literals — courier 1.33, authored NPC art 0.095, monsters 1.1 — which on screen meant
+  0.75, 1.14 and 0.92 tiles of *figure*: villagers stood 1.5x the courier beside them
+  while monsters were barely taller, and nothing said which was intended. Entity art
+  cannot be measured by its canvas the way prop art can: the class frames put the figure
+  in 69% of a 36px square and the NPC pack in 82-89% of a 700px one, so the same number
+  meant different things in different packs. That is exactly how 1.33 and 0.095 came to
+  look comparable.
+- **Consequences:** The courier keeps its on-screen size (its scale is now derived and
+  lands on 1.333 for the bear and cat, 1.286 for the fox), so this corrects the entities
+  that disagreed with it rather than moving the character the camera and physics are
+  tuned around. Villagers come down to 0.95 tiles (from 1.14-1.24) and monsters up to
+  1.15 (from 0.92), so the cast reads as one world. Entity shadows are now the same
+  Pass 6 recipe ellipse every prop uses, sized from the entity's own contact, which
+  replaced the baked 32x24 `player-shadow` texture entirely (removed).
+  **Open question (⚠):** the rule makes a pre-existing grounding fact measurable — on a
+  48px tile the courier's feet land ~5px above the tile's bottom edge while a villager's
+  land on it and a monster's sink ~4px below. Correcting that moves sprites relative to
+  their collision bodies, which is a feel change, so it is recorded rather than done.
+  Whether the new sizes read right on screen is `REQUIRES SEELLE/BROWSER VERIFICATION`.
+- **Status:** ✅ built.
+
+### Plan properties are reviewed as images, not as screenshots
+- **Decision:** Visual Passes 2–6 are reviewed with `npm run composition:render`, which
+  rasterizes the *planners' own output* — the terrain plan, density bands, framing
+  clusters, the clearance audit and the shadow recipe — into PNGs under
+  `artifacts/composition/`, with no browser, no dev server and no gameplay. Six panels
+  per zone: authored codes, density, surface, plan pieces, clearance, lighting.
+- **Reason:** The browser baseline cannot answer the questions these passes ask. It shows
+  the world as it happens to be framed around the courier, with the HUD over it, so "is
+  the plaza the generator's disc or a rectangle", "are the bands actually banded",
+  "where did the arcs land", "does decoration touch a tile the player acts on" and "do the
+  shadows agree about the light" are all invisible in it. Those are properties of the
+  *plan*, and the plan is pure and Phaser-free.
+- **Consequences:** The harness must stay a renderer of decisions taken elsewhere — it
+  calls `buildTerrainPlan`, `footprintBoxTiles` and `shadowRecipe` and draws what they
+  return, never re-implementing a rule. `tests/data/composition-preview.test.ts` pins
+  that: it reads the pixel back out of each panel and compares it against the planner
+  (the paved disc tile for tile, the density priority order, every colour declared), and
+  asserts two runs are byte-identical. A magenta pixel means a map code the renderer does
+  not handle. Panels also record what the plan *planned* against what a zone can actually
+  *draw* — the valley authors no canopy or fringe art, so it plans 88 pieces and draws
+  none, which is a zone choice made visible rather than a silent gap.
+  Judging whether any of it looks good remains `REQUIRES SEELLE/BROWSER VERIFICATION`.
+- **Status:** ✅ built.
+
+### Composition intent lives in per-zone JSON, not in tuning constants
+- **Decision:** Where a zone's clearings, thickets and framed entrances are is authored
+  content: `src/data/maps/<zone>.composition.json`, read through the single registry
+  `src/game/compositionPlans.ts` (the same pattern `Maps.ts` uses for maps) and applied by
+  the planner in `src/game/terrainComposition.ts`. A plan can author the composition cell
+  size, the treeline band and class, the four band multipliers, any number of **regions**
+  (ellipse or rect, in tile coordinates, applied as *paint* in file order so a later region
+  can carve a clearing out of an earlier thicket), the **entrances** to frame (or `null` to
+  derive them from the map's own road mouths), the scatter densities, spacings and path
+  clearances, and the minimum height a piece must have to cover a suppressed blocking tile.
+- **Reason:** Pass 4 proved the mechanism — deliberate bands, a boundary treeline, framing
+  arcs at the plaza approaches — but left the numbers as constants inside the planner, so
+  the composition of a specific place could only be changed by editing a system. A zone's
+  own geography (where its square is, which way its roads leave, which corner should be
+  wooded) is content, and it belongs next to the map it describes.
+- **Consequences:** Precedence is explicit and unchanged in spirit: a **reserved** tile is
+  clear first (safety — decoration must never obscure a tile the player acts on), then the
+  **treeline** band (the world's edge is not left to chance), then an **authored region**
+  (intent), then the **seeded cell roll** (variation where nothing was authored). Two things
+  are deliberately *not* authorable, because they are rules rather than intent:
+  `RESERVED_RADIUS`, and `MOUTH_MERGE_TILES` / `APPROACH_CHAIN_TILES`, which only matter when
+  a zone derives its entrances. A zone with no plan gets `COMPOSITION_DEFAULTS`, which are
+  the numbers the planner used before, so an unauthored zone composes exactly as it did.
+  Parsing is strict and reports *every* problem rather than the first, because this is
+  hand-authored content; at runtime a rejected plan falls back to the defaults instead of
+  taking the zone's terrain down, while `npm run validate` and `npm run composition:render`
+  refuse to ship one. `validateComposition` adds the checks that matter after a map is
+  regenerated underneath a hand-written plan: a region that no longer touches the map, bands
+  that are no longer ordered open-to-dense, and an entrance that has stopped being a way in.
+  Measured effect on the shipped village: 8 regions, and the band counts move to
+  open 1264 / light 1477 / normal 725 / dense 2159 of 5625 (the open band is the square and
+  its ring plus the reserved margins), and the three authored entrances land
+  on the same tiles as the map's derived mouths (east 45,27 west 29,29 south 38,36) with
+  compass outward vectors instead of the centroid's tilted ones. The valley, which has no
+  paving at all and therefore derives nothing, authors its single gate. One honest
+  consequence: authoring *which* ground is dense makes the dense band smaller and puts it
+  where the woods already are, so the canopy-per-map-tile contrast between dense and light
+  ground moves from 3x to 1.78x — the band still decides how wooded a place feels (0.187 /
+  0.304 / 0.363 pieces per *woodland* tile, against a spacing floor that caps the dense band
+  at 0.39), but the ratio is now the packing ratio rather than the odds ratio. Whether the
+  authored clearings and thickets read the way they were meant to is
+  `REQUIRES SEELLE/BROWSER VERIFICATION`; the wiring is not.
+- **Status:** ✅ built (`tests/data/composition-plan.test.ts` 25 cases: defaults, full parse,
+  error collection, region paint order and tile-centre sampling, radii and spread rejection,
+  every `validateComposition` rule, and the shipped plans including the cross-check that the
+  village's authored entrances sit on the map's real road mouths).
+
 ---
 
 ## 1. Online Architecture & Authority

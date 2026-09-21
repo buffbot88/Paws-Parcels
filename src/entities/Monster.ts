@@ -3,6 +3,13 @@ import { TILE_SIZE } from "../game/GameConfig.ts";
 import { TextureKeys } from "../game/GameConstants.ts";
 import type { NetMonsterInfo } from "../net/GameSocket.ts";
 import { worldDepth } from "../game/WorldDepth.ts";
+import {
+  CREATURE_SIZING,
+  entityFeetOffsetPx,
+  entityNameTagOffsetPx,
+  entityScale,
+  entityShadow,
+} from "../game/entitySizing.ts";
 
 /** One cozy tint per species family (placeholder palette; art lands Phase 8). */
 const SPECIES_TINTS: Readonly<Record<string, number>> = {
@@ -29,6 +36,8 @@ export class Monster extends Phaser.GameObjects.Container {
   private nameTag: Phaser.GameObjects.Text;
   private hpBar: Phaser.GameObjects.Rectangle;
   private hpMax: number;
+  /** Tag height, derived from the creature's figure rather than hand-placed. */
+  private readonly nameTagY: number;
 
   constructor(scene: Phaser.Scene, info: NetMonsterInfo) {
     const px = info.pos.x * TILE_SIZE + TILE_SIZE / 2;
@@ -41,13 +50,25 @@ export class Monster extends Phaser.GameObjects.Container {
     this.targetY = py;
     this.hpMax = info.maxHp || 1;
 
+    // Placeholder art, sized by the shared entity convention rather than a
+    // literal: a monster must read as bigger than the courier it chases, and
+    // "1.1" only looked bigger while the courier was mis-measured by its canvas.
     const blob = scene.add
       .image(0, 0, TextureKeys.NpcBlob)
       .setTint(SPECIES_TINTS[info.key] ?? 0x777777)
-      .setScale(1.1);
-    const shadow = scene.add.image(0, 12, TextureKeys.PlayerShadow);
+      .setScale(entityScale(CREATURE_SIZING));
+    const recipe = entityShadow(CREATURE_SIZING);
+    const shadow = scene.add.ellipse(
+      0,
+      entityFeetOffsetPx(CREATURE_SIZING),
+      recipe.widthPx,
+      recipe.heightPx,
+      recipe.color,
+      recipe.alpha,
+    );
+    this.nameTagY = entityNameTagOffsetPx(CREATURE_SIZING);
     this.nameTag = scene.add
-      .text(0, -34, info.displayName, {
+      .text(0, this.nameTagY, info.displayName, {
         fontFamily: "Georgia, serif",
         fontSize: "13px",
         color: "#4a2f2f",
@@ -87,7 +108,7 @@ export class Monster extends Phaser.GameObjects.Container {
     this.x += (this.targetX - this.x) * LERP;
     this.y += (this.targetY - this.y) * LERP;
     this.setDepth(worldDepth(this.y));
-    this.nameTag.setPosition(0, -34);
+    this.nameTag.setPosition(0, this.nameTagY);
     this.hpBar.setPosition(0, -18);
   }
 

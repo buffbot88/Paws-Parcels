@@ -16,7 +16,6 @@ export const TextureKeys = {
   /** Single generated tileset sheet — tile frame index comes from src/game/Tiles.ts. */
   TilesetMain: "tileset-main",
   PlayerIdleDown: "player-idle-down",
-  PlayerShadow: "player-shadow",
   /** White blob tinted per NPC in the NPC entity (Phase 3). */
   NpcBlob: "npc-blob",
   /** Small marker placed on interactable objects (mailbox, board, signs). */

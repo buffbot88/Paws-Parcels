@@ -2,13 +2,20 @@ import Phaser from "phaser";
 import { TILE_SIZE } from "../game/GameConfig.ts";
 import { TextureKeys } from "../game/GameConstants.ts";
 import type { NPC as NPCDefinition } from "../types/NPCtypes.ts";
-import { worldDepth } from "../game/WorldDepth.ts";
+import { DEPTH_OFFSET, worldDepth } from "../game/WorldDepth.ts";
 import {
   npcAnimationKey,
   npcArtForDefinition,
   npcFrameKey,
   type CloverNpcArt,
 } from "../game/cloverVillageNpcAssets.ts";
+import {
+  entityFeetOffsetPx,
+  entityNameTagOffsetPx,
+  entityScale,
+  entityShadow,
+  villagerSizing,
+} from "../game/entitySizing.ts";
 
 /**
  * A static NPC with supplied Clover Village artwork where mapped; unmapped
@@ -20,6 +27,14 @@ export class NPC extends Phaser.Physics.Arcade.Sprite {
   readonly npcArtKey: string;
   private readonly nameTag: Phaser.GameObjects.Text;
   private readonly npcArt: CloverNpcArt | null;
+  /**
+   * The NPC's cast shadow.
+   *
+   * A sibling object rather than a child of the sprite, so the idle bob tween
+   * moves the villager and not the patch of ground they are standing on — the
+   * same reason every prop's shadow is placed from its own base line.
+   */
+  private readonly shadow: Phaser.GameObjects.Ellipse;
 
   constructor(scene: Phaser.Scene, definition: NPCDefinition) {
     const x = definition.homeTile.x * TILE_SIZE + TILE_SIZE / 2;
@@ -46,14 +61,31 @@ export class NPC extends Phaser.Physics.Arcade.Sprite {
       TILE_SIZE - 24 - 4,
     );
 
-    // Authored frames are 700px square; this keeps the courier cast readable
-    // beside the large village overlays without changing their collision body.
-    this.setScale(npcArt === null ? 1 : 0.095);
+    // Sized by the shared entity convention. Authored frames are 700px square
+    // with the figure in 82-89% of that, so the canvas height is not the
+    // villager's height — the figure is (see entitySizing.ts). The collision
+    // body is unaffected either way.
+    const sizing = villagerSizing(npcArt);
+    this.setScale(entityScale(sizing));
     this.setDepth(worldDepth(y));
     if (this.npcArt !== null) this.play(npcAnimationKey(this.npcArt));
 
+    // One lighting recipe for the whole world (Pass 6), sized from this
+    // villager's own ground contact instead of a fixed ellipse.
+    const recipe = entityShadow(sizing);
+    this.shadow = scene.add
+      .ellipse(
+        x,
+        y + entityFeetOffsetPx(sizing),
+        recipe.widthPx,
+        recipe.heightPx,
+        recipe.color,
+        recipe.alpha,
+      )
+      .setDepth(worldDepth(y, DEPTH_OFFSET.contactShadow));
+
     this.nameTag = scene.add
-      .text(x, y - (npcArt === null ? 30 : 48), definition.name, {
+      .text(x, y + entityNameTagOffsetPx(sizing), definition.name, {
         fontFamily: "Georgia, serif",
         fontSize: npcArt === null ? "12px" : "11px",
         color: "#fff8e8",
@@ -65,7 +97,7 @@ export class NPC extends Phaser.Physics.Arcade.Sprite {
       .setOrigin(0.5)
       .setAlpha(0.88)
       .setShadow(0, 2, "#172219", 3, true, true)
-      .setDepth(worldDepth(y, 0.08));
+      .setDepth(worldDepth(y, DEPTH_OFFSET.overlay));
 
     scene.tweens.add({
       targets: [this, this.nameTag],
@@ -81,6 +113,7 @@ export class NPC extends Phaser.Physics.Arcade.Sprite {
   preUpdate(time: number, delta: number): void {
     super.preUpdate(time, delta);
     this.setDepth(worldDepth(this.y));
-    this.nameTag.setDepth(worldDepth(this.y, 0.08));
+    this.nameTag.setDepth(worldDepth(this.y, DEPTH_OFFSET.overlay));
+    this.shadow.setDepth(worldDepth(this.y, DEPTH_OFFSET.contactShadow));
   }
 }

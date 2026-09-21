@@ -56,13 +56,6 @@ export class PreloaderScene extends Phaser.Scene {
     p.generateTexture(TextureKeys.PlayerIdleDown, TILE_SIZE, TILE_SIZE);
     p.destroy();
 
-    // Soft shadow ellipse that sits under the player.
-    const s = this.make.graphics();
-    s.fillStyle(0x000000, 0.25);
-    s.fillEllipse(1, 6, 30, 12);
-    s.generateTexture(TextureKeys.PlayerShadow, 32, 24);
-    s.destroy();
-
     // NPC placeholder: white blob (tinted per NPC at runtime in NPC.ts).
     const n = this.make.graphics();
     n.fillStyle(0xffffff, 1);

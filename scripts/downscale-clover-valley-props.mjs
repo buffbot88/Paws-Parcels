@@ -17,10 +17,24 @@
  * The script is idempotent: a second run finds the rendered sizes unchanged
  * and recomputes F ~ 1, leaving files and scales untouched (modulo rounding).
  *
- * Run: node scripts/downscale-clover-valley-props.mjs
- * Writes: the PNGs in place under reference/assets/new/CloverValley/, and
- * rewrites scale values + quest frame rects in src/game/cloverVillagePlacements.ts.
- * Then: npm run assets:inventory to refresh the inventory bytes.
+ * ## Gating (visual Pass 3)
+ *
+ * This script and hand-tuned composition are in direct tension: it derives its
+ * factors FROM the placements and then rewrites the placements' `scale:` values
+ * by line index. A run after a deliberate scale change would silently undo it —
+ * which is exactly what raising the ponds, bridges and flower fronts does.
+ * So a bare run is now a DRY RUN and says what it would do, and it refuses to
+ * upscale art whose rendered size has grown:
+ *
+ *   node scripts/downscale-clover-valley-props.mjs                  # report only
+ *   node scripts/downscale-clover-valley-props.mjs --write          # apply
+ *   ... --write --allow-upscale                                     # reviewed growth
+ *
+ * Writes (with --write): the PNGs in place under
+ * reference/assets/new/CloverValley/, and scale values + quest frame rects in
+ * src/game/cloverVillagePlacements.ts. After that, refresh the inventory bytes
+ * with `npm run assets:inventory`, and re-run `npm test` — the prop-sizing audit
+ * checks that the rewrite left every rendered height inside its band.
  */
 import { readFileSync, writeFileSync } from "node:fs";
 import { dirname, resolve } from "node:path";
@@ -29,6 +43,18 @@ import { decodePNG, encodePNG } from "./lib/png.mjs";
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const placementsPath = resolve(root, "src/game/cloverVillagePlacements.ts");
+
+const argv = process.argv.slice(2);
+/** Apply the resizes and the scale rewrites. Without this the run only reports. */
+const WRITE = argv.includes("--write");
+/** Permit re-encoding art to a LARGER source, i.e. a reviewed scale increase. */
+const ALLOW_UPSCALE = argv.includes("--allow-upscale");
+for (const flag of argv) {
+  if (flag !== "--write" && flag !== "--allow-upscale") {
+    console.error(`Unknown argument ${flag}. Use --write and/or --allow-upscale.`);
+    process.exit(2);
+  }
+}
 
 /**
  * New-pack texture keys to downscale, with their source file. Mirrors the
@@ -219,6 +245,26 @@ for (const [key, file] of Object.entries(PACK)) {
 /* Verify: every placement keeps its rendered size within 1.5px        */
 /* ------------------------------------------------------------------ */
 const qF = factors.get("questItems").F;
+
+// Upscaling is the tell-tale of a placement whose rendered size grew since the
+// art was last cut: the script would re-encode bigger art to keep the world size
+// identical, i.e. spend bytes to undo a deliberate change. Refuse unless asked.
+const grown = [...factors.entries()].filter(([, f]) => f.F > 1.02);
+if (grown.length > 0 && !ALLOW_UPSCALE) {
+  console.error(
+    [
+      "Refusing to upscale art. These props now render larger than when they were last cut:",
+      ...grown.map(
+        ([key, f]) =>
+          `  ${key}: F=${f.F.toFixed(3)} (${f.nativeMax}px native, largest rendered ${f.maxRendered.toFixed(1)}px)`,
+      ),
+      "A hand-tuned scale increase is already satisfied at the current art size.",
+      "Re-run with --allow-upscale only after deciding the art itself should grow.",
+    ].join("\n"),
+  );
+  process.exit(1);
+}
+
 for (const [key, entries] of entryScales) {
   const f = factors.get(key);
   const errs = [];
@@ -256,8 +302,9 @@ for (const [key, file] of Object.entries(PACK)) {
   }
   const { px } = decodePNG(abs);
   const out = resampleRGBA(px, w, h, newW, newH);
-  writeFileSync(abs, encodePNG(newW, newH, Buffer.from(out.buffer, out.byteOffset, out.byteLength)));
-  const after = readFileSync(abs).length;
+  const encoded = encodePNG(newW, newH, Buffer.from(out.buffer, out.byteOffset, out.byteLength));
+  if (WRITE) writeFileSync(abs, encoded);
+  const after = WRITE ? readFileSync(abs).length : encoded.length;
   bytesBefore += before;
   bytesAfter += after;
   const minBefore = (Math.max(w, h) / maxRendered).toFixed(1);
@@ -267,7 +314,24 @@ for (const [key, file] of Object.entries(PACK)) {
   );
 }
 console.log(report.join("\n"));
+if (bytesBefore === 0) {
+  console.log("\nNothing to resize: every prop already matches the 4x rule.");
+  process.exit(0);
+}
 console.log(`\nFile bytes: ${(bytesBefore / 1024).toFixed(0)}KB -> ${(bytesAfter / 1024).toFixed(0)}KB (${(100 - (100 * bytesAfter) / bytesBefore).toFixed(0)}% smaller)`);
+if (!WRITE) {
+  console.log(
+    [
+      "",
+      "DRY RUN — no files written.",
+      "This run would also rewrite `scale:` values in src/game/cloverVillagePlacements.ts",
+      "by line index, including hand-tuned composition. Review the table above, then",
+      "re-run with --write, and afterwards `npm test` (the prop-sizing audit re-checks",
+      "every rendered height) plus `npm run assets:inventory`.",
+    ].join("\n"),
+  );
+  process.exit(0);
+}
 
 /* ------------------------------------------------------------------ */
 /* Rewrite placement scales + quest frame rects in the TS (by line idx) */

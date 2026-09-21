@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import type { TerrainMaterials } from "../../src/game/terrainAssets.ts";
 
 /**
  * Shared interactable-art parity harness: every mapped zone's interactable
@@ -61,6 +62,23 @@ function nearestPlacement(
 
 /** How close (in tiles) the dedicated art must sit to its interactable. */
 const ADJACENCY_TILES = 4;
+
+/**
+ * The texture keys a zone's terrain materials draw directly, for a zone's
+ * `surfaceKeys`. Derived from the material set so adding a terrain piece cannot
+ * register as a dead set-piece key.
+ *
+ * Foliage is deliberately EXCLUDED: a zone wires the same decor art both as
+ * canopy cover and as curated set pieces, so those keys must still be proven to
+ * appear in the world by the placement check.
+ */
+export function terrainSurfaceKeys(materials: TerrainMaterials): readonly string[] {
+  const keys: string[] = [materials.base, materials.path];
+  if (materials.patch !== undefined) keys.push(materials.patch);
+  if (materials.plaza !== undefined) keys.push(materials.plaza);
+  for (const variants of Object.values(materials.fringes ?? {})) keys.push(...variants);
+  return keys;
+}
 
 /** Emit the standard interactable-art parity suite for one zone. */
 export function describeInteractableArtParity(spec: InteractableArtParitySpec): void {

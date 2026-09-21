@@ -1,5 +1,6 @@
 import { createAvatar, createPanel, createProgressBar } from "./hud/primitives.ts";
 import { createIcon } from "./hud/icons.ts";
+import { hudLayer } from "./hud/layer.ts";
 
 export interface PlayerStatusData {
   name: string;
@@ -77,7 +78,7 @@ export class PlayerStatusCard {
     // body is a column; make the card a row via the player-card class.
     panel.body.style.flexDirection = "row";
     panel.body.style.alignItems = "center";
-    document.getElementById("game-container")?.appendChild(this.root);
+    hudLayer()?.appendChild(this.root);
     this.renderHp();
   }
 

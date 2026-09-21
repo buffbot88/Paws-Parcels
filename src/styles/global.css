@@ -191,13 +191,29 @@ body {
   background: #bcd8a6;
 }
 
-#game-container canvas {
+/* The Phaser canvas is the floor of the game window: it fills the box exactly
+   and takes no part in its flow, so no DOM panel can displace or clip it.
+   Scoped to the direct child so the minimap's nested canvases keep their own
+   layout inside #hud-layer. */
+#game-container > canvas {
   display: block;
+  position: absolute;
+  inset: 0;
   width: 100%;
   height: 100%;
-  position: relative;
   z-index: 0;
 }
+
+/* Canvas-relative world HUD (HUD v4). Children are absolutely positioned, so
+   mounting or removing a panel never reflows the world. */
+#hud-layer {
+  position: absolute;
+  inset: 0;
+  z-index: 10;
+  pointer-events: none;
+}
+
+#hud-layer > * { pointer-events: auto; }
 
 #hud-overlays {
   position: fixed;

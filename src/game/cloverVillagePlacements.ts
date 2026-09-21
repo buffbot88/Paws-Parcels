@@ -11,12 +11,31 @@
  * interactable tile has dedicated art here, catching silent gaps like a missing
  * mailbox.
  */
+import type { TerrainMaterials } from "./terrainAssets.ts";
 
 export const CloverVillageTextureKeys = {
   plaza: "clover-village-plaza-authored",
   // Authored surface (land + road), drawn under everything.
   ground: "clover-village-ground-authored",
   road: "clover-village-road-authored",
+  // Ground silhouette kit (CloverVillage pack) — visual Pass 2 terrain.
+  //
+  // The compass roles come from design/assets/ground-topology-roles.json and
+  // were independently re-confirmed from the art itself: each piece is a ragged
+  // grass strip lying along one outer edge of a 256px square (land_3/7 solid
+  // south, land_4/8 north, land_5/9 west, land_6/10 east; land_2 is an island,
+  // land_1 a seamless repeat). Only the four edge pairs are wired, because only
+  // they have a confirmed side; the corner/compound pieces stay unused until
+  // their placement is reviewed.
+  grassPatch: "clover-village-grass-patch",
+  fringeNorthA: "clover-village-grass-fringe-north-a",
+  fringeNorthB: "clover-village-grass-fringe-north-b",
+  fringeSouthA: "clover-village-grass-fringe-south-a",
+  fringeSouthB: "clover-village-grass-fringe-south-b",
+  fringeWestA: "clover-village-grass-fringe-west-a",
+  fringeWestB: "clover-village-grass-fringe-west-b",
+  fringeEastA: "clover-village-grass-fringe-east-a",
+  fringeEastB: "clover-village-grass-fringe-east-b",
   // Buildings (CloverVillage pack).
   postOffice: "clover-village-building-post-office",
   shop: "clover-village-building-shop",
@@ -102,6 +121,14 @@ export interface CloverVillageSetPieceDefinition {
   rotation?: number;
   /** Mirror the art horizontally. */
   flipX?: boolean;
+  /**
+   * Draw in the foreground layer, over the courier, instead of sorting against
+   * them by world Y (visual Pass 5). Reserved for pieces the courier walks
+   * *under* — the entrance arch, and canopy trees that frame a view — because a
+   * foreground piece the courier should be able to stand in front of would look
+   * wrong from the south. See `DEPTH`/`foregroundDepth` in WorldDepth.ts.
+   */
+  foreground?: boolean;
 }
 
 /**
@@ -133,12 +160,12 @@ export const SET_PIECES: CloverVillageSetPieceDefinition[] = [
   { texture: CloverVillageTextureKeys.parcels, tileX: 39.3, baseTileY: 23, scale: 0.2501, depthOffset: 0.02 },
   // Courier Square's central flower bed (reference look): a ring of the
   // florist's flower art around the tilemap's X-flower cluster at (36-38, 27-28).
-  { texture: CloverVillageTextureKeys.flowerFront, tileX: 37, baseTileY: 26.4, scale: 0.12 },
-  { texture: CloverVillageTextureKeys.flowerFront, tileX: 35.9, baseTileY: 27.5, scale: 0.12 },
-  { texture: CloverVillageTextureKeys.flowerFront, tileX: 38.1, baseTileY: 27.5, scale: 0.12 },
-  { texture: CloverVillageTextureKeys.flowerFront, tileX: 37, baseTileY: 28.6, scale: 0.12 },
-  { texture: CloverVillageTextureKeys.flowerFront, tileX: 36, baseTileY: 28.4, scale: 0.12 },
-  { texture: CloverVillageTextureKeys.flowerFront, tileX: 38, baseTileY: 28.4, scale: 0.12 },
+  { texture: CloverVillageTextureKeys.flowerFront, tileX: 37, baseTileY: 26.4, scale: 0.25 },
+  { texture: CloverVillageTextureKeys.flowerFront, tileX: 35.9, baseTileY: 27.5, scale: 0.25 },
+  { texture: CloverVillageTextureKeys.flowerFront, tileX: 38.1, baseTileY: 27.5, scale: 0.25 },
+  { texture: CloverVillageTextureKeys.flowerFront, tileX: 37, baseTileY: 28.6, scale: 0.25 },
+  { texture: CloverVillageTextureKeys.flowerFront, tileX: 36, baseTileY: 28.4, scale: 0.25 },
+  { texture: CloverVillageTextureKeys.flowerFront, tileX: 38, baseTileY: 28.4, scale: 0.25 },
   // Café — Building 16 thatched cottage (footprint x15-19, y25-28).
   { texture: CloverVillageTextureKeys.cafe, tileX: 17.5, baseTileY: 29, scale: 0.49 },
   { texture: CloverVillageTextureKeys.cafeSign, tileX: 19.7, baseTileY: 29, scale: 0.2502, depthOffset: 0.02 },
@@ -182,7 +209,7 @@ export const SET_PIECES: CloverVillageSetPieceDefinition[] = [
   { texture: CloverVillageTextureKeys.lampPost, tileX: 43.4, baseTileY: 25.2, scale: 0.2354 },
   { texture: CloverVillageTextureKeys.lampPost, tileX: 30.6, baseTileY: 32.4, scale: 0.2354 },
   { texture: CloverVillageTextureKeys.lampPost, tileX: 43.4, baseTileY: 32.4, scale: 0.2354 },
-  { texture: CloverVillageTextureKeys.greenery, tileX: 31.2, baseTileY: 28.6, scale: 1.1 },
+  { texture: CloverVillageTextureKeys.greenery, tileX: 31.2, baseTileY: 28.6, scale: 0.52 },
   { texture: CloverVillageTextureKeys.greeneryAlt, tileX: 42.8, baseTileY: 28.2, scale: 0.7 },
   { texture: CloverVillageTextureKeys.stones, tileX: 40.9, baseTileY: 26.2, scale: 0.85, depthOffset: 0.01 },
   { texture: CloverVillageTextureKeys.stonesAlt, tileX: 32.2, baseTileY: 33.8, scale: 0.8, depthOffset: 0.01 },
@@ -193,7 +220,7 @@ export const SET_PIECES: CloverVillageSetPieceDefinition[] = [
   { texture: CloverVillageTextureKeys.lampPost, tileX: 39.4, baseTileY: 16, scale: 0.2354 },
   { texture: CloverVillageTextureKeys.courierBanner, tileX: 40.5, baseTileY: 8.8, scale: 0.2116 },
   { texture: CloverVillageTextureKeys.greeneryFourth, tileX: 34.8, baseTileY: 9.4, scale: 1.0 },
-  { texture: CloverVillageTextureKeys.greeneryFifth, tileX: 41.2, baseTileY: 12.6, scale: 1.2 },
+  { texture: CloverVillageTextureKeys.greeneryFifth, tileX: 41.2, baseTileY: 12.6, scale: 1.1 },
   // South road (x37-38, y36-74).
   { texture: CloverVillageTextureKeys.lampPost, tileX: 35.6, baseTileY: 40, scale: 0.2354 },
   { texture: CloverVillageTextureKeys.lampPost, tileX: 39.4, baseTileY: 44, scale: 0.2354 },
@@ -205,13 +232,15 @@ export const SET_PIECES: CloverVillageSetPieceDefinition[] = [
   { texture: CloverVillageTextureKeys.lampPost, tileX: 41.8, baseTileY: 69.4, scale: 0.2501 },
   // Grand wooden gate arch (reference look) framing the Happy Valley exit —
   // stone pillar bases, lanterns, white banner with the clover emblem.
-  { texture: CloverVillageTextureKeys.entranceArch, tileX: 37.5, baseTileY: 72.5, scale: 0.2999, depthOffset: 0.03 },
+  // The southern gate: the courier walks through it on the route to Happy
+  // Valley, so it draws in the foreground layer and covers them on the way in.
+  { texture: CloverVillageTextureKeys.entranceArch, tileX: 37.5, baseTileY: 72.5, scale: 0.2999, foreground: true },
   // Directional Signpost — LAST, on the south verge beside the Happy Valley
   // transition tile (37,74). Wired from decor_4 (the catalog's only signpost).
   { texture: CloverVillageTextureKeys.signpost, tileX: 34.9, baseTileY: 72.6, scale: 0.4, flipX: true },
   // East arm + southeast connector dressing.
   { texture: CloverVillageTextureKeys.greeneryThird, tileX: 47.5, baseTileY: 26.2, scale: 0.75 },
-  { texture: CloverVillageTextureKeys.greenery, tileX: 44.8, baseTileY: 38.4, scale: 0.95 },
+  { texture: CloverVillageTextureKeys.greenery, tileX: 44.8, baseTileY: 38.4, scale: 0.45 },
   { texture: CloverVillageTextureKeys.stonesThird, tileX: 45.6, baseTileY: 35.2, scale: 0.75, depthOffset: 0.01 },
 
   // --- 4. Moss's Garden — open fenced garden (x40-52, y40-47) --------------
@@ -221,24 +250,24 @@ export const SET_PIECES: CloverVillageSetPieceDefinition[] = [
   { texture: CloverVillageTextureKeys.gardenBed, tileX: 48.2, baseTileY: 43.5, scale: 0.2498, depthOffset: 0.02, flipX: true },
   { texture: CloverVillageTextureKeys.gardenBed, tileX: 46.8, baseTileY: 44.4, scale: 0.2498, depthOffset: 0.02 },
   { texture: CloverVillageTextureKeys.gardenBed, tileX: 49, baseTileY: 46.2, scale: 0.2498, depthOffset: 0.02, flipX: true },
-  { texture: CloverVillageTextureKeys.greeneryAlt, tileX: 42.2, baseTileY: 41.4, scale: 0.65 },
+  { texture: CloverVillageTextureKeys.greeneryAlt, tileX: 42.2, baseTileY: 41.4, scale: 0.7 },
   { texture: CloverVillageTextureKeys.greeneryFourth, tileX: 49.8, baseTileY: 45.8, scale: 0.9 },
   { texture: CloverVillageTextureKeys.greeneryFifth, tileX: 50.6, baseTileY: 41.6, scale: 1.1 },
-  { texture: CloverVillageTextureKeys.stones, tileX: 42.6, baseTileY: 46.2, scale: 0.7, depthOffset: 0.01 },
+  { texture: CloverVillageTextureKeys.stones, tileX: 42.6, baseTileY: 46.2, scale: 0.85, depthOffset: 0.01 },
 
   // --- 5. NW pond + Rabbit Burrow clearing ---------------------------------
   { texture: CloverVillageTextureKeys.pondArea, tileX: 7.5, baseTileY: 11.8, scale: 0.2498 },
-  { texture: CloverVillageTextureKeys.bridge, tileX: 8.5, baseTileY: 12.3, scale: 0.25 },
+  { texture: CloverVillageTextureKeys.bridge, tileX: 8.5, baseTileY: 12.3, scale: 0.3 },
   // Lily pads floating on the pond water (reference look).
   { texture: CloverVillageTextureKeys.lilyPads, tileX: 8.5, baseTileY: 9.5, scale: 0.2, depthOffset: 0.015 },
   { texture: CloverVillageTextureKeys.lilyPads, tileX: 9.6, baseTileY: 6.4, scale: 0.2, depthOffset: 0.015, flipX: true },
   { texture: CloverVillageTextureKeys.lilyPads, tileX: 7.5, baseTileY: 10.5, scale: 0.2, depthOffset: 0.015 },
-  { texture: CloverVillageTextureKeys.pondArea, tileX: 10.4, baseTileY: 5.2, scale: 0.2029 },
+  { texture: CloverVillageTextureKeys.pondArea, tileX: 10.4, baseTileY: 5.2, scale: 0.25 },
   { texture: CloverVillageTextureKeys.rabbitBurrow, tileX: 18.6, baseTileY: 11.4, scale: 0.2499 },
-  { texture: CloverVillageTextureKeys.greenery, tileX: 20.8, baseTileY: 9.6, scale: 1.0 },
+  { texture: CloverVillageTextureKeys.greenery, tileX: 20.8, baseTileY: 9.6, scale: 0.47 },
   { texture: CloverVillageTextureKeys.stonesAlt, tileX: 15.2, baseTileY: 11.8, scale: 0.85, depthOffset: 0.01 },
   { texture: CloverVillageTextureKeys.stonesThird, tileX: 21.4, baseTileY: 12.2, scale: 0.8, depthOffset: 0.01 },
-  { texture: CloverVillageTextureKeys.tree, tileX: 13, baseTileY: 8.5, scale: 0.27 },
+  { texture: CloverVillageTextureKeys.tree, tileX: 13, baseTileY: 8.5, scale: 0.46 },
 
   // --- 6. Hollow Oak clearing (discovery trail, southwest) ------------------
   { texture: CloverVillageTextureKeys.hollowOak, tileX: 13.5, baseTileY: 60.8, scale: 0.2502 },
@@ -247,114 +276,120 @@ export const SET_PIECES: CloverVillageSetPieceDefinition[] = [
   { texture: CloverVillageTextureKeys.stones, tileX: 11.2, baseTileY: 60.4, scale: 0.9, depthOffset: 0.01 },
   { texture: CloverVillageTextureKeys.stonesThird, tileX: 16.2, baseTileY: 59.6, scale: 0.8, depthOffset: 0.01 },
   { texture: CloverVillageTextureKeys.greeneryThird, tileX: 10.8, baseTileY: 58.6, scale: 0.85 },
-  { texture: CloverVillageTextureKeys.greeneryFifth, tileX: 16.6, baseTileY: 61.4, scale: 1.15 },
+  { texture: CloverVillageTextureKeys.greeneryFifth, tileX: 16.6, baseTileY: 61.4, scale: 1.1 },
 
   // --- 7. SE pond + picnic clearing ----------------------------------------
   // Shore cluster beside the object-pond-edge marker (49,56) so the pond art
   // reaches the marker's bank rather than sitting far off-center.
-  { texture: CloverVillageTextureKeys.pondArea, tileX: 50.4, baseTileY: 56.6, scale: 0.1561 },
+  { texture: CloverVillageTextureKeys.pondArea, tileX: 50.4, baseTileY: 56.6, scale: 0.25 },
   // Lumi's moonlight notebook, dropped on the pond-edge shore (quest item art).
   { texture: CloverVillageTextureKeys.questItems, frame: "moonNotebook", tileX: 49.6, baseTileY: 57, scale: 0.9, flipX: true },
   { texture: CloverVillageTextureKeys.pondArea, tileX: 53, baseTileY: 57.6, scale: 0.2498 },
-  { texture: CloverVillageTextureKeys.pondArea, tileX: 58.5, baseTileY: 68.6, scale: 0.2341 },
-  { texture: CloverVillageTextureKeys.bridge, tileX: 52.4, baseTileY: 57.4, scale: 0.2143 },
+  { texture: CloverVillageTextureKeys.pondArea, tileX: 58.5, baseTileY: 68.6, scale: 0.25 },
+  { texture: CloverVillageTextureKeys.bridge, tileX: 52.4, baseTileY: 57.4, scale: 0.3 },
   // Lily pads on the pond water (reference look).
   { texture: CloverVillageTextureKeys.lilyPads, tileX: 55.5, baseTileY: 58.5, scale: 0.2, depthOffset: 0.015 },
   { texture: CloverVillageTextureKeys.lilyPads, tileX: 53.5, baseTileY: 60.5, scale: 0.2, depthOffset: 0.015, flipX: true },
   { texture: CloverVillageTextureKeys.lilyPads, tileX: 57.5, baseTileY: 60.5, scale: 0.2, depthOffset: 0.015 },
   { texture: CloverVillageTextureKeys.picnic, tileX: 65.5, baseTileY: 57.8, scale: 0.2499 },
-  { texture: CloverVillageTextureKeys.treeAlt, tileX: 68.5, baseTileY: 54.5, scale: 0.26 },
+  { texture: CloverVillageTextureKeys.treeAlt, tileX: 68.5, baseTileY: 54.5, scale: 0.45 },
   { texture: CloverVillageTextureKeys.greeneryAlt, tileX: 62.4, baseTileY: 56.2, scale: 0.7 },
-  { texture: CloverVillageTextureKeys.stones, tileX: 60.8, baseTileY: 66.8, scale: 0.75, depthOffset: 0.01 },
+  { texture: CloverVillageTextureKeys.stones, tileX: 60.8, baseTileY: 66.8, scale: 0.85, depthOffset: 0.01 },
 
   // --- 8. Storybook trees framing the village ------------------------------
-  { texture: CloverVillageTextureKeys.tree, tileX: 26, baseTileY: 20.5, scale: 0.27 },
-  { texture: CloverVillageTextureKeys.treeAlt, tileX: 49, baseTileY: 22.5, scale: 0.29 },
-  { texture: CloverVillageTextureKeys.treeAlt, tileX: 28.5, baseTileY: 43.5, scale: 0.26 },
-  { texture: CloverVillageTextureKeys.tree, tileX: 47.5, baseTileY: 36.8, scale: 0.25 },
-  { texture: CloverVillageTextureKeys.tree, tileX: 33, baseTileY: 51.5, scale: 0.25 },
-  { texture: CloverVillageTextureKeys.treeAlt, tileX: 42.5, baseTileY: 52.5, scale: 0.24 },
-  { texture: CloverVillageTextureKeys.tree, tileX: 24.5, baseTileY: 33.5, scale: 0.24 },
-  { texture: CloverVillageTextureKeys.treeAlt, tileX: 50.5, baseTileY: 33.5, scale: 0.24 },
+  //
+  // These are the frame, not the forest: they ring the square and their canopy
+  // overhangs the routes in and out of it, so they draw in the foreground layer
+  // and overlap the courier as they do in the reference illustration. The
+  // boundary trees in section 10 stay Y-sorted — the courier must be able to
+  // stand in front of a tree in the woods.
+  { texture: CloverVillageTextureKeys.tree, tileX: 26, baseTileY: 20.5, scale: 0.46, foreground: true },
+  { texture: CloverVillageTextureKeys.treeAlt, tileX: 49, baseTileY: 22.5, scale: 0.5, foreground: true },
+  { texture: CloverVillageTextureKeys.treeAlt, tileX: 28.5, baseTileY: 43.5, scale: 0.45, foreground: true },
+  { texture: CloverVillageTextureKeys.tree, tileX: 47.5, baseTileY: 36.8, scale: 0.44, foreground: true },
+  { texture: CloverVillageTextureKeys.tree, tileX: 33, baseTileY: 51.5, scale: 0.44, foreground: true },
+  { texture: CloverVillageTextureKeys.treeAlt, tileX: 42.5, baseTileY: 52.5, scale: 0.42, foreground: true },
+  { texture: CloverVillageTextureKeys.tree, tileX: 24.5, baseTileY: 33.5, scale: 0.42, foreground: true },
+  { texture: CloverVillageTextureKeys.treeAlt, tileX: 50.5, baseTileY: 33.5, scale: 0.42, foreground: true },
 
   // --- 9. Vegetation + stone scatter along the routes ----------------------
-  { texture: CloverVillageTextureKeys.greenery, tileX: 21.5, baseTileY: 24.5, scale: 1.0 },
+  { texture: CloverVillageTextureKeys.greenery, tileX: 21.5, baseTileY: 24.5, scale: 0.47 },
   { texture: CloverVillageTextureKeys.greeneryAlt, tileX: 45.5, baseTileY: 30.8, scale: 0.7 },
   { texture: CloverVillageTextureKeys.greeneryThird, tileX: 30.5, baseTileY: 37.5, scale: 0.8 },
   { texture: CloverVillageTextureKeys.greeneryFourth, tileX: 52.5, baseTileY: 36.5, scale: 0.95 },
-  { texture: CloverVillageTextureKeys.greenery, tileX: 43.5, baseTileY: 49.5, scale: 0.9 },
+  { texture: CloverVillageTextureKeys.greenery, tileX: 43.5, baseTileY: 49.5, scale: 0.42 },
   { texture: CloverVillageTextureKeys.greeneryFifth, tileX: 31.5, baseTileY: 47.5, scale: 1.1 },
   { texture: CloverVillageTextureKeys.greeneryAlt, tileX: 34.5, baseTileY: 56.5, scale: 0.75 },
   { texture: CloverVillageTextureKeys.greeneryThird, tileX: 41.5, baseTileY: 64.5, scale: 0.8 },
-  { texture: CloverVillageTextureKeys.greenery, tileX: 33.5, baseTileY: 66.5, scale: 0.95 },
-  { texture: CloverVillageTextureKeys.stones, tileX: 36.2, baseTileY: 21.4, scale: 0.8, depthOffset: 0.01 },
+  { texture: CloverVillageTextureKeys.greenery, tileX: 33.5, baseTileY: 66.5, scale: 0.45 },
+  { texture: CloverVillageTextureKeys.stones, tileX: 36.2, baseTileY: 21.4, scale: 0.85, depthOffset: 0.01 },
   { texture: CloverVillageTextureKeys.stonesAlt, tileX: 39.8, baseTileY: 27.4, scale: 0.7, depthOffset: 0.01 },
   { texture: CloverVillageTextureKeys.stonesThird, tileX: 34.2, baseTileY: 43.5, scale: 0.7, depthOffset: 0.01 },
-  { texture: CloverVillageTextureKeys.stones, tileX: 40.2, baseTileY: 55.5, scale: 0.8, depthOffset: 0.01 },
+  { texture: CloverVillageTextureKeys.stones, tileX: 40.2, baseTileY: 55.5, scale: 0.85, depthOffset: 0.01 },
   { texture: CloverVillageTextureKeys.stonesAlt, tileX: 35.8, baseTileY: 64.5, scale: 0.75, depthOffset: 0.01 },
 
   // --- 10. Forest canopy ring (reference look: dense tree boundary) --------
   // Greedy spread over the map-edge grass tiles (>=4 tiles apart), clear of
   // interactables/spawn/transitions, mixed tree + greenery variants.
-  { texture: CloverVillageTextureKeys.tree, tileX: 5, baseTileY: 4, scale: 0.24 },
-  { texture: CloverVillageTextureKeys.treeAlt, tileX: 11, baseTileY: 4, scale: 0.24 },
-  { texture: CloverVillageTextureKeys.greenery, tileX: 15, baseTileY: 4, scale: 0.85 },
-  { texture: CloverVillageTextureKeys.tree, tileX: 19, baseTileY: 4, scale: 0.24 },
-  { texture: CloverVillageTextureKeys.treeAlt, tileX: 23, baseTileY: 4, scale: 0.24 },
+  { texture: CloverVillageTextureKeys.tree, tileX: 5, baseTileY: 4, scale: 0.42 },
+  { texture: CloverVillageTextureKeys.treeAlt, tileX: 11, baseTileY: 4, scale: 0.42 },
+  { texture: CloverVillageTextureKeys.greenery, tileX: 15, baseTileY: 4, scale: 0.4 },
+  { texture: CloverVillageTextureKeys.tree, tileX: 19, baseTileY: 4, scale: 0.42 },
+  { texture: CloverVillageTextureKeys.treeAlt, tileX: 23, baseTileY: 4, scale: 0.42 },
   { texture: CloverVillageTextureKeys.greeneryFourth, tileX: 27, baseTileY: 4, scale: 0.9 },
-  { texture: CloverVillageTextureKeys.tree, tileX: 31, baseTileY: 4, scale: 0.24 },
+  { texture: CloverVillageTextureKeys.tree, tileX: 31, baseTileY: 4, scale: 0.42 },
   { texture: CloverVillageTextureKeys.greeneryThird, tileX: 35, baseTileY: 4, scale: 0.75 },
-  { texture: CloverVillageTextureKeys.treeAlt, tileX: 39, baseTileY: 4, scale: 0.24 },
-  { texture: CloverVillageTextureKeys.greeneryFifth, tileX: 43, baseTileY: 4, scale: 1 },
-  { texture: CloverVillageTextureKeys.tree, tileX: 47, baseTileY: 4, scale: 0.24 },
-  { texture: CloverVillageTextureKeys.treeAlt, tileX: 51, baseTileY: 4, scale: 0.24 },
-  { texture: CloverVillageTextureKeys.greenery, tileX: 55, baseTileY: 4, scale: 0.85 },
-  { texture: CloverVillageTextureKeys.tree, tileX: 59, baseTileY: 4, scale: 0.24 },
-  { texture: CloverVillageTextureKeys.treeAlt, tileX: 63, baseTileY: 4, scale: 0.24 },
+  { texture: CloverVillageTextureKeys.treeAlt, tileX: 39, baseTileY: 4, scale: 0.42 },
+  { texture: CloverVillageTextureKeys.greeneryFifth, tileX: 43, baseTileY: 4, scale: 1.1 },
+  { texture: CloverVillageTextureKeys.tree, tileX: 47, baseTileY: 4, scale: 0.42 },
+  { texture: CloverVillageTextureKeys.treeAlt, tileX: 51, baseTileY: 4, scale: 0.42 },
+  { texture: CloverVillageTextureKeys.greenery, tileX: 55, baseTileY: 4, scale: 0.4 },
+  { texture: CloverVillageTextureKeys.tree, tileX: 59, baseTileY: 4, scale: 0.42 },
+  { texture: CloverVillageTextureKeys.treeAlt, tileX: 63, baseTileY: 4, scale: 0.42 },
   { texture: CloverVillageTextureKeys.greeneryFourth, tileX: 67, baseTileY: 4, scale: 0.9 },
-  { texture: CloverVillageTextureKeys.tree, tileX: 4, baseTileY: 8, scale: 0.24 },
+  { texture: CloverVillageTextureKeys.tree, tileX: 4, baseTileY: 8, scale: 0.42 },
   { texture: CloverVillageTextureKeys.greeneryThird, tileX: 69, baseTileY: 8, scale: 0.75 },
-  { texture: CloverVillageTextureKeys.treeAlt, tileX: 4, baseTileY: 12, scale: 0.24 },
-  { texture: CloverVillageTextureKeys.greeneryFifth, tileX: 70, baseTileY: 12, scale: 1 },
-  { texture: CloverVillageTextureKeys.tree, tileX: 4, baseTileY: 16, scale: 0.24 },
-  { texture: CloverVillageTextureKeys.treeAlt, tileX: 70, baseTileY: 16, scale: 0.24 },
-  { texture: CloverVillageTextureKeys.greenery, tileX: 4, baseTileY: 20, scale: 0.85 },
-  { texture: CloverVillageTextureKeys.tree, tileX: 4, baseTileY: 24, scale: 0.24 },
-  { texture: CloverVillageTextureKeys.treeAlt, tileX: 70, baseTileY: 26, scale: 0.24 },
+  { texture: CloverVillageTextureKeys.treeAlt, tileX: 4, baseTileY: 12, scale: 0.42 },
+  { texture: CloverVillageTextureKeys.greeneryFifth, tileX: 70, baseTileY: 12, scale: 1.1 },
+  { texture: CloverVillageTextureKeys.tree, tileX: 4, baseTileY: 16, scale: 0.42 },
+  { texture: CloverVillageTextureKeys.treeAlt, tileX: 70, baseTileY: 16, scale: 0.42 },
+  { texture: CloverVillageTextureKeys.greenery, tileX: 4, baseTileY: 20, scale: 0.4 },
+  { texture: CloverVillageTextureKeys.tree, tileX: 4, baseTileY: 24, scale: 0.42 },
+  { texture: CloverVillageTextureKeys.treeAlt, tileX: 70, baseTileY: 26, scale: 0.42 },
   { texture: CloverVillageTextureKeys.greeneryFourth, tileX: 4, baseTileY: 28, scale: 0.9 },
-  { texture: CloverVillageTextureKeys.tree, tileX: 70, baseTileY: 30, scale: 0.24 },
+  { texture: CloverVillageTextureKeys.tree, tileX: 70, baseTileY: 30, scale: 0.42 },
   { texture: CloverVillageTextureKeys.greeneryThird, tileX: 4, baseTileY: 32, scale: 0.75 },
-  { texture: CloverVillageTextureKeys.treeAlt, tileX: 70, baseTileY: 34, scale: 0.24 },
-  { texture: CloverVillageTextureKeys.greeneryFifth, tileX: 4, baseTileY: 36, scale: 1 },
-  { texture: CloverVillageTextureKeys.tree, tileX: 69, baseTileY: 38, scale: 0.24 },
-  { texture: CloverVillageTextureKeys.treeAlt, tileX: 4, baseTileY: 40, scale: 0.24 },
-  { texture: CloverVillageTextureKeys.greenery, tileX: 69, baseTileY: 43, scale: 0.85 },
-  { texture: CloverVillageTextureKeys.tree, tileX: 4, baseTileY: 44, scale: 0.24 },
-  { texture: CloverVillageTextureKeys.treeAlt, tileX: 69, baseTileY: 47, scale: 0.24 },
+  { texture: CloverVillageTextureKeys.treeAlt, tileX: 70, baseTileY: 34, scale: 0.42 },
+  { texture: CloverVillageTextureKeys.greeneryFifth, tileX: 4, baseTileY: 36, scale: 1.1 },
+  { texture: CloverVillageTextureKeys.tree, tileX: 69, baseTileY: 38, scale: 0.42 },
+  { texture: CloverVillageTextureKeys.treeAlt, tileX: 4, baseTileY: 40, scale: 0.42 },
+  { texture: CloverVillageTextureKeys.greenery, tileX: 69, baseTileY: 43, scale: 0.4 },
+  { texture: CloverVillageTextureKeys.tree, tileX: 4, baseTileY: 44, scale: 0.42 },
+  { texture: CloverVillageTextureKeys.treeAlt, tileX: 69, baseTileY: 47, scale: 0.42 },
   { texture: CloverVillageTextureKeys.greeneryFourth, tileX: 5, baseTileY: 48, scale: 0.9 },
-  { texture: CloverVillageTextureKeys.tree, tileX: 4, baseTileY: 52, scale: 0.24 },
+  { texture: CloverVillageTextureKeys.tree, tileX: 4, baseTileY: 52, scale: 0.42 },
   { texture: CloverVillageTextureKeys.greeneryThird, tileX: 69, baseTileY: 52, scale: 0.75 },
-  { texture: CloverVillageTextureKeys.treeAlt, tileX: 5, baseTileY: 56, scale: 0.24 },
-  { texture: CloverVillageTextureKeys.greeneryFifth, tileX: 69, baseTileY: 56, scale: 1 },
-  { texture: CloverVillageTextureKeys.tree, tileX: 4, baseTileY: 60, scale: 0.24 },
-  { texture: CloverVillageTextureKeys.treeAlt, tileX: 69, baseTileY: 60, scale: 0.24 },
-  { texture: CloverVillageTextureKeys.greenery, tileX: 4, baseTileY: 64, scale: 0.85 },
-  { texture: CloverVillageTextureKeys.tree, tileX: 69, baseTileY: 64, scale: 0.24 },
-  { texture: CloverVillageTextureKeys.treeAlt, tileX: 10, baseTileY: 67, scale: 0.24 },
+  { texture: CloverVillageTextureKeys.treeAlt, tileX: 5, baseTileY: 56, scale: 0.42 },
+  { texture: CloverVillageTextureKeys.greeneryFifth, tileX: 69, baseTileY: 56, scale: 1.1 },
+  { texture: CloverVillageTextureKeys.tree, tileX: 4, baseTileY: 60, scale: 0.42 },
+  { texture: CloverVillageTextureKeys.treeAlt, tileX: 69, baseTileY: 60, scale: 0.42 },
+  { texture: CloverVillageTextureKeys.greenery, tileX: 4, baseTileY: 64, scale: 0.4 },
+  { texture: CloverVillageTextureKeys.tree, tileX: 69, baseTileY: 64, scale: 0.42 },
+  { texture: CloverVillageTextureKeys.treeAlt, tileX: 10, baseTileY: 67, scale: 0.42 },
   { texture: CloverVillageTextureKeys.greeneryFourth, tileX: 14, baseTileY: 67, scale: 0.9 },
-  { texture: CloverVillageTextureKeys.tree, tileX: 19, baseTileY: 67, scale: 0.24 },
+  { texture: CloverVillageTextureKeys.tree, tileX: 19, baseTileY: 67, scale: 0.42 },
   { texture: CloverVillageTextureKeys.greeneryThird, tileX: 26, baseTileY: 67, scale: 0.75 },
-  { texture: CloverVillageTextureKeys.treeAlt, tileX: 30, baseTileY: 67, scale: 0.24 },
-  { texture: CloverVillageTextureKeys.greeneryFifth, tileX: 34, baseTileY: 67, scale: 1 },
-  { texture: CloverVillageTextureKeys.tree, tileX: 39, baseTileY: 67, scale: 0.24 },
-  { texture: CloverVillageTextureKeys.treeAlt, tileX: 43, baseTileY: 67, scale: 0.24 },
-  { texture: CloverVillageTextureKeys.greenery, tileX: 47, baseTileY: 67, scale: 0.85 },
-  { texture: CloverVillageTextureKeys.tree, tileX: 51, baseTileY: 67, scale: 0.24 },
-  { texture: CloverVillageTextureKeys.treeAlt, tileX: 59, baseTileY: 67, scale: 0.24 },
+  { texture: CloverVillageTextureKeys.treeAlt, tileX: 30, baseTileY: 67, scale: 0.42 },
+  { texture: CloverVillageTextureKeys.greeneryFifth, tileX: 34, baseTileY: 67, scale: 1.1 },
+  { texture: CloverVillageTextureKeys.tree, tileX: 39, baseTileY: 67, scale: 0.42 },
+  { texture: CloverVillageTextureKeys.treeAlt, tileX: 43, baseTileY: 67, scale: 0.42 },
+  { texture: CloverVillageTextureKeys.greenery, tileX: 47, baseTileY: 67, scale: 0.4 },
+  { texture: CloverVillageTextureKeys.tree, tileX: 51, baseTileY: 67, scale: 0.42 },
+  { texture: CloverVillageTextureKeys.treeAlt, tileX: 59, baseTileY: 67, scale: 0.42 },
   { texture: CloverVillageTextureKeys.greeneryFourth, tileX: 63, baseTileY: 67, scale: 0.9 },
-  { texture: CloverVillageTextureKeys.tree, tileX: 5, baseTileY: 68, scale: 0.24 },
+  { texture: CloverVillageTextureKeys.tree, tileX: 5, baseTileY: 68, scale: 0.42 },
   { texture: CloverVillageTextureKeys.greeneryThird, tileX: 55, baseTileY: 68, scale: 0.75 },
-  { texture: CloverVillageTextureKeys.treeAlt, tileX: 67, baseTileY: 68, scale: 0.24 },
+  { texture: CloverVillageTextureKeys.treeAlt, tileX: 67, baseTileY: 68, scale: 0.42 },
 ];
 
 /**
@@ -451,3 +486,65 @@ for (const piece of expandFenceRuns(FENCE_RUNS)) SET_PIECES.push(piece);
 export function getCloverVillageSetPieceDefinitions(): readonly CloverVillageSetPieceDefinition[] {
   return SET_PIECES;
 }
+
+/**
+ * Clover Village's terrain materials, consumed by the shared
+ * `addTerrainSurface` renderer (visual Pass 2).
+ *
+ * The collision tilemap stays authoritative underneath; these layers supply
+ * the visible surface. `coveredBlockingCodes` lists the blocking codes whose
+ * visible art is now authored (the forest mass gets real foliage below), so the
+ * procedural tile must stop painting a flat square over the surface. Water and
+ * wall tiles are deliberately NOT listed: pond art covers only about a fifth of
+ * the water tiles' centres, and an uncovered blocking tile that paints nothing
+ * would be an invisible wall.
+ *
+ * Pure data — no Phaser, no globs — so the terrain tests can assert the kit
+ * against the topology catalog in the node environment.
+ */
+/**
+ * The CloverVillage land kit as wired, keyed by texture key → catalog file.
+ *
+ * Kept here rather than only in the Phaser glue so the terrain test can check
+ * every wired piece's compass role against
+ * `design/assets/ground-topology-roles.json` without a browser. A swapped pair
+ * of fringes would put grass on the wrong side of the seam, and nothing else in
+ * the build would notice.
+ */
+export const CLOVER_VILLAGE_GROUND_KIT: Readonly<Record<string, string>> = {
+  [CloverVillageTextureKeys.ground]: "land_1.png",
+  [CloverVillageTextureKeys.grassPatch]: "land_2.png",
+  [CloverVillageTextureKeys.fringeNorthA]: "land_4.png",
+  [CloverVillageTextureKeys.fringeNorthB]: "land_8.png",
+  [CloverVillageTextureKeys.fringeSouthA]: "land_3.png",
+  [CloverVillageTextureKeys.fringeSouthB]: "land_7.png",
+  [CloverVillageTextureKeys.fringeWestA]: "land_5.png",
+  [CloverVillageTextureKeys.fringeWestB]: "land_9.png",
+  [CloverVillageTextureKeys.fringeEastA]: "land_6.png",
+  [CloverVillageTextureKeys.fringeEastB]: "land_10.png",
+};
+
+export const CLOVER_VILLAGE_TERRAIN: TerrainMaterials = {
+  base: CloverVillageTextureKeys.ground,
+  patch: CloverVillageTextureKeys.grassPatch,
+  path: CloverVillageTextureKeys.road,
+  plaza: CloverVillageTextureKeys.plaza,
+  fringes: {
+    n: [CloverVillageTextureKeys.fringeNorthA, CloverVillageTextureKeys.fringeNorthB],
+    s: [CloverVillageTextureKeys.fringeSouthA, CloverVillageTextureKeys.fringeSouthB],
+    w: [CloverVillageTextureKeys.fringeWestA, CloverVillageTextureKeys.fringeWestB],
+    e: [CloverVillageTextureKeys.fringeEastA, CloverVillageTextureKeys.fringeEastB],
+  },
+  // Forest cover: the same decor art the curated set pieces use, so the canopy
+  // mass speaks one visual language.
+  foliage: [
+    CloverVillageTextureKeys.tree,
+    CloverVillageTextureKeys.treeAlt,
+    CloverVillageTextureKeys.greenery,
+    CloverVillageTextureKeys.greeneryAlt,
+    CloverVillageTextureKeys.greeneryThird,
+    CloverVillageTextureKeys.greeneryFourth,
+    CloverVillageTextureKeys.greeneryFifth,
+  ],
+  coveredBlockingCodes: ["T"],
+};

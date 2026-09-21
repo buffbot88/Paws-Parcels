@@ -11,6 +11,7 @@
  * the valley per the props-catalog policy. Collision remains authoritative in
  * the ASCII map; every set piece here is visual-only.
  */
+import type { TerrainMaterials } from "./terrainAssets.ts";
 
 export const HappyValleyTextureKeys = {
   // Authored ground (generated, same pipeline as the Clover Village meadow/road).
@@ -76,3 +77,20 @@ export const SET_PIECES: HappyValleySetPieceDefinition[] = [
 export function getHappyValleySetPieceDefinitions(): readonly HappyValleySetPieceDefinition[] {
   return SET_PIECES;
 }
+
+/**
+ * Terrain materials for Happy Valley, consumed by the shared
+ * `addTerrainSurface` renderer (visual Pass 2).
+ *
+ * The valley predates the village's ground kit, so it supplies only a base
+ * meadow and a path fill; declaring no `fringes`, `patch`, `plaza` or `foliage`
+ * is deliberate — it has no art for them, and the shared renderer draws what a
+ * zone authors and nothing more. `coveredBlockingCodes` stays empty for the
+ * same reason: no authored piece replaces its water or tree tiles, so those
+ * keep painting their procedural square and stay visibly solid.
+ */
+export const HAPPY_VALLEY_TERRAIN: TerrainMaterials = {
+  base: HappyValleyTextureKeys.ground,
+  path: HappyValleyTextureKeys.path,
+  coveredBlockingCodes: [],
+};

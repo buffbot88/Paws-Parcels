@@ -1,3 +1,5 @@
+import { hudLayer } from "./hud/layer.ts";
+
 export interface SkillBarAction {
   id: string;
   label: string;
@@ -58,7 +60,7 @@ export class SkillBar {
     leafRight.textContent = "🌿";
 
     root.append(leafLeft, slots, leafRight, hint);
-    document.getElementById("game-container")?.appendChild(root);
+    hudLayer()?.appendChild(root);
 
     this.root = root;
     this.cooldown = this.activeSlot.querySelector(".skill-slot__cooldown")!;

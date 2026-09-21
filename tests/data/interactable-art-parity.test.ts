@@ -1,7 +1,11 @@
-import { describeInteractableArtParity } from "./interactable-art-parity-harness.ts";
+import {
+  describeInteractableArtParity,
+  terrainSurfaceKeys,
+} from "./interactable-art-parity-harness.ts";
 import cloverVillageJson from "../../src/data/maps/clover-village.json";
 import {
   CLOVER_VILLAGE_QUEST_ITEM_FRAMES,
+  CLOVER_VILLAGE_TERRAIN,
   CloverVillageTextureKeys,
   getCloverVillageSetPieceDefinitions,
 } from "../../src/game/cloverVillagePlacements.ts";
@@ -18,9 +22,10 @@ describeInteractableArtParity({
   mapName: "clover village",
   interactables: cloverVillageJson.interactables,
   allTextureKeys: Object.values(CloverVillageTextureKeys),
-  // ground/road are the authored surface drawn by addCloverVillageGround,
-  // deliberately not set pieces — everything else must appear in the world.
-  surfaceKeys: [CloverVillageTextureKeys.ground, CloverVillageTextureKeys.road, CloverVillageTextureKeys.plaza],
+  // The authored surface (base, road, plaza, grass islands, fringe kit) is
+  // drawn by the shared terrain renderer, deliberately not as set pieces —
+  // everything else must appear in the world.
+  surfaceKeys: terrainSurfaceKeys(CLOVER_VILLAGE_TERRAIN),
   artMappings: {
     // Post Office counter + corner share the building's art.
     "object-counter": [CloverVillageTextureKeys.postOffice],

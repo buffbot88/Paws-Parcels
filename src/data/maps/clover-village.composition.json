@@ -1,0 +1,102 @@
+{
+  "version": 1,
+  "zone": "zone-clover-village",
+  "note": "Where the clearings, the thickets and the framed ways into the square belong. Regions are paint: they are applied in file order, so a later region can carve an opening out of an earlier one, and any tile no region covers keeps the seeded variation. Coordinates are tiles.",
+  "cellTiles": 12,
+  "treeline": {
+    "class": "dense",
+    "band": 5
+  },
+  "bands": {
+    "open": 0,
+    "light": 0.4,
+    "normal": 1,
+    "dense": 1.7
+  },
+  "regions": [
+    {
+      "class": "open",
+      "shape": "ellipse",
+      "center": { "x": 37, "y": 29 },
+      "radius": { "x": 12, "y": 10 },
+      "note": "The square and everything you approach it through: paving, the grass ring around it, and the three road mouths. Nothing scatters here, so the landmark and its entrances stay readable."
+    },
+    {
+      "class": "light",
+      "shape": "ellipse",
+      "center": { "x": 14, "y": 40 },
+      "radius": { "x": 10, "y": 16 },
+      "note": "West lanes. Thin enough to see a long way down the road, so the route out feels open."
+    },
+    {
+      "class": "light",
+      "shape": "ellipse",
+      "center": { "x": 33, "y": 56 },
+      "radius": { "x": 9, "y": 7 },
+      "note": "South approach from the gate, paired with the lighter ground either side of it."
+    },
+    {
+      "class": "dense",
+      "shape": "ellipse",
+      "center": { "x": 19, "y": 17 },
+      "radius": { "x": 9, "y": 8 },
+      "note": "North-west thicket: the mass you walk around on the way to the café, closing the corner between the treeline and the village."
+    },
+    {
+      "class": "dense",
+      "shape": "ellipse",
+      "center": { "x": 21, "y": 62 },
+      "radius": { "x": 12, "y": 7 },
+      "note": "South-west wood, merged into the boundary treeline at the map's foot."
+    },
+    {
+      "class": "dense",
+      "shape": "ellipse",
+      "center": { "x": 49, "y": 51 },
+      "radius": { "x": 8, "y": 6 },
+      "note": "Inner grove between the square and the south-east water, so the walk out of the square thins into trees as you leave."
+    },
+    {
+      "class": "light",
+      "shape": "ellipse",
+      "center": { "x": 52, "y": 63 },
+      "radius": { "x": 9, "y": 6 },
+      "note": "Pond shore. Kept open so the water reads and does not disappear under canopy."
+    },
+    {
+      "class": "light",
+      "shape": "rect",
+      "center": { "x": 62, "y": 20 },
+      "radius": { "x": 9, "y": 12 },
+      "note": "North-east meadow, in front of the eastern tree belt. Its job is contrast: dense wood behind, open ground in front."
+    }
+  ],
+  "entrances": [
+    {
+      "tile": { "x": 45, "y": 27 },
+      "outward": { "x": 1, "y": 0 },
+      "note": "East road, the way in from Happy Valley."
+    },
+    {
+      "tile": { "x": 29, "y": 29 },
+      "outward": { "x": -1, "y": 0 },
+      "note": "West road along the shop row."
+    },
+    {
+      "tile": { "x": 38, "y": 36 },
+      "outward": { "x": 0, "y": 1 },
+      "note": "The southern gate: the widest way in, so it gets the widest arc."
+    }
+  ],
+  "scatter": {
+    "canopyDensity": 0.85,
+    "canopySpacing": 1.6,
+    "clusterSpacing": 1.3,
+    "patchDensity": 0.06,
+    "patchSpacing": 5,
+    "patchClearance": 2
+  },
+  "blockingCover": {
+    "minHeightTiles": 1.5
+  }
+}

@@ -9,6 +9,13 @@ import {
 } from "../game/classAssets.ts";
 import type { NetPlayerInfo } from "../net/GameSocket.ts";
 import { worldDepth } from "../game/WorldDepth.ts";
+import {
+  courierSizing,
+  entityFeetOffsetPx,
+  entityNameTagOffsetPx,
+  entityScale,
+  entityShadow,
+} from "../game/entitySizing.ts";
 import { PositionSampleBuffer } from "../net/positionInterpolation.ts";
 
 const INTERPOLATION_DELAY_MS = 100;
@@ -29,6 +36,8 @@ export class RemotePlayer extends Phaser.GameObjects.Container {
   private nameTag: Phaser.GameObjects.Text;
   private sprite: Phaser.GameObjects.Sprite;
   private facing: Facing = "south";
+  /** Tag height, derived from the courier's figure rather than hand-placed. */
+  private readonly nameTagY: number;
 
   constructor(scene: Phaser.Scene, info: NetPlayerInfo) {
     const px = info.pos.x * TILE_SIZE + TILE_SIZE / 2;
@@ -40,12 +49,25 @@ export class RemotePlayer extends Phaser.GameObjects.Container {
     this.samples.add({ at: Date.now(), x: px, y: py });
 
     const idleKey = animationKey(this.classKey, "idle", "south");
+    const authoredArt = scene.textures.exists(idleKey);
+    // The same convention row the local courier uses, so a remote courier and
+    // the one you are driving cannot disagree about how big a courier is.
+    const sizing = courierSizing(this.classKey, authoredArt);
     this.sprite = scene.add
-      .sprite(0, 0, scene.textures.exists(idleKey) ? idleKey : TextureKeys.NpcBlob)
-      .setScale(1.33);
-    const shadow = scene.add.image(0, 12, TextureKeys.PlayerShadow);
+      .sprite(0, 0, authoredArt ? idleKey : TextureKeys.NpcBlob)
+      .setScale(entityScale(sizing));
+    const recipe = entityShadow(sizing);
+    const shadow = scene.add.ellipse(
+      0,
+      entityFeetOffsetPx(sizing),
+      recipe.widthPx,
+      recipe.heightPx,
+      recipe.color,
+      recipe.alpha,
+    );
+    this.nameTagY = entityNameTagOffsetPx(sizing);
     this.nameTag = scene.add
-      .text(0, -32, info.name, {
+      .text(0, this.nameTagY, info.name, {
         fontFamily: "Georgia, serif",
         fontSize: "14px",
         color: "#3a5a3a",
@@ -83,7 +105,7 @@ export class RemotePlayer extends Phaser.GameObjects.Container {
     this.x = rendered.x;
     this.y = rendered.y;
     this.setDepth(worldDepth(this.y));
-    this.nameTag.setPosition(0, -32);
+    this.nameTag.setPosition(0, this.nameTagY);
     this.playAnimation(rendered.moving ? "walk" : "idle", this.facing);
   }
 

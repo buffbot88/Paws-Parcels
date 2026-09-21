@@ -3,6 +3,7 @@ import { TILES } from "../game/Tiles.ts";
 import type { NPC as NPCDefinition } from "../types/NPCtypes.ts";
 import { createIcon } from "./hud/icons.ts";
 import { createIconButton, createPanel } from "./hud/primitives.ts";
+import { hudLayer } from "./hud/layer.ts";
 
 /** Terrain fill colors per tile code (`#rrggbb` for canvas), derived from the tile catalog. */
 const TERRAIN_COLORS: Readonly<Record<string, string>> = Object.fromEntries(
@@ -18,8 +19,12 @@ const NPC_COLOR = "#2f7d3a";
 const OBJECT_COLOR = "#c98a2e";
 const TRANSITION_COLOR = "#2ba0b8";
 
-/** Max displayed width of the minimap (px); height follows the map aspect. */
-const MAX_WIDTH = 300;
+/**
+ * Max displayed width in *internal game units* (the 960x540 canvas space, so
+ * `src/styles/hud.css` can scale it by --hud-scale). Height follows the map
+ * aspect.
+ */
+const MAX_WIDTH = 150;
 
 /** A position in tile units (fractional allowed). */
 export interface MinimapPoint {
@@ -104,7 +109,7 @@ export class Minimap {
 
     root.append(header, body, footer);
     header.addEventListener("click", () => this.toggle());
-    document.getElementById("game-container")?.appendChild(root);
+    hudLayer()?.appendChild(root);
 
     this.root = root;
     this.zoneLabel = zone;
@@ -119,7 +124,10 @@ export class Minimap {
     this.mapWidth = map.width;
     this.mapHeight = map.height;
 
-    // Fit the box to the map's aspect ratio (square village → square).
+    // Fit the box to the map's aspect ratio (square village → square). The
+    // result is published as CSS custom properties rather than a pixel width,
+    // so `src/styles/hud.css` can scale the whole minimap with the canvas
+    // instead of locking it to a fixed device pixel size.
     const aspect = map.height / map.width;
     let width = MAX_WIDTH;
     let height = width * aspect;
@@ -127,7 +135,8 @@ export class Minimap {
       height = MAX_WIDTH * 0.95;
       width = height / aspect;
     }
-    this.root.style.width = `${Math.round(width)}px`;
+    this.root.style.setProperty("--minimap-width", String(Math.round(width)));
+    this.root.style.setProperty("--minimap-aspect", String(aspect));
     this.expanded = !Minimap.collapsed;
     this.root.classList.toggle("minimap--collapsed", Minimap.collapsed);
     this.setCaret();

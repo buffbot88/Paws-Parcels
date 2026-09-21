@@ -1,5 +1,6 @@
 import { createIcon } from "./hud/icons.ts";
 import { createPanel, createKeyHint } from "./hud/primitives.ts";
+import { hudLayer } from "./hud/layer.ts";
 
 export interface ChatMessage {
   sender: string;
@@ -87,7 +88,7 @@ export class ChatBox {
     });
 
     this.panelBody.append(header, this.log, composer);
-    document.getElementById("game-container")?.appendChild(this.root);
+    hudLayer()?.appendChild(this.root);
     this.input = input;
     this.sendButton = send;
   }

@@ -22,9 +22,9 @@ import {
   releaseKey,
   screenshot,
 } from "./support/harness";
-
-/** The village's south-edge transition tile to Happy Valley (knowledge.md). */
-const TRANSITION_TILE = { x: 37, y: 74 };
+// Travel + approach navigation live in support/navigation.ts so the
+// visual-baseline captures can reuse the same server-validated walk.
+import { walkToTransition } from "./support/navigation";
 
 test.describe("combat (J, server-authoritative)", () => {
   test("courier reaches Happy Valley and lands a server-confirmed attack", async ({ page }) => {
@@ -124,39 +124,11 @@ test.describe("combat (J, server-authoritative)", () => {
 // Navigation helpers
 // ---------------------------------------------------------------------------
 
-/** The walking speed is ~2.4 tiles/s (96 px/s at 48 px tiles); bursts cover it. */
-async function walkToTransition(page: import("@playwright/test").Page): Promise<boolean> {
-  const deadline = Date.now() + 90_000;
-  let phase: "south" | "done" = "south";
-  while (Date.now() < deadline) {
-    const probe = await readGameProbe(page);
-    if (probe.mapId === "zone-happy-valley") return true;
-    if (probe.player === null) return false;
-
-    if (phase === "south") {
-      // Hold S toward the southern gate; stop when reaching the transition
-      // tile's column or the walk stalls against the fence line.
-      await holdKey(page, "s");
-      await page.waitForTimeout(1_500);
-      await releaseKey(page, "s");
-      const after = await readGameProbe(page);
-      if (after.player !== null && after.player.tileY >= TRANSITION_TILE.y - 3) {
-        phase = "done";
-      }
-      if (after.player !== null && after.player.tileY <= probe.player.tileY) {
-        // Stalled (collision) — jiggle along X to find the gate corridor.
-        await holdKey(page, "a");
-        await page.waitForTimeout(700);
-        await releaseKey(page, "a");
-        await holdKey(page, "d");
-        await page.waitForTimeout(1_400);
-        await releaseKey(page, "d");
-      }
-    }
-  }
-  return (await readGameProbe(page)).mapId === "zone-happy-valley";
-}
-
+/**
+ * Walk toward the nearest live monster until one is inside attack range (6
+ * tiles). Walking speed is ~2.4 tiles/s (96 px/s at 48 px tiles), so each
+ * burst covers a little over a tile.
+ */
 async function approachNearestMonster(
   page: import("@playwright/test").Page,
 ): Promise<{ id: string; hpRatio: number } | null> {

@@ -1,6 +1,10 @@
-import { describeInteractableArtParity } from "./interactable-art-parity-harness.ts";
+import {
+  describeInteractableArtParity,
+  terrainSurfaceKeys,
+} from "./interactable-art-parity-harness.ts";
 import happyValleyJson from "../../src/data/maps/happy-valley.json";
 import {
+  HAPPY_VALLEY_TERRAIN,
   HappyValleyTextureKeys,
   getHappyValleySetPieceDefinitions,
 } from "../../src/game/happyValleyPlacements.ts";
@@ -15,7 +19,9 @@ describeInteractableArtParity({
   mapName: "happy valley",
   interactables: happyValleyJson.interactables,
   allTextureKeys: Object.values(HappyValleyTextureKeys),
-  surfaceKeys: [HappyValleyTextureKeys.ground, HappyValleyTextureKeys.path],
+  // The meadow and path fills are drawn by the shared terrain renderer, not as
+  // set pieces. The valley declares no fringe/patch/plaza art.
+  surfaceKeys: terrainSurfaceKeys(HAPPY_VALLEY_TERRAIN),
   artMappings: {
     // The arrival meadow is announced by the blue banner beside the sign.
     "object-valley-welcome": [HappyValleyTextureKeys.blueBanner],

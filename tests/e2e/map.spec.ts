@@ -90,9 +90,14 @@ async function readLocationFilterState(
   });
 }
 
-/** The map panel blurs the canvas while open; focus the canvas when closed. */
+/**
+ * The map panel blurs the canvas while open; focus the canvas when closed.
+ * Targets the Phaser canvas (`> canvas`) because #hud-layer holds the
+ * minimap's canvases earlier in the DOM. Best-effort: M is document-scoped, so
+ * a failed focus click must not fail the spec.
+ */
 async function focusCanvasSafe(page: import("@playwright/test").Page): Promise<void> {
-  await page.locator("#game-container canvas").first().click({ position: { x: 20, y: 20 } }).catch(() => {
-    /* the canvas may not be interactable at this moment; M is document-scoped */
+  await page.locator("#game-container > canvas").first().click({ position: { x: 20, y: 20 } }).catch(() => {
+    /* the panel may be blurring the canvas; M is document-scoped */
   });
 }

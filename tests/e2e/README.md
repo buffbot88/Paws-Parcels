@@ -60,6 +60,7 @@ Nothing after `boot` should be treated as green until `boot` is reliably green.
 | `interact.spec.ts` | walking to Pip and pressing `E` opens dialogue, which advances and closes |
 | `combat.spec.ts` | travel to Happy Valley, `J` produces a server `combat_event`, the client HP bar mirrors the server |
 | `reconnect.spec.ts` | reload restores session/socket/HUD with no duplicate presence |
+| `visual-baseline.spec.ts` | **visual overhaul baseline** — the fixed set of review framings (see below) |
 
 `tests/e2e/support/harness.ts` owns the shared plumbing: the dev-login boot
 (all three desk steps), per-test fresh couriers (state isolation), console /
@@ -79,6 +80,56 @@ font formats).
 Stable filenames under `artifacts/playwright/` (gitignored): the Clover Village
 baseline, auth desk, HUD, character profile, local map, movement, dialogue,
 Happy Valley, combat state, and reconnect.
+
+## Visual baseline captures
+
+```bash
+npm run visual:baseline
+```
+
+The visual overhaul (camera framing, HUD footprint, terrain integration,
+landmark scale, density, depth, lighting) is reviewed against a **fixed set of
+framings** rather than one screenshot at a time, so each pass can be compared
+with the last. This spec produces them in a single run; it asserts nothing
+about whether they look good, because Playwright cannot judge composition,
+camera feel, or art direction.
+
+| Capture | Framing |
+| --- | --- |
+| `town-centre` | Post Office as the dominant centre landmark, plaza, path exits |
+| `cafe` | Café Biscuit frontage, seating, path approach |
+| `florist` | Florist stall, flower beds, shopfront scale |
+| `research-shop` | Research shop frontage and props against the terrain |
+| `village-edge` | Southern gate, forest boundary, where terrain treatment stops |
+| `happy-valley` | Second-zone arrival (skipped with a blocker note if travel is non-deterministic) |
+| `inventory-open` | Courier ledger over the live world |
+| `local-map-open` | Full-screen field guide |
+| `spawn-framing` | **Real player view** on arrival, no camera override |
+| `walk-framing` | **Real player view** mid-walk, camera following |
+
+**Anchors are data-driven.** Landmark framings read the live scene's authored
+`mapData` (interactables, transitions, NPC home tiles), so a map change moves
+the captures with it instead of silently framing the wrong place.
+
+**Camera-framed captures are rendering-only.** They stop camera follow and
+centre it on an anchor tile, which touches no gameplay state: the courier's
+server-owned position, collision, and presence are untouched, and no
+production code is involved (the suite already probes `window.game`
+deliberately). The two `player-view` captures are plain screenshots with the
+camera following, so every run includes frames that are exactly what a player
+sees.
+
+Output: PNGs plus `manifest.json` under `artifacts/visual-baseline/`
+(gitignored). The manifest records the zone, anchor, camera transform, and
+viewport for each capture.
+
+### HUD footprint
+
+`hud.spec.ts` additionally asserts that the world HUD stays **inside the game
+window** (every panel's box within the container, none clipped), that the
+canvas fills the window instead of being displaced by a panel, and that the
+HUD's union coverage of the window stays under a budget so the world remains
+the dominant surface.
 
 ## Boundaries
 

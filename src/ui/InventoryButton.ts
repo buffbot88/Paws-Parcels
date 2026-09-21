@@ -1,5 +1,6 @@
 import { createIcon } from "./hud/icons.ts";
 import { createKeyHint } from "./hud/primitives.ts";
+import { hudLayer } from "./hud/layer.ts";
 
 /**
  * HUD v4 inventory control (bottom-right, ~235×72): warm cream button with a
@@ -25,7 +26,7 @@ export class InventoryButton {
 
     button.append(icon, label, key);
     button.addEventListener("click", () => onOpen());
-    document.getElementById("game-container")?.appendChild(button);
+    hudLayer()?.appendChild(button);
     this.root = button;
   }
 

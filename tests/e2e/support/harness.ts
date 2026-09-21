@@ -26,6 +26,9 @@ const PROJECT_ROOT = process.cwd();
 
 export const SEL = {
   topBar: "#top-navbar",
+  gameContainer: "#game-container",
+  /** Canvas-relative world HUD layer (HUD v4). */
+  hudLayer: "#hud-layer",
   courierMenuButton: ".character-menu__button",
   courierMenuPanel: ".character-menu__panel",
   courierCreateAction: ".character-menu__action", // identified by label at call site
@@ -487,16 +490,74 @@ export async function releaseKey(page: Page, key: string): Promise<void> {
   await page.keyboard.up(key);
 }
 
-/** Focus the game canvas so Phaser receives keyboard events. */
+/**
+ * Focus the game canvas so Phaser receives keyboard events.
+ *
+ * The Phaser canvas specifically (`> canvas`): #hud-layer precedes it inside
+ * #game-container and contains the minimap's own canvases, so a descendant
+ * selector would click the minimap instead.
+ */
 export async function focusCanvas(page: Page): Promise<void> {
-  await page.locator("#game-container canvas").first().click({ position: { x: 20, y: 20 } });
+  await page.locator("#game-container > canvas").first().click({ position: { x: 20, y: 20 } });
 }
 
-/** Stable-name screenshot checkpoint under artifacts/playwright/. */
-export async function screenshot(page: Page, name: string): Promise<string> {
-  const dir = resolve(PROJECT_ROOT, "artifacts", "playwright");
+/** Stable-name screenshot checkpoint under artifacts/<subdirectory>/. */
+export async function screenshotTo(
+  page: Page,
+  subdirectory: string,
+  name: string,
+): Promise<string> {
+  const dir = resolve(PROJECT_ROOT, "artifacts", subdirectory);
   mkdirSync(dir, { recursive: true });
   const path = resolve(dir, name);
   await page.screenshot({ path, fullPage: false });
   return path;
+}
+
+/** Stable-name screenshot checkpoint under artifacts/playwright/. */
+export async function screenshot(page: Page, name: string): Promise<string> {
+  return screenshotTo(page, "playwright", name);
+}
+
+// ---------------------------------------------------------------------------
+// HUD geometry (Pass 1: the world HUD must never eat the game window)
+// ---------------------------------------------------------------------------
+
+export interface Box {
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+}
+
+/**
+ * Fraction of `container` covered by the union of `boxes`.
+ *
+ * Overlapping panels must not be double-counted, or a HUD that stacks two
+ * cards on one corner would look like it covers twice the screen it does.
+ * A coarse deterministic grid samples each cell's centre and asks whether any
+ * box covers that point — cell count is fixed, so the result is stable.
+ */
+export function unionCoverageRatio(
+  boxes: Box[],
+  container: Box,
+  grid = 48,
+): number {
+  if (container.width <= 0 || container.height <= 0) return 0;
+  let covered = 0;
+  for (let row = 0; row < grid; row += 1) {
+    const y = container.y + ((row + 0.5) / grid) * container.height;
+    for (let column = 0; column < grid; column += 1) {
+      const x = container.x + ((column + 0.5) / grid) * container.width;
+      const hit = boxes.some(
+        (box) =>
+          x >= box.x &&
+          x <= box.x + box.width &&
+          y >= box.y &&
+          y <= box.y + box.height,
+      );
+      if (hit) covered += 1;
+    }
+  }
+  return covered / (grid * grid);
 }

@@ -9,6 +9,12 @@ import {
 } from "../game/classAssets.ts";
 import type { MoveVector } from "../systems/InputSystem.ts";
 import { worldDepth } from "../game/WorldDepth.ts";
+import {
+  courierSizing,
+  entityFeetOffsetPx,
+  entityScale,
+  type EntitySizing,
+} from "../game/entitySizing.ts";
 
 export type Facing = "down" | "up" | "left" | "right";
 
@@ -24,6 +30,12 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
   static readonly BODY_HEIGHT = 20;
 
   readonly classKey: ClassKey;
+  /**
+   * The courier's size row from the shared entity convention. Everything the
+   * sprite's rendering needs — scale, feet offset, shadow — is derived from it,
+   * so this class holds no scale or shadow numbers of its own.
+   */
+  readonly sizing: EntitySizing;
   /** Movement speed (px/s) matching the server's class speed — see classAssets.ts.
    * Raised to the gear-adjusted speed when the server's inventory snapshot
    * arrives, so speed gear renders (and the intent throttle matches). */
@@ -44,9 +56,18 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
       Player.BODY_WIDTH,
       Player.BODY_HEIGHT,
     );
-    this.setScale(1.33);
+    // Sized by the shared entity convention rather than a literal: the courier
+    // renders at 0.75 tiles of figure whether its class art is present or the
+    // placeholder blob is standing in for it (see entitySizing.ts).
+    this.sizing = courierSizing(classKey, this.texture.key !== TextureKeys.PlayerIdleDown);
+    this.setScale(entityScale(this.sizing));
     this.setDepth(worldDepth(this.y));
     this.playIfAvailable("idle", "south");
+  }
+
+  /** Pixels below the courier's centre where its feet (and cast shadow) sit. */
+  get feetOffsetPx(): number {
+    return entityFeetOffsetPx(this.sizing);
   }
 
   /** Adjust the rendered speed to the server's gear-adjusted px/s. */

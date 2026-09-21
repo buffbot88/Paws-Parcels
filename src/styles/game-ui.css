@@ -4,7 +4,9 @@
   position: absolute;
   inset: 0;
   pointer-events: none;
-  z-index: 10;
+  /* Above the world HUD layer (z-index 10): the dialogue panel is a modal
+     interaction and must never be buried under a HUD card. */
+  z-index: 20;
   display: flex;
   align-items: flex-end;
   justify-content: center;

@@ -1,13 +1,42 @@
 import Phaser from "phaser";
 import { TILE_SIZE } from "./GameConfig.ts";
-import { worldDepth } from "./WorldDepth.ts";
+import { DEPTH_OFFSET, foregroundDepth, worldDepth } from "./WorldDepth.ts";
+import { CLOVER_VILLAGE_PROP_SIZING, footprintWidthPx } from "./propSizing.ts";
+import { shadowRecipe } from "./lighting.ts";
 import type { MapData } from "./Maps.ts";
 import {
+  CLOVER_VILLAGE_GROUND_KIT,
   CLOVER_VILLAGE_QUEST_ITEM_FRAMES,
   CloverVillageTextureKeys,
   SET_PIECES,
   type CloverVillageSetPieceDefinition,
 } from "./cloverVillagePlacements.ts";
+
+/**
+ * The CloverVillage land kit, resolved as one directory glob.
+ *
+ * Which catalog file each texture key draws is data
+ * (`CLOVER_VILLAGE_GROUND_KIT`), so the node terrain test can verify the
+ * compass role of every wired piece against the topology catalog. Only the
+ * lookup lives here, because `import.meta.glob` needs a literal path.
+ */
+const LAND_KIT_DIR = "../../reference/assets/maps/CloverVillage/Map/PNG/land/";
+const landKit = import.meta.glob(
+  "../../reference/assets/maps/CloverVillage/Map/PNG/land/land_*.png",
+  { eager: true, query: "?url", import: "default" },
+) as AssetGlob;
+
+/** Resolve one land-kit texture key to its queueable single-entry glob. */
+function kitGroup(textureKey: string): AssetGlob {
+  const file = CLOVER_VILLAGE_GROUND_KIT[textureKey];
+  if (file === undefined) return {};
+  const url = landKit[`${LAND_KIT_DIR}${file}`];
+  if (url === undefined) {
+    console.error(`Clover Village: land kit piece missing for ${textureKey} (${file})`);
+    return {};
+  }
+  return { [file]: url };
+}
 
 /**
  * Authored 2.5D art pass for the NEW Clover Village layout.
@@ -25,10 +54,10 @@ import {
  * variation. Collision stays authoritative in the ASCII map; every set piece
  * here is visual-only.
  *
- * The placement tables (texture keys, set-piece coordinates, fence runs) live
- * in `cloverVillagePlacements.ts` — a Phaser-free module so the node test env
- * can import them for the interactable-art parity check. This file owns only
- * the Phaser glue: asset queueing, ground/road tiling, and depth-sorted
+ * The placement tables (texture keys, set-piece coordinates, fence runs) and
+ * the terrain material set live in `cloverVillagePlacements.ts` — a Phaser-free
+ * module, so the node test env can import them for the interactable-art parity
+ * check. This file owns only the Phaser glue: asset queueing and depth-sorted
  * rendering.
  */
 
@@ -40,18 +69,38 @@ type AssetGlob = Record<string, string>;
  * overlays depth-sorted against the couriers.
  */
 const sourceAssets: Readonly<Record<string, AssetGlob>> = {
-  ground: import.meta.glob(
-    "../../reference/assets/new/CloverValley/Ground/meadow.png",
-    { eager: true, query: "?url", import: "default" },
-  ) as AssetGlob,
+  // --- Ground surface (visual Pass 2) -----------------------------------
+  // Base, road fill and grass fringe kit all come from the CloverVillage land
+  // and road kits, which the ground/road audits verified. Two deliberate
+  // material swaps, both measured against design/CloverVillage.png:
+  //   - base: the kit's land_1 averages #478122; the previously wired
+  //     generated meadow averages #6ea948, markedly lighter and yellower than
+  //     anything in the reference (whose greens cluster at #29462a..#4c6b3b).
+  //   - road: the kit's road_5 averages #ad7d5e against the wired road's
+  //     #aa7b5d — the same palette, and road_5 is the catalogued confirmed
+  //     centre/fill tile.
+  // The plaza deliberately KEEPS its existing stone: it averages #a3aaab
+  // against the reference's #a0a19a, while the seamless green paving families
+  // average #4f6b56..#67765d and would darken the plaza well away from the
+  // reference. See design/assets/clover-village-road-catalog.json.
+  ground: kitGroup(CloverVillageTextureKeys.ground),
   road: import.meta.glob(
-    "../../reference/assets/new/CloverValley/Ground/road.png",
+    "../../reference/assets/maps/CloverVillage/Map/PNG/road/road_5.png",
     { eager: true, query: "?url", import: "default" },
   ) as AssetGlob,
   plaza: import.meta.glob(
     "../../reference/assets/new/CloverValley/Ground/plaza.png",
     { eager: true, query: "?url", import: "default" },
   ) as AssetGlob,
+  grassPatch: kitGroup(CloverVillageTextureKeys.grassPatch),
+  fringeNorthA: kitGroup(CloverVillageTextureKeys.fringeNorthA),
+  fringeNorthB: kitGroup(CloverVillageTextureKeys.fringeNorthB),
+  fringeSouthA: kitGroup(CloverVillageTextureKeys.fringeSouthA),
+  fringeSouthB: kitGroup(CloverVillageTextureKeys.fringeSouthB),
+  fringeWestA: kitGroup(CloverVillageTextureKeys.fringeWestA),
+  fringeWestB: kitGroup(CloverVillageTextureKeys.fringeWestB),
+  fringeEastA: kitGroup(CloverVillageTextureKeys.fringeEastA),
+  fringeEastB: kitGroup(CloverVillageTextureKeys.fringeEastB),
 
   postOffice: import.meta.glob(
     "../../reference/assets/maps/CloverVillage/Map/PNG/buildings/building_17/building_1.png",
@@ -317,44 +366,6 @@ function resolveTexture(
   return { key: piece.texture };
 }
 
-/**
- * Build the authored visible surface for Clover Village. The collision tilemap
- * remains authoritative underneath; this layer replaces its procedural visual
- * language with the supplied land and road art.
- */
-export function addCloverVillageGround(
-  scene: Phaser.Scene,
-  map: MapData,
-): Phaser.GameObjects.GameObject[] {
-  if (!scene.textures.exists(CloverVillageTextureKeys.ground)) return [];
-  const added: Phaser.GameObjects.GameObject[] = [];
-  const worldWidth = map.width * TILE_SIZE;
-  const worldHeight = map.height * TILE_SIZE;
-  const ground = scene.add
-    .tileSprite(worldWidth / 2, worldHeight / 2, worldWidth, worldHeight, CloverVillageTextureKeys.ground)
-    .setDepth(-20);
-  added.push(ground);
-
-  if (!scene.textures.exists(CloverVillageTextureKeys.road)) return added;
-  // Courier Square is paved (reference look: cobblestone plaza in front of
-  // the Post Office); the rest of the path network keeps the warm earth road.
-  const isPlaza = (x: number, y: number) =>
-    x >= 29 && x <= 44 && y >= 25 && y <= 35 && scene.textures.exists(CloverVillageTextureKeys.plaza);
-  for (let y = 0; y < map.height; y++) {
-    const row = map.rows[y] ?? "";
-    for (let x = 0; x < map.width; x++) {
-      if (row[x] !== "P") continue;
-      const key = isPlaza(x, y) ? CloverVillageTextureKeys.plaza : CloverVillageTextureKeys.road;
-      const tile = scene.add
-        .image(x * TILE_SIZE + TILE_SIZE / 2, y * TILE_SIZE + TILE_SIZE / 2, key)
-        .setDisplaySize(TILE_SIZE, TILE_SIZE)
-        .setDepth(-15);
-      added.push(tile);
-    }
-  }
-  return added;
-}
-
 /** Add the curated buildings, landmarks, and decor for Clover Village. */
 export function addCloverVillageSetPieces(scene: Phaser.Scene): Phaser.GameObjects.Image[] {
   registerQuestItemFrames(scene);
@@ -366,21 +377,39 @@ export function addCloverVillageSetPieces(scene: Phaser.Scene): Phaser.GameObjec
     const x = piece.tileX * TILE_SIZE;
     const y = piece.baseTileY * TILE_SIZE;
 
-    // A soft contact shadow sized from the actual art keeps authored overlays
-    // grounded against the continuous field without blocky tile artifacts.
-    // cutWidth covers both plain textures and manually added sheet frames.
-    const source = scene.textures.get(key).get(frame);
-    const frameWidth = source.cutWidth;
-    const shadowWidth = Math.min(320, Math.max(24, frameWidth * piece.scale * 0.7));
+    // A soft contact shadow keeps authored overlays grounded against the
+    // continuous field without blocky tile artifacts. Size, offset and alpha all
+    // come from the shared lighting recipe, derived from the piece's ground
+    // footprint (sizing table + scale), so a trunk and a facade each cast a
+    // shadow of their own weight instead of sharing one hand-tuned number.
+    const spec = CLOVER_VILLAGE_PROP_SIZING[piece.texture];
+    const footprint =
+      spec === undefined
+        ? undefined
+        : footprintWidthPx(spec, piece.scale);
+    const recipe = shadowRecipe(footprint ?? 40);
     const shadow = scene.add
-      .ellipse(x, y - 4, shadowWidth, Math.max(10, shadowWidth * 0.2), 0x263b2a, 0.2)
-      .setDepth(worldDepth(y, -0.04));
+      .ellipse(
+        x + recipe.offsetXPx,
+        y + recipe.offsetYPx,
+        recipe.widthPx,
+        recipe.heightPx,
+        recipe.color,
+        recipe.alpha,
+      )
+      .setDepth(worldDepth(y, DEPTH_OFFSET.contactShadow));
 
+    // A foreground piece draws over the courier instead of sorting against
+    // them — see `foregroundDepth` for why that cannot go through worldDepth.
+    const depth =
+      piece.foreground === true
+        ? foregroundDepth(y)
+        : worldDepth(y, piece.depthOffset ?? DEPTH_OFFSET.piece);
     const image = scene.add
       .image(x, y, key, frame)
       .setOrigin(0.5, 1)
       .setScale(piece.scale)
-      .setDepth(worldDepth(y, piece.depthOffset ?? 0));
+      .setDepth(depth);
     if (piece.rotation !== undefined && piece.rotation !== 0) {
       image.setRotation(piece.rotation);
     }

@@ -27,11 +27,19 @@ import { CharacterProfilePanel } from "../ui/CharacterProfilePanel.ts";
 import { QuestTracker } from "../ui/QuestTracker.ts";
 import { InventoryButton } from "../ui/InventoryButton.ts";
 import { LocalMapPanel } from "../ui/LocalMapPanel.ts";
+import { addCloverVillageSetPieces } from "../game/cloverVillageAssets.ts";
+import { addHappyValleySetPieces } from "../game/happyValleyAssets.ts";
+import { CLOVER_VILLAGE_TERRAIN } from "../game/cloverVillagePlacements.ts";
+import { HAPPY_VALLEY_TERRAIN } from "../game/happyValleyPlacements.ts";
+import { addTerrainSurface, terrainPlanInput, type TerrainMaterials } from "../game/terrainAssets.ts";
+import { reservedTilesFor, COMPOSITION_DEFAULTS } from "../game/terrainComposition.ts";
+import { buildTerrainPlan, type TerrainPlan } from "../game/terrainSurface.ts";
+import { entityShadow } from "../game/entitySizing.ts";
 import {
-  addCloverVillageGround,
-  addCloverVillageSetPieces,
-} from "../game/cloverVillageAssets.ts";
-import { addHappyValleyGround, addHappyValleySetPieces } from "../game/happyValleyAssets.ts";
+  CLOVER_VILLAGE_PROP_SIZING,
+  HAPPY_VALLEY_PROP_SIZING,
+} from "../game/propSizing.ts";
+import { COMPOSITION_BY_ZONE } from "../game/compositionPlans.ts";
 import type { VisualSceneMetadata } from "../types/VisualSceneMetadata.ts";
 import npcsJson from "../data/npcs.json" with { type: "json" };
 import dialogueJson from "../data/dialogue.json" with { type: "json" };
@@ -39,7 +47,7 @@ import questsJson from "../data/quests.json" with { type: "json" };
 import type { NPC as NPCDefinition } from "../types/NPCtypes.ts";
 import type { DialogueSet } from "../types/DialogueTypes.ts";
 import type { QuestDefinition } from "../types/QuestTypes.ts";
-import { worldDepth } from "../game/WorldDepth.ts";
+import { DEPTH_OFFSET, worldDepth } from "../game/WorldDepth.ts";
 
 export interface OverworldSceneData {
   zoneId?: string;
@@ -63,6 +71,42 @@ const SCENE_SNAPSHOT_MAX_WIDTH = 320;
 const VISUAL_CAPTURE_MAX_WIDTH = 800;
 /** Leave headroom below the server's 1.5 MB decoded PNG limit. */
 const VISUAL_CAPTURE_MAX_BYTES = 1_400_000;
+/**
+ * World camera zoom (visual Pass 1 — camera framing).
+ *
+ * The previous Clover Village value was 0.8: a zoom *out*, despite the comment
+ * describing a zoom-in. It shrank the courier and pushed ~25 tiles across the
+ * viewport, which is a large part of why the world read as a flat tile field
+ * seen from far away. A modest zoom-in frames the village at reference scale
+ * (~18 tiles wide), so buildings, props and the courier occupy comparable
+ * screen space instead of the world drifting off into the distance.
+ *
+ * Interplay warning: scripts/downscale-clover-valley-props.mjs sized every
+ * prop texture against a 0.8 camera ("4x its largest rendered size"). Zooming
+ * in only increases a prop's on-screen size, so that rule stays satisfied.
+ * Do NOT re-run that script to "correct" for this — it rewrites the hand-tuned
+ * `scale:` values inside cloverVillagePlacements.ts in place.
+ */
+const WORLD_CAMERA_ZOOM = 1.1;
+
+/**
+ * Terrain materials per zone, for the shared `addTerrainSurface` renderer.
+ *
+ * A zone absent from this table keeps the procedural tile art it always had,
+ * so adding a map here is the only opt-in the renderer needs.
+ */
+const TERRAIN_BY_ZONE: Readonly<Record<string, TerrainMaterials>> = {
+  [ZoneKeys.CloverVillage]: CLOVER_VILLAGE_TERRAIN,
+  [ZoneKeys.HappyValley]: HAPPY_VALLEY_TERRAIN,
+};
+
+/**
+ * Composition plans come from `src/game/compositionPlans.ts`, which reads the
+ * authored JSON (`src/data/maps/*.composition.json`) so a zone's clearings and
+ * thickets are content a designer can edit without touching a system. A zone
+ * with no plan composes exactly as every zone did before plans existed, and
+ * `npm run validate` rejects a plan that no longer matches its map.
+ */
 
 /**
  * The zone-capable world scene (Phase 2-3): builds a tilemap from the custom
@@ -72,7 +116,9 @@ const VISUAL_CAPTURE_MAX_BYTES = 1_400_000;
  */
 export class OverworldScene extends Phaser.Scene {
   private player!: Player;
-  private shadow!: Phaser.GameObjects.Image;
+  private shadow!: Phaser.GameObjects.Ellipse;
+  /** The zone's terrain plan, built once per create() for the tilemap + surface. */
+  private terrainPlan: TerrainPlan | null = null;
   private lastNpcTalkAt = 0;
   private lastSceneSnapshotAt = 0;
   private captureInProgress = false;
@@ -146,14 +192,39 @@ export class OverworldScene extends Phaser.Scene {
     this.network.attach(this, zoneId);
     if (character !== null) this.network.start(zoneId, character.id);
 
+    // One shared authored-surface renderer for every zone. A zone that supplies
+    // no materials (anything but the two hand-composed maps) simply keeps its
+    // procedural tile art, and the call is still cleanup-safe.
+    const terrain = TERRAIN_BY_ZONE[resolved.id];
+    // The terrain plan is pure and cheap, and two passes need the same answer:
+    // the tilemap asks which blocking tiles have art over them, and the surface
+    // renderer draws exactly that plan.
+    const reserved = reservedTilesFor(
+      resolved,
+      NPCS.filter((npc) => npc.homeZone === resolved.id).map((npc) => npc.homeTile),
+    );
+    this.terrainPlan =
+      terrain === undefined
+        ? null
+        : buildTerrainPlan(
+            resolved,
+            terrainPlanInput(terrain, {
+              reserved,
+              composition: COMPOSITION_BY_ZONE[resolved.id] ?? COMPOSITION_DEFAULTS,
+              sizing:
+                resolved.id === ZoneKeys.CloverVillage
+                  ? CLOVER_VILLAGE_PROP_SIZING
+                  : HAPPY_VALLEY_PROP_SIZING,
+            }),
+          );
     this.buildTilemap(resolved);
-    if (resolved.id === ZoneKeys.CloverVillage) {
-      // The authored surface replaces ordinary grass/path tile art, but the
-      // collision tiles must remain visible. Hiding the whole tilemap leaves
-      // trees and water as invisible solid obstacles in the world.
-      this.visualGround = addCloverVillageGround(this, resolved);
-    } else if (resolved.id === ZoneKeys.HappyValley) {
-      this.visualGround = addHappyValleyGround(this, resolved);
+    if (terrain !== undefined) {
+      // Hand the composition planner the tiles decoration must keep clear of:
+      // the map's own spawn/transitions/interactables plus this zone's NPCs.
+      this.visualGround = addTerrainSurface(this, resolved, terrain, {
+        reserved,
+        plan: this.terrainPlan ?? undefined,
+      });
     }
     // Physics world matches the whole map so the camera + colliders behave.
     this.physics.world.setBounds(
@@ -178,9 +249,20 @@ export class OverworldScene extends Phaser.Scene {
       spawn.y * TILE_SIZE + TILE_SIZE / 2,
       character?.class_id ?? 1,
     );
+    // The courier's shadow comes from the same recipe as every prop's (Pass 6),
+    // sized from its own ground contact, and sits at the figure's feet as the
+    // entity convention measures them — not at a fixed 12px below centre.
+    const playerShadow = entityShadow(this.player.sizing);
     this.shadow = this.add
-      .image(this.player.x, this.player.y + 12, TextureKeys.PlayerShadow)
-      .setDepth(worldDepth(this.player.y, -0.08));
+      .ellipse(
+        this.player.x,
+        this.player.y + this.player.feetOffsetPx,
+        playerShadow.widthPx,
+        playerShadow.heightPx,
+        playerShadow.color,
+        playerShadow.alpha,
+      )
+      .setDepth(worldDepth(this.player.y, DEPTH_OFFSET.contactShadow));
     this.player.setDepth(worldDepth(this.player.y));
 
     // Collide with the ground layer only now that the player exists (and guard
@@ -207,10 +289,10 @@ export class OverworldScene extends Phaser.Scene {
 
     const camera = this.cameras.main;
     camera.setBounds(0, 0, resolved.width * TILE_SIZE, resolved.height * TILE_SIZE);
-    // Clover Village is the large shared hub, but the courier should remain
-    // readable. A modest zoom-in enlarges every world character together while
-    // preserving the existing tile scale, collision, and camera bounds.
-    camera.setZoom(this.mapData.id === ZoneKeys.CloverVillage ? 0.8 : 1);
+    // Frame the world at reference scale. Every zone shares one zoom so the
+    // courier keeps a constant apparent size across the village and the
+    // valley; tile scale, collision, and camera bounds are all unchanged.
+    camera.setZoom(WORLD_CAMERA_ZOOM);
     // Keep fractional camera positions for smooth 2.5D art; integer camera
     // rounding would make movement look like pixel-art stepping.
     camera.startFollow(this.player, false, 0.12, 0.12);
@@ -355,8 +437,8 @@ export class OverworldScene extends Phaser.Scene {
     if (this.isDefeated) {
       this.player.move({ x: 0, y: 0 });
       this.player.setDepth(worldDepth(this.player.y));
-      this.shadow.setPosition(this.player.x, this.player.y + 12);
-      this.shadow.setDepth(worldDepth(this.player.y, -0.08));
+      this.shadow.setPosition(this.player.x, this.player.y + this.player.feetOffsetPx);
+      this.shadow.setDepth(worldDepth(this.player.y, DEPTH_OFFSET.contactShadow));
       this.skillBar.setVisible(false);
       this.network.update();
       return;
@@ -366,8 +448,8 @@ export class OverworldScene extends Phaser.Scene {
     if (dialoguePanel.isOpen()) {
       this.player.move({ x: 0, y: 0 });
       this.player.setDepth(worldDepth(this.player.y));
-      this.shadow.setPosition(this.player.x, this.player.y + 12);
-      this.shadow.setDepth(worldDepth(this.player.y, -0.08));
+      this.shadow.setPosition(this.player.x, this.player.y + this.player.feetOffsetPx);
+      this.shadow.setDepth(worldDepth(this.player.y, DEPTH_OFFSET.contactShadow));
       this.skillBar.setVisible(false);
       if (this.inputSystem.consumeInteract()) dialoguePanel.advance();
       this.prompt.setVisible(false);
@@ -378,8 +460,8 @@ export class OverworldScene extends Phaser.Scene {
     const vector = this.inputSystem.getMoveVector();
     this.player.move(vector);
     this.player.setDepth(worldDepth(this.player.y));
-    this.shadow.setPosition(this.player.x, this.player.y + 12);
-    this.shadow.setDepth(worldDepth(this.player.y, -0.08));
+    this.shadow.setPosition(this.player.x, this.player.y + this.player.feetOffsetPx);
+    this.shadow.setDepth(worldDepth(this.player.y, DEPTH_OFFSET.contactShadow));
 
     // Phase 2 — send a throttled move intent (dominant axis only; the server
     // rejects diagonals) and interpolate other couriers' snapshots.
@@ -489,15 +571,29 @@ export class OverworldScene extends Phaser.Scene {
     // Set all four collision faces and recalculate them across the complete
     // layer. This keeps adjacent solid tiles symmetric at their exposed edges.
     layer.setCollision([...COLLIDING_TILE_INDICES], true, true);
-    if (map.id === ZoneKeys.CloverVillage) {
-      // Clover Village has an authored ground/road surface above the normal
-      // tile art. Keep only blocking tiles rendered by this layer so every
-      // physical obstacle still has a visible representation.
-      layer.forEachTile((tile) => {
-        tile.visible = tile.collides;
-      });
-      layer.setDepth(-10);
-    }
+    const covered = new Set(TERRAIN_BY_ZONE[map.id]?.coveredBlockingCodes ?? []);
+    // Only blocking tiles stay on the tile map: every non-blocking tile is
+    // drawn by the authored surface, and leaving one visible would paint a flat
+    // procedural square over the art.
+    //
+    // A blocking tile whose square the zone suppresses is hidden only where the
+    // plan actually put art over it. Per *tile* rather than per code, because
+    // the cover rule deliberately keeps off reserved tiles — so hiding by code
+    // alone would leave a solid, invisible obstacle beside an interactable and
+    // the courier would stop at nothing. Where no art stands in, the plain
+    // square stays: visibly solid beats invisibly solid.
+    layer.forEachTile((tile) => {
+      const code = map.rows[tile.y]?.[tile.x] ?? "";
+      if (!tile.collides) {
+        tile.visible = false;
+        return;
+      }
+      const suppressed = covered.has(code);
+      tile.visible = !suppressed || !this.terrainPlan?.coveredBlockingTiles.has(`${tile.x},${tile.y}`);
+    });
+    // Above the terrain surface (see TERRAIN_DEPTH) but below every entity, so
+    // a surviving obstacle square never draws over the courier.
+    layer.setDepth(-10);
     this.groundLayer = layer;
   }
 
@@ -627,7 +723,7 @@ export class OverworldScene extends Phaser.Scene {
           obj.y * TILE_SIZE + TILE_SIZE / 2,
           TextureKeys.ObjectMarker,
         )
-        .setDepth(worldDepth(obj.y * TILE_SIZE + TILE_SIZE / 2, 0.04))
+        .setDepth(worldDepth(obj.y * TILE_SIZE + TILE_SIZE / 2, DEPTH_OFFSET.overlay))
         .setTint(0xd8b28a);
     }
   }
@@ -770,7 +866,11 @@ export class OverworldScene extends Phaser.Scene {
     const now = Date.now();
     if (now - this.lastSceneSnapshotAt < SCENE_SNAPSHOT_MIN_INTERVAL_MS) return null;
     this.lastSceneSnapshotAt = now;
-    const canvas = document.querySelector("#game-container canvas");
+    // Direct child: #hud-layer now precedes the Phaser canvas inside
+    // #game-container, so a plain descendant selector would pick up the
+    // minimap's canvas and send the model a 75x75 map thumbnail instead of
+    // the world the courier is looking at.
+    const canvas = document.querySelector("#game-container > canvas");
     if (!(canvas instanceof HTMLCanvasElement) || canvas.width === 0) return null;
     try {
       const scale =

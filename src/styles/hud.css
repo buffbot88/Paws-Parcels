@@ -1,0 +1,664 @@
+/* HUD v4 — the canvas-relative world HUD layer.
+ *
+ * This is the stylesheet that the world HUD components in src/ui/*.ts have
+ * always described in their own doc comments but that never existed: nothing
+ * in this project defined .player-card, .minimap, .skill-bar, .quest-tracker,
+ * .chat-box, .inventory-button or the .hud-tray/.skill-slot family. The only
+ * surviving trace was an orphaned reduced-motion block at the end of
+ * game-ui.css referencing .minimap__server and .skill-slot__cooldown.
+ *
+ * The consequences were not cosmetic. With no positioning of their own, the
+ * panels were ordinary in-flow children of #game-container: the status card
+ * stretched to the full window width, and because the container clips its
+ * overflow while the canvas filled its whole height, every component mounted
+ * after the canvas was pushed out of sight. The world HUD now lives in
+ * #hud-layer (see src/styles/global.css), which is absolutely positioned, and
+ * every rule below is absolute within it.
+ *
+ * Sizing is authored against the 960x540 internal canvas and multiplied by
+ * --hud-scale, so the HUD keeps the same footprint relative to the world on
+ * every device rather than drifting with device pixels. --hud-scale has a
+ * legibility floor: on a small phone the window scales down, and text must not
+ * scale with it into illegibility.
+ *
+ * Layout (per design/UI.png): compact status card top-left, minimap
+ * top-right, quest tracker on the right above the inventory control, skill bar
+ * bottom-centre, chat bottom-left, inventory bottom-right.
+ */
+
+#hud-layer {
+  --hud-scale: max(var(--game-scale, 1), 0.55);
+  --hud-edge: calc(var(--hud-scale) * 12px);
+  --hud-gap: calc(var(--hud-scale) * 8px);
+  --hud-radius: calc(var(--hud-scale) * 14px);
+  --hud-inventory-height: calc(var(--hud-scale) * 38px);
+  /* Cream "raised soft card" recipe, scaled from the shared tokens. */
+  --hud-card-surface: linear-gradient(
+    150deg,
+    rgba(255, 249, 232, 0.94),
+    rgba(247, 235, 203, 0.88)
+  );
+}
+
+/* ------------------------------------------------------------------ */
+/* Player status card — compact, top-left                              */
+/* ------------------------------------------------------------------ */
+
+#player-hp.player-card {
+  position: absolute;
+  top: var(--hud-edge);
+  left: var(--hud-edge);
+  width: calc(var(--hud-scale) * 242px);
+  border-radius: var(--hud-radius);
+}
+
+/* The status card is display-only. If it swallowed pointer events it would
+   sit on top of the world's top-left corner and eat clicks meant for the
+   canvas — which is also where the e2e harness focuses the game. */
+#player-hp.player-card { pointer-events: none; }
+
+#player-hp.player-card > .hud-panel__body {
+  padding: calc(var(--hud-scale) * 8px) calc(var(--hud-scale) * 10px);
+  gap: calc(var(--hud-scale) * 9px);
+}
+
+.player-card__portrait {
+  width: calc(var(--hud-scale) * 46px);
+  height: calc(var(--hud-scale) * 46px);
+  border-width: calc(var(--hud-scale) * 2px);
+  font-size: calc(var(--hud-scale) * 20px);
+}
+
+.player-card__details {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: calc(var(--hud-scale) * 4px);
+  min-width: 0;
+}
+
+.player-card__identity {
+  display: flex;
+  align-items: baseline;
+  gap: calc(var(--hud-scale) * 6px);
+  min-width: 0;
+}
+
+.player-card__name {
+  overflow: hidden;
+  color: var(--brown-900);
+  font-family: var(--font-display);
+  font-size: calc(var(--hud-scale) * 14px);
+  line-height: 1.1;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.player-card__rank {
+  flex: none;
+  color: var(--brown-600);
+  font-size: calc(var(--hud-scale) * 9px);
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.player-card__health {
+  display: flex;
+  align-items: center;
+  gap: calc(var(--hud-scale) * 6px);
+}
+
+.player-card__heart {
+  flex: none;
+  color: var(--hp);
+}
+
+.player-card__health .hud-progress {
+  height: calc(var(--hud-scale) * 11px);
+}
+
+.player-card__hp-text {
+  flex: none;
+  color: var(--brown-900);
+  font-size: calc(var(--hud-scale) * 10px);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.player-card__stats {
+  display: flex;
+  gap: calc(var(--hud-scale) * 12px);
+  color: var(--brown-600);
+  font-size: calc(var(--hud-scale) * 10px);
+}
+
+.player-card__stat {
+  display: inline-flex;
+  align-items: center;
+  gap: calc(var(--hud-scale) * 4px);
+}
+
+.player-card__stat b {
+  color: var(--brown-900);
+  font-size: calc(var(--hud-scale) * 11px);
+}
+
+/* ------------------------------------------------------------------ */
+/* Minimap — top-right                                                 */
+/* ------------------------------------------------------------------ */
+
+.minimap {
+  position: absolute;
+  top: var(--hud-edge);
+  right: var(--hud-edge);
+  display: flex;
+  flex-direction: column;
+  width: calc(var(--hud-scale) * var(--minimap-width, 150) * 1px);
+  overflow: hidden;
+  color: var(--cream-50);
+  background: rgba(23, 54, 31, 0.92);
+  border: 1px solid rgba(186, 145, 62, 0.45);
+  border-radius: var(--hud-radius);
+  box-shadow: var(--panel-shadow-dark);
+  font-family: var(--font-body);
+  animation: hud-panel-in var(--motion-panel);
+}
+
+.minimap__header {
+  display: flex;
+  align-items: center;
+  gap: calc(var(--hud-scale) * 6px);
+  height: calc(var(--hud-scale) * 24px);
+  padding: 0 calc(var(--hud-scale) * 8px);
+  color: var(--cream-50);
+  background: transparent;
+  border: 0;
+  font-family: var(--font-display);
+  font-size: calc(var(--hud-scale) * 11px);
+  font-weight: 700;
+  text-align: left;
+  cursor: pointer;
+}
+
+.minimap__header:hover { background: rgba(231, 188, 85, 0.14); }
+.minimap__header:focus-visible { outline: 2px solid var(--gold-500); outline-offset: -2px; }
+
+.minimap__pin { flex: none; color: var(--gold-400); }
+
+.minimap__title {
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.minimap__caret {
+  display: grid;
+  place-items: center;
+  flex: none;
+  transition: transform var(--motion-hover);
+}
+
+/* Height follows the map aspect (published by Minimap.attach); the two
+   canvases are stacked so the static terrain and the live layer never
+   re-layout as entities move. */
+.minimap__body {
+  position: relative;
+  width: 100%;
+  height: calc(
+    var(--hud-scale) * var(--minimap-width, 150) * var(--minimap-aspect, 1) * 1px
+  );
+  background: #8fc98a;
+}
+
+.minimap__base,
+.minimap__dyn {
+  position: absolute;
+  inset: 0;
+  display: block;
+  width: 100%;
+  height: 100%;
+  image-rendering: pixelated;
+}
+
+.minimap__footer {
+  display: flex;
+  align-items: center;
+  gap: calc(var(--hud-scale) * 6px);
+  height: calc(var(--hud-scale) * 20px);
+  padding: 0 calc(var(--hud-scale) * 8px);
+  border-top: 1px solid rgba(231, 188, 85, 0.22);
+  font-size: calc(var(--hud-scale) * 9px);
+}
+
+.minimap__zone {
+  flex: 1;
+  overflow: hidden;
+  color: var(--cream-100);
+  font-weight: 700;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.minimap__coords {
+  flex: none;
+  color: var(--sage-300);
+  font-variant-numeric: tabular-nums;
+}
+
+.minimap__server {
+  display: block;
+  flex: none;
+  width: calc(var(--hud-scale) * 9px);
+  height: calc(var(--hud-scale) * 9px);
+}
+
+.minimap__server::before {
+  content: "";
+  display: block;
+  width: 100%;
+  height: 100%;
+  background: var(--hp);
+  border-radius: 50%;
+}
+
+.minimap__server[data-status="joined"]::before { background: var(--success); }
+.minimap__server[data-status="idle"]::before { background: var(--brown-600); }
+.minimap__server[data-status="closed"]::before { background: var(--hp); }
+
+.minimap__server[data-status="connecting"]::before,
+.minimap__server[data-status="authenticating"]::before,
+.minimap__server[data-status="fetching-token"]::before,
+.minimap__server[data-status="reconnecting"]::before {
+  background: var(--gold-400);
+  animation: hud-status-pulse 1.2s ease-in-out infinite;
+}
+
+@keyframes hud-status-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.3; }
+}
+
+.minimap--collapsed .minimap__body,
+.minimap--collapsed .minimap__footer { display: none; }
+
+.minimap--collapsed .minimap__caret { transform: rotate(180deg); }
+
+.minimap[hidden] { display: none; }
+
+/* ------------------------------------------------------------------ */
+/* Quest tracker — right edge, above the inventory control             */
+/* ------------------------------------------------------------------ */
+
+.quest-tracker {
+  position: absolute;
+  right: var(--hud-edge);
+  bottom: calc(
+    var(--hud-edge) + var(--hud-inventory-height) + var(--hud-gap)
+  );
+  width: calc(var(--hud-scale) * 196px);
+  border-radius: var(--hud-radius);
+}
+
+.quest-tracker > .hud-panel__body {
+  padding: calc(var(--hud-scale) * 12px) calc(var(--hud-scale) * 12px)
+    calc(var(--hud-scale) * 10px);
+  gap: calc(var(--hud-scale) * 6px);
+}
+
+/* Category tab sitting on the card's top edge. */
+.quest-tracker__tab {
+  position: absolute;
+  top: calc(var(--hud-scale) * -9px);
+  left: calc(var(--hud-scale) * 12px);
+  padding: calc(var(--hud-scale) * 3px) calc(var(--hud-scale) * 9px);
+  font-size: calc(var(--hud-scale) * 9px);
+}
+
+.quest-tracker__header {
+  display: flex;
+  align-items: center;
+  gap: calc(var(--hud-scale) * 6px);
+}
+
+.quest-tracker__title {
+  flex: 1;
+  color: var(--brown-900);
+  font-family: var(--font-display);
+  font-size: calc(var(--hud-scale) * 13px);
+  line-height: 1.15;
+}
+
+.quest-tracker__toggle {
+  width: calc(var(--hud-scale) * 22px);
+  height: calc(var(--hud-scale) * 22px);
+}
+
+.quest-tracker__objective {
+  display: block;
+  color: var(--brown-600);
+  font-size: calc(var(--hud-scale) * 10px);
+  line-height: 1.35;
+}
+
+.quest-tracker__row {
+  display: flex;
+  align-items: center;
+  gap: calc(var(--hud-scale) * 6px);
+}
+
+.quest-tracker__status {
+  flex: 1;
+  color: var(--brown-900);
+  font-size: calc(var(--hud-scale) * 10px);
+  font-weight: 700;
+  line-height: 1.3;
+}
+
+.quest-tracker__status--notice { color: var(--success); }
+
+.quest-tracker__action {
+  padding: calc(var(--hud-scale) * 5px) calc(var(--hud-scale) * 10px);
+  font-size: calc(var(--hud-scale) * 10px);
+}
+
+.quest-tracker--collapsed > .hud-panel__body { display: none; }
+
+.quest-tracker[hidden] { display: none; }
+
+/* ------------------------------------------------------------------ */
+/* Skill bar — bottom centre                                           */
+/* ------------------------------------------------------------------ */
+
+.skill-bar {
+  position: absolute;
+  left: 50%;
+  bottom: var(--hud-edge);
+  display: flex;
+  align-items: center;
+  gap: var(--hud-gap);
+  padding: calc(var(--hud-scale) * 6px) calc(var(--hud-scale) * 10px);
+  transform: translateX(-50%);
+  background: var(--hud-card-surface);
+  border: var(--panel-border);
+  border-radius: var(--radius-pill);
+  box-shadow: var(--panel-shadow);
+  animation: hud-panel-in var(--motion-panel);
+}
+
+.hud-tray__leaf {
+  flex: none;
+  font-size: calc(var(--hud-scale) * 14px);
+  opacity: 0.55;
+  user-select: none;
+}
+
+.skill-bar__slots {
+  display: flex;
+  gap: calc(var(--hud-scale) * 6px);
+}
+
+.skill-slot {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: calc(var(--hud-scale) * 40px);
+  height: calc(var(--hud-scale) * 40px);
+  padding: 0;
+  overflow: hidden;
+  color: var(--forest-950);
+  background: radial-gradient(circle at 38% 28%, var(--cream-50), var(--cream-200));
+  border: 1px solid rgba(128, 103, 75, 0.5);
+  border-radius: calc(var(--hud-scale) * 10px);
+  box-shadow: inset 0 -2px 0 rgba(128, 103, 75, 0.22);
+  cursor: pointer;
+  transition: transform var(--motion-hover), filter var(--motion-hover);
+}
+
+.skill-slot:disabled {
+  cursor: not-allowed;
+  filter: grayscale(0.7);
+  opacity: 0.5;
+}
+
+.skill-slot:not(:disabled):hover { filter: brightness(1.08); }
+.skill-slot:focus-visible { outline: 2px solid var(--gold-500); outline-offset: 1px; }
+
+.skill-slot__icon {
+  font-size: calc(var(--hud-scale) * 17px);
+  line-height: 1;
+}
+
+.skill-slot__key {
+  position: absolute;
+  right: calc(var(--hud-scale) * -2px);
+  bottom: calc(var(--hud-scale) * -2px);
+  transform: scale(0.8);
+}
+
+/* Server-confirmed attack flash: a short press, then the cooldown sweep. */
+.skill-slot--pressed { animation: hud-slot-press 180ms ease-out; }
+
+@keyframes hud-slot-press {
+  0% { transform: scale(1); }
+  45% { transform: scale(0.9); filter: brightness(1.25); }
+  100% { transform: scale(1); }
+}
+
+.skill-slot__cooldown {
+  position: absolute;
+  inset: 0;
+  background: rgba(24, 53, 31, 0.6);
+  opacity: 0;
+  pointer-events: none;
+}
+
+/* animation-duration is set inline by SkillBar.showFeedback to the server's
+   authoritative class cooldown (bear 3s / cat 2.5s / fox 2s). */
+.skill-slot--cooldown .skill-slot__cooldown {
+  animation: hud-slot-cooldown linear forwards;
+}
+
+@keyframes hud-slot-cooldown {
+  from { opacity: 0.62; }
+  to { opacity: 0; }
+}
+
+.skill-bar__hint {
+  flex: none;
+  height: auto;
+  padding: calc(var(--hud-scale) * 4px) calc(var(--hud-scale) * 8px);
+  border-radius: var(--radius-pill);
+  font-size: calc(var(--hud-scale) * 9px);
+  white-space: nowrap;
+}
+
+.skill-bar[hidden] { display: none; }
+
+/* ------------------------------------------------------------------ */
+/* Village chat — bottom-left                                          */
+/* ------------------------------------------------------------------ */
+
+.chat-box {
+  position: absolute;
+  left: var(--hud-edge);
+  bottom: var(--hud-edge);
+  width: calc(var(--hud-scale) * 224px);
+  border-radius: var(--hud-radius);
+}
+
+.chat-box > .hud-panel__body {
+  padding: calc(var(--hud-scale) * 9px) calc(var(--hud-scale) * 10px)
+    calc(var(--hud-scale) * 10px);
+  gap: calc(var(--hud-scale) * 7px);
+}
+
+.chat-box__header {
+  display: flex;
+  align-items: center;
+  gap: calc(var(--hud-scale) * 6px);
+  font-size: calc(var(--hud-scale) * 10px);
+}
+
+.chat-box__title {
+  display: inline-flex;
+  align-items: center;
+  flex: 1;
+  gap: calc(var(--hud-scale) * 5px);
+  overflow: hidden;
+  font-family: var(--font-display);
+  font-weight: 700;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.chat-box__scope {
+  flex: none;
+  padding: calc(var(--hud-scale) * 2px) calc(var(--hud-scale) * 7px);
+  font-size: calc(var(--hud-scale) * 8px);
+}
+
+.chat-box__log {
+  display: flex;
+  flex-direction: column;
+  gap: calc(var(--hud-scale) * 4px);
+  height: calc(var(--hud-scale) * 62px);
+  overflow-y: auto;
+  scrollbar-width: thin;
+  font-size: calc(var(--hud-scale) * 10px);
+  line-height: 1.35;
+}
+
+.chat-box__empty {
+  display: grid;
+  place-items: center;
+  gap: calc(var(--hud-scale) * 2px);
+  height: 100%;
+  color: rgba(175, 197, 140, 0.7);
+  text-align: center;
+}
+
+.chat-box__empty[hidden] { display: none; }
+
+.chat-box__message {
+  display: flex;
+  gap: calc(var(--hud-scale) * 4px);
+  color: var(--cream-100);
+  overflow-wrap: anywhere;
+}
+
+.chat-box__message strong { flex: none; color: var(--gold-400); }
+.chat-box__message--self strong { color: var(--sage-300); }
+
+.chat-box__composer {
+  display: flex;
+  align-items: center;
+  gap: calc(var(--hud-scale) * 6px);
+}
+
+.chat-box__field {
+  position: relative;
+  display: flex;
+  align-items: center;
+  flex: 1;
+  min-width: 0;
+}
+
+.chat-box__field-icon {
+  position: absolute;
+  left: calc(var(--hud-scale) * 8px);
+  color: var(--sage-300);
+  pointer-events: none;
+}
+
+.chat-box__input {
+  width: 100%;
+  height: calc(var(--hud-scale) * 28px);
+  padding: 0 calc(var(--hud-scale) * 8px) 0 calc(var(--hud-scale) * 26px);
+  color: var(--cream-50);
+  background: rgba(255, 249, 232, 0.1);
+  border: 1px solid rgba(231, 188, 85, 0.3);
+  border-radius: var(--radius-pill);
+  font-family: var(--font-body);
+  font-size: calc(var(--hud-scale) * 10px);
+}
+
+.chat-box__input::placeholder { color: rgba(175, 197, 140, 0.65); }
+.chat-box__input:focus-visible { outline: 2px solid var(--gold-500); outline-offset: 1px; }
+
+.chat-box__send {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: calc(var(--hud-scale) * 28px);
+  height: calc(var(--hud-scale) * 28px);
+  padding: 0;
+  color: var(--forest-950);
+  background: linear-gradient(150deg, var(--gold-400), var(--gold-500));
+  border: 1px solid var(--gold-500);
+  border-radius: 50%;
+  cursor: pointer;
+}
+
+.chat-box__send:disabled { cursor: not-allowed; filter: grayscale(0.6); opacity: 0.5; }
+.chat-box__send:focus-visible { outline: 2px solid var(--gold-500); outline-offset: 1px; }
+
+.chat-box[hidden] { display: none; }
+
+/* ------------------------------------------------------------------ */
+/* Inventory control — bottom-right                                    */
+/* ------------------------------------------------------------------ */
+
+.inventory-button {
+  position: absolute;
+  right: var(--hud-edge);
+  bottom: var(--hud-edge);
+  display: inline-flex;
+  align-items: center;
+  gap: var(--hud-gap);
+  height: var(--hud-inventory-height);
+  padding: 0 calc(var(--hud-scale) * 12px);
+  color: var(--brown-900);
+  background: var(--hud-card-surface);
+  border: var(--panel-border);
+  border-radius: var(--radius-pill);
+  box-shadow: var(--panel-shadow);
+  font-family: var(--font-body);
+  font-size: calc(var(--hud-scale) * 12px);
+  font-weight: 700;
+  cursor: pointer;
+  transition: transform var(--motion-hover), filter var(--motion-hover);
+}
+
+.inventory-button:hover { filter: brightness(1.06); }
+.inventory-button:active { transform: scale(0.98); }
+.inventory-button:focus-visible { outline: 2px solid var(--gold-500); outline-offset: 2px; }
+
+.inventory-button__icon { flex: none; color: var(--forest-800); }
+.inventory-button__label { white-space: nowrap; }
+.inventory-button .hud-key { flex: none; transform: scale(0.9); }
+
+.inventory-button[hidden] { display: none; }
+
+/* ------------------------------------------------------------------ */
+/* Narrow game windows                                                 */
+/* ------------------------------------------------------------------ */
+
+/* The world window can get genuinely small (a phone in portrait). Below a
+   certain scale the right-hand column would collide, so the tracker and the
+   chat log step back and leave the world readable. */
+@media (max-width: 560px) {
+  .chat-box__log { display: none; }
+  .quest-tracker__objective { display: none; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .minimap,
+  .skill-bar,
+  .skill-slot--pressed,
+  .minimap__server[data-status]::before,
+  .skill-slot--cooldown .skill-slot__cooldown {
+    animation: none;
+  }
+}

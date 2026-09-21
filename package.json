@@ -29,6 +29,8 @@
     "visual:review": "node --import tsx scripts/visual-director.mjs",
     "visual:latest": "node --import tsx scripts/visual-latest.mjs",
     "visual:history": "node --import tsx scripts/visual-history.mjs",
+    "visual:baseline": "node node_modules/playwright/cli.js test visual-baseline",
+    "composition:render": "node --import tsx scripts/render-composition.mjs",
     "e2e": "node node_modules/playwright/cli.js test",
     "e2e:headed": "node node_modules/playwright/cli.js test --headed",
     "e2e:report": "node node_modules/playwright/cli.js show-report"

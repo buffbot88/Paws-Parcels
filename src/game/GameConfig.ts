@@ -6,8 +6,14 @@ import { OverworldScene } from "../scenes/OverworldScene.ts";
 /** Locked in design/decisions.md: 960x540 internal resolution. */
 export const GAME_WIDTH = 960;
 export const GAME_HEIGHT = 540;
-/** Locked in design/decisions.md: 48x48 tile grid. */
-export const TILE_SIZE = 48;
+/**
+ * Locked in design/decisions.md: 48x48 tile grid.
+ *
+ * Re-exported from `tileGrid.ts`, which is Phaser-free so the node tests can
+ * import the same number without loading the engine.
+ */
+export { TILE_SIZE } from "./tileGrid.ts";
+import { TILE_SIZE } from "./tileGrid.ts";
 
 export const gameConfig: Phaser.Types.Core.GameConfig = {
   type: Phaser.AUTO,

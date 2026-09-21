@@ -6,6 +6,9 @@
 > removed — this document now describes only the **shipped 75×75 layout**.
 > Spawn/monster rules for the online game: [`BuildPlan.md`](../BuildPlan.md) §8,
 > [`monsters.md`](monsters.md). NPC cards: [`npcs.md`](npcs.md).
+> Where each zone's clearings, thickets and framed entrances belong is authored separately, in
+> `src/data/maps/<zone>.composition.json` (see `design/decisions.md`, *Composition intent lives
+> in per-zone JSON*); it is decoration only and never changes collision or the map itself.
 
 ## Zone: Clover Village (hub) — `zone-clover-village`
 

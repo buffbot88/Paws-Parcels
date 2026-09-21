@@ -230,6 +230,14 @@
   background: transparent;
 }
 
+/* `display: inline-flex` out-specifies the user-agent [hidden] rule, so a
+   hidden action button stayed visible — the quest tracker's "Accept route"
+   button showed even when no offer was pending. Same class of bug as
+   .local-map-panel__location[hidden] in game-ui.css. */
+.hud-button[hidden] {
+  display: none;
+}
+
 @media (prefers-reduced-motion: reduce) {
   .hud-panel,
   .hud-button,

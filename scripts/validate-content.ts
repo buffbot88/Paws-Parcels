@@ -17,6 +17,7 @@ import {
 import type { ContentData, StaticContentData } from "../src/types/ContentData.ts";
 import { validateAllMaps, validateNpcPlacement } from "../src/systems/MapValidator.ts";
 import { ARCHIVED_MAPS } from "../src/game/ArchivedMaps.ts";
+import { auditCompositionPlans, COMPOSITION_PLAN_JSON } from "../src/game/compositionPlans.ts";
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const dataDir = resolve(root, "src", "data");
@@ -88,9 +89,23 @@ if (npcPlacement.length > 0) {
   process.exit(1);
 }
 
+// Compose plans are authored content too: a plan that no longer matches its map
+// would fall back to the defaults in the client, quietly losing the composition.
+const compositionErrors = auditCompositionPlans();
+if (compositionErrors.length > 0) {
+  console.error(
+    `Composition validation FAILED (${compositionErrors.length} error${compositionErrors.length > 1 ? "s" : ""}):`,
+  );
+  for (const e of compositionErrors) console.error(`  ✗ ${e}`);
+  process.exit(1);
+}
+
 const interactableCount = Object.values(ARCHIVED_MAPS).reduce(
   (n, m) => n + m.interactables.length,
   0,
+);
+console.log(
+  `Composition validation PASSED — ${Object.keys(COMPOSITION_PLAN_JSON).length} authored plan(s).`,
 );
 console.log(
   `Content validation PASSED — ${data.npcs.length} npcs, ${data.items.length} items, ${data.quests.length} quests, ${data.upgrades.length} upgrades, ${data.dialogue.length} dialogue sets; ${staticData.classes.length} classes, ${staticData.skills.length} skills, ${staticData.monsters.length} monsters, ${staticData.zones.length} zones; ${Object.keys(ARCHIVED_MAPS).length} zone(s) mapped, ${interactableCount} interactable(s).`

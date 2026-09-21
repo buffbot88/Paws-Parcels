@@ -1,6 +1,7 @@
 import type { NetQuestSnapshot } from "../net/GameSocket.ts";
 import { createIcon } from "./hud/icons.ts";
 import { createPanel, createPill, createKeyHint, createDivider } from "./hud/primitives.ts";
+import { hudLayer } from "./hud/layer.ts";
 
 /** HUD v4 quest tracker: tab pill on the card edge, dominant title, objective row. */
 export class QuestTracker {
@@ -58,7 +59,7 @@ export class QuestTracker {
 
     this.panelBody.append(header, this.objective, createDivider(), objectiveRow, this.action);
     this.root.prepend(tab);
-    document.getElementById("game-container")?.appendChild(this.root);
+    hudLayer()?.appendChild(this.root);
     this.countdownTimer = window.setInterval(() => {
       if (this.quests.some((quest) => quest.state === "active" && quest.deadlineAt !== null)) this.render();
     }, 1000);

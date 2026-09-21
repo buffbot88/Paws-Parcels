@@ -383,7 +383,13 @@ describe("verifyOidcIdToken", () => {
   it("rejects a token whose signature is tampered with", async () => {
     const good = await signIdToken();
     const [h, p, s] = good.split(".");
-    const tampered = `${h}.${p}.${s.slice(0, -2)}xx`;
+    // The last character is replaced with a different one rather than appended:
+    // overwriting its tail with "xx" left the signature unchanged whenever the
+    // real signature already ended that way, which made this test fail roughly
+    // once in four thousand runs.
+    const last = s!.slice(-1);
+    const tampered = `${h}.${p}.${s!.slice(0, -1)}${last === "A" ? "B" : "A"}`;
+    expect(tampered).not.toBe(good);
     expect(await verifyOidcIdToken(tampered)).toEqual({ kind: "invalid" });
   });
 

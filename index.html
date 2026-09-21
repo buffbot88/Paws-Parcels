@@ -10,7 +10,11 @@
   <body>
     <!-- HUD v4: the top bar is built by src/ui/TopBar.ts at boot. -->
     <div id="game-container">
-      <!-- DOM-over-Canvas UI mounts here (dialogue, login, menus) — Phase 3+. -->
+      <!-- DOM-over-Canvas UI mounts here (dialogue, login, menus) — Phase 3+.
+           #hud-layer holds the canvas-relative world HUD (status card, minimap,
+           skill bar, quest tracker, chat, inventory). It is absolutely
+           positioned so a HUD panel can never displace or clip the canvas. -->
+      <div id="hud-layer"></div>
       <div id="ui-overlay"></div>
 
       <!-- Phase 2 — Auth gate. Hidden by default; LoginOverlay.show() reveals it. -->
