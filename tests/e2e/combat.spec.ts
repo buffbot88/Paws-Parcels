@@ -28,8 +28,11 @@ const TRANSITION_TILE = { x: 37, y: 74 };
 
 test.describe("combat (J, server-authoritative)", () => {
   test("courier reaches Happy Valley and lands a server-confirmed attack", async ({ page }) => {
+    // Boot + a long server-validated walk + approach + combat rounds exceed the
+    // suite default; the milestone gate is the assertion set, not the clock.
+    test.setTimeout(300_000);
     const collector = await bootToOverworld(page);
-    const ws = observeWebSocket(page, collector.wsSeed);
+    const ws = observeWebSocket(page, collector.frames);
     await focusCanvas(page);
 
     // --- Travel: walk the lamp-lined southern road to the transition. ---
@@ -68,32 +71,46 @@ test.describe("combat (J, server-authoritative)", () => {
       return;
     }
 
-    const hpBefore = target.hpRatio;
-
     // Attack with J. The server validates range/cooldown and answers with
     // combat_event + monster_snapshot; the client never computes damage.
     await page.keyboard.press("j");
     await ws.waitForInboundType("combat_event", 15_000);
     expect(ws.sawOutboundType("attack")).toBe(true);
 
-    // The client-side monster map only changes via server frames — poll until
-    // the server snapshot shows the damage (or a defeat), then assert.
+    // Server side first: the combat event must report real damage against a
+    // concrete monster (the server chooses the target — near a herd it may not
+    // be the one the harness picked).
+    const events = ws
+      .messages("inbound")
+      .filter((m) => m.type === "combat_event" && Number(m.damage) > 0);
+    expect(events.length).toBeGreaterThan(0);
+    const event = events[events.length - 1]!;
+    const targetId = String(event.targetId);
+    const targetHp = Number(event.targetHp);
+    const targetMaxHp = Number(event.targetMaxHp);
+    expect(targetMaxHp).toBeGreaterThan(0);
+    expect(targetHp).toBeLessThan(targetMaxHp);
+    void target;
+
+    // Client side: the rendered monster HP must mirror the server's number
+    // (it only ever changes through server frames, never from local math).
     await expect
       .poll(
         async () => {
           const probe = await readGameProbe(page);
-          const current = probe.monsters.find((m) => m.id === target.id);
+          const current = probe.monsters.find((m) => m.id === targetId);
           if (!current) return "defeated";
-          return current.hpRatio < hpBefore ? "damaged" : "waiting";
+          const serverRatio = targetHp / targetMaxHp;
+          return Math.abs(current.hpRatio - serverRatio) <= 0.15 ? "mirrored" : `waiting:${current.hpRatio.toFixed(2)}`;
         },
-        { timeout: 15_000, message: "expected server-confirmed monster HP change" },
+        { timeout: 15_000, message: "expected the client monster HP bar to mirror the server" },
       )
-      .toMatch(/damaged|defeated/);
+      .toMatch(/mirrored|defeated/);
 
     await screenshot(page, "combat-state.png");
 
     // Server-authoritative: the client emitted only an intent, never a claim.
-    const attackFrames = ws.outbound.filter((m: Record<string, unknown>) => m.type === "attack");
+    const attackFrames = ws.messages("outbound").filter((m) => m.type === "attack");
     for (const frame of attackFrames) {
       expect(Object.hasOwn(frame, "damage")).toBe(false);
       expect(Object.hasOwn(frame, "hp")).toBe(false);

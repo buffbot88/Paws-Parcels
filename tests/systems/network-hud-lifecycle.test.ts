@@ -65,6 +65,24 @@ class FakeDocument {
 
 // ---- Module mocks -----------------------------------------------------------
 
+// NetworkSystem imports these collaborators at module scope. Phaser is used
+// there for types only, GameConfig re-exports the Phaser scenes, and the
+// entity classes are only constructed when snapshot frames arrive — but
+// importing the real modules pulls Phaser's ESM build, which touches `window`
+// and cannot load in this node-environment test. Mocking them keeps this suite
+// a pure HUD-lifecycle check (no rendering).
+vi.mock("phaser", () => ({ default: {} }));
+
+vi.mock("../../src/game/GameConfig.ts", () => ({
+  TILE_SIZE: 48,
+  GAME_WIDTH: 960,
+  GAME_HEIGHT: 540,
+}));
+
+vi.mock("../../src/entities/RemotePlayer.ts", () => ({ RemotePlayer: class RemotePlayer {} }));
+
+vi.mock("../../src/entities/Monster.ts", () => ({ Monster: class Monster {} }));
+
 vi.mock("../../src/net/bootTarget.ts", () => ({
   pickCharacter: () => ({ id: 42, name: "Pip", class_id: 1, level: 1, zone_id: "zone-clover-village", pos_x: 0, pos_y: 0 }),
   readBootCharacters: () => [],

@@ -151,68 +151,78 @@ export interface SeededFrame {
 }
 
 /**
- * Observe the game WebSocket and capture inbound/outbound JSON frames.
+ * Observe the game WebSocket through the collector's live frame log.
  *
- * `seedFrames` replays frames captured earlier in the page's lifetime (e.g.
- * by collectRuntimeIssues), so a recorder attached after the socket connected
- * still sees the authenticate/zone_state handshake.
+ * Playwright's `page.on("websocket")` only reports sockets opened after the
+ * listener is registered, and the game socket connects during boot — so the
+ * recorder must read the SAME live array the issue collector has been filling
+ * since before navigation (pass `collector.frames`). The collector's listener
+ * stays attached for the page's lifetime, so frames after reload/reconnect are
+ * captured too.
  */
 export function observeWebSocket(
   page: Page,
-  seedFrames: SeededFrame[] | null = null,
+  frames: SeededFrame[] = [],
 ): {
-  outbound: Array<Record<string, unknown>>;
-  inbound: Array<Record<string, unknown>>;
+  frames: SeededFrame[];
+  types(direction: "inbound" | "outbound"): string[];
+  messages(direction: "inbound" | "outbound"): Array<Record<string, unknown>>;
   sawOutboundType(type: string): boolean;
   sawInboundType(type: string): boolean;
   waitForInboundType(type: string, timeoutMs?: number): Promise<void>;
 } {
-  const outbound: Array<Record<string, unknown>> = [];
-  const inbound: Array<Record<string, unknown>> = [];
+  if (frames.length === 0) {
+    // Standalone use (no collector): record frames for sockets opened from now
+    // on. Prefer `collector.frames` when the socket already connected.
+    page.on("websocket", (ws) => {
+      ws.on("framereceived", (frame) => frames.push({ direction: "inbound", payload: frame.payload }));
+      ws.on("framesent", (frame) => frames.push({ direction: "outbound", payload: frame.payload }));
+    });
+  }
 
-  const parse = (raw: unknown): Record<string, unknown> | null => {
-    if (typeof raw !== "string") return null;
+  const messageType = (frame: SeededFrame): string | null => {
+    if (typeof frame.payload !== "string") return null;
     try {
-      const parsed: unknown = JSON.parse(raw);
-      return typeof parsed === "object" && parsed !== null
-        ? (parsed as Record<string, unknown>)
-        : null;
+      const parsed: unknown = JSON.parse(frame.payload);
+      if (typeof parsed !== "object" || parsed === null) return null;
+      const type = (parsed as Record<string, unknown>).type;
+      return typeof type === "string" ? type : null;
     } catch {
       return null;
     }
   };
 
-  page.on("websocket", (ws) => {
-    ws.on("framereceived", (frame) => {
-      const msg = parse(frame.payload);
-      if (msg !== null) inbound.push(msg);
-    });
-    ws.on("framesent", (frame) => {
-      const msg = parse(frame.payload);
-      if (msg !== null) outbound.push(msg);
-    });
-  });
+  const types = (direction: "inbound" | "outbound"): string[] =>
+    frames
+      .filter((frame) => frame.direction === direction)
+      .map(messageType)
+      .filter((type): type is string => type !== null);
 
-  // The game socket usually connects during boot — before this helper is
-  // called. Seed the recorder with frames already observed by the issue
-  // collector's page-level listeners so waitForInboundType cannot miss them.
-  if (seedFrames !== null) {
-    for (const frame of seedFrames) {
-      const msg = parse(frame.payload);
-      if (msg === null) continue;
-      if (frame.direction === "inbound") inbound.push(msg);
-      else outbound.push(msg);
-    }
-  }
+  const messages = (direction: "inbound" | "outbound"): Array<Record<string, unknown>> =>
+    frames
+      .filter((frame) => frame.direction === direction)
+      .map((frame) => {
+        if (typeof frame.payload !== "string") return null;
+        try {
+          const parsed: unknown = JSON.parse(frame.payload);
+          return typeof parsed === "object" && parsed !== null
+            ? (parsed as Record<string, unknown>)
+            : null;
+        } catch {
+          return null;
+        }
+      })
+      .filter((msg): msg is Record<string, unknown> => msg !== null);
 
   return {
-    outbound,
-    inbound,
-    sawOutboundType: (type) => outbound.some((m) => m.type === type),
-    sawInboundType: (type) => inbound.some((m) => m.type === type),
+    frames,
+    types,
+    messages,
+    sawOutboundType: (type) => types("outbound").includes(type),
+    sawInboundType: (type) => types("inbound").includes(type),
     waitForInboundType: (type, timeoutMs = 15_000) =>
       expect
-        .poll(() => inbound.some((m) => m.type === type), {
+        .poll(() => types("inbound").includes(type), {
           timeout: timeoutMs,
           message: `expected an inbound "${type}" WebSocket frame`,
         })
@@ -392,7 +402,7 @@ export async function startFreshCourier(page: Page): Promise<void> {
 export async function bootToOverworld(
   page: Page,
   options: { characterName?: string } = {},
-): Promise<RuntimeIssueCollector & { wsSeed: SeededFrame[] }> {
+): Promise<RuntimeIssueCollector> {
   const collector = collectRuntimeIssues(page);
   await gotoDevLogin(page);
 
@@ -440,7 +450,7 @@ export async function bootToOverworld(
   // The desk must be gone once the game is playing.
   await expect(desk).toBeHidden({ timeout: 15_000 });
 
-  return { ...collector, wsSeed: collector.frames };
+  return collector;
 }
 
 /**

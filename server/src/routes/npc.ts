@@ -7,7 +7,8 @@
  * "canned" (or any error) means the client keeps its local dialogue.
  */
 import { readFileSync, existsSync } from "node:fs";
-import { resolve } from "node:path";
+import { dirname, resolve } from "node:path";
+import { fileURLToPath } from "node:url";
 import type { IncomingMessage, ServerResponse } from "node:http";
 import { requireAccount } from "../middleware/auth.ts";
 import { errorResponse, jsonResponse } from "../middleware/index.ts";
@@ -40,11 +41,21 @@ export interface NpcTalkDeps {
   now?: () => number;
 }
 
+/**
+ * Resolve relative to this module, never process.cwd() — the server must find
+ * the NPC catalog no matter where it is launched from (a server started with a
+ * different working directory used to answer 404 UNKNOWN_NPC for every NPC).
+ */
+const NPCS_PATH = resolve(
+  dirname(fileURLToPath(import.meta.url)),
+  "../../../src/data/npcs.json",
+);
+
 /** Load the NPC catalog from the client data file (cached at module load). */
 function loadNpcCatalog(): Map<string, NpcInfo> {
   const out = new Map<string, NpcInfo>();
   try {
-    const path = resolve(process.cwd(), "src/data/npcs.json");
+    const path = NPCS_PATH;
     if (!existsSync(path)) return out;
     const raw = JSON.parse(readFileSync(path, "utf8")) as { npcs?: NpcInfo[] };
     for (const npc of raw.npcs ?? []) {

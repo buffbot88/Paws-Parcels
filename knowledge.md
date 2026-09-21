@@ -61,6 +61,7 @@ The internal management surface lives at **`/admin.html`** (second Vite entry al
 - Build: `npm run build` (outputs `dist/`; `base: './'` for static hosting)
 - Typecheck: `npm run typecheck`
 - Test: `npm test` (Vitest) — 559 tests in `tests/`
+- **Browser/runtime validation: `npm run e2e` (Playwright, headless Chrome)** — boots the real client against an isolated game server on **3004** with a throwaway SQLite (`tests/e2e/env/server/`, wiped each run via `reset-e2e-db.mjs`), drives dev-login → CharacterDesk → Overworld with real keyboard input, and fails on console errors, page exceptions, failed WS auth, `/api/*` 5xx, and `/static/` asset 404s. Screenshots land in `artifacts/playwright/` (gitignored); the audit is `reports/PLAYWRIGHT-RUNTIME-AUDIT.md`; see `tests/e2e/README.md`. The browser CDN is unreachable from this box, so the suite uses the **system Chrome** (`use.channel`, override with `PLAYWRIGHT_CHANNEL=chromium` after `node node_modules/playwright/cli.js install chromium`). The dev-login entry is `http://localhost:5173/?auth=1&dev-login=1` (needs BOTH params), and the Vite `/api`+`/ws` proxy target is `PAWS_GAME_SERVER` (default `http://127.0.0.1:3003`)
 - Admin panel (dev): `npm run dev` then `http://localhost:5173/admin.html`; production: `https://<host>/admin.html` (served from dist by the game server)
 - Content validate: `node scripts/validate-content.ts` (also `npm run validate`)
 - Full repository gate: `npm run verify`

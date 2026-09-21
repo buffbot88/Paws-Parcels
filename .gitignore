@@ -11,6 +11,14 @@ oraclehost_id_rsa
 # Scratch / review artifacts (npm cache, ad-hoc notes)
 tmp/
 
+# Playwright runtime validation (tests/e2e): generated HTML reports, raw
+# failure output, screenshot checkpoints, and the throwaway e2e database.
+# These are regenerated on every run — never commit them.
+playwright-report/
+test-results/
+artifacts/
+tests/e2e/env/server/data/
+
 # Unified server config — contains real DB password and JWT secret.
 # Commit server_config.example.json instead; copy it locally and fill in secrets.
 server_config.json

@@ -33,7 +33,9 @@ test.describe("inventory (Character Profile)", () => {
     // The profile panel is a singleton: exactly one modal instance.
     await expect(page.locator(SEL.profilePanel)).toHaveCount(1);
 
-    // The inventory section renders (server-backed ledger).
+    // The panel opens on Character Info; the Inventory tab renders the
+    // server-backed ledger grid.
+    await panel.locator(SEL.profileTabButton, { hasText: "Inventory" }).click();
     await expect(panel.locator(".inventory-grid")).toBeVisible({ timeout: 15_000 });
 
     // Server-backed: profile fetch succeeded (panel status line cleared).

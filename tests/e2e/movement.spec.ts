@@ -24,7 +24,7 @@ import {
 test.describe("movement (WASD, server-validated)", () => {
   test("holding W/A/S/D moves the courier; intents are accepted; bounds hold", async ({ page }) => {
     const collector = await bootToOverworld(page);
-    const ws = observeWebSocket(page, collector.wsSeed);
+    const ws = observeWebSocket(page, collector.frames);
     await focusCanvas(page);
 
     const start = await expectGameProbe(page, (p) => p.player !== null);

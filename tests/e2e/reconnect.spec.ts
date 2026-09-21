@@ -29,7 +29,7 @@ test.describe("reconnect", () => {
     const beforeProbe = await readGameProbe(page);
     expect(beforeProbe.authCharacterId).not.toBeNull();
 
-    const ws = observeWebSocket(page, before.wsSeed);
+    const ws = observeWebSocket(page, before.frames);
     const collector = await reloadAndRestore(page);
 
     // The same courier is restored (server-selected character).

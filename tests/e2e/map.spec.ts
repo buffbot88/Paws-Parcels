@@ -34,18 +34,26 @@ test.describe("Local Map panel", () => {
     const locationCount = await locations.count();
     expect(locationCount).toBeGreaterThanOrEqual(3);
 
-    // Search filters the list (e.g. "post" → Post Office only). Assert the
-    // actual DOM contract: exactly one location stays unhidden, it is the
-    // matching one, and it is rendered (not merely flagged).
+    // Search filters the list (e.g. "post" → Post Office only). Read the
+    // filter state straight from the DOM (hidden flags) and separately prove
+    // the visual outcome: the match is rendered and a non-match is not.
     await page.locator(SEL.localMapSearch).fill("post");
-    const unhidden = locations.locator("button:not([hidden])");
-    await expect(unhidden).toHaveCount(1, { timeout: 10_000 });
-    await expect(unhidden.first()).toContainText(/post/i);
-    await expect(unhidden.first()).toBeVisible();
+    await expect
+      .poll(async () => {
+        const state = await readLocationFilterState(page);
+        return `${state.unhidden}/${state.total}:${state.firstUnhidden}`;
+      }, { timeout: 10_000, message: "expected the search to leave only the matching location" })
+      .toMatch(new RegExp(`^1/${locationCount}:.*post`));
+    await expect(page.locator(SEL.localMapLocation).first()).toBeVisible();
+    await expect(
+      page.locator(SEL.localMapLocation).filter({ hasText: "Café" }),
+    ).toBeHidden();
 
     // Reset the filter so the screenshot shows the full panel.
     await page.locator(SEL.localMapSearch).fill("");
-    await expect(locations.locator("button:not([hidden])")).toHaveCount(locationCount);
+    const restored = await readLocationFilterState(page);
+    expect(restored.total).toBe(locationCount);
+    expect(restored.unhidden).toBe(locationCount);
     await expect(locations.first()).toBeVisible();
 
     // Waypoint control is visibly disabled and honestly labeled.
@@ -67,6 +75,20 @@ test.describe("Local Map panel", () => {
     collector.expectClean();
   });
 });
+
+/** The location list's filter state, read directly from the DOM. */
+async function readLocationFilterState(
+  page: import("@playwright/test").Page,
+): Promise<{ total: number; unhidden: number; firstUnhidden: string }> {
+  return page.locator(SEL.localMapLocation).evaluateAll((els) => {
+    const unhidden = els.filter((el) => !(el as HTMLElement).hidden);
+    return {
+      total: els.length,
+      unhidden: unhidden.length,
+      firstUnhidden: (unhidden[0]?.textContent ?? "").trim().toLowerCase(),
+    };
+  });
+}
 
 /** The map panel blurs the canvas while open; focus the canvas when closed. */
 async function focusCanvasSafe(page: import("@playwright/test").Page): Promise<void> {

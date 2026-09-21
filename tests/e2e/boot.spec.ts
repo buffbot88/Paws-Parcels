@@ -23,7 +23,7 @@ import {
 test.describe("boot: reach the Overworld", () => {
   test("dev-login boots into a joined Clover Village", async ({ page }) => {
     const collector = await bootToOverworld(page, { characterName: "Milestone" });
-    const ws = observeWebSocket(page, collector.wsSeed);
+    const ws = observeWebSocket(page, collector.frames);
 
     // Phaser canvas exists (direct child; the minimap's canvases are nested).
     await expect(page.locator("#game-container > canvas")).toHaveCount(1);
@@ -64,7 +64,7 @@ test.describe("boot: reach the Overworld", () => {
     const first = await bootToOverworld(page);
     const probeBefore = await expectGameProbe(page, isJoinedOverworld);
 
-    const ws = observeWebSocket(page, first.wsSeed);
+    const ws = observeWebSocket(page, first.frames);
     await page.reload();
     await expect
       .poll(async () => {
