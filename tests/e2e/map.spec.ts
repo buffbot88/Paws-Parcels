@@ -34,19 +34,19 @@ test.describe("Local Map panel", () => {
     const locationCount = await locations.count();
     expect(locationCount).toBeGreaterThanOrEqual(3);
 
-    // Search filters the list (e.g. "post" → Post Office only). The panel
-    // hides non-matching buttons, so at least one location must disappear
-    // from the visible set while a match remains.
+    // Search filters the list (e.g. "post" → Post Office only). Assert the
+    // actual DOM contract: exactly one location stays unhidden, it is the
+    // matching one, and it is rendered (not merely flagged).
     await page.locator(SEL.localMapSearch).fill("post");
-    await expect(locations.first()).toContainText(/post/i, { timeout: 10_000 });
-    const visibleAfterSearch = await locations.locator("button:visible").count();
-    expect(visibleAfterSearch).toBeGreaterThan(0);
-    expect(visibleAfterSearch).toBeLessThan(locationCount);
+    const unhidden = locations.locator("button:not([hidden])");
+    await expect(unhidden).toHaveCount(1, { timeout: 10_000 });
+    await expect(unhidden.first()).toContainText(/post/i);
+    await expect(unhidden.first()).toBeVisible();
 
     // Reset the filter so the screenshot shows the full panel.
     await page.locator(SEL.localMapSearch).fill("");
+    await expect(locations.locator("button:not([hidden])")).toHaveCount(locationCount);
     await expect(locations.first()).toBeVisible();
-    await expect(locations.locator("button:visible")).toHaveCount(locationCount);
 
     // Waypoint control is visibly disabled and honestly labeled.
     const waypoint = panel.locator(SEL.localMapWaypoint);

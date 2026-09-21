@@ -55,6 +55,11 @@ const topBar = new TopBar({
 const desk = new CharacterDesk();
 const menu = new CharacterMenu();
 const profilePanel = new CharacterProfilePanel();
+// Register the panel singleton before the game boots: the in-world `I`
+// shortcut and the HUD InventoryButton open it through
+// `CharacterProfilePanel.instance`, which is only assigned by mount(). Without
+// this call those two affordances were silent no-ops in a real browser.
+profilePanel.mount();
 
 /** Keep startup failures visible instead of leaving a silent offline canvas. */
 function showConnectionDiagnostic(title: string, detail: string): void {

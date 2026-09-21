@@ -16,6 +16,7 @@ import { defineConfig } from "@playwright/test";
  */
 export default defineConfig({
   testDir: "./tests/e2e",
+  globalSetup: "./tests/e2e/support/global-setup.ts",
   timeout: 90_000,
   expect: { timeout: 15_000 },
   fullyParallel: false,
@@ -35,11 +36,15 @@ export default defineConfig({
     locale: "en-US",
     timezoneId: "UTC",
     actionTimeout: 10_000,
-    navigationTimeout: 30_000,
+    // The dev client's first cold load (Vite dep optimization + the eager art
+    // pack) can outrun a 30s window; explicit state waits do the real gating.
+    navigationTimeout: 60_000,
   },
   webServer: [
     {
-      command: 'node --import tsx ../../../../server/src/index.ts',
+      // Wipe the throwaway e2e database first so every run starts from a
+      // known account state (no cross-run courier/zone bleed).
+      command: 'node reset-e2e-db.mjs && node --import tsx ../../../../server/src/index.ts',
       cwd: "tests/e2e/env/server",
       url: "http://127.0.0.1:3004/api/health",
       reuseExistingServer: false,

@@ -260,8 +260,10 @@ export const SCENE_KEY_OVERWORLD = "overworld";
 export async function readGameProbe(page: Page): Promise<GameProbe> {
   return page.evaluate(() => {
     const win = window as unknown as GameInternals;
-    const scene = win.game?.scene?.getScene?.("overworld") as SceneInternals | undefined;
-    if (scene === undefined) {
+    // Phaser's SceneManager returns null (not undefined) while the scene is
+    // not yet running — guard both so the probe never throws mid-boot.
+    const scene = (win.game?.scene?.getScene?.("overworld") ?? null) as SceneInternals | null;
+    if (scene === null) {
       return {
         sceneKey: null,
         mapId: null,
@@ -350,7 +352,11 @@ export function isJoinedOverworld(probe: GameProbe): boolean {
  * (localhost only) — see src/ui/LoginOverlay.ts.
  */
 export async function gotoDevLogin(page: Page): Promise<void> {
-  await page.goto("/?auth=1&dev-login=1");
+  // `domcontentloaded`, not `load`: the dev client pulls Phaser plus the whole
+  // eager art pack through Vite, and the dev-login overlay reloads the page as
+  // soon as the session is issued — waiting on `load` can outlast the timeout.
+  // Every meaningful state is awaited explicitly afterwards.
+  await page.goto("/?auth=1&dev-login=1", { waitUntil: "domcontentloaded" });
 }
 
 /**
@@ -443,7 +449,7 @@ export async function bootToOverworld(
  */
 export async function reloadAndRestore(page: Page): Promise<RuntimeIssueCollector> {
   const collector = collectRuntimeIssues(page);
-  await page.reload();
+  await page.reload({ waitUntil: "domcontentloaded" });
   await expect
     .poll(async () => {
       const probe = await readGameProbe(page);
