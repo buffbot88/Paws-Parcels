@@ -1,6 +1,12 @@
 import { resolve } from "node:path";
 import { defineConfig } from "vite";
 
+// Dev proxy target. Defaults to the local game server (127.0.0.1:3003, matching
+// server_config.json) and is overridable so the Playwright e2e stack can point
+// Vite at its own isolated server (see tests/e2e/).
+const DEV_GAME_SERVER = process.env.PAWS_GAME_SERVER ?? "http://127.0.0.1:3003";
+const DEV_WS_SERVER = DEV_GAME_SERVER.replace(/^http/, "ws");
+
 export default defineConfig({
   // Relative base so the built game works from any static host subpath.
   base: "./",
@@ -21,12 +27,12 @@ export default defineConfig({
         // 127.0.0.1 (not 'localhost'): on hosts where localhost resolves to
         // ::1 first and the game server binds IPv4, the proxy must not rely
         // on OS resolution order.
-        target: "http://127.0.0.1:3001",
+        target: DEV_GAME_SERVER,
         changeOrigin: true,
       },
       // Phase 2 — WebSocket game server (ws://host/ws → game server).
       "/ws": {
-        target: "ws://127.0.0.1:3001",
+        target: DEV_WS_SERVER,
         ws: true,
       },
     },
