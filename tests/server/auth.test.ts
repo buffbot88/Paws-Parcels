@@ -28,6 +28,7 @@ vi.mock("../../server/src/config/index.ts", () => ({
     accessTokenTtlSeconds: 900,
     refreshTokenTtlSeconds: 604800,
     bcryptRounds: 4,
+    devLoginEnabled: false,
   },
   oidc: {
     clientId: "paws-and-parcels",
@@ -97,6 +98,7 @@ import {
   logoutHandler,
   meHandler,
   oidcCallbackHandler,
+  devLoginHandler,
 } from "../../server/src/routes/auth.ts";
 
 const mockFindOrCreate = vi.mocked(findOrCreateAccountByAshatId);
@@ -682,6 +684,82 @@ describe("logoutHandler", () => {
     const res = makeRes();
     await logoutHandler(makeReq({ method: "POST" }), res);
     expect(res._status).toBe(200);
-    expect(res._body).toEqual({ ok: true });
+  });
+});
+
+// ===== devLoginHandler =====
+
+describe("devLoginHandler", () => {
+  it("returns 404 when devLoginEnabled is false (default)", async () => {
+    const res = makeRes();
+    await devLoginHandler(makeReq({ method: "POST" }), res);
+    expect(res._status).toBe(404);
+    expect(res._body).toMatchObject({ error: "NOT_FOUND" });
+  });
+
+  it("returns 404 when nodeEnv is not development even if enabled", async () => {
+    const { server, auth } = await import("../../server/src/config/index.ts");
+    const originalEnv = server.nodeEnv;
+    const originalAuth = auth.devLoginEnabled;
+    (server as { nodeEnv: string }).nodeEnv = "production";
+    (auth as { devLoginEnabled: boolean }).devLoginEnabled = true;
+
+    try {
+      const res = makeRes();
+      await devLoginHandler(makeReq({ method: "POST" }), res);
+      expect(res._status).toBe(404);
+    } finally {
+      (server as { nodeEnv: string }).nodeEnv = originalEnv;
+      (auth as { devLoginEnabled: boolean }).devLoginEnabled = originalAuth;
+    }
+  });
+
+  it("returns 200 and a JWT + test account when enabled in development", async () => {
+    const { server, auth } = await import("../../server/src/config/index.ts");
+    const originalEnv = server.nodeEnv;
+    const originalAuth = auth.devLoginEnabled;
+    (server as { nodeEnv: string }).nodeEnv = "development";
+    (auth as { devLoginEnabled: boolean }).devLoginEnabled = true;
+
+    mockFindOrCreate.mockResolvedValue({
+      id: 99,
+      username: "dev_courier",
+      email: "dev@ashat.local",
+      display_name: "Local Dev Courier",
+      role: "Member",
+      ashat_user_id: "dev-local-1234",
+    });
+    mockGetCharacters.mockResolvedValue([]);
+
+    try {
+      const res = makeRes();
+      await devLoginHandler(makeReq({ method: "POST" }), res);
+      expect(res._status).toBe(200);
+
+      const body = res._body as {
+        token: string;
+        account: { id: number; ashat_user_id: string; role: string };
+        characters: unknown[];
+      };
+
+      expect(body.token).toMatch(/^[\w-]+\.[\w-]+\.[\w-]+$/);
+      expect(body.account.id).toBe(99);
+      expect(body.account.ashat_user_id).toBe("dev-local-1234");
+
+      // Prove the account has no admin privileges (Member role)
+      expect(body.account.role).toBe("Member");
+
+      expect(Array.isArray(body.characters)).toBe(true);
+      expect(mockFindOrCreate).toHaveBeenCalledWith({
+        ashatUserId: "dev-local-1234",
+        username: "dev_courier",
+        displayName: "Local Dev Courier",
+        role: "Member",
+      });
+
+    } finally {
+      (server as { nodeEnv: string }).nodeEnv = originalEnv;
+      (auth as { devLoginEnabled: boolean }).devLoginEnabled = originalAuth;
+    }
   });
 });

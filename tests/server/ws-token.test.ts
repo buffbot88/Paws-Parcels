@@ -319,4 +319,56 @@ describe("wsTokenHandler", () => {
     expect(body.zoneId).toBe("zone-clover-village");
     expect(consumeWsToken(body.wsToken)).toEqual({ accountId: 7, characterId: 10 });
   });
+
+  it("works with a dev-issued authentication session", async () => {
+    // Generate a token exactly as the devLoginHandler does
+    const devToken = await generateAccessToken({
+      accountId: 99,
+      ashatUserId: "dev-local-1234",
+      username: "dev_courier",
+      role: "Member",
+    });
+    const devAccount = {
+      id: 99,
+      username: "dev_courier",
+      email: "dev@ashat.local",
+      display_name: "Local Dev Courier",
+      role: "Member",
+      ashat_user_id: "dev-local-1234",
+    };
+    mockGetAccount.mockResolvedValue(devAccount);
+    mockGetCharacter.mockResolvedValue({ ...CHARACTER, id: 20, account_id: 99 });
+
+    const res = makeRes();
+    await wsTokenHandler(
+      makeReq({ url: "/api/ws-token?characterId=20", authHeader: `Bearer ${devToken}` }),
+      res,
+    );
+
+    expect(res._status).toBe(200);
+    const body = res._body as { wsToken: string };
+    expect(consumeWsToken(body.wsToken)).toEqual({ accountId: 99, characterId: 20 });
+  });
+
+  it("prevents another account from using the dev account's character ID", async () => {
+    // Other real account tries to access character ID 20 (owned by dev account 99)
+    const otherToken = await generateAccessToken({
+      accountId: 7,
+      ashatUserId: "u-7",
+      username: "maple",
+      role: "Member",
+    });
+    mockGetAccount.mockResolvedValue(ACCOUNT);
+    mockGetCharacter.mockResolvedValue({ ...CHARACTER, id: 20, account_id: 99 }); // Character belongs to dev account
+
+    const res = makeRes();
+    await wsTokenHandler(
+      makeReq({ url: "/api/ws-token?characterId=20", authHeader: `Bearer ${otherToken}` }),
+      res,
+    );
+
+    // Normal ownership check applies
+    expect(res._status).toBe(404);
+    expect(res._body).toMatchObject({ error: "CHARACTER_NOT_FOUND" });
+  });
 });

@@ -131,6 +131,15 @@ export class NetworkSystem {
   private authoritativeZone: string | null = null;
 
   private constructor() {
+    // Intentionally empty: HUD is created only after authentication via mountHUD().
+  }
+
+  /**
+   * Create the player status card HUD. Call this exactly once after the
+   * authenticated session is established (from startGame in main.ts).
+   * Safe to call multiple times — idempotent.
+   */
+  mountHUD(): void {
     this.ensureStatusCard();
   }
 
@@ -139,9 +148,12 @@ export class NetworkSystem {
     if (zoneId !== undefined) this.expectedZoneId = zoneId;
     this.destroyEntities();
     this.scene = scene;
-    // shutdown() removes the status card; re-create it on every scene attach so
-    // a character switch (singleton reuse) never loses the HUD bar.
-    this.ensureStatusCard();
+    // shutdown() removes the status card; re-create it on scene attach only when
+    // an authenticated character is known — avoids mounting HUD before login on
+    // scene restarts that happen to run before auth completes.
+    if (this.myCharacterId !== null) {
+      this.ensureStatusCard();
+    }
     // The socket can now be started before Phaser finishes loading art. If the
     // server answered during the preloader, replay that authoritative snapshot
     // into the newly attached scene instead of losing the initial world state.

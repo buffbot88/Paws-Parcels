@@ -73,12 +73,14 @@ function showConnectionDiagnostic(title: string, detail: string): void {
   container.appendChild(panel);
 }
 
-NetworkSystem.get().onError = (code, message, requestType) => {
-  // Intent rejections (requestType set) are gameplay feedback, not a broken
-  // connection — the scary diagnostic panel is reserved for real failures.
-  if (requestType !== undefined) return;
-  showConnectionDiagnostic("Village connection failed", `${code}: ${message}`);
-};
+function wireNetworkSystem(): void {
+  NetworkSystem.get().onError = (code, message, requestType) => {
+    // Intent rejections (requestType set) are gameplay feedback, not a broken
+    // connection — the scary diagnostic panel is reserved for real failures.
+    if (requestType !== undefined) return;
+    showConnectionDiagnostic("Village connection failed", `${code}: ${message}`);
+  };
+}
 
 /**
  * Boot the Phaser game once auth + a playable courier are confirmed (exposed
@@ -94,6 +96,10 @@ function startGame(
   topBar.setAccount(detail.account);
   win.pawsCharacters = characters;
   win.pawsSelectedCharacterId = selectedId;
+  // Wire the NetworkSystem error handler and mount the player HUD now that the
+  // session is authenticated. Both are deferred until this point so they never
+  // run before the login flow completes.
+  wireNetworkSystem();
   // Resolve one authoritative courier for this boot and persist that exact id
   // before either the socket or Phaser scene reads tab state.
   const resolvedCharacter = pickCharacter(characters, selectedId);
@@ -105,6 +111,9 @@ function startGame(
   const bootTarget = resolveBootTarget(characters, resolvedCharacterId);
   if (resolvedCharacterId !== null) {
     NetworkSystem.get().start(bootTarget.zoneId, resolvedCharacterId);
+    // Mount the player status card HUD after start() has set myCharacterId,
+    // ensuring the card is populated with the correct character name/level.
+    NetworkSystem.get().mountHUD();
   }
   try {
     win.game = new Phaser.Game(gameConfig);

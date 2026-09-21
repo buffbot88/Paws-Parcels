@@ -61,6 +61,7 @@ export interface DbConfig {
 export interface AuthConfig {
   jwtSecret: string;
   accessTokenTtlSeconds: number;
+  devLoginEnabled: boolean;
 }
 
 export interface OidcConfig {
@@ -167,6 +168,12 @@ export function validateAndNormalize(raw: unknown): {
     86_400,
     errors,
     "auth.accessTokenTtlSeconds",
+  );
+  const devLoginEnabled = bool(
+    authRaw.devLoginEnabled,
+    false,
+    errors,
+    "auth.devLoginEnabled",
   );
 
   // oidc (Phase 3 — ASHAT Hub as an OIDC issuer)
@@ -285,6 +292,7 @@ export function validateAndNormalize(raw: unknown): {
     auth: {
       jwtSecret,
       accessTokenTtlSeconds: accessTokenTtl,
+      devLoginEnabled,
     },
     oidc: {
       clientId,

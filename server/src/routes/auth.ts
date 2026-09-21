@@ -1,5 +1,5 @@
 import type { IncomingMessage, ServerResponse } from "node:http";
-import { oidc as oidcConfig } from "../config/index.ts";
+import { server as serverConfig, auth as authConfig, oidc as oidcConfig } from "../config/index.ts";
 import { generateAccessToken } from "../auth/index.ts";
 import { clearSessionCookie, sessionCookie } from "../auth/sessionCookie.ts";
 import {
@@ -207,5 +207,55 @@ export async function logoutHandler(
 ): Promise<void> {
   res.setHeader("Set-Cookie", clearSessionCookie());
   jsonResponse(res, 200, { ok: true });
+}
+
+/**
+ * POST /api/auth/dev-login
+ * Development-only authentication harness. Bypasses OIDC and creates/loads a local
+ * test account. Disabled in production.
+ */
+export async function devLoginHandler(
+  _req: IncomingMessage,
+  res: ServerResponse,
+): Promise<void> {
+  if (serverConfig.nodeEnv !== "development" || !authConfig.devLoginEnabled) {
+    errorResponse(res, 404, "NOT_FOUND", "Not found");
+    return;
+  }
+
+  const identity = {
+    sub: "dev-local-1234",
+    username: "dev_courier",
+    displayName: "Local Dev Courier",
+    role: "Member",
+  };
+
+  const account = await findOrCreateAccountByAshatId({
+    ashatUserId: identity.sub,
+    username: identity.username,
+    displayName: identity.displayName,
+    role: identity.role,
+  });
+
+  const token = await generateAccessToken({
+    accountId: account.id,
+    ashatUserId: identity.sub,
+    username: account.username ?? identity.username,
+    role: account.role ?? identity.role,
+  });
+
+  logger.info("Issued JWT via dev-login harness", {
+    accountId: account.id,
+    ashatUserId: identity.sub,
+    role: account.role,
+  });
+
+  const characters = await getCharactersByAccountId(account.id);
+  res.setHeader("Set-Cookie", sessionCookie(token));
+  jsonResponse(res, 200, {
+    token,
+    account: toPublicAccount(account),
+    characters: characters.map(toPublicCharacter),
+  });
 }
 

@@ -256,6 +256,34 @@ export class LoginOverlay {
    */
   public async openLogin(): Promise<void> {
     this.ensureMounted();
+
+    const isLocalOrigin =
+      window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1";
+    if (isLocalOrigin && new URLSearchParams(window.location.search).get("dev-login") === "1") {
+      this.setStatus({ kind: "loading", message: "Connecting to local dev server…" });
+      try {
+        const res = await fetch(apiPath("/api/auth/dev-login"), {
+          method: "POST",
+          credentials: "include",
+        });
+        if (res.ok) {
+          const body = (await res.json()) as { token: string; account: AccountPublic; characters: CharacterListItem[] };
+          writeToken(body.token, body.account, body.characters);
+          const url = new URL(window.location.href);
+          url.searchParams.delete("dev-login");
+          window.history.replaceState({}, "", url.href);
+          window.location.reload();
+          return;
+        } else {
+          this.setStatus({ kind: "error", message: "Dev login rejected or disabled by server." });
+          return;
+        }
+      } catch {
+        this.setStatus({ kind: "error", message: "Dev server unreachable." });
+        return;
+      }
+    }
+
     this.setStatus({ kind: "loading", message: "Taking you to ASHAT Hub…" });
 
     const verifier = randomBase64Url(32);

@@ -5,6 +5,7 @@ import {
   logoutHandler,
   meHandler,
   oidcCallbackHandler,
+  devLoginHandler,
 } from "./auth.ts";
 import {
   classesHandler,
@@ -139,6 +140,7 @@ export function createRouter(deps?: RouterDeps): Router {
   // Phase 3 — ASHAT Hub OIDC (authorization code + PKCE)
   router.get("/api/auth/login-url", loginUrlHandler);
   router.post("/api/auth/oidc/callback", oidcCallbackHandler);
+  router.post("/api/auth/dev-login", devLoginHandler);
   router.get("/api/auth/me", meHandler);
   router.post("/api/auth/logout", logoutHandler);
 

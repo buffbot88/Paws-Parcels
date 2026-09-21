@@ -12,7 +12,8 @@
   },
   "auth": {
     "jwtSecret": "test-only-jwt-secret-32-characters-long",
-    "accessTokenTtlSeconds": 900
+    "accessTokenTtlSeconds": 900,
+    "devLoginEnabled": false
   },
   "oidc": {
     "clientId": "test-client",

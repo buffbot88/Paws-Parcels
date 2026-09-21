@@ -19,7 +19,9 @@
   },
   "auth": {
     "jwtSecret": "REPLACE_ME_JWT_SECRET_AT_LEAST_32_CHARS_LONG",
-    "accessTokenTtlSeconds": 86400
+    "accessTokenTtlSeconds": 86400,
+    "_comment_devLoginEnabled": "WARNING: Bypasses OIDC authentication. Only works when server.nodeEnv=development. Never enable in production.",
+    "devLoginEnabled": false
   },
   "oidc": {
     "_comment_clientId": "Registered client_id in Ashat Hub's oauth_clients table (seeded for Paws & Parcels).",
