@@ -383,12 +383,14 @@ describe("verifyOidcIdToken", () => {
   it("rejects a token whose signature is tampered with", async () => {
     const good = await signIdToken();
     const [h, p, s] = good.split(".");
-    // The last character is replaced with a different one rather than appended:
-    // overwriting its tail with "xx" left the signature unchanged whenever the
-    // real signature already ended that way, which made this test fail roughly
-    // once in four thousand runs.
-    const last = s!.slice(-1);
-    const tampered = `${h}.${p}.${s!.slice(0, -1)}${last === "A" ? "B" : "A"}`;
+    // Flip a bit in the *decoded* signature instead of editing its text: the
+    // last base64url character carries padding bits, so replacing it can leave
+    // the decoded signature byte-identical — roughly a 1-in-16 chance of
+    // handing the valid token to this "tampered" path. Text edits near a fixed
+    // suffix can flake the same way; a bit flip cannot.
+    const signature = Buffer.from(s!, "base64url");
+    signature[0] ^= 0x01;
+    const tampered = `${h}.${p}.${signature.toString("base64url")}`;
     expect(tampered).not.toBe(good);
     expect(await verifyOidcIdToken(tampered)).toEqual({ kind: "invalid" });
   });

@@ -1,6 +1,7 @@
 import { createAvatar, createPanel, createProgressBar } from "./hud/primitives.ts";
 import { createIcon } from "./hud/icons.ts";
 import { hudLayer } from "./hud/layer.ts";
+import type { ClassResource } from "../game/classStats.ts";
 
 export interface PlayerStatusData {
   name: string;
@@ -11,20 +12,42 @@ export interface PlayerStatusData {
   level: number;
 }
 
+/** How many stamps the courier rating is scored out of. */
+export const STAMP_RATING_SLOTS = 5;
+
 /**
- * HUD v4 player card (top-left, ~420×138): portrait, animated HP bar, and
- * real Stamps + level wired from server snapshots (spec §6).
+ * HUD v4 player card (top-left, compact): portrait, name + level, health bar,
+ * the class's primary resource bar, and the five-stamp courier rating.
+ *
+ * Every value here is server-owned or server-mirrored: name/level/stamps come
+ * from the account's character records, hp/maxHp from the socket, and the
+ * resource kind + ceiling from `src/data/classes.json` — the same content the
+ * server seeds its classes from. The rating is display-only until the server
+ * scores it, so it renders greyed.
+ *
+ * Every row carries a `title`: the card is small enough that icons and bars
+ * have to explain themselves on hover.
  */
 export class PlayerStatusCard {
   private readonly root: HTMLElement;
   private readonly name: HTMLElement;
   private readonly rank: HTMLElement;
+  private readonly level: HTMLElement;
+  private readonly hpRow: HTMLElement;
   private readonly hpText: HTMLElement;
   private readonly hpBar: ReturnType<typeof createProgressBar>;
-  private readonly stamps: HTMLElement;
-  private readonly level: HTMLElement;
+  private readonly resourceRow: HTMLElement;
+  private readonly resourceBar: ReturnType<typeof createProgressBar>;
+  private readonly resourceText: HTMLElement;
+  private readonly ratingRow: HTMLElement;
+  private readonly ratingSlots: HTMLElement[] = [];
   private hp = 0;
   private maxHp = 0;
+  private resource = 0;
+  private maxResource = 0;
+  private resourceName = "";
+  private rating = 0;
+  private stamps = 0;
 
   constructor() {
     const panel = createPanel({ className: "player-card", leaf: true });
@@ -33,6 +56,7 @@ export class PlayerStatusCard {
 
     const portrait = createAvatar("🐾");
     portrait.classList.add("player-card__portrait");
+    portrait.title = "Your courier";
 
     const details = document.createElement("div");
     details.className = "player-card__details";
@@ -41,38 +65,51 @@ export class PlayerStatusCard {
     identity.className = "player-card__identity";
     this.name = document.createElement("strong");
     this.name.className = "player-card__name";
+    this.name.title = "Courier name";
     this.rank = document.createElement("span");
     this.rank.className = "player-card__rank";
-    identity.append(this.name, this.rank);
+    this.level = document.createElement("span");
+    this.level.className = "player-card__level";
+    this.level.title = "Courier level";
+    // Rank and level share the right-hand slot: the card is too narrow for both
+    // side by side, and rank is only populated for named ranks.
+    identity.append(this.name, this.rank, this.level);
 
     const health = document.createElement("div");
-    health.className = "player-card__health";
-    const heart = createIcon("heart", { size: 13, className: "player-card__heart" });
+    this.hpRow = health;
+    health.className = "player-card__bar player-card__bar--hp";
+    const heart = createIcon("heart", { size: 12, className: "player-card__heart" });
     this.hpBar = createProgressBar(0);
     this.hpText = document.createElement("span");
-    this.hpText.className = "player-card__hp-text";
+    this.hpText.className = "player-card__bar-value";
     this.hpText.textContent = "–";
-    health.append(heart, this.hpBar.root, this.hpText);
+    this.hpBar.root.appendChild(this.hpText);
+    health.append(heart, this.hpBar.root);
 
-    const stats = document.createElement("div");
-    stats.className = "player-card__stats";
-    const stampsCell = document.createElement("span");
-    stampsCell.className = "player-card__stat";
-    const stampsIcon = createIcon("coins", { size: 13 });
-    const stampsValue = document.createElement("b");
-    stampsValue.textContent = "0";
-    stampsCell.append(stampsIcon, stampsValue);
-    const levelCell = document.createElement("span");
-    levelCell.className = "player-card__stat";
-    const levelIcon = createIcon("sparkles", { size: 13 });
-    const levelValue = document.createElement("b");
-    levelValue.textContent = "Lv. 1";
-    levelCell.append(levelIcon, levelValue);
-    this.stamps = stampsValue;
-    this.level = levelValue;
+    this.resourceRow = document.createElement("div");
+    this.resourceRow.className = "player-card__bar player-card__bar--resource";
+    const droplet = createIcon("droplet", {
+      size: 12,
+      className: "player-card__resource-icon",
+    });
+    this.resourceBar = createProgressBar(0);
+    this.resourceText = document.createElement("span");
+    this.resourceText.className = "player-card__bar-value";
+    this.resourceText.textContent = "–";
+    this.resourceBar.root.appendChild(this.resourceText);
+    this.resourceRow.append(droplet, this.resourceBar.root);
 
-    stats.append(stampsCell, levelCell);
-    details.append(identity, health, stats);
+    this.ratingRow = document.createElement("div");
+    this.ratingRow.className = "player-card__rating";
+    for (let slot = 0; slot < STAMP_RATING_SLOTS; slot += 1) {
+      const glyph = document.createElement("span");
+      glyph.className = "player-card__stamp";
+      glyph.appendChild(createIcon("stamp", { size: 11 }));
+      this.ratingSlots.push(glyph);
+      this.ratingRow.appendChild(glyph);
+    }
+
+    details.append(identity, health, this.resourceRow, this.ratingRow);
     panel.body.appendChild(portrait);
     panel.body.appendChild(details);
     // body is a column; make the card a row via the player-card class.
@@ -80,14 +117,28 @@ export class PlayerStatusCard {
     panel.body.style.alignItems = "center";
     hudLayer()?.appendChild(this.root);
     this.renderHp();
+    this.renderResource();
+    this.renderRating();
   }
 
   /** Server-confirmed identity + economy state (profile/quest snapshots). */
   setStatus(data: Partial<PlayerStatusData>): void {
-    if (data.name !== undefined) this.name.textContent = data.name;
-    if (data.rank !== undefined) this.rank.textContent = data.rank;
-    if (data.stamps !== undefined) this.stamps.textContent = data.stamps.toLocaleString();
-    if (data.level !== undefined) this.level.textContent = `Lv. ${data.level}`;
+    if (data.name !== undefined) {
+      this.name.textContent = data.name;
+      this.name.title = `${data.name} — courier name`;
+    }
+    if (data.rank !== undefined) {
+      this.rank.textContent = data.rank;
+      this.rank.title = `Courier rank ${data.rank}`;
+    }
+    if (data.stamps !== undefined) {
+      this.stamps = data.stamps;
+      this.renderRating();
+    }
+    if (data.level !== undefined) {
+      this.level.textContent = `Lv. ${data.level}`;
+      this.level.title = `Courier level ${data.level}`;
+    }
     if (data.hp !== undefined) this.hp = data.hp;
     if (data.maxHp !== undefined) this.maxHp = data.maxHp;
     this.renderHp();
@@ -100,6 +151,36 @@ export class PlayerStatusCard {
     this.renderHp();
   }
 
+  /**
+   * Adopt the class's primary resource — its identity and ceiling, not a live
+   * value. Called once from the courier's class.
+   */
+  setResourceKind(resource: ClassResource): void {
+    this.resourceName = resource.label;
+    this.maxResource = resource.max;
+    this.resource = resource.max;
+    this.resourceRow.classList.add(`player-card__bar--${resource.kind}`);
+    this.resourceBar.root.classList.add(`player-card__bar-track--${resource.kind}`);
+    this.renderResource();
+  }
+
+  /**
+   * Set the current resource (a server value, once combat spends it). Until
+   * then the bar sits at full, which is the steady state for a resource nothing
+   * spends: basic attacks are free by design and abilities are not built.
+   */
+  setResource(current: number, max: number): void {
+    this.resource = current;
+    this.maxResource = max;
+    this.renderResource();
+  }
+
+  /** How many of the five rating stamps the courier has earned. */
+  setStampRating(earned: number): void {
+    this.rating = Math.max(0, Math.min(STAMP_RATING_SLOTS, earned));
+    this.renderRating();
+  }
+
   destroy(): void {
     this.root.remove();
   }
@@ -108,5 +189,23 @@ export class PlayerStatusCard {
     const ratio = this.maxHp > 0 ? this.hp / this.maxHp : 0;
     this.hpBar.setRatio(ratio, `Health ${this.hp} of ${this.maxHp}`);
     this.hpText.textContent = this.maxHp > 0 ? `${this.hp} / ${this.maxHp}` : "–";
+    this.hpRow.title = `Health — ${this.hp} of ${this.maxHp}`;
+  }
+
+  private renderResource(): void {
+    const ratio = this.maxResource > 0 ? this.resource / this.maxResource : 0;
+    const label = this.resourceName === "" ? "Class resource" : this.resourceName;
+    this.resourceBar.setRatio(ratio, `${label} ${this.resource} of ${this.maxResource}`);
+    this.resourceText.textContent =
+      this.maxResource > 0 ? `${this.resource} / ${this.maxResource}` : "–";
+    this.resourceRow.title = `${label} — refills over time and is spent by abilities (${this.resource} of ${this.maxResource})`;
+    this.resourceRow.dataset.resource = label.toLowerCase();
+  }
+
+  private renderRating(): void {
+    for (let slot = 0; slot < this.ratingSlots.length; slot += 1) {
+      this.ratingSlots[slot]!.classList.toggle("player-card__stamp--earned", slot < this.rating);
+    }
+    this.ratingRow.title = `Courier rating — ${this.rating} of ${STAMP_RATING_SLOTS} stamps earned · stamps held: ${this.stamps.toLocaleString()}`;
   }
 }

@@ -143,6 +143,131 @@ test.describe("HUD lifecycle", () => {
     collector.expectClean();
   });
 
+  test("the status card is compact, self-explaining, and shows the class resource", async ({
+    page,
+  }) => {
+    const collector = await bootToOverworld(page);
+
+    const card = page.locator(SEL.playerStatusCard);
+    await expect(card).toBeVisible({ timeout: 15_000 });
+
+    // Two bars — health and the class's primary resource — each printing its
+    // value inside the track, which is what lets the card be this narrow.
+    await expect(card.locator(".player-card__bar--hp .hud-progress")).toHaveCount(1);
+    await expect(card.locator(".player-card__bar--resource .hud-progress")).toHaveCount(1);
+    await expect(card.locator(".player-card__bar-value")).toHaveCount(2);
+
+    // Five rating slots, none earned: the server does not score the courier yet.
+    await expect(card.locator(".player-card__stamp")).toHaveCount(5);
+    await expect(card.locator(".player-card__stamp--earned")).toHaveCount(0);
+
+    // Half the footprint it shipped with (242px at HUD scale).
+    const container = await page.locator(SEL.gameContainer).boundingBox();
+    const box = await card.boundingBox();
+    expect(box).not.toBeNull();
+    expect(container).not.toBeNull();
+    expect(box!.width / container!.width, "card footprint").toBeLessThan(0.16);
+
+    // Every row says what it is on hover, at this size.
+    await expect(card.locator(".player-card__bar--hp")).toHaveAttribute("title", /Health/);
+    await expect(card.locator(".player-card__bar--resource")).toHaveAttribute(
+      "title",
+      /(Stamina|Mana|Focus)/,
+    );
+    await expect(card.locator(".player-card__rating")).toHaveAttribute("title", /Courier rating/);
+    await expect(card.locator(".player-card__name")).toHaveAttribute("title", /courier name/);
+    await expect(card.locator(".player-card__level")).toHaveAttribute("title", /level/);
+
+    // The resource the bar names is the courier's own class resource.
+    const classId = await page.evaluate(
+      () =>
+        (window as unknown as { pawsCharacters?: { class_id: number }[] })
+          .pawsCharacters?.[0]?.class_id ?? null,
+    );
+    const expected = classId === 2 ? "mana" : classId === 3 ? "focus" : "stamina";
+    await expect(card.locator(".player-card__bar--resource")).toHaveAttribute(
+      "data-resource",
+      expected,
+    );
+    // ... and that resource's colour is the one painted on the track.
+    await expect(card.locator(".player-card__bar--resource .hud-progress")).toHaveClass(
+      new RegExp(`player-card__bar-track--${expected}`),
+    );
+
+    // Nothing spills out of a card this small.
+    const overflow = await card.evaluate((node) =>
+      [...node.querySelectorAll<HTMLElement>(".player-card__details > *")].map((row) => ({
+        cls: row.className,
+        over: row.scrollWidth - row.clientWidth,
+      })),
+    );
+    for (const row of overflow) {
+      expect(row.over, `${row.cls} overflows by ${row.over}px`).toBeLessThanOrEqual(1);
+    }
+
+    await screenshot(page, "hud.png");
+    collector.expectClean();
+  });
+
+  test("the quest tracker collapses to its tab, reopens, and stacks above the chat", async ({
+    page,
+  }) => {
+    const collector = await bootToOverworld(page);
+
+    const tracker = page.locator(SEL.questTrackerRoot);
+    const tab = page.locator(SEL.questTrackerTab);
+    await expect(tracker).toBeVisible({ timeout: 15_000 });
+
+    // Collapsing hides the card body. The defect was that it hid the chevron
+    // too, leaving nothing on screen that could expand it again.
+    await page.locator(SEL.questTrackerToggle).click();
+    await expect(tracker).toHaveClass(/quest-tracker--collapsed/);
+    await expect(tab).toBeVisible();
+    await expect(tab).toHaveAttribute("aria-expanded", "false");
+
+    // The tab is the way back.
+    await tab.click();
+    await expect(tracker).not.toHaveClass(/quest-tracker--collapsed/);
+    await expect(tab).toHaveAttribute("aria-expanded", "true");
+    await expect(page.locator(SEL.questTracker)).toBeVisible();
+
+    // Bottom-left column: same left edge as the chat, entirely above it.
+    const trackerBox = await tracker.boundingBox();
+    const chatBox = await page.locator(SEL.chatBox).boundingBox();
+    expect(trackerBox).not.toBeNull();
+    expect(chatBox).not.toBeNull();
+    expect(Math.abs(trackerBox!.x - chatBox!.x)).toBeLessThanOrEqual(1);
+    expect(
+      trackerBox!.y + trackerBox!.height,
+      "the tracker is stacked above the chat",
+    ).toBeLessThanOrEqual(chatBox!.y + 1);
+
+    collector.expectClean();
+  });
+
+  test("the top bar is the only account surface", async ({ page }) => {
+    const collector = await bootToOverworld(page);
+
+    // The floating courier pill used to render at viewport top-left and land
+    // on top of the brand. There is now exactly one account surface: the top
+    // bar's dropdown, and it is the one the harness opens.
+    await expect(page.locator(".character-menu, .character-menu__button")).toHaveCount(0);
+    await expect(page.locator(SEL.topBar)).toHaveCount(1);
+
+    await expect(page.locator(SEL.courierMenuPanel)).toBeHidden();
+    await page.locator(SEL.courierMenuButton).click();
+    await expect(page.locator(SEL.courierMenuPanel)).toBeVisible();
+    await expect(
+      page.locator(`${SEL.courierMenuPanel} button`, { hasText: "Create a new courier" }),
+    ).toBeVisible();
+
+    // Escape (and any outside click) dismisses it again.
+    await page.keyboard.press("Escape");
+    await expect(page.locator(SEL.courierMenuPanel)).toBeHidden();
+
+    collector.expectClean();
+  });
+
   test("no duplicate HUD after reload", async ({ page }) => {
     await bootToOverworld(page);
     const collector = await reloadAndRestore(page);

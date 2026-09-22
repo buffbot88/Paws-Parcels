@@ -6,7 +6,6 @@ import "./styles/primitives.css";
 // layers so every panel is positioned before its component mounts.
 import "./styles/hud.css";
 import "./styles/game-ui.css";
-import "./styles/character-menu.css";
 import { initClientUpdateMonitor } from "./clientUpdate.ts";
 import { gameConfig } from "./game/GameConfig.ts";
 import { initErrorLogging } from "./game/ErrorLog.ts";
@@ -18,7 +17,6 @@ import {
   type CharacterListItem,
 } from "./ui/LoginOverlay.ts";
 import { CharacterDesk } from "./ui/CharacterDesk.ts";
-import { CharacterMenu } from "./ui/CharacterMenu.ts";
 import { CharacterProfilePanel } from "./ui/CharacterProfilePanel.ts";
 import { TopBar } from "./ui/TopBar.ts";
 import { deskStepFor } from "./ui/characterFlow.ts";
@@ -49,15 +47,17 @@ type GameWindow = Window & {
 const win = window as GameWindow;
 
 /** One desk + one HUD menu, reused across boot and in-game switch flows. */
+const desk = new CharacterDesk();
+const profilePanel = new CharacterProfilePanel();
+// The top bar is the single account surface: one dropdown holding the courier
+// roster and every account action. See src/ui/TopBar.ts.
 const topBar = new TopBar({
   onSignOut: () => {
+    profilePanel.close();
     clearAuthStorage();
     window.location.reload();
   },
 });
-const desk = new CharacterDesk();
-const menu = new CharacterMenu();
-const profilePanel = new CharacterProfilePanel();
 // Register the panel singleton before the game boots: the in-world `I`
 // shortcut and the HUD InventoryButton open it through
 // `CharacterProfilePanel.instance`, which is only assigned by mount(). Without
@@ -132,8 +132,7 @@ function startGame(
     );
     console.error("Phaser startup failed", error);
   }
-  menu.mount({
-    account: detail.account,
+  topBar.setCouriers({
     characters,
     selectedId,
     onSwitch: (id) => playWith(detail, characters, id),
@@ -142,11 +141,6 @@ function startGame(
       const activeId = selectedId ?? characters[0]?.id;
       const token = readAuthToken();
       if (activeId !== undefined && token !== null) profilePanel.open(activeId, token);
-    },
-    onSignOut: () => {
-      profilePanel.close();
-      clearAuthStorage();
-      window.location.reload();
     },
   });
 }
@@ -158,7 +152,7 @@ function playWith(
   selectedId: number,
 ): void {
   profilePanel.close();
-  menu.unmount();
+  topBar.closeMenu();
   NetworkSystem.get().shutdown();
   dialoguePanel.close(); // don't carry a stale dialogue into the new session
   win.game?.destroy(true);
@@ -173,10 +167,10 @@ function openCreateDesk(
 ): void {
   const token = readAuthToken();
   if (token === null) {
-    console.warn("CharacterMenu: no JWT in storage — can't open the creation desk");
+    console.warn("TopBar: no JWT in storage — can't open the creation desk");
     return;
   }
-  menu.unmount();
+  topBar.closeMenu();
   desk.show(
     { account: detail.account, characters, token },
     (nextCharacters, selectedId) => playWith(detail, nextCharacters, selectedId),

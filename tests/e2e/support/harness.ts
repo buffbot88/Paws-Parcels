@@ -29,11 +29,16 @@ export const SEL = {
   gameContainer: "#game-container",
   /** Canvas-relative world HUD layer (HUD v4). */
   hudLayer: "#hud-layer",
-  courierMenuButton: ".character-menu__button",
-  courierMenuPanel: ".character-menu__panel",
-  courierCreateAction: ".character-menu__action", // identified by label at call site
+  /* The single account surface: the top bar's account button and its
+     dropdown. The floating courier pill was merged into this menu. */
+  courierMenuButton: "#navbar-account",
+  courierMenuPanel: "#navbar-account-menu",
+  courierCreateAction: ".navbar-account-menu__action", // identified by label at call site
   playerStatusCard: "#player-hp",
   questTracker: ".quest-tracker__header",
+  questTrackerRoot: ".quest-tracker",
+  questTrackerTab: ".quest-tracker__tab",
+  questTrackerToggle: ".quest-tracker__toggle",
   skillBar: ".skill-bar",
   inventoryButton: ".inventory-button",
   minimap: ".minimap",
@@ -380,8 +385,9 @@ export async function gotoDevLogin(page: Page): Promise<void> {
  */
 export async function startFreshCourier(page: Page): Promise<void> {
   const menuButton = page.locator(SEL.courierMenuButton);
-  // The menu mounts only after Phaser boots — give it a short window and skip
-  // silently when we are genuinely pre-boot (the auto-play path).
+  // The account button appears once the session resolves (it never waits on
+  // Phaser). Give it a short window and skip silently when we are genuinely
+  // pre-auth (the auto-play path).
   const menuAppeared = await menuButton
     .waitFor({ state: "visible", timeout: 8_000 })
     .then(() => true)

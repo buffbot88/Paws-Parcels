@@ -1,6 +1,12 @@
 import { describe, expect, it } from "vitest";
 import classesJson from "../../src/data/classes.json";
-import { classCooldownMs, classSpeed, type ClassKey } from "../../src/game/classStats.ts";
+import {
+  CLASS_RESOURCE,
+  classCooldownMs,
+  classResourceFromId,
+  classSpeed,
+  type ClassKey,
+} from "../../src/game/classStats.ts";
 import { CLASS_PROFILES } from "../../server/src/ws/combat.ts";
 
 // Client movement and server combat both key off the same class ids; a
@@ -33,5 +39,32 @@ describe("class data parity (client vs server)", () => {
         CLASS_PROFILES[cls.key].cooldownMs,
       );
     }
+  });
+
+  it("client CLASS_RESOURCE matches classes.json for every class", () => {
+    // The HUD's second bar shows this resource, so a drifted table would label
+    // a courier with the wrong bar and the wrong ceiling.
+    const withResources = classesJson.classes as {
+      key: string;
+      primaryResource: string;
+      resourceMax: number;
+      resourceRegenPerSec: number;
+    }[];
+    for (const cls of withResources) {
+      const mirrored = CLASS_RESOURCE[cls.key as ClassKey];
+      expect(mirrored, cls.key).toBeDefined();
+      expect(mirrored.kind, cls.key).toBe(cls.primaryResource);
+      expect(mirrored.max, cls.key).toBe(cls.resourceMax);
+      expect(mirrored.regenPerSec, cls.key).toBe(cls.resourceRegenPerSec);
+      expect(mirrored.label.length, cls.key).toBeGreaterThan(0);
+    }
+  });
+
+  it("maps every seeded class id onto its own resource", () => {
+    // Ids are the server's seeded order (bear 1, cat 2, fox 3).
+    expect(classResourceFromId(1).label).toBe("Stamina");
+    expect(classResourceFromId(2).label).toBe("Mana");
+    expect(classResourceFromId(3).label).toBe("Focus");
+    expect(classResourceFromId(2).max).toBe(120);
   });
 });

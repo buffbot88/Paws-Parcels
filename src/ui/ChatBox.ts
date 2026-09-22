@@ -1,6 +1,6 @@
 import { createIcon } from "./hud/icons.ts";
 import { createPanel, createKeyHint } from "./hud/primitives.ts";
-import { hudLayer } from "./hud/layer.ts";
+import { hudColumn } from "./hud/layer.ts";
 
 export interface ChatMessage {
   sender: string;
@@ -14,6 +14,9 @@ const MAX_MESSAGES = 40;
  * HUD v4 zone chat (bottom-left, dark translucent forest surface): users
  * icon + "same zone" pill header, low-contrast empty state, 48px composer
  * with a gold circular send button. Server remains authoritative for delivery.
+ *
+ * Mounts into the bottom-left HUD column, so the quest tracker sits above it
+ * by layout rather than by a measured offset.
  */
 export class ChatBox {
   private readonly root: HTMLElement;
@@ -88,7 +91,7 @@ export class ChatBox {
     });
 
     this.panelBody.append(header, this.log, composer);
-    hudLayer()?.appendChild(this.root);
+    hudColumn("bottom-left")?.appendChild(this.root);
     this.input = input;
     this.sendButton = send;
   }

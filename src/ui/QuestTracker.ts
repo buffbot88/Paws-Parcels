@@ -1,9 +1,17 @@
 import type { NetQuestSnapshot } from "../net/GameSocket.ts";
 import { createIcon } from "./hud/icons.ts";
 import { createPanel, createPill, createKeyHint, createDivider } from "./hud/primitives.ts";
-import { hudLayer } from "./hud/layer.ts";
+import { hudColumn } from "./hud/layer.ts";
 
-/** HUD v4 quest tracker: tab pill on the card edge, dominant title, objective row. */
+/**
+ * HUD v4 quest tracker: tab pill on the card edge, dominant title, objective
+ * row. Bottom-left, stacked above the village chat.
+ *
+ * The tab is a button that toggles the card. That matters: collapsing used to
+ * hide the entire panel body — including the chevron — so the only control
+ * that could expand it again was the one being hidden, and a collapsed
+ * tracker could not be reopened at all.
+ */
 export class QuestTracker {
   private readonly root: HTMLElement;
   private readonly panelBody: HTMLElement;
@@ -12,6 +20,7 @@ export class QuestTracker {
   private readonly action: HTMLButtonElement;
   private readonly status: HTMLElement;
   private readonly toggle: HTMLButtonElement;
+  private readonly tab: HTMLButtonElement;
   private quests: NetQuestSnapshot[] = [];
   private offeredQuestId: string | null = null;
   private readonly onAccept: (questId: string) => void;
@@ -24,9 +33,16 @@ export class QuestTracker {
     this.root = panel.root;
     this.panelBody = panel.body;
 
-    // Category tab attached to the top edge.
-    const tab = createPill("Main Quest", { icon: "book-open" });
-    tab.classList.add("quest-tracker__tab");
+    // Category tab attached to the top edge, and the collapse/expand control
+    // that survives collapsing (the card body is what gets hidden).
+    const tabContent = createPill("Main Quest", { icon: "book-open" });
+    const tab = document.createElement("button");
+    tab.type = "button";
+    tab.className = `${tabContent.className} quest-tracker__tab`;
+    tab.replaceChildren(...tabContent.childNodes);
+    tab.setAttribute("aria-controls", "quest-tracker-body");
+    tab.addEventListener("click", () => this.setCollapsed(!this.collapsed));
+    this.tab = tab;
 
     // Header row: title + collapse chevron.
     const header = document.createElement("div");
@@ -41,6 +57,7 @@ export class QuestTracker {
     this.toggle.appendChild(createIcon("chevron-up", { size: 14 }));
     this.toggle.addEventListener("click", () => this.setCollapsed(!this.collapsed));
     header.append(this.title, this.toggle);
+    this.panelBody.id = "quest-tracker-body";
 
     this.objective = document.createElement("span");
     this.objective.className = "quest-tracker__objective";
@@ -59,7 +76,8 @@ export class QuestTracker {
 
     this.panelBody.append(header, this.objective, createDivider(), objectiveRow, this.action);
     this.root.prepend(tab);
-    hudLayer()?.appendChild(this.root);
+    hudColumn("bottom-left")?.appendChild(this.root);
+    this.setCollapsed(false);
     this.countdownTimer = window.setInterval(() => {
       if (this.quests.some((quest) => quest.state === "active" && quest.deadlineAt !== null)) this.render();
     }, 1000);
@@ -101,6 +119,8 @@ export class QuestTracker {
     this.toggle.setAttribute("aria-expanded", String(!collapsed));
     this.toggle.setAttribute("aria-label", collapsed ? "Expand quest tracker" : "Collapse quest tracker");
     this.toggle.replaceChildren(createIcon(collapsed ? "chevron-down" : "chevron-up", { size: 14 }));
+    this.tab.setAttribute("aria-expanded", String(!collapsed));
+    this.tab.setAttribute("aria-label", collapsed ? "Expand quest tracker" : "Collapse quest tracker");
   }
 
   private render(): void {

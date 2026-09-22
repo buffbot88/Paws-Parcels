@@ -187,7 +187,14 @@ describe("step-up tokens", () => {
 
   it("rejects tampered payloads", () => {
     const { token } = mintStepUpToken(42);
-    const tampered = token.slice(0, -2) + "zz";
+    // Flip a bit in the decoded signature rather than overwriting its last two
+    // characters: those are base64url padding, so a fixed suffix can already
+    // match the real signature and hand the *valid* token back as "tampered".
+    const [body, sig] = token.split(".");
+    const signature = Buffer.from(sig!, "base64url");
+    signature[0] ^= 0x01;
+    const tampered = `${body}.${signature.toString("base64url")}`;
+    expect(tampered).not.toBe(token);
     const verdict = verifyStepUpToken(tampered, 42);
     expect(verdict.ok).toBe(false);
   });

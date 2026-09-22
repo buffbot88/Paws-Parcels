@@ -53,6 +53,14 @@
   --brown-600: #80674b;
   --hp: #e85f57;
   --success: #6f9d58;
+  /* Primary class resource bar (design/classes.md): one hue per resource so
+     the bar reads as stamina/mana/focus without needing its label spelled out. */
+  --resource-stamina: #6f9d58;
+  --resource-mana: #4f86cd;
+  --resource-focus: #7d6bc4;
+  /* Courier rating: an earned stamp, and the greyed-out slot for one. */
+  --stamp-earned: #c99a32;
+  --stamp-empty: #b8ac95;
 
   /* Corner radius */
   --radius-sm: 10px;

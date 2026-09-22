@@ -223,6 +223,112 @@
   every `validateComposition` rule, and the shipped plans including the cross-check that the
   village's authored entrances sit on the map's real road mouths).
 
+### One account surface: the courier switcher lives in the top bar
+- **Decision:** The in-game courier switcher is **not** a widget of its own. It lives in the
+  top bar's account dropdown (`src/ui/TopBar.ts`), which is the game's only account surface:
+  account identity, the courier roster, "Character, bag & skills", "Create a new courier",
+  "Report bug", and the Admin link. `src/ui/CharacterMenu.ts` and
+  `src/styles/character-menu.css` are deleted, and the dropdown now opens for **every** role
+  rather than Admin only, because switching couriers is an every-player need.
+- **Reason:** the pill was a second, older component (`CharacterMenu`) that mounted into
+  `#hud-overlays` — `position: fixed; inset: 0; z-index: 3000` — pinned at viewport top-left,
+  which is *outside* the game window and therefore on top of the "Paws & Parcels" brand. It
+  also duplicated what the bar already had: two carets, two visual languages (cream pill vs
+  green bar), and Sign out in both.
+- **Consequences:** the world HUD keeps one account affordance instead of two, and the
+  floating pill cannot return without deleting the dropdown. Sign out stays the visible bar
+  button rather than moving into the menu, so the primary action keeps its prominence. The
+  roster scrolls inside a `max-height` panel — the cap that fixed the unreachable-actions
+  defect in `reports/PLAYWRIGHT-RUNTIME-AUDIT.md` (D3) moved with the panel. One latent
+  defect fell out of the merge: the Admin link had been rendering cream-on-cream, because
+  `.top-navbar a { color: inherit }` (0,1,1) out-specified `.navbar-account-menu__link`
+  (0,1,0), so it was invisible until hover; the menu now styles its own rows through
+  `.navbar-account-menu a` / `.navbar-account-menu button`, which also have to opt back out
+  of the cream-on-green bar button treatment.
+- **Status:** ✅ built (`tests/e2e/hud.spec.ts` → "the top bar is the only account surface":
+  zero `.character-menu` nodes, one `#navbar-account`, the dropdown opens with the create
+  action and closes on Escape; `tests/e2e/support/harness.ts` now drives the merged menu, so
+  every spec that boots a fresh courier exercises it). Whether the merged menu reads as well
+  as it should — panel width, the ellipsised account name, roster scrolling — is
+  `REQUIRES SEELLE/BROWSER VERIFICATION`.
+
+### The inventory control is icon-only
+- **Decision:** The bottom-right inventory control is **just its icon**: a circular cream
+  control (44px at HUD scale, `--hud-inventory-size`) carrying the courier's satchel glyph,
+  with no "Inventory" label and no `I` keycap chip. The binding lives in the hover hint
+  (`title="Inventory - I"`) and the aria-label.
+- **Reason:** the labelled pill was the largest HUD affordance on the screen for the smallest
+  amount of information — the pill repeated what the icon already said, and the keycap was a
+  third element for a hint the HUD already delivers through `title` elsewhere (the minimap
+  toggle, every skill slot).
+- **Consequences:** the control stops competing with the world, and the bottom-right corner
+  is now its own (the quest tracker that used to stack above it moved to the bottom-left
+  column — see the next entry). The satchel is a drawn glyph in `src/ui/hud/icons.ts` rather than a cropped sprite, because the
+  HUD is vector throughout (gradients, inline SVG, no raster panel art) and a bitmap would be
+  the first exception. It was checked by rasterizing it at its real 24px size: the clasp had
+  to be a stroke rather than a rect, since a 3-unit box fills in solid at that size and reads
+  as a smudge.
+- **Status:** ✅ built (`tests/e2e/inventory.spec.ts` pins the control as icon-only: empty
+  text, exactly one SVG child, `aria-label`, `title="Inventory - I"`, and a square box — then
+  still opens the profile panel). Whether it *looks* like the right satchel at HUD scale is
+  `REQUIRES SEELLE/BROWSER VERIFICATION`.
+
+### The bottom-left is a column: quest tracker above village chat
+- **Decision:** Panels that stack get a **column**: `hudColumn("bottom-left")` in
+  `src/ui/hud/layer.ts` holds the quest tracker above the village chat, and the tracker is
+  anchored bottom-left rather than bottom-right above the inventory control.
+- **Reason:** two things. The tracker's position on the right was a hand-measured offset off
+  a *different* panel's height (`bottom: edge + inventory-size + gap`), which is the same
+  class of magic number the depth pass replaced everywhere else — and it goes stale the moment
+  the chat log grows, or the narrow-window media query hides it. Inside a column, "above the
+  chat" is layout. Separately, the bottom-right corner already had the inventory control, so
+  the world's most useful panel sat in the corner with the least room.
+- **Consequences:** the column is a layout box, not a surface — it spans more of the world
+  than the panels it holds, so `#hud-layer > .hud-column` turns pointer events back off (the
+  layer turns them on for every direct child). Mount order is not layout: `order` puts the
+  tracker in the upper slot whichever component is constructed first. The collapsed tracker
+  becomes just its tab, which is now a **button** — this is also the fix for a real defect:
+  collapsing hid the whole panel body *including the chevron*, so the only control that could
+  expand the tracker again was the one being hidden, and a collapsed tracker could not be
+  reopened at all. The tab survives collapsing because it lives outside the body, and its
+  `aria-expanded`/`aria-label` flip with the state.
+- **Status:** ✅ built (`tests/e2e/hud.spec.ts` → "the quest tracker collapses to its tab,
+  reopens, and stacks above the chat": the body hides, the tab stays visible with
+  `aria-expanded="false"`, the tab click restores the card, and the tracker and chat share a
+  left edge with the tracker entirely above the chat). Whether the stacked column reads
+  better than the old right-edge placement — and whether a collapsed tab is enough of a
+  cue — is `REQUIRES SEELLE/BROWSER VERIFICATION`.
+
+### The status card is half the size and carries the class resource
+- **Decision:** The player status card is **121px wide at HUD scale — half the 242px it
+  shipped with** — with the numbers printed *inside* each bar so the card needs no third
+  column for text, and one row per bar. It shows the courier's class **primary resource**
+  (stamina / mana / focus) under health, and a **five-stamp courier rating** whose slots render
+  greyed until the server scores them. Every row carries a `title` explaining what it is.
+- **Reason:** the card was the largest thing in the HUD for the least information, and it showed
+  a single bar. The resource is real authored content (`src/data/classes.json`
+  `primaryResource` / `resourceMax` / `resourceRegenPerSec`, mirrored in `classStats.ts` and
+  pinned by the class-parity test) that the HUD had simply never displayed.
+- **Consequences:** the resource bar's **value is not yet simulated anywhere**. `design/combat.md`
+  says basic attacks are free and abilities cost the resource; no ability is implemented and the
+  server tracks no resource, so the bar sits at the authored ceiling — the correct steady state
+  for something nothing spends — and `PlayerStatusCard.setResource(current, max)` is the seam the
+  server will drive when combat spends it. One honest note for whoever picks that up: the server
+  side is *scaffolded but absent* — `gameServer.ts` emits `resourceCost: {}` on both combat
+  events, always empty, and `ws/combat.ts`'s rejection union has `TARGET_DEAD`, `OUT_OF_RANGE` and
+  `COOLDOWN_ACTIVE` but no `INSUFFICIENT_RESOURCE`, even though `ROADMAP.md` lists resource costs
+  and that error code under a complete Phase 3. The rating is likewise
+  display-only (`setStampRating` is the seam), and the authoritative stamp *count* moved into the
+  rating row's tooltip, since the half-width card has no room for a separate stat row.
+- **Status:** ✅ built (`tests/e2e/hud.spec.ts` → "the status card is compact, self-explaining, and
+  shows the class resource": two bars with two in-bar values, five rating slots with none earned,
+  footprint under 16% of the game window, `title` on the name/level/health/resource/rating rows,
+  the resource matching the courier's own class and its colour class, and no row overflowing at
+  that width; `tests/data/class-parity.test.ts` pins the resource table to `classes.json`, and
+  `tests/systems/network-hud-lifecycle.test.ts` that the card adopts it on mount). Whether a
+  121px card is still legible, and whether greyed stamps read as "not yet" rather than "broken",
+  is `REQUIRES SEELLE/BROWSER VERIFICATION`.
+
 ---
 
 ## 1. Online Architecture & Authority

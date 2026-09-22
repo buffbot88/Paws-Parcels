@@ -25,6 +25,36 @@ export const CLASS_COOLDOWN_MS: Readonly<Record<ClassKey, number>> = {
   "fox-archer": 2000,
 };
 
+/**
+ * The class's primary combat resource — the bar under health.
+ *
+ * Mirror of `src/data/classes.json` (`primaryResource` / `resourceMax` /
+ * `resourceRegenPerSec`), pinned by `tests/data/class-parity.test.ts`. Nothing
+ * on the server spends or regenerates it yet: basic attacks are free by design
+ * (design/combat.md) and abilities are not implemented, so `max` is also the
+ * steady state the HUD shows until a server value exists.
+ */
+export type ResourceKind = "stamina" | "mana" | "focus";
+
+export interface ClassResource {
+  kind: ResourceKind;
+  /** Display label, e.g. "Mana". */
+  label: string;
+  max: number;
+  regenPerSec: number;
+}
+
+export const CLASS_RESOURCE: Readonly<Record<ClassKey, ClassResource>> = {
+  "bear-warrior": { kind: "stamina", label: "Stamina", max: 100, regenPerSec: 5.0 },
+  "cat-mage": { kind: "mana", label: "Mana", max: 120, regenPerSec: 10.0 },
+  "fox-archer": { kind: "focus", label: "Focus", max: 100, regenPerSec: 8.0 },
+};
+
+/** Primary resource for a class id (server-seeded order). */
+export function classResourceFromId(classId: number): ClassResource {
+  return CLASS_RESOURCE[classKeyFromId(classId)];
+}
+
 /** The stable seeded class order used by the server's class migration. */
 export function classKeyFromId(classId: number): ClassKey {
   if (classId === 2) return "cat-mage";

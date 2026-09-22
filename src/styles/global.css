@@ -132,35 +132,155 @@ body {
   position: relative;
 }
 
+/* Avatar + account button + dropdown share this positioned wrapper so the
+   menu hangs off the account button rather than the whole account row. */
+.top-navbar__identity {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.top-navbar__account-label {
+  display: inline-block;
+  max-width: 12rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  vertical-align: bottom;
+}
+
+.top-navbar__account-caret {
+  margin-left: 0.35rem;
+  color: #e8d9b4;
+  font-size: 0.7rem;
+}
+
 .navbar-account-menu {
   position: absolute;
   top: calc(100% + 0.55rem);
-  right: 5.2rem;
+  right: 0;
   z-index: 300;
-  min-width: 13rem;
+  width: min(19rem, calc(100vw - 1.5rem));
   padding: 0.4rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
   background: #fff8e8;
   border: 2px solid #c99a4a;
   border-radius: 0.7rem;
   box-shadow: 0 8px 20px rgba(31, 48, 35, 0.28);
+  /* A full courier roster used to push the panel past the viewport, which
+     made "Create a new courier" unreachable (no scroll). Cap the height and
+     let the panel scroll instead. */
+  max-height: calc(100vh - 6rem);
+  overflow-y: auto;
+  overscroll-behavior: contain;
 }
 
 .navbar-account-menu[hidden] { display: none; }
 
-.navbar-account-menu__link {
+.navbar-account-menu__account {
+  margin: 0 0.4rem 0.35rem;
+  padding-bottom: 0.4rem;
+  border-bottom: 1px solid rgba(201, 154, 74, 0.4);
+  color: #6b7a5e;
+  font: italic 0.72rem Georgia, "Times New Roman", serif;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Menu rows sit inside the bar, so they must opt back out of the cream-on-
+   green `.top-navbar button` / `.top-navbar a` treatment. These rules come
+   after those, and out-specify them for the hover states. */
+.navbar-account-menu button {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  width: 100%;
+  padding: 0.5rem 0.7rem;
+  border: none;
+  border-radius: 0.45rem;
+  background: transparent;
+  color: #203b2d;
+  font: 700 0.8rem Georgia, "Times New Roman", serif;
+  text-align: left;
+  cursor: pointer;
+}
+
+.navbar-account-menu a {
   display: block;
-  padding: 0.65rem 0.75rem;
+  padding: 0.5rem 0.7rem;
   border-radius: 0.45rem;
   color: #203b2d;
   font: 700 0.8rem Georgia, "Times New Roman", serif;
   text-decoration: none;
 }
 
-.navbar-account-menu__link:hover,
-.navbar-account-menu__link:focus-visible {
+.navbar-account-menu button:hover,
+.navbar-account-menu a:hover,
+.navbar-account-menu button:focus-visible,
+.navbar-account-menu a:focus-visible {
+  border-color: transparent;
   color: #203b2d;
   background: #ead9bc;
   outline: none;
+}
+
+.navbar-account-menu__courier,
+.navbar-account-menu .navbar-account-menu__courier:hover {
+  gap: 0.55rem;
+  background: transparent;
+}
+
+.navbar-account-menu button.navbar-account-menu__courier--current,
+.navbar-account-menu .navbar-account-menu__courier--current:hover {
+  background: rgba(143, 201, 138, 0.25);
+  border: 1px solid rgba(109, 165, 107, 0.5);
+  cursor: default;
+}
+
+.navbar-account-menu__badge {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 1.75rem;
+  height: 1.75rem;
+  border-radius: 50%;
+  background: radial-gradient(
+    circle at 35% 30%,
+    rgba(143, 201, 138, 0.55),
+    rgba(109, 165, 107, 0.25)
+  );
+  border: 1px solid rgba(109, 165, 107, 0.5);
+  font-size: 0.85rem;
+}
+
+.navbar-account-menu__courier-info {
+  display: flex;
+  flex-direction: column;
+  gap: 0.05rem;
+  min-width: 0;
+}
+
+.navbar-account-menu__courier-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-weight: 700;
+  font-size: 0.8rem;
+}
+
+.navbar-account-menu__courier-meta {
+  color: #6b7a5e;
+  font: 0.65rem/1.3 "Trebuchet MS", Arial, sans-serif;
+}
+
+.navbar-account-menu__divider {
+  height: 1px;
+  margin: 0.25rem 0.2rem;
+  background: rgba(201, 154, 74, 0.4);
 }
 
 .top-navbar button {

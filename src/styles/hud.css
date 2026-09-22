@@ -22,8 +22,8 @@
  * scale with it into illegibility.
  *
  * Layout (per design/UI.png): compact status card top-left, minimap
- * top-right, quest tracker on the right above the inventory control, skill bar
- * bottom-centre, chat bottom-left, inventory bottom-right.
+ * top-right, skill bar bottom-centre, inventory bottom-right, and a bottom-left
+ * column holding the quest tracker above the village chat.
  */
 
 #hud-layer {
@@ -31,7 +31,8 @@
   --hud-edge: calc(var(--hud-scale) * 12px);
   --hud-gap: calc(var(--hud-scale) * 8px);
   --hud-radius: calc(var(--hud-scale) * 14px);
-  --hud-inventory-height: calc(var(--hud-scale) * 38px);
+  /* The inventory control is a circle, so its footprint is one number. */
+  --hud-inventory-size: calc(var(--hud-scale) * 44px);
   /* Cream "raised soft card" recipe, scaled from the shared tokens. */
   --hud-card-surface: linear-gradient(
     150deg,
@@ -48,7 +49,9 @@
   position: absolute;
   top: var(--hud-edge);
   left: var(--hud-edge);
-  width: calc(var(--hud-scale) * 242px);
+  /* Half the card this shipped with (242px): the world is the main surface, and
+     the status card only has to be legible, not roomy. */
+  width: calc(var(--hud-scale) * 121px);
   border-radius: var(--hud-radius);
 }
 
@@ -58,29 +61,29 @@
 #player-hp.player-card { pointer-events: none; }
 
 #player-hp.player-card > .hud-panel__body {
-  padding: calc(var(--hud-scale) * 8px) calc(var(--hud-scale) * 10px);
-  gap: calc(var(--hud-scale) * 9px);
+  padding: calc(var(--hud-scale) * 6px) calc(var(--hud-scale) * 7px);
+  gap: calc(var(--hud-scale) * 6px);
 }
 
 .player-card__portrait {
-  width: calc(var(--hud-scale) * 46px);
-  height: calc(var(--hud-scale) * 46px);
-  border-width: calc(var(--hud-scale) * 2px);
-  font-size: calc(var(--hud-scale) * 20px);
+  width: calc(var(--hud-scale) * 28px);
+  height: calc(var(--hud-scale) * 28px);
+  border-width: calc(var(--hud-scale) * 1.5px);
+  font-size: calc(var(--hud-scale) * 13px);
 }
 
 .player-card__details {
   display: flex;
   flex: 1;
   flex-direction: column;
-  gap: calc(var(--hud-scale) * 4px);
+  gap: calc(var(--hud-scale) * 3px);
   min-width: 0;
 }
 
 .player-card__identity {
   display: flex;
   align-items: baseline;
-  gap: calc(var(--hud-scale) * 6px);
+  gap: calc(var(--hud-scale) * 4px);
   min-width: 0;
 }
 
@@ -88,25 +91,40 @@
   overflow: hidden;
   color: var(--brown-900);
   font-family: var(--font-display);
-  font-size: calc(var(--hud-scale) * 14px);
+  font-size: calc(var(--hud-scale) * 11px);
   line-height: 1.1;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
+/* Only populated for named ranks; an empty span must not add a gap. */
+.player-card__rank:empty { display: none; }
+
 .player-card__rank {
   flex: none;
   color: var(--brown-600);
-  font-size: calc(var(--hud-scale) * 9px);
+  font-size: calc(var(--hud-scale) * 8px);
   font-weight: 700;
-  letter-spacing: 0.08em;
+  letter-spacing: 0.06em;
   text-transform: uppercase;
 }
 
-.player-card__health {
+.player-card__level {
+  flex: none;
+  margin-left: auto;
+  color: var(--brown-600);
+  font-size: calc(var(--hud-scale) * 9px);
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+/* One row per bar: icon + track, with the numbers centred inside the track so
+   a 121px card does not need a third column for text. */
+.player-card__bar {
   display: flex;
   align-items: center;
-  gap: calc(var(--hud-scale) * 6px);
+  gap: calc(var(--hud-scale) * 4px);
+  min-width: 0;
 }
 
 .player-card__heart {
@@ -114,34 +132,65 @@
   color: var(--hp);
 }
 
-.player-card__health .hud-progress {
+.player-card__resource-icon {
+  flex: none;
+  color: var(--brown-600);
+}
+
+.player-card__bar--stamina .player-card__resource-icon { color: var(--resource-stamina); }
+.player-card__bar--mana .player-card__resource-icon { color: var(--resource-mana); }
+.player-card__bar--focus .player-card__resource-icon { color: var(--resource-focus); }
+
+.player-card__bar .hud-progress {
   height: calc(var(--hud-scale) * 11px);
 }
 
-.player-card__hp-text {
-  flex: none;
-  color: var(--brown-900);
-  font-size: calc(var(--hud-scale) * 10px);
+.player-card__bar-track--stamina {
+  --resource-fill: linear-gradient(90deg, var(--resource-stamina), #a8c98a);
+}
+.player-card__bar-track--mana {
+  --resource-fill: linear-gradient(90deg, var(--resource-mana), #8ab4e8);
+}
+.player-card__bar-track--focus {
+  --resource-fill: linear-gradient(90deg, var(--resource-focus), #ac9ce4);
+}
+
+.player-card__bar--resource .hud-progress__fill {
+  background: var(--resource-fill, var(--resource-mana));
+}
+
+.player-card__bar-value {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  color: var(--cream-50);
+  font-size: calc(var(--hud-scale) * 8px);
   font-weight: 700;
   font-variant-numeric: tabular-nums;
+  text-shadow: 0 1px 1px rgba(43, 29, 15, 0.55);
+  pointer-events: none;
 }
 
-.player-card__stats {
+/* Courier rating: five stamp slots, greyed until the server scores them. */
+.player-card__rating {
   display: flex;
-  gap: calc(var(--hud-scale) * 12px);
-  color: var(--brown-600);
-  font-size: calc(var(--hud-scale) * 10px);
-}
-
-.player-card__stat {
-  display: inline-flex;
   align-items: center;
-  gap: calc(var(--hud-scale) * 4px);
+  gap: calc(var(--hud-scale) * 2px);
+  min-width: 0;
 }
 
-.player-card__stat b {
-  color: var(--brown-900);
-  font-size: calc(var(--hud-scale) * 11px);
+.player-card__stamp {
+  display: grid;
+  place-items: center;
+  flex: none;
+  color: var(--stamp-empty);
+  opacity: 0.55;
+}
+
+.player-card__stamp--earned {
+  color: var(--stamp-earned);
+  opacity: 1;
 }
 
 /* ------------------------------------------------------------------ */
@@ -288,16 +337,40 @@
 .minimap[hidden] { display: none; }
 
 /* ------------------------------------------------------------------ */
-/* Quest tracker — right edge, above the inventory control             */
+/* Stacked HUD columns — bottom-left holds tracker above chat          */
+/* ------------------------------------------------------------------ */
+
+.hud-column {
+  position: absolute;
+  display: flex;
+  flex-direction: column;
+  gap: var(--hud-gap);
+}
+
+/* A column is a layout box, not a surface: it spans more of the world than
+   the panels it holds, so it must not swallow canvas clicks. (`#hud-layer > *`
+   turns pointer events on for every direct child, hence the id.) */
+#hud-layer > .hud-column { pointer-events: none; }
+.hud-column > * { pointer-events: auto; }
+
+.hud-column--bottom-left {
+  left: var(--hud-edge);
+  bottom: var(--hud-edge);
+  width: calc(var(--hud-scale) * 224px);
+}
+
+/* Mount order is not the layout: the tracker owns the upper slot whichever
+   component happens to be constructed first. */
+.hud-column--bottom-left > .quest-tracker { order: 0; }
+.hud-column--bottom-left > .chat-box { order: 1; }
+
+/* ------------------------------------------------------------------ */
+/* Quest tracker — bottom-left, above the village chat                 */
 /* ------------------------------------------------------------------ */
 
 .quest-tracker {
-  position: absolute;
-  right: var(--hud-edge);
-  bottom: calc(
-    var(--hud-edge) + var(--hud-inventory-height) + var(--hud-gap)
-  );
-  width: calc(var(--hud-scale) * 196px);
+  position: relative;
+  width: 100%;
   border-radius: var(--hud-radius);
 }
 
@@ -307,14 +380,21 @@
   gap: calc(var(--hud-scale) * 6px);
 }
 
-/* Category tab sitting on the card's top edge. */
+/* Category tab sitting on the card's top edge — and the control that brings
+   the card back once it is collapsed. It is a button, so it must opt out of
+   the browser's button styling to keep the pill look. */
 .quest-tracker__tab {
   position: absolute;
   top: calc(var(--hud-scale) * -9px);
   left: calc(var(--hud-scale) * 12px);
   padding: calc(var(--hud-scale) * 3px) calc(var(--hud-scale) * 9px);
   font-size: calc(var(--hud-scale) * 9px);
+  font-family: var(--font-display);
+  cursor: pointer;
 }
+
+.quest-tracker__tab:hover { filter: brightness(1.12); }
+.quest-tracker__tab:focus-visible { outline: 2px solid var(--gold-500); outline-offset: 2px; }
 
 .quest-tracker__header {
   display: flex;
@@ -363,7 +443,27 @@
   font-size: calc(var(--hud-scale) * 10px);
 }
 
+/* Collapsed: the card goes away entirely and the tab *is* the panel, sitting
+   in the column rather than overhanging a zero-height box. */
+.quest-tracker--collapsed {
+  align-self: flex-start;
+  width: max-content;
+  background: none;
+  border: none;
+  box-shadow: none;
+  /* Both spellings: a transparent background still shows a filtered backdrop,
+     which would leave a blurred patch behind the lone tab. */
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+}
+
 .quest-tracker--collapsed > .hud-panel__body { display: none; }
+
+.quest-tracker--collapsed > .quest-tracker__tab {
+  position: static;
+  top: auto;
+  left: auto;
+}
 
 .quest-tracker[hidden] { display: none; }
 
@@ -481,10 +581,8 @@
 /* ------------------------------------------------------------------ */
 
 .chat-box {
-  position: absolute;
-  left: var(--hud-edge);
-  bottom: var(--hud-edge);
-  width: calc(var(--hud-scale) * 224px);
+  position: relative;
+  width: 100%;
   border-radius: var(--hud-radius);
 }
 
@@ -614,19 +712,16 @@
   position: absolute;
   right: var(--hud-edge);
   bottom: var(--hud-edge);
-  display: inline-flex;
-  align-items: center;
-  gap: var(--hud-gap);
-  height: var(--hud-inventory-height);
-  padding: 0 calc(var(--hud-scale) * 12px);
+  display: grid;
+  place-items: center;
+  width: var(--hud-inventory-size);
+  height: var(--hud-inventory-size);
+  padding: 0;
   color: var(--brown-900);
   background: var(--hud-card-surface);
   border: var(--panel-border);
-  border-radius: var(--radius-pill);
+  border-radius: 50%;
   box-shadow: var(--panel-shadow);
-  font-family: var(--font-body);
-  font-size: calc(var(--hud-scale) * 12px);
-  font-weight: 700;
   cursor: pointer;
   transition: transform var(--motion-hover), filter var(--motion-hover);
 }
@@ -635,9 +730,9 @@
 .inventory-button:active { transform: scale(0.98); }
 .inventory-button:focus-visible { outline: 2px solid var(--gold-500); outline-offset: 2px; }
 
-.inventory-button__icon { flex: none; color: var(--forest-800); }
-.inventory-button__label { white-space: nowrap; }
-.inventory-button .hud-key { flex: none; transform: scale(0.9); }
+/* Icon-only: the glyph is the entire control, so it carries the button colour
+   rather than the muted icon tint a labelled button could afford. */
+.inventory-button__icon { display: block; color: var(--forest-800); }
 
 .inventory-button[hidden] { display: none; }
 

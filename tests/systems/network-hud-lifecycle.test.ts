@@ -107,6 +107,8 @@ vi.mock("../../src/game/classAssets.ts", () => ({
 
 let statusCardCreateCount = 0;
 let statusCardDestroyCount = 0;
+/** Every resource the card was told to adopt, in order. */
+let statusCardResources: string[] = [];
 
 vi.mock("../../src/ui/PlayerStatusCard.ts", () => {
   return {
@@ -114,6 +116,13 @@ vi.mock("../../src/ui/PlayerStatusCard.ts", () => {
       constructor() { statusCardCreateCount++; }
       setStatus(_d: unknown): void { /* no-op */ }
       setHp(_hp: number, _max: number): void { /* no-op */ }
+      // Part of the card's surface: the HUD adopts the courier's class resource
+      // on mount, so a mock missing it would only fail at runtime.
+      setResourceKind(resource: { label: string }): void {
+        statusCardResources.push(resource.label);
+      }
+      setResource(_current: number, _max: number): void { /* no-op */ }
+      setStampRating(_earned: number): void { /* no-op */ }
       destroy(): void { statusCardDestroyCount++; }
     },
   };
@@ -148,6 +157,7 @@ let fakeDoc: FakeDocument;
 beforeEach(() => {
   statusCardCreateCount = 0;
   statusCardDestroyCount = 0;
+  statusCardResources = [];
   fakeDoc = new FakeDocument();
   vi.stubGlobal("document", fakeDoc);
 
@@ -185,6 +195,10 @@ describe("NetworkSystem HUD lifecycle", () => {
     sys.start("zone-clover-village", 42);
     sys.mountHUD();
     expect(statusCardCreateCount).toBe(1);
+    // The card is told which class resource it shows on the same pass that
+    // gives it the courier's name; with no boot character stored, that falls
+    // back to the first seeded class (bear → Stamina).
+    expect(statusCardResources).toEqual(["Stamina"]);
 
     NetworkSystem.resetForTests();
   });

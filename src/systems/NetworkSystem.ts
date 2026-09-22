@@ -24,6 +24,7 @@ import { TILE_SIZE } from "../game/GameConfig.ts";
 import type { MapPoint } from "../game/Maps.ts";
 import { apiPath, getWsUrl } from "../config.ts";
 import { classKeyFromId, classSpeedFromId, playAttackEffect } from "../game/classAssets.ts";
+import { classResourceFromId } from "../game/classStats.ts";
 import { PlayerStatusCard } from "../ui/PlayerStatusCard.ts";
 import {
   isNewerSnapshotSequence,
@@ -749,6 +750,10 @@ export class NetworkSystem {
       name: character?.name ?? "Courier",
       level: character?.level,
     });
+    // The class's primary resource (stamina / mana / focus) names and colours
+    // the card's second bar. Its ceiling is authored content — the same
+    // classes.json the server seeds from — not something this client invents.
+    this.statusCard.setResourceKind(classResourceFromId(character?.class_id ?? 1));
     // Restore any HP the socket already knows (reconnect / scene restart).
     this.renderHp();
   }

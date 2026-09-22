@@ -58,8 +58,21 @@ test.describe("inventory (Character Profile)", () => {
 
   test("the HUD InventoryButton opens the same panel without duplication", async ({ page }) => {
     const collector = await bootToOverworld(page);
+    const button = page.locator(SEL.inventoryButton);
 
-    await page.locator(SEL.inventoryButton).click();
+    // The control is the satchel glyph and nothing else: no label, no keycap
+    // chip. The binding is discoverable from the hover hint instead.
+    await expect(button).toHaveText("");
+    await expect(button.locator("svg")).toHaveCount(1);
+    await expect(button).toHaveAttribute("aria-label", "Open inventory");
+    await expect(button).toHaveAttribute("title", "Inventory - I");
+    const box = await button.boundingBox();
+    expect(box).not.toBeNull();
+    expect(Math.abs(box!.width - box!.height), "icon-only control is circular").toBeLessThanOrEqual(
+      1,
+    );
+
+    await button.click();
     const panel = page.locator(SEL.profilePanel);
     await expect(panel).toBeVisible({ timeout: 15_000 });
     await expect(page.locator(SEL.profilePanel)).toHaveCount(1);
@@ -69,7 +82,7 @@ test.describe("inventory (Character Profile)", () => {
     await expect(panel).toBeHidden({ timeout: 10_000 });
 
     // Reopen once more to prove the singleton lifecycle is stable.
-    await page.locator(SEL.inventoryButton).click();
+    await button.click();
     await expect(panel).toBeVisible({ timeout: 15_000 });
     await expect(page.locator(SEL.profilePanel)).toHaveCount(1);
     await page.keyboard.press("Escape");
