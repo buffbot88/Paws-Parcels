@@ -12,8 +12,11 @@
 
 ## Zone: Clover Village (hub) — `zone-clover-village`
 
-Dimensions: **75×75 tiles**. Tile size **48×48**; the camera zooms to 0.8 for the village
-(≈25×14 tiles visible). Regenerate with `node scripts/generate-clover-village.mjs`
+Dimensions: **75×75 tiles**. Tile size **48×48**; every zone shares one world-camera zoom
+(`WORLD_CAMERA_ZOOM = 1.1` in `src/scenes/OverworldScene.ts`, visual Pass 1), which shows
+≈18×10 tiles at the 960×540 reference resolution, and one framing rule: the camera focus
+sits 9% of the viewport height above the courier so the world ahead gets more of the frame
+(`src/game/cameraFraming.ts`, see `design/decisions.md`). Regenerate with `node scripts/generate-clover-village.mjs`
 (self-checks walkability + landmark reachability before writing); migration
 `013_clover_village_new_layout.sql` resets existing village couriers to the new plaza.
 

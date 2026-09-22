@@ -44,6 +44,43 @@
 - **Consequences:** Map authoring continues in tile units; viewport stays.
 - **Status:** ✅ built.
 
+### The camera frames the courier, it does not centre them
+- **Decision:** The world camera carries two framing rules, both in
+  `src/game/cameraFraming.ts` and both applied to the *focus point* rather than
+  to the world: the focus sits **9% of the viewport height above the courier**, so
+  the courier renders below centre and the world ahead gets more of the frame, and
+  while the courier walks the focus **leads the direction of travel by up to 0.6
+  tiles**, eased at 4.5/s so it settles when they stop. One value set for every
+  zone, and `prefers-reduced-motion` keeps the bias while dropping the lead.
+- **Reason:** Pass 1 settled the camera's *scale* (one zoom, ~18×10 tiles) and then
+  handed it straight to `startFollow`, which centres the target exactly. A dead
+  centre gives the ground already walked exactly as much of the viewport as the
+  world ahead — the "flat tile field seen from far away" reading the overhaul
+  exists to remove — and it is the half of the reference camera that a 2D client
+  can take without tilting the projection (which would need new art and a different
+  collision space, and is recorded as blocked on art, not on code).
+- **Consequences:** The courier sits ~49 screen px below centre at 960×540 — the
+  figure is a fraction of the viewport, not a fixed offset, so it holds at any
+  window size and any zoom, and the offset is expressed in world units
+  (`bias / zoom`) because that is what `setFollowOffset` takes. The lead is capped
+  at a fraction of one tile, so the camera can never run ahead of the player. The
+  easing is exponential (frame-rate independent) rather than a per-frame lerp, so a
+  144 Hz client does not settle the camera faster than a 60 Hz one. Framing is
+  rendering only: no courier position, collision, or presence is touched.
+  **Open question (⚠):** whether the world *should* tilt. A true 3/4 projection is
+  the remaining half of the reference camera and needs art authored at that angle;
+  this pass is the part that does not.
+- **Status:** ✅ built (`tests/data/camera-framing.test.ts` 16 cases: the bias is
+  zoom-invariant and viewport-relative, the lead is equal in every direction and
+  inside its clamp, the easing is monotonic and frame-rate independent, and reduced
+  motion keeps the composition; `tests/e2e/movement.spec.ts` → "frames the courier
+  below centre and leads the walk" measures it in a live browser — the courier
+  renders 9% of the viewport height below centre while idle, the follow offset leads
+  0.6 tiles while walking north and west, and unwinds to the idle bias when the key
+  is released). Whether the courier sits at the right height in the frame, and
+  whether the lead reads as anticipation rather than lag, is
+  `REQUIRES SEELLE/BROWSER VERIFICATION` — the numbers are small on purpose.
+
 ### Prop size bands — one scale convention, in tiles
 - **Decision:** Every placed prop declares an intended rendered height **in tiles**,
   measured as `sourceHeightPx * scale / 48`, and belongs to a named band (`decal`,

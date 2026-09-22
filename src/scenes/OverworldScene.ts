@@ -32,6 +32,13 @@ import { addHappyValleySetPieces } from "../game/happyValleyAssets.ts";
 import { CLOVER_VILLAGE_TERRAIN } from "../game/cloverVillagePlacements.ts";
 import { HAPPY_VALLEY_TERRAIN } from "../game/happyValleyPlacements.ts";
 import { addTerrainSurface, terrainPlanInput, type TerrainMaterials } from "../game/terrainAssets.ts";
+import {
+  CAMERA_FRAMING,
+  framedFollowOffset,
+  framingForMotionPreference,
+  type CameraFraming,
+  type OffsetPx,
+} from "../game/cameraFraming.ts";
 import { reservedTilesFor, COMPOSITION_DEFAULTS } from "../game/terrainComposition.ts";
 import { buildTerrainPlan, type TerrainPlan } from "../game/terrainSurface.ts";
 import { entityNameTagOffsetPx, entityShadow, villagerSizing } from "../game/entitySizing.ts";
@@ -164,6 +171,10 @@ export class OverworldScene extends Phaser.Scene {
   private localMap!: LocalMapPanel;
   private lastTileX = -1;
   private lastTileY = -1;
+  /** The framing rules in force (see cameraFraming.ts), resolved per session. */
+  private cameraFraming: CameraFraming = CAMERA_FRAMING;
+  /** The look-ahead the camera is currently carrying, in world px. */
+  private cameraLookAhead: OffsetPx = { x: 0, y: 0 };
   private isTransitioning = false;
   private isDefeated = false;
   private network = NetworkSystem.get();
@@ -325,6 +336,17 @@ export class OverworldScene extends Phaser.Scene {
     // Keep fractional camera positions for smooth 2.5D art; integer camera
     // rounding would make movement look like pixel-art stepping.
     camera.startFollow(this.player, false, 0.12, 0.12);
+    // Pass 1 settled the camera's scale; this settles where the courier sits in
+    // the frame. `startFollow` alone centres them exactly, which gives the
+    // ground already walked as much of the viewport as the world ahead of them
+    // (see `cameraFraming.ts`). Applied here as well as per frame so the very
+    // first rendered frame is already framed.
+    const reducedMotion =
+      typeof window.matchMedia === "function" &&
+      window.matchMedia("(prefers-reduced-motion: reduce)").matches === true;
+    this.cameraFraming = framingForMotionPreference(CAMERA_FRAMING, reducedMotion);
+    this.cameraLookAhead = { x: 0, y: 0 };
+    this.updateCameraFraming({ x: 0, y: 0 });
 
     this.addUi();
     this.buildQuickMenu();
@@ -464,6 +486,7 @@ export class OverworldScene extends Phaser.Scene {
     // Defeat freeze: let the death pose remain visible until the server sends
     // the authoritative respawn payload.
     if (this.isDefeated) {
+      this.updateCameraFraming({ x: 0, y: 0 });
       this.player.move({ x: 0, y: 0 });
       this.player.setDepth(worldDepth(this.player.y));
       this.shadow.setPosition(this.player.x, this.player.y + this.player.feetOffsetPx);
@@ -476,6 +499,9 @@ export class OverworldScene extends Phaser.Scene {
 
     // Dialogue open: freeze the world, feed E/Space into the panel only.
     if (dialoguePanel.isOpen()) {
+      // The lead unwinds while the world is frozen, so closing a conversation
+      // does not leave the camera pointing at a road nobody is walking.
+      this.updateCameraFraming({ x: 0, y: 0 });
       this.player.move({ x: 0, y: 0 });
       this.player.setDepth(worldDepth(this.player.y));
       this.shadow.setPosition(this.player.x, this.player.y + this.player.feetOffsetPx);
@@ -492,6 +518,9 @@ export class OverworldScene extends Phaser.Scene {
     this.player.setDepth(worldDepth(this.player.y));
     this.shadow.setPosition(this.player.x, this.player.y + this.player.feetOffsetPx);
     this.shadow.setDepth(worldDepth(this.player.y, DEPTH_OFFSET.contactShadow));
+    // Lead the direction of travel a little, so the road ahead is revealed
+    // before the courier reaches it.
+    this.updateCameraFraming(vector);
 
     // Phase 2 — send a throttled move intent (dominant axis only; the server
     // rejects diagonals) and interpolate other couriers' snapshots.
@@ -549,6 +578,27 @@ export class OverworldScene extends Phaser.Scene {
     }
 
     this.checkTransition();
+  }
+
+  /**
+   * Place the camera's focus for this frame (see `cameraFraming.ts`).
+   *
+   * Rendering only: the offset moves the camera, never the courier, and the
+   * server's idea of where the courier is never changes. The frame delta comes
+   * from the game loop so the easing is the same at any frame rate.
+   */
+  private updateCameraFraming(direction: OffsetPx): void {
+    const camera = this.cameras.main;
+    const framed = framedFollowOffset(
+      this.cameraFraming,
+      { heightPx: camera.height, zoom: camera.zoom },
+      direction,
+      this.cameraLookAhead,
+      TILE_SIZE,
+      this.game.loop.delta / 1000,
+    );
+    this.cameraLookAhead = framed.lookAhead;
+    camera.setFollowOffset(framed.x, framed.y);
   }
 
   /** Open the courier ledger (inventory/equipment) for the active courier. */
