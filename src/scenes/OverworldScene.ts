@@ -29,8 +29,14 @@ import { InventoryButton } from "../ui/InventoryButton.ts";
 import { LocalMapPanel } from "../ui/LocalMapPanel.ts";
 import { addCloverVillageSetPieces } from "../game/cloverVillageAssets.ts";
 import { addHappyValleySetPieces } from "../game/happyValleyAssets.ts";
-import { CLOVER_VILLAGE_TERRAIN } from "../game/cloverVillagePlacements.ts";
-import { HAPPY_VALLEY_TERRAIN } from "../game/happyValleyPlacements.ts";
+import {
+  CLOVER_VILLAGE_TERRAIN,
+  getCloverVillageSetPieceDefinitions,
+} from "../game/cloverVillagePlacements.ts";
+import {
+  HAPPY_VALLEY_TERRAIN,
+  getHappyValleySetPieceDefinitions,
+} from "../game/happyValleyPlacements.ts";
 import { addTerrainSurface, terrainPlanInput, type TerrainMaterials } from "../game/terrainAssets.ts";
 import {
   CAMERA_FRAMING,
@@ -56,6 +62,9 @@ import type { NPC as NPCDefinition } from "../types/NPCtypes.ts";
 import type { DialogueSet } from "../types/DialogueTypes.ts";
 import type { QuestDefinition } from "../types/QuestTypes.ts";
 import { DEPTH_OFFSET, worldDepth } from "../game/WorldDepth.ts";
+import { WorldRenderer3D } from "../render3d/WorldRenderer3D.ts";
+import { entityBillboards } from "../render3d/entityView.ts";
+import { readRendererMode, type RendererMode } from "../render3d/rendererMode.ts";
 
 export interface OverworldSceneData {
   zoneId?: string;
@@ -171,6 +180,14 @@ export class OverworldScene extends Phaser.Scene {
   private localMap!: LocalMapPanel;
   private lastTileX = -1;
   private lastTileY = -1;
+  /** The 3D world renderer, when this session runs one. */
+  private world3d: WorldRenderer3D | null = null;
+  /** Which world renderer this session runs (3D is the shipped default). */
+  private readonly renderMode: RendererMode = readRendererMode();
+  /** Where the 3D badge hangs, or null when nothing is focused. */
+  private badge3d: { x: number; y: number; z: number } | null = null;
+  /** Last size the WebGL canvas was fitted to, so resize is a comparison. */
+  private world3dSize = { width: 0, height: 0 };
   /** The framing rules in force (see cameraFraming.ts), resolved per session. */
   private cameraFraming: CameraFraming = CAMERA_FRAMING;
   /** The look-ahead the camera is currently carrying, in world px. */
@@ -353,6 +370,11 @@ export class OverworldScene extends Phaser.Scene {
     this.localMap = new LocalMapPanel();
     this.localMap.attach(resolved);
     this.buildPrompt();
+    // The world itself is drawn in 3D from here on: Phaser keeps owning input,
+    // entities, collision and the HUD, while the frame comes from the WebGL
+    // canvas under the HUD layers. The sprite renderer stays reachable through
+    // `?renderer=2d` so a regression can be compared against it.
+    this.buildWorld3D(resolved, terrain);
 
     // Phase 4 — world minimap: pre-renders this zone's terrain once and
     // tracks the courier + network entities live each frame.
@@ -468,6 +490,8 @@ export class OverworldScene extends Phaser.Scene {
       }
     };
     this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
+      this.world3d?.destroy();
+      this.world3d = null;
       for (const object of this.visualGround) object.destroy();
       for (const piece of this.visualSetPieces) piece.destroy();
       for (const shadow of this.visualSetPieceShadows) shadow.destroy();
@@ -493,6 +517,7 @@ export class OverworldScene extends Phaser.Scene {
       this.shadow.setDepth(worldDepth(this.player.y, DEPTH_OFFSET.contactShadow));
       this.skillBar.setVisible(false);
       this.updatePrompt(null);
+      this.updateWorld3D({ x: 0, y: 0 });
       this.network.update();
       return;
     }
@@ -509,6 +534,7 @@ export class OverworldScene extends Phaser.Scene {
       this.skillBar.setVisible(false);
       if (this.inputSystem.consumeInteract()) dialoguePanel.advance();
       this.updatePrompt(null);
+      this.updateWorld3D({ x: 0, y: 0 });
       return;
     }
 
@@ -578,6 +604,70 @@ export class OverworldScene extends Phaser.Scene {
     }
 
     this.checkTransition();
+    this.updateWorld3D(vector);
+  }
+
+  /**
+   * Build the 3D world for this zone and hand the frame over to it.
+   *
+   * A zone with no authored terrain keeps the sprite renderer: the 3D world is
+   * built from the terrain plan and the placement tables, and without them there
+   * is nothing to stand up in three dimensions.
+   */
+  private buildWorld3D(map: MapData, terrain: TerrainMaterials | undefined): void {
+    if (this.renderMode !== "3d" || terrain === undefined || this.terrainPlan === null) return;
+    const host = document.getElementById("game-container");
+    if (host === null) return;
+    try {
+      const world = new WorldRenderer3D(this.sys.textures, host);
+      world.attachZone({
+        map,
+        materials: terrain,
+        plan: this.terrainPlan,
+        placements:
+          map.id === ZoneKeys.CloverVillage
+            ? getCloverVillageSetPieceDefinitions()
+            : getHappyValleySetPieceDefinitions(),
+        sizing:
+          map.id === ZoneKeys.CloverVillage
+            ? CLOVER_VILLAGE_PROP_SIZING
+            : HAPPY_VALLEY_PROP_SIZING,
+      });
+      this.world3d = world;
+      // The sprite world is no longer the frame: entities keep updating, and
+      // only the drawing of them moves to the WebGL canvas.
+      this.cameras.main.setVisible(false);
+      this.world3dSize = { width: host.clientWidth, height: host.clientHeight };
+    } catch (error) {
+      // A context that cannot open WebGL is a rendering failure, never a
+      // gameplay one: fall back to the sprite world and say so.
+      console.error("OverworldScene: 3D world unavailable, keeping the sprite renderer", error);
+      this.world3d = null;
+    }
+  }
+
+  /** Hand this frame's world state to the 3D renderer. */
+  private updateWorld3D(direction: OffsetPx): void {
+    const world = this.world3d;
+    if (world === null) return;
+    const host = document.getElementById("game-container");
+    if (host !== null) {
+      const width = host.clientWidth;
+      const height = host.clientHeight;
+      if (width !== this.world3dSize.width || height !== this.world3dSize.height) {
+        this.world3dSize = { width, height };
+        world.resize();
+      }
+    }
+    world.frame({
+      subject: { x: this.player.x / TILE_SIZE, z: this.player.y / TILE_SIZE },
+      direction,
+      dtSeconds: this.game.loop.delta / 1000,
+      framing: this.cameraFraming,
+      entities: entityBillboards(this.children.list),
+      badge: this.badge3d,
+      badgeTouch: this.sys.game.device.input.touch,
+    });
   }
 
   /**
@@ -751,7 +841,9 @@ export class OverworldScene extends Phaser.Scene {
         "The screenshot excludes DOM overlays; metadata includes the world entities used for visual review.",
       ],
     };
-    const snapshot = await captureRenderedPng(this);
+    // In 3D the world lives on the WebGL canvas, so a capture has to come from
+    // there rather than from the sprite canvas the HUD sits over.
+    const snapshot = await captureRenderedPng(this, this.world3d?.worldCanvas);
     if (snapshot === null) {
       showCaptureToast("Capture was not saved", "The rendered frame could not be captured", true);
       return;
@@ -878,11 +970,20 @@ export class OverworldScene extends Phaser.Scene {
     if (!focused) {
       this.prompt.setVisible(false);
       this.promptTargetId = null;
+      this.badge3d = null;
       return;
     }
     const moved = this.promptTargetId !== focused.id;
     this.promptTargetId = focused.id;
     this.prompt.setPosition(focused.x, focused.y + focused.promptOffsetPx);
+    // The 3D badge hangs the same distance above the target's own art; the
+    // sprite badge stays positioned too, so `?renderer=2d` and the visual
+    // probes see the same focus either way.
+    this.badge3d = {
+      x: focused.x / TILE_SIZE,
+      y: -focused.promptOffsetPx / TILE_SIZE,
+      z: focused.y / TILE_SIZE,
+    };
     // Sorted with the world at the target's own Y (the same band its name tag
     // uses) rather than pinned on top of everything: a foreground set piece the
     // NPC is standing behind should hide the badge with them.
@@ -1054,7 +1155,27 @@ export class OverworldScene extends Phaser.Scene {
   }
 }
 
-async function captureRenderedPng(scene: Phaser.Scene): Promise<Blob | null> {
+/** Downscale a live canvas into a PNG blob, within the server's byte budget. */
+async function captureCanvasPng(source: HTMLCanvasElement): Promise<Blob | null> {
+  if (source.width === 0 || source.height === 0) return null;
+  const scale =
+    source.width > VISUAL_CAPTURE_MAX_WIDTH ? VISUAL_CAPTURE_MAX_WIDTH / source.width : 1;
+  const canvas = document.createElement("canvas");
+  canvas.width = Math.max(1, Math.round(source.width * scale));
+  canvas.height = Math.max(1, Math.round(source.height * scale));
+  const context = canvas.getContext("2d");
+  if (context === null) return null;
+  context.imageSmoothingEnabled = true;
+  context.imageSmoothingQuality = "high";
+  context.drawImage(source, 0, 0, canvas.width, canvas.height);
+  return capturePngBlob(canvas, canvas.width);
+}
+
+async function captureRenderedPng(
+  scene: Phaser.Scene,
+  worldCanvas?: HTMLCanvasElement,
+): Promise<Blob | null> {
+  if (worldCanvas !== undefined) return captureCanvasPng(worldCanvas);
   const renderer = scene.sys.game.renderer as Phaser.Renderer.WebGL.WebGLRenderer | Phaser.Renderer.Canvas.CanvasRenderer;
   return new Promise((resolve) => {
     try {
