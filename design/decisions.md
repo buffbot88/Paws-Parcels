@@ -506,7 +506,8 @@
 
 ## 4. Controls (retained from single-player)
 
-- **Decision:** Desktop: WASD/arrows move · E/Space interact · J basic attack (Phase 3) ·
+- **Decision:** Desktop: WASD/arrows move · E/Space interact · 1 basic attack (Phase 3,
+  slot 1 of the HUD skill boxes, keyed 1–4) ·
   Esc closes panels. Mobile: pointer-drag virtual pad + on-screen interact/attack buttons.
 - **Reason:** Shipped input already works; combat adds an attack input.
 - **Consequences:** InputSystem gains attack intents; mobile gets an attack button.

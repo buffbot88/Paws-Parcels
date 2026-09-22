@@ -113,7 +113,7 @@ Goal: first monster map, basic combat, class system.
 - **WS protocol:** `attack` (C→S); `monster_snapshot`, `combat_event`,
   `loot_received`, `player_respawned` (S→C); error codes `INVALID_TARGET`,
   `OUT_OF_RANGE`, `COOLDOWN_ACTIVE`, `INSUFFICIENT_RESOURCE`, `TARGET_DEAD`
-- **Client:** Monster entity with HP bars + damage numbers, attack key (J),
+- **Client:** Monster entity with HP bars + damage numbers, attack key (1),
   player HP chip, defeat/respawn handling
 - Gate: combat math server-side; monster + player respawn work; damage validated
 

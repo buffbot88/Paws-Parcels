@@ -3,7 +3,7 @@
  *
  * Verifies (spec):
  *   - travel to Happy Valley via the village's southern transition (37,74);
- *   - attacking with J sends an attack intent and the server confirms with a
+ *   - attacking with 1 sends an attack intent and the server confirms with a
  *     combat_event (damage/HP computed server-side);
  *   - monster HP on the client changes only through server frames.
  *
@@ -26,7 +26,7 @@ import {
 // visual-baseline captures can reuse the same server-validated walk.
 import { walkToTransition } from "./support/navigation";
 
-test.describe("combat (J, server-authoritative)", () => {
+test.describe("combat (1, server-authoritative)", () => {
   test("courier reaches Happy Valley and lands a server-confirmed attack", async ({ page }) => {
     // Boot + a long server-validated walk + approach + combat rounds exceed the
     // suite default; the milestone gate is the assertion set, not the clock.
@@ -71,9 +71,10 @@ test.describe("combat (J, server-authoritative)", () => {
       return;
     }
 
-    // Attack with J. The server validates range/cooldown and answers with
-    // combat_event + monster_snapshot; the client never computes damage.
-    await page.keyboard.press("j");
+    // Attack with 1 (the first skill box). The server validates range/cooldown
+    // and answers with combat_event + monster_snapshot; the client never
+    // computes damage.
+    await page.keyboard.press("1");
     await ws.waitForInboundType("combat_event", 15_000);
     expect(ws.sawOutboundType("attack")).toBe(true);
 

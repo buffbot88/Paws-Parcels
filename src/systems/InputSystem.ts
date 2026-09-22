@@ -22,8 +22,12 @@ interface KeyMap {
   RIGHT: Phaser.Input.Keyboard.Key;
   E: Phaser.Input.Keyboard.Key;
   SPACE: Phaser.Input.Keyboard.Key;
-  /** Phase 3 — basic attack (J). */
-  J: Phaser.Input.Keyboard.Key;
+  /**
+   * Phase 3 — basic attack (1). Slots are keyed 1–4 in the HUD's skill boxes,
+   * so the attack sits on the same row as the abilities still to come.
+   * Phaser names the digit keys ONE…FOUR (KeyCodes.ONE = 49).
+   */
+  ONE: Phaser.Input.Keyboard.Key;
   /** Open the courier inventory/profile panel (I). */
   I: Phaser.Input.Keyboard.Key;
   /** Developer-only visual review capture (Ctrl+Shift+V). */
@@ -34,8 +38,9 @@ interface KeyMap {
  * Unifies keyboard (WASD/arrows), touch (drag joystick) and interaction input.
  * A pointer press becomes a joystick only once it drags past DRAG_THRESHOLD;
  * releasing before that queues a tap (Phase 3 tap-to-interact). E/Space queue
- * a one-shot interact signal consumed by the scene. Phaser 4 ships no built-in
- * virtual joystick, so the touch pad is pointer-based.
+ * a one-shot interact signal and 1 queues a basic attack, consumed by the
+ * scene. Phaser 4 ships no built-in virtual joystick, so the touch pad is
+ * pointer-based.
  */
 export class InputSystem {
   static readonly JOYSTICK_RADIUS = 48;
@@ -65,13 +70,13 @@ export class InputSystem {
     this.devAccess = options.devAccess === true;
     this.scene = scene;
     this.keys = scene.input.keyboard!.addKeys(
-      "W,A,S,D,UP,DOWN,LEFT,RIGHT,E,SPACE,J,I,V",
+      "W,A,S,D,UP,DOWN,LEFT,RIGHT,E,SPACE,ONE,I,V",
     ) as unknown as KeyMap;
 
     const kb = scene.input.keyboard!;
     kb.on("keydown-E", this.queueInteract, this);
     kb.on("keydown-SPACE", this.queueInteract, this);
-    kb.on("keydown-J", this.queueAttack, this);
+    kb.on("keydown-ONE", this.queueAttack, this);
     kb.on("keydown-I", this.queueInventory, this);
     kb.on("keydown-V", this.queueCapture, this);
 
@@ -90,7 +95,7 @@ export class InputSystem {
     if (kb) {
       kb.off("keydown-E", this.queueInteract, this);
       kb.off("keydown-SPACE", this.queueInteract, this);
-      kb.off("keydown-J", this.queueAttack, this);
+      kb.off("keydown-ONE", this.queueAttack, this);
       kb.off("keydown-I", this.queueInventory, this);
       kb.off("keydown-V", this.queueCapture, this);
     }
@@ -134,7 +139,7 @@ export class InputSystem {
     return v;
   }
 
-  /** True exactly once per J press (edge-triggered — Phase 3 attack). */
+  /** True exactly once per 1 press (edge-triggered — Phase 3 attack). */
   consumeAttack(): boolean {
     const v = this.attackQueued;
     this.attackQueued = false;

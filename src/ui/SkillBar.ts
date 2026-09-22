@@ -9,16 +9,18 @@ export interface SkillBarAction {
 }
 
 const SKILLS: readonly SkillBarAction[] = [
-  { id: "basic-attack", label: "Basic attack", shortcut: "J", icon: "⚔", available: true },
+  { id: "basic-attack", label: "Basic attack", shortcut: "1", icon: "⚔", available: true },
   { id: "skill-2", label: "Skill 2", shortcut: "2", icon: "✦", available: false },
   { id: "skill-3", label: "Skill 3", shortcut: "3", icon: "✹", available: false },
   { id: "skill-4", label: "Skill 4", shortcut: "4", icon: "✧", available: false },
 ];
 
 /**
- * HUD v4 action hotbar (bottom center): one physical cream tray with leaf
- * anchors, 58–64px slots, keycap labels at the lower-right of each slot, and
- * a gold active edge. Only server-backed skills are enabled.
+ * HUD v4 skill boxes (bottom centre): four plain boxes sitting directly on the
+ * world, keyed 1–4. The cream tray, leaf anchors and "· attack" chip that used
+ * to frame them were pure chrome — at HUD scale they were louder than the
+ * skills and read as a banner across the play area. Only server-backed skills
+ * are enabled; the rest unlock later.
  */
 export class SkillBar {
   private readonly root: HTMLElement;
@@ -33,12 +35,6 @@ export class SkillBar {
     root.className = "skill-bar";
     root.setAttribute("role", "toolbar");
     root.setAttribute("aria-label", "Courier skills");
-    root.classList.add("hud-tray");
-
-    const leafLeft = document.createElement("span");
-    leafLeft.className = "hud-tray__leaf";
-    leafLeft.setAttribute("aria-hidden", "true");
-    leafLeft.textContent = "🌿";
 
     const slots = document.createElement("div");
     slots.className = "skill-bar__slots";
@@ -50,16 +46,7 @@ export class SkillBar {
     }
     this.activeSlot = active!;
 
-    const hint = document.createElement("span");
-    hint.className = "skill-bar__hint hud-key";
-    hint.textContent = "J · attack";
-
-    const leafRight = document.createElement("span");
-    leafRight.className = "hud-tray__leaf";
-    leafRight.setAttribute("aria-hidden", "true");
-    leafRight.textContent = "🌿";
-
-    root.append(leafLeft, slots, leafRight, hint);
+    root.appendChild(slots);
     hudLayer()?.appendChild(root);
 
     this.root = root;

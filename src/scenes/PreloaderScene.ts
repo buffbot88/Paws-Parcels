@@ -1,6 +1,6 @@
 import Phaser from "phaser";
 import { TILE_SIZE } from "../game/GameConfig.ts";
-import { SceneKeys, TextureKeys } from "../game/GameConstants.ts";
+import { OBJECT_MARKER_SIZE_PX, SceneKeys, TextureKeys } from "../game/GameConstants.ts";
 import { TILES, TILESET_COLUMNS } from "../game/Tiles.ts";
 import { renderTilesetCanvas } from "../game/TileTextures.ts";
 import { queueClassAssets, registerClassAnimations } from "../game/classAssets.ts";
@@ -69,8 +69,10 @@ export class PreloaderScene extends Phaser.Scene {
     // Interactable-object marker: small rounded plaque.
     const o = this.make.graphics();
     o.fillStyle(0xffffff, 1);
-    o.fillRoundedRect(2, 2, 26, 26, 6);
-    o.generateTexture(TextureKeys.ObjectMarker, 30, 30);
+    const markerInset = 2;
+    const markerSize = OBJECT_MARKER_SIZE_PX - markerInset * 2;
+    o.fillRoundedRect(markerInset, markerInset, markerSize, markerSize, 6);
+    o.generateTexture(TextureKeys.ObjectMarker, OBJECT_MARKER_SIZE_PX, OBJECT_MARKER_SIZE_PX);
     o.destroy();
   }
 

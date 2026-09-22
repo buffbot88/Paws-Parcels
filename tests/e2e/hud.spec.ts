@@ -245,6 +245,79 @@ test.describe("HUD lifecycle", () => {
     collector.expectClean();
   });
 
+  test("the chat collapses to its header, reopens, and stays see-through", async ({ page }) => {
+    const collector = await bootToOverworld(page);
+
+    const chat = page.locator(SEL.chatBox);
+    const body = page.locator(SEL.chatBoxBody);
+    const toggle = page.locator(SEL.chatBoxToggle);
+    await expect(chat).toBeVisible({ timeout: 15_000 });
+    await expect(page.locator(SEL.chatBoxToggle)).toBeVisible();
+
+    // Collapsing hides the log and composer — but the header holding the
+    // toggle has to survive, or nothing on screen could reopen the chat.
+    await toggle.click();
+    await expect(chat).toHaveClass(/chat-box--collapsed/);
+    await expect(body).toBeHidden();
+    await expect(toggle).toBeVisible();
+    await expect(toggle).toHaveAttribute("aria-expanded", "false");
+    await expect(page.locator(".chat-box__title")).toBeVisible();
+
+    await toggle.click();
+    await expect(chat).not.toHaveClass(/chat-box--collapsed/);
+    await expect(body).toBeVisible();
+    await expect(toggle).toHaveAttribute("aria-expanded", "true");
+
+    // Translucent, not opaque: the world has to read through the log. The
+    // dark panel recipe is rgba(23, 54, 31, 0.92); the chat overrides it with a
+    // lower alpha, so this measures the painted colour rather than the CSS text.
+    const alpha = await chat.evaluate((node) => {
+      const colour = getComputedStyle(node).backgroundColor;
+      const match = /rgba?\(([^)]+)\)/.exec(colour);
+      const parts = match === null ? [] : match[1].split(",").map((p) => Number(p.trim()));
+      return parts.length === 4 ? parts[3] : 1;
+    });
+    expect(alpha, "chat panel background alpha").toBeLessThan(0.8);
+
+    collector.expectClean();
+  });
+
+  test("the skill boxes are plain boxes keyed 1-4, with no tray chrome", async ({ page }) => {
+    const collector = await bootToOverworld(page);
+
+    const bar = page.locator(SEL.skillBar);
+    await expect(bar).toBeVisible({ timeout: 15_000 });
+
+    // Four boxes, keyed 1-4 (the basic attack is the first).
+    const slots = page.locator(`${SEL.skillBar} ${SEL.skillSlot}`);
+    await expect(slots).toHaveCount(4);
+    await expect(page.locator(`${SEL.skillBar} ${SEL.skillSlotKey}`)).toHaveText([
+      "1",
+      "2",
+      "3",
+      "4",
+    ]);
+
+    // No tray: the bar itself paints nothing, so the boxes sit on the world.
+    const barBackground = await bar.evaluate(
+      (node) => getComputedStyle(node).backgroundColor,
+    );
+    expect(barBackground).toMatch(/rgba\(0, 0, 0, 0\)|transparent/);
+    await expect(page.locator(`${SEL.skillBar} .hud-tray__leaf`)).toHaveCount(0);
+    await expect(page.locator(`${SEL.skillBar} .skill-bar__hint`)).toHaveCount(0);
+
+    // Only the server-backed basic attack is live.
+    await expect(slots.nth(0)).toBeEnabled();
+    await expect(slots.nth(1)).toBeDisabled();
+
+    // Clicking the live box runs the same basic-attack path as the 1 key and
+    // answers with its press feedback.
+    await slots.nth(0).click();
+    await expect(slots.nth(0)).toHaveClass(/skill-slot--pressed/);
+
+    collector.expectClean();
+  });
+
   test("the top bar is the only account surface", async ({ page }) => {
     const collector = await bootToOverworld(page);
 

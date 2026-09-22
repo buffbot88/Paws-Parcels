@@ -1,6 +1,6 @@
 import Phaser from "phaser";
 import { TILE_SIZE } from "../game/GameConfig.ts";
-import { SceneKeys, TextureKeys, ZoneKeys } from "../game/GameConstants.ts";
+import { OBJECT_MARKER_SIZE_PX, SceneKeys, TextureKeys, ZoneKeys } from "../game/GameConstants.ts";
 import { PLAYABLE_MAPS, type MapData, type MapInteractable, type MapPoint } from "../game/Maps.ts";
 import { COLLIDING_TILE_INDICES, TILE_INDEX } from "../game/Tiles.ts";
 import { InputSystem } from "../systems/InputSystem.ts";
@@ -34,7 +34,8 @@ import { HAPPY_VALLEY_TERRAIN } from "../game/happyValleyPlacements.ts";
 import { addTerrainSurface, terrainPlanInput, type TerrainMaterials } from "../game/terrainAssets.ts";
 import { reservedTilesFor, COMPOSITION_DEFAULTS } from "../game/terrainComposition.ts";
 import { buildTerrainPlan, type TerrainPlan } from "../game/terrainSurface.ts";
-import { entityShadow } from "../game/entitySizing.ts";
+import { entityNameTagOffsetPx, entityShadow, villagerSizing } from "../game/entitySizing.ts";
+import { npcArtForDefinition } from "../game/cloverVillageNpcAssets.ts";
 import {
   CLOVER_VILLAGE_PROP_SIZING,
   HAPPY_VALLEY_PROP_SIZING,
@@ -61,6 +62,32 @@ const QUESTS = questsJson.quests as QuestDefinition[];
 export const dialoguePanel = new DialoguePanel();
 /** Client-side attack-pickup radius (tiles); the server enforces the real range. */
 const ATTACK_TARGET_RANGE = 6;
+
+/**
+ * The interaction badge, in px at 48px tiles: the small "E" (or "Tap" on
+ * touch) that hangs over the head of the one thing this courier is focused on.
+ *
+ * Deliberately tiny. It annotates a villager; it does not announce them. The
+ * 230x34 cream card this replaced said the same thing while covering the NPC
+ * and the plaza around it, and it followed the *player* rather than the NPC, so
+ * it read as a banner floating in the middle of the world.
+ */
+const PROMPT_BADGE_HEIGHT_PX = 22;
+/** Clearance between the badge and whatever art is already drawn there. */
+const PROMPT_BADGE_GAP_PX = 6;
+/** A villager name tag: 11-12px text plus 3px padding, see NPC.ts. */
+const NPC_NAME_TAG_HEIGHT_PX = 20;
+
+/**
+ * Where the badge hangs for a target whose own annotation — a villager's name
+ * tag, an object marker — is centred `artCentrePx` above the tile centre and
+ * `artHeightPx` tall. Negative means above. The badge sits over that art rather
+ * than on it, because both annotate the same spot.
+ */
+function promptOffsetAbove(artCentrePx: number, artHeightPx: number): number {
+  return artCentrePx - artHeightPx / 2 - PROMPT_BADGE_GAP_PX - PROMPT_BADGE_HEIGHT_PX / 2;
+}
+
 /** Min ms between AI NPC line requests (server also rate-limits). */
 const NPC_TALK_MIN_INTERVAL_MS = 6_000;
 /** Min ms between scene snapshots sent to the model (1-core protection). */
@@ -127,6 +154,8 @@ export class OverworldScene extends Phaser.Scene {
   private mapData!: MapData;
   private groundLayer!: Phaser.Tilemaps.TilemapLayer;
   private prompt!: Phaser.GameObjects.Container;
+  /** Which target the badge is currently anchored to (null = hidden). */
+  private promptTargetId: string | null = null;
   private minimap!: Minimap;
   private skillBar!: SkillBar;
   private chatBox!: ChatBox;
@@ -440,6 +469,7 @@ export class OverworldScene extends Phaser.Scene {
       this.shadow.setPosition(this.player.x, this.player.y + this.player.feetOffsetPx);
       this.shadow.setDepth(worldDepth(this.player.y, DEPTH_OFFSET.contactShadow));
       this.skillBar.setVisible(false);
+      this.updatePrompt(null);
       this.network.update();
       return;
     }
@@ -452,7 +482,7 @@ export class OverworldScene extends Phaser.Scene {
       this.shadow.setDepth(worldDepth(this.player.y, DEPTH_OFFSET.contactShadow));
       this.skillBar.setVisible(false);
       if (this.inputSystem.consumeInteract()) dialoguePanel.advance();
-      this.prompt.setVisible(false);
+      this.updatePrompt(null);
       return;
     }
 
@@ -477,7 +507,7 @@ export class OverworldScene extends Phaser.Scene {
       this.openInventory();
     }
 
-    // Phase 3 — attack: J targets the nearest monster in class range (the
+    // Phase 3 — attack: 1 targets the nearest monster in class range (the
     // server re-validates range + cooldown and rejects anything untrustworthy).
     if (this.inputSystem.consumeAttack()) {
       this.requestBasicAttack();
@@ -508,7 +538,6 @@ export class OverworldScene extends Phaser.Scene {
       TILE_SIZE,
     );
     this.updatePrompt(focused);
-    this.prompt.setVisible(focused !== null);
 
     const tap = this.inputSystem.consumeTap();
     const interacted =
@@ -738,6 +767,12 @@ export class OverworldScene extends Phaser.Scene {
       x: n.homeTile.x * TILE_SIZE + TILE_SIZE / 2,
       y: n.homeTile.y * TILE_SIZE + TILE_SIZE / 2,
       npcId: n.id,
+      // Over the name tag: that is what already occupies the space above a
+      // villager's head, and the badge must not sit on it.
+      promptOffsetPx: promptOffsetAbove(
+        entityNameTagOffsetPx(villagerSizing(npcArtForDefinition(n))),
+        NPC_NAME_TAG_HEIGHT_PX,
+      ),
     }));
     const objectTargets: InteractionTarget[] = map.interactables.map(
       (o: MapInteractable) => ({
@@ -747,44 +782,80 @@ export class OverworldScene extends Phaser.Scene {
         x: o.x * TILE_SIZE + TILE_SIZE / 2,
         y: o.y * TILE_SIZE + TILE_SIZE / 2,
         lines: o.lines,
+        // Over the object's marker plaque, which is centred on its tile.
+        promptOffsetPx: promptOffsetAbove(0, OBJECT_MARKER_SIZE_PX),
       }),
     );
     this.interactionSystem = new InteractionSystem([...npcTargets, ...objectTargets]);
   }
 
-  /** Cozy hint bar shown above the player when something is in range. */
+  /**
+   * The interaction badge: a keycap over the head of the focused target.
+   *
+   * Local rendering only — it is built from this courier's own focus and never
+   * goes over the socket, so a nearby player generates their own badge (or none)
+   * and never sees this one.
+   */
   private buildPrompt(): void {
-    const bg = this.add.rectangle(0, 0, 230, 34, 0xfff8e8, 0.97);
-    bg.setStrokeStyle(2, 0xc99a4a, 0.95);
-    const keycap = this.add.rectangle(-88, 0, 28, 24, 0x203b2d, 1);
-    keycap.setStrokeStyle(1, 0xe7c979, 0.9);
-    const keyLabel = this.add.text(-88, 0, "E", {
+    const touch = this.sys.game.device.input.touch;
+    const label = touch ? "Tap" : "E";
+    const keycap = this.add.rectangle(
+      0,
+      0,
+      touch ? 40 : 22,
+      PROMPT_BADGE_HEIGHT_PX,
+      0x203b2d,
+      0.92,
+    );
+    keycap.setStrokeStyle(2, 0xe7c979, 0.9);
+    const text = this.add.text(0, 0, label, {
       fontFamily: "Trebuchet MS, Arial, sans-serif",
-      fontSize: "13px",
+      fontSize: touch ? "11px" : "13px",
       color: "#fff8e8",
       fontStyle: "bold",
     }).setOrigin(0.5);
-    const text = this.add.text(12, 0, "", {
-      fontFamily: "Trebuchet MS, Arial, sans-serif",
-      fontSize: "13px",
-      color: "#203b2d",
-      fontStyle: "bold",
-    });
-    text.setOrigin(0.5);
-    this.prompt = this.add.container(0, 0, [bg, keycap, keyLabel, text]).setDepth(120);
+    this.prompt = this.add.container(0, 0, [keycap, text]).setDepth(120);
     this.prompt.setVisible(false);
   }
 
+  /**
+   * Hang the badge over the focused target's head, or take it away.
+   *
+   * Moving between targets is what triggers the pop; re-anchoring to the same
+   * target each frame just keeps it pinned while the player walks around it.
+   */
   private updatePrompt(focused: InteractionTarget | null): void {
-    const text = this.prompt.list[3] as Phaser.GameObjects.Text;
     if (!focused) {
       this.prompt.setVisible(false);
+      this.promptTargetId = null;
       return;
     }
-    const touch = this.sys.game.device.input.touch;
-    const verb = touch ? "Tap" : "Press E";
-    text.setText(`${verb === "Press E" ? "Talk" : "Tap"}   ${focused.label}`);
-    this.prompt.setPosition(this.player.x, this.player.y - 36);
+    const moved = this.promptTargetId !== focused.id;
+    this.promptTargetId = focused.id;
+    this.prompt.setPosition(focused.x, focused.y + focused.promptOffsetPx);
+    // Sorted with the world at the target's own Y (the same band its name tag
+    // uses) rather than pinned on top of everything: a foreground set piece the
+    // NPC is standing behind should hide the badge with them.
+    this.prompt.setDepth(worldDepth(focused.y, DEPTH_OFFSET.overlay));
+    this.prompt.setVisible(true);
+    if (moved) this.popPromptIn();
+  }
+
+  /** A short scale-in so a new target reads as "this one", not "something". */
+  private popPromptIn(): void {
+    this.tweens.killTweensOf(this.prompt);
+    // The HUD honors prefers-reduced-motion in CSS; the canvas has to ask.
+    const reduced =
+      typeof window.matchMedia === "function" &&
+      window.matchMedia("(prefers-reduced-motion: reduce)").matches === true;
+    this.prompt.setScale(reduced ? 1 : 0.7);
+    if (reduced) return;
+    this.tweens.add({
+      targets: this.prompt,
+      scale: 1,
+      duration: 140,
+      ease: "back.out",
+    });
   }
 
   private tapHits(worldX: number, worldY: number, focused: InteractionTarget | null): boolean {

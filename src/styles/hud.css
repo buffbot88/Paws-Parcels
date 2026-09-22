@@ -3,7 +3,7 @@
  * This is the stylesheet that the world HUD components in src/ui/*.ts have
  * always described in their own doc comments but that never existed: nothing
  * in this project defined .player-card, .minimap, .skill-bar, .quest-tracker,
- * .chat-box, .inventory-button or the .hud-tray/.skill-slot family. The only
+ * .chat-box, .inventory-button or the .skill-slot family. The only
  * surviving trace was an orphaned reduced-motion block at the end of
  * game-ui.css referencing .minimap__server and .skill-slot__cooldown.
  *
@@ -22,8 +22,8 @@
  * scale with it into illegibility.
  *
  * Layout (per design/UI.png): compact status card top-left, minimap
- * top-right, skill bar bottom-centre, inventory bottom-right, and a bottom-left
- * column holding the quest tracker above the village chat.
+ * top-right, skill boxes bottom-centre, inventory bottom-right, and a
+ * bottom-left column holding the quest tracker above the village chat.
  */
 
 #hud-layer {
@@ -468,30 +468,18 @@
 .quest-tracker[hidden] { display: none; }
 
 /* ------------------------------------------------------------------ */
-/* Skill bar — bottom centre                                           */
+/* Skill boxes — bottom centre, no tray                                */
 /* ------------------------------------------------------------------ */
 
+/* Four boxes on the world, not a banner across it: the cream tray, leaf
+   anchors and "· attack" chip that framed them were pure chrome and, at HUD
+   scale, louder than the skills themselves. */
 .skill-bar {
   position: absolute;
   left: 50%;
   bottom: var(--hud-edge);
-  display: flex;
-  align-items: center;
-  gap: var(--hud-gap);
-  padding: calc(var(--hud-scale) * 6px) calc(var(--hud-scale) * 10px);
   transform: translateX(-50%);
-  background: var(--hud-card-surface);
-  border: var(--panel-border);
-  border-radius: var(--radius-pill);
-  box-shadow: var(--panel-shadow);
   animation: hud-panel-in var(--motion-panel);
-}
-
-.hud-tray__leaf {
-  flex: none;
-  font-size: calc(var(--hud-scale) * 14px);
-  opacity: 0.55;
-  user-select: none;
 }
 
 .skill-bar__slots {
@@ -503,15 +491,17 @@
   position: relative;
   display: grid;
   place-items: center;
-  width: calc(var(--hud-scale) * 40px);
-  height: calc(var(--hud-scale) * 40px);
+  width: calc(var(--hud-scale) * 32px);
+  height: calc(var(--hud-scale) * 32px);
   padding: 0;
   overflow: hidden;
   color: var(--forest-950);
   background: radial-gradient(circle at 38% 28%, var(--cream-50), var(--cream-200));
   border: 1px solid rgba(128, 103, 75, 0.5);
-  border-radius: calc(var(--hud-scale) * 10px);
-  box-shadow: inset 0 -2px 0 rgba(128, 103, 75, 0.22);
+  border-radius: calc(var(--hud-scale) * 9px);
+  /* Outer shadow because the tray no longer separates the boxes from a bright
+     world; the inset line keeps the soft-card recipe. */
+  box-shadow: inset 0 -2px 0 rgba(128, 103, 75, 0.22), 0 2px 4px rgba(49, 29, 15, 0.28);
   cursor: pointer;
   transition: transform var(--motion-hover), filter var(--motion-hover);
 }
@@ -526,15 +516,24 @@
 .skill-slot:focus-visible { outline: 2px solid var(--gold-500); outline-offset: 1px; }
 
 .skill-slot__icon {
-  font-size: calc(var(--hud-scale) * 17px);
+  font-size: calc(var(--hud-scale) * 15px);
   line-height: 1;
 }
 
+/* Keycap as a corner badge (1–4), not the old keycap chip: at slot size it
+   must not read louder than the skill glyph it labels. */
 .skill-slot__key {
   position: absolute;
-  right: calc(var(--hud-scale) * -2px);
-  bottom: calc(var(--hud-scale) * -2px);
-  transform: scale(0.8);
+  right: 0;
+  bottom: 0;
+  min-width: calc(var(--hud-scale) * 13px);
+  height: calc(var(--hud-scale) * 13px);
+  padding: 0 calc(var(--hud-scale) * 2px);
+  border-radius: calc(var(--hud-scale) * 4px);
+  box-shadow: none;
+  font-size: calc(var(--hud-scale) * 8px);
+  opacity: 0.85;
+  transform: none;
 }
 
 /* Server-confirmed attack flash: a short press, then the cooldown sweep. */
@@ -565,15 +564,6 @@
   to { opacity: 0; }
 }
 
-.skill-bar__hint {
-  flex: none;
-  height: auto;
-  padding: calc(var(--hud-scale) * 4px) calc(var(--hud-scale) * 8px);
-  border-radius: var(--radius-pill);
-  font-size: calc(var(--hud-scale) * 9px);
-  white-space: nowrap;
-}
-
 .skill-bar[hidden] { display: none; }
 
 /* ------------------------------------------------------------------ */
@@ -584,6 +574,12 @@
   position: relative;
   width: 100%;
   border-radius: var(--hud-radius);
+  /* More see-through than the other dark panels — this one is tall and the
+     world behind it should stay readable. The heavier blur is what keeps the
+     cream text legible at a low alpha. */
+  background: rgba(23, 54, 31, 0.68);
+  -webkit-backdrop-filter: blur(16px) saturate(120%);
+  backdrop-filter: blur(16px) saturate(120%);
 }
 
 .chat-box > .hud-panel__body {
@@ -591,6 +587,29 @@
     calc(var(--hud-scale) * 10px);
   gap: calc(var(--hud-scale) * 7px);
 }
+
+/* Collapsed: the header bar is all that is left. It holds the toggle, so it
+   must survive — hiding the whole panel body would hide the only control that
+   can expand the chat again. */
+.chat-box--collapsed > .hud-panel__body {
+  padding: calc(var(--hud-scale) * 6px) calc(var(--hud-scale) * 9px);
+  gap: 0;
+}
+
+/* A collapsed chat is a bar, not a card: it hugs its header instead of
+   painting a 224px empty surface across the corner. */
+.chat-box--collapsed {
+  align-self: flex-start;
+  width: max-content;
+  max-width: 100%;
+  background: rgba(23, 54, 31, 0.58);
+}
+
+/* The scope pill is the first thing to go: a 96px bar only has room for the
+   title. */
+.chat-box--collapsed .chat-box__scope { display: none; }
+
+.chat-box__body[hidden] { display: none; }
 
 .chat-box__header {
   display: flex;
@@ -615,6 +634,12 @@
   flex: none;
   padding: calc(var(--hud-scale) * 2px) calc(var(--hud-scale) * 7px);
   font-size: calc(var(--hud-scale) * 8px);
+}
+
+.chat-box__toggle {
+  flex: none;
+  width: calc(var(--hud-scale) * 22px);
+  height: calc(var(--hud-scale) * 22px);
 }
 
 .chat-box__log {
@@ -675,7 +700,7 @@
   height: calc(var(--hud-scale) * 28px);
   padding: 0 calc(var(--hud-scale) * 8px) 0 calc(var(--hud-scale) * 26px);
   color: var(--cream-50);
-  background: rgba(255, 249, 232, 0.1);
+  background: rgba(255, 249, 232, 0.14);
   border: 1px solid rgba(231, 188, 85, 0.3);
   border-radius: var(--radius-pill);
   font-family: var(--font-body);

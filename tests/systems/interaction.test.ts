@@ -10,6 +10,8 @@ function target(partial: Partial<InteractionTarget>): InteractionTarget {
     label: "T",
     x: 0,
     y: 0,
+    // Focus lookup never reads the badge's placement; the scene is what sets it.
+    promptOffsetPx: -50,
     ...partial,
   };
 }

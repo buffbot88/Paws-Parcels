@@ -61,6 +61,10 @@ export const SEL = {
   localMapWaypoint: ".local-map-panel__waypoint",
   dialoguePanel: ".dialogue-panel",
   chatBox: ".chat-box",
+  chatBoxBody: ".chat-box__body",
+  chatBoxToggle: ".chat-box__toggle",
+  skillSlot: ".skill-slot",
+  skillSlotKey: ".skill-slot__key",
   connectionDiagnostic: ".connection-diagnostic",
 } as const;
 
@@ -90,6 +94,17 @@ export interface GameProbe {
   remotePlayerIds: number[];
   networkStatus: string | null;
   authCharacterId: number | null;
+}
+
+/** The interaction badge as the canvas currently draws it (null = no scene). */
+export interface InteractionPromptProbe {
+  visible: boolean;
+  /** Badge centre, in world pixels. */
+  x: number;
+  y: number;
+  widthPx: number;
+  heightPx: number;
+  label: string;
 }
 
 // ---------------------------------------------------------------------------
@@ -255,6 +270,13 @@ interface SceneInternals {
   scene?: { key?: string };
   mapData?: { id?: string };
   player?: { x?: number; y?: number };
+  /** The interaction badge container: `list[0]` is its keycap, `list[1]` a text. */
+  prompt?: {
+    visible?: boolean;
+    x?: number;
+    y?: number;
+    list?: Array<{ width?: number; height?: number; text?: string }>;
+  };
   network?: {
     getStatus?: () => { status?: string };
     myCharacterId?: number | null;
@@ -330,6 +352,33 @@ export async function readGameProbe(page: Page): Promise<GameProbe> {
       remotePlayerIds: remoteIds,
       networkStatus: network?.getStatus?.().status ?? null,
       authCharacterId: network?.myCharacterId ?? null,
+    };
+  });
+}
+
+/**
+ * Read the interaction badge's live geometry from the scene.
+ *
+ * The badge is canvas, so the DOM cannot answer where it is or how big it is —
+ * this reads the container the scene positions over the focused target.
+ */
+export async function readInteractionPrompt(
+  page: Page,
+): Promise<InteractionPromptProbe | null> {
+  return page.evaluate(() => {
+    const win = window as unknown as GameInternals;
+    const scene = (win.game?.scene?.getScene?.("overworld") ?? null) as SceneInternals | null;
+    const prompt = scene?.prompt;
+    if (prompt === undefined) return null;
+    const keycap = prompt.list?.[0];
+    const text = prompt.list?.[1];
+    return {
+      visible: prompt.visible === true,
+      x: Number(prompt.x ?? 0),
+      y: Number(prompt.y ?? 0),
+      widthPx: Number(keycap?.width ?? 0),
+      heightPx: Number(keycap?.height ?? 0),
+      label: String(text?.text ?? ""),
     };
   });
 }

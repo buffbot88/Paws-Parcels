@@ -15,6 +15,12 @@ export interface InteractionTarget {
   npcId?: string;
   /** Flavor lines for map objects (NPC dialogue comes from dialogue.json). */
   lines?: string[];
+  /**
+   * Vertical offset (px, negative = above the tile centre) of this target's
+   * interaction badge. The scene sets it, because only the scene knows what is
+   * already drawn over that spot: a villager's name tag, an object marker.
+   */
+  promptOffsetPx: number;
 }
 
 /**
