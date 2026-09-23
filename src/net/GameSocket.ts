@@ -102,6 +102,22 @@ export interface NetQuestSnapshot {
   friendshipGate: { npcId: string; level: number } | null;
 }
 
+/**
+ * Post-grant courier progression attached to a delivery.
+ *
+ * Mirrors `QuestProgression` in `server/src/models/Quest.ts`: level and rank are
+ * server-computed, so the HUD never derives a level-up itself.
+ */
+export interface NetQuestProgression {
+  level: number;
+  previousLevel: number;
+  levelsGained: number;
+  experience: number;
+  skillPoints: number;
+  courierRank: string;
+  rankPromotion: string | null;
+}
+
 export interface NetQuestInventoryItem {
   itemInstanceId: number;
   itemKey: string;
@@ -160,7 +176,18 @@ export interface GameSocketCallbacks {
   onLoot?: (sourceId: string, items: { itemKey: string; quantity: number }[]) => void;
   onNpcInteraction?: (npcId: string, quests: NetQuestSnapshot[]) => void;
   onQuestState?: (quests: NetQuestSnapshot[]) => void;
-  onQuestUpdated?: (payload: { action: string; quest: NetQuestSnapshot; quests: NetQuestSnapshot[]; inventory: NetQuestInventoryItem[]; stamps: number; xp: number; message: string }) => void;
+  onQuestUpdated?: (payload: {
+    action: string;
+    quest: NetQuestSnapshot;
+    quests: NetQuestSnapshot[];
+    inventory: NetQuestInventoryItem[];
+    stamps: number;
+    /** The character's new total XP (not the granted amount). */
+    xp: number;
+    /** Present on deliveries: the level/rank the server just wrote. */
+    progression?: NetQuestProgression;
+    message: string;
+  }) => void;
   onQuestNotice?: (message: string) => void;
   onInventoryUpdated?: (items: NetQuestInventoryItem[], stamps: number, state?: NetInventoryState) => void;
   /** requestType is set for intent rejections (gameplay), absent for connection errors. */
@@ -525,6 +552,7 @@ export class GameSocket {
             inventory: normalizeQuestInventory(msg.inventory),
             stamps: Number(msg.stamps ?? 0),
             xp: Number(msg.xp ?? 0),
+            progression: normalizeQuestProgression(msg.progression),
             message: typeof msg.message === "string" ? msg.message : "Quest updated",
           });
         }
@@ -768,6 +796,27 @@ function normalizeQuests(raw: unknown): NetQuestSnapshot[] {
         : null,
     };
   }).filter((q) => q.questId !== "");
+}
+
+/**
+ * Deliveries carry progression; accepts and searches do not. Returning
+ * `undefined` (rather than zeros) keeps "no level information" distinct from
+ * "level 0", so the HUD only ever reacts to a real server value.
+ */
+function normalizeQuestProgression(raw: unknown): NetQuestProgression | undefined {
+  if (raw === null || raw === undefined) return undefined;
+  const row = raw as Record<string, unknown>;
+  const level = Number(row.level ?? 0);
+  if (!Number.isFinite(level) || level <= 0) return undefined;
+  return {
+    level,
+    previousLevel: Math.max(1, Number(row.previousLevel ?? level)),
+    levelsGained: Math.max(0, Number(row.levelsGained ?? 0)),
+    experience: Math.max(0, Number(row.experience ?? 0)),
+    skillPoints: Math.max(0, Number(row.skillPoints ?? 0)),
+    courierRank: typeof row.courierRank === "string" ? row.courierRank : "",
+    rankPromotion: typeof row.rankPromotion === "string" && row.rankPromotion !== "" ? row.rankPromotion : null,
+  };
 }
 
 function normalizeQuestInventory(raw: unknown): NetQuestInventoryItem[] {

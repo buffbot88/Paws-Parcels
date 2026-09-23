@@ -18,11 +18,61 @@
   online milestone.
 - **Reason:** Phaser 4 is already the proven client stack (Phases 0–3 shipped on it); 2D
   sprites keep the cozy art identity and the content pipeline (Aseprite sheets, JSON
-  atlases) intact. An engine swap would block every other milestone.
-- **Consequences:** Depth sorting is a first-class rendering requirement (Phase 7); a true
+  atlases) intact. An engine swap would block every other milestone.  - **Consequences:** Depth sorting is a first-class rendering requirement (Phase 7); a true
   3D engine, if ever required, needs a **separate engine-evaluation decision** and is
   blocked until then (⚠).
-- **Status:** ✅ decided (documented, Phase 0 of new plan).
+- **Status:** 🗃 superseded 2026-09-22 by *The world renders in 3D (three.js), locked 3/4
+  camera* (below). The Phaser client, depth sorting in tile space, the coordinate
+  separation, and every authority rule in this document still stand; only the
+  "no 3D engine" clause was lifted, by owner directive and against the amendment
+  procedure `engine-evaluation.md` §7 had reserved for it.
+
+### The world renders in 3D (three.js), locked 3/4 camera
+- **Decision:** The client keeps Phaser for everything it already owned — input, the scene
+  graph, entities, the network systems, and the DOM-over-canvas HUD — and draws the
+  **world** with a three.js `WebGLRenderer` on its own canvas stacked above Phaser's
+  sprite canvas, whose world camera is hidden. The camera is a **fixed 3/4 perspective**:
+  fov 30°, pitch 55°, **yaw 0** (the cutout art only has a front), ground span 10.2 tiles
+  — the same framing scale as the sprite camera, chosen so the two renderers agree about
+  how much world is on screen. **1 tile = 1 world unit**, so the authored placements,
+  footprints, prop size bands and per-zone composition plans are used unchanged. Ground,
+  paths, paving, fringes and boundary darkening are flat textured quads at staggered
+  heights backed by polygon offset; set pieces, foliage and characters are camera-facing
+  billboards of the existing cutout art that write depth, so the courier passes behind a
+  canopy instead of over it.  The vertical bias and eased movement look-ahead come from
+  `cameraFraming.ts`, so a courier sits the same distance below centre in both renderers.
+  `?renderer=2d` runs the sprite world instead, unmodified. **Authored staging fields are
+  translated, not dropped:** a placement's `depthOffset` (the 2D draw-order nudge on shop
+  signs, parcels, café tables) becomes a real separation toward the camera, and a rotated
+  placement (the vertical fence runs) is mirrored into three's plane *and* pivots on the
+  ground it stands on rather than its centre — see `render3d/parity3d.ts`. Name tags and
+  monster health bars reach the 3D frame by uploading the entities' own text canvases
+  (`render3d/labels3d.ts`), so typography and the HP colour ramp stay authored once.
+- **Reason:** The owner's target is classic 3/4 browser-MMO presence — camera angle,
+  spatial depth, traversal presence, landmark scale — while keeping the cozy storybook
+  cutout art. Depth-sorted sprites cannot produce a tilted ground plane with real height
+  and true occlusion, and visual Passes 1–6 had already spent the available 2D headroom
+  (there is no "2.5D tilt" left to buy in that renderer). `engine-evaluation.md` §5 (Path
+  B) was written for exactly this and reserves the choice to the owner.
+- **Consequences:** Server, protocol, SQLite, persistence and every authority rule are
+  untouched: the 3D renderer draws, it never simulates, and it never talks to the socket.
+  Gameplay stays in Phaser and stays server-authoritative. Art stays 2D cutouts — no model
+  pipeline is introduced — which is why the camera yaw is locked: any other angle shows
+  sides the art does not have. The sprite world remains the comparison and escape hatch.
+  **Cost, measured:** `three` is currently a static import, so the main client chunk is
+  2.19 MB / 564 kB gzip (~600 kB of that is three). Code-splitting it behind the renderer
+  choice is a recorded follow-up, not a shipped claim. Mouse/raycast world picking does
+  not exist yet; interaction is still key- and proximity-driven.
+- **Verification:** `tests/data/camera-3d.test.ts` (pure: the fixed 3/4 camera, and that
+  the courier projects below centre by exactly `verticalBias`), `tests/e2e/render3d.spec.ts`
+  (browser: the WebGL canvas fills the window, the sprite camera stepped aside, the HUD
+  paints above the world, `?renderer=2d` still gives the sprite world), `movement.spec.ts`
+  (the shipping renderer frames the courier below centre and leads the walk, measured by
+  projecting through the live camera's own matrices). Whether the frame *looks* right — the
+  billboard read at a 3/4 angle, camera feel, depth cues — is
+  `REQUIRES SEELLE/BROWSER VERIFICATION`; `artifacts/playwright/render-3d.png` and the
+  `artifacts/visual-baseline/` framings are the captures to judge it from.
+- **Status:** ✅ built for Clover Village and Happy Valley (2026-09-22).
 
 ### Coordinate systems (explicitly distinct)
 - **Decision:** Three coordinate concepts are kept separate everywhere:
@@ -432,6 +482,46 @@
   localStorage cannot provide multi-device or authoritative persistence.
 - **Consequences:** Save system moves entirely server-side; migration scripts versioned.
 - **Status:** ✅ decided.
+
+### Quest guidance is a HUD compass, drawn from the server's quest state
+- **Decision:** the active quest's next stop is shown twice — a gold arrow floating
+  just ahead of the courier and aimed at the destination, and a pulsing gold marker
+  (with a dashed line from the courier) on the minimap. Both read one resolution of
+  *what the next stop is* (`src/ui/hud/questCompass.ts`), which is pure and unit-tested:
+  the active quest's next step (its authored search object while the objective is
+  unfound, otherwise its target villager), or — with nothing accepted yet — the giver
+  of the earliest available chain quest, so a brand-new courier is guided to their
+  first route instead of seeing nothing.
+- **Reason:** the tracker states the objective in words but not *where*, which is the
+  gap a new player actually falls into. Resolving it from server quest state means the
+  arrow can never point somewhere the server would refuse (no client-invented goals),
+  and a destination in another zone yields no arrow rather than a lying direction.
+- **Consequences:** guidance is DOM, not world objects — the two renderers only supply
+  the courier's on-screen fraction (`WorldRenderer3D.projectGround` for 3D, the sprite
+  camera's `worldView` for 2D) plus the ground foreshortening the camera applies
+  (`groundForeshortening`), so one implementation guides both. Destinations use authored
+  tile indices and are measured in tile-centre space (`tileCentre`) — comparing an index
+  to a continuous position is a half-tile error. Guidance is decorative for assistive
+  tech (the tracker carries the instruction) and stops bobbing under reduced motion.
+- **Status:** ✅ built (3D verified in a browser; sprite-renderer parity unverified).
+
+### Level-ups are presented from server-reported progression
+- **Decision:** a delivery's `quest_updated` frame carries a `progression` block — the level
+  the grant wrote, the level before it, the levels crossed, total XP, skill points, the rank
+  held, and the rank it promoted to. The client never re-derives the XP curve and never
+  compares ranks: `src/ui/hud/progression.ts` turns those facts into the moment's copy,
+  `src/ui/LevelUpBanner.ts` renders it (queueing rather than overpainting), the status card
+  flashes its level chip, and `src/audio/sfx.ts` plays a synthesised chime.
+- **Reason:** XP and the level curve are server-authoritative (`server/src/models/leveling.ts`).
+  A client-side mirror would announce a promotion based on a guess for a returning courier,
+  and could not tell a two-level delivery from a one-level one — the tutorial's closing
+  delivery crosses two levels *and* promotes to Courier in the same grant.
+- **Consequences:** additive fields on the WS frame (accepts and searches omit them, so a plain
+  delivery celebrates nothing); the tutorial circuit is tuned to 400 XP so the last stamp lands
+  exactly on level 5; sound is synthesised WebAudio because the repository ships no audio assets,
+  muted through a local `localStorage` preference with a top-bar toggle; the moment's copy,
+  queueing and note selection are unit-tested, while how it *looks* stays a browser-verification item.
+- **Status:** ✅ built.
 
 ### localStorage holds the auth session, never gameplay state
 - **Decision:** localStorage may hold the server-issued authentication session and client

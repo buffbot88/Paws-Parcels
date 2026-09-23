@@ -23,7 +23,10 @@ export type IconName =
   | "chevron-down"
   | "chevron-up"
   | "maximize-2"
-  | "leaf";
+  | "leaf"
+  | "volume-2"
+  | "volume-x"
+  | "navigation";
 
 const PATHS: Readonly<Record<IconName, string>> = {
   "map-pin": '<path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/>',
@@ -53,6 +56,13 @@ const PATHS: Readonly<Record<IconName, string>> = {
   "chevron-up": '<path d="m18 15-6-6-6 6"/>',
   "maximize-2": '<path d="M15 3h6v6"/><path d="M9 21H3v-6"/><path d="M21 3l-7 7"/><path d="M3 21l7-7"/>',
   leaf: '<path d="M11 20A7 7 0 0 1 9.8 6.1C15.5 5 17 4.48 19 2c1 2 2 4.18 2 8 0 5.5-4.78 10-10 10Z"/><path d="M2 21c0-3 1.85-5.36 5.08-6C9.5 14.52 12 13 13 12"/>',
+  // Speaker with waves, and the muted speaker — the top bar's sound toggle.
+  "volume-2": '<path d="M11 4.702a.705.705 0 0 0-1.203-.498L6.413 7.587A1.4 1.4 0 0 1 5.416 8H3a1 1 0 0 0-1 1v6a1 1 0 0 0 1 1h2.416a1.4 1.4 0 0 1 .997.413l3.383 3.384A.705.705 0 0 0 11 19.298z"/><path d="M16 9a5 5 0 0 1 0 6"/><path d="M19.364 18.364a9 9 0 0 0 0-12.728"/>',
+  "volume-x": '<path d="M11 4.702a.705.705 0 0 0-1.203-.498L6.413 7.587A1.4 1.4 0 0 1 5.416 8H3a1 1 0 0 0-1 1v6a1 1 0 0 0 1 1h2.416a1.4 1.4 0 0 1 .997.413l3.383 3.384A.705.705 0 0 0 11 19.298z"/><line x1="22" x2="16" y1="9" y2="15"/><line x1="16" x2="22" y1="9" y2="15"/>',
+  // A filled arrowhead for the quest compass, authored pointing right so a CSS
+  // rotation of 0deg means "east" — the same convention `questCompass.ts`
+  // returns, which keeps the two in step with no magic offset between them.
+  navigation: '<path d="M5 5 21 12 5 19 8.5 12Z" fill="currentColor" stroke="none"/>',
 };
 
 /**

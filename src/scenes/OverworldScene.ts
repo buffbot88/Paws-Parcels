@@ -25,6 +25,16 @@ import { Minimap } from "../ui/Minimap.ts";
 import { SkillBar } from "../ui/SkillBar.ts";
 import { CharacterProfilePanel } from "../ui/CharacterProfilePanel.ts";
 import { QuestTracker } from "../ui/QuestTracker.ts";
+import { QuestCompass } from "../ui/QuestCompass.ts";
+import {
+  compassDistanceTiles,
+  compassLabel,
+  groundCompassAngle,
+  questDestination,
+  shouldShowCompass,
+  tileCentre,
+  type CompassDestination,
+} from "../ui/hud/questCompass.ts";
 import { InventoryButton } from "../ui/InventoryButton.ts";
 import { LocalMapPanel } from "../ui/LocalMapPanel.ts";
 import { addCloverVillageSetPieces } from "../game/cloverVillageAssets.ts";
@@ -63,6 +73,7 @@ import type { DialogueSet } from "../types/DialogueTypes.ts";
 import type { QuestDefinition } from "../types/QuestTypes.ts";
 import { DEPTH_OFFSET, worldDepth } from "../game/WorldDepth.ts";
 import { WorldRenderer3D } from "../render3d/WorldRenderer3D.ts";
+import { CAMERA_3D, groundForeshortening } from "../render3d/camera3d.ts";
 import { entityBillboards } from "../render3d/entityView.ts";
 import { readRendererMode, type RendererMode } from "../render3d/rendererMode.ts";
 
@@ -176,6 +187,9 @@ export class OverworldScene extends Phaser.Scene {
   private skillBar!: SkillBar;
   private chatBox!: ChatBox;
   private questTracker!: QuestTracker;
+  private questCompass!: QuestCompass;
+  /** The active quest's destination this frame, mirrored into the minimap. */
+  private questDestination: CompassDestination | null = null;
   private inventoryButton!: InventoryButton;
   private localMap!: LocalMapPanel;
   private lastTileX = -1;
@@ -306,6 +320,9 @@ export class OverworldScene extends Phaser.Scene {
       spawn.y * TILE_SIZE + TILE_SIZE / 2,
       character?.class_id ?? 1,
     );
+    // The courier's own name over their head, from the same session character
+    // the status card and the top bar use — so it can never disagree with them.
+    this.player.setDisplayName(character?.name ?? "Courier");
     // The courier's shadow comes from the same recipe as every prop's (Pass 6),
     // sized from its own ground contact, and sits at the figure's feet as the
     // entity convention measures them — not at a fixed 12px below centre.
@@ -383,6 +400,7 @@ export class OverworldScene extends Phaser.Scene {
     this.skillBar = new SkillBar(() => this.requestBasicAttack());
     this.chatBox = new ChatBox((text) => this.network.chat(text));
     this.questTracker = new QuestTracker((questId) => this.network.acceptQuest(questId));
+    this.questCompass = new QuestCompass();
     this.inventoryButton = new InventoryButton(() => this.openInventory());
     this.network.onQuestState = (quests) => this.questTracker.setQuests(quests);
     this.network.onNpcInteraction = (npcId, quests) => {
@@ -500,6 +518,7 @@ export class OverworldScene extends Phaser.Scene {
       this.skillBar.destroy();
       this.chatBox.destroy();
       this.questTracker.destroy();
+      this.questCompass.destroy();
       this.inventoryButton.destroy();
       this.localMap.destroy();
       this.network.detach();
@@ -511,6 +530,12 @@ export class OverworldScene extends Phaser.Scene {
     // the authoritative respawn payload.
     if (this.isDefeated) {
       this.updateCameraFraming({ x: 0, y: 0 });
+      this.questCompass.update({
+        origin: this.playerCanvasFraction(),
+        label: "",
+        angleRad: 0,
+        visible: false,
+      });
       this.player.move({ x: 0, y: 0 });
       this.player.setDepth(worldDepth(this.player.y));
       this.shadow.setPosition(this.player.x, this.player.y + this.player.feetOffsetPx);
@@ -577,7 +602,9 @@ export class OverworldScene extends Phaser.Scene {
       });
     }
 
-    // Phase 4 — minimap live layer (own courier, others, monsters).
+    // Phase 4 — minimap live layer (own courier, others, monsters, and the
+    // active quest's destination).
+    this.updateQuestGuide();
     this.minimap.update({
       player: {
         x: this.player.x / TILE_SIZE,
@@ -585,6 +612,7 @@ export class OverworldScene extends Phaser.Scene {
       },
       players: this.network.getRemotePositions(),
       monsters: this.network.getMonsterPositions(),
+      quest: this.questDestination === null ? null : this.questDestination.tile,
     });
 
     const focused = this.interactionSystem.getFocused(
@@ -668,6 +696,106 @@ export class OverworldScene extends Phaser.Scene {
       badge: this.badge3d,
       badgeTouch: this.sys.game.device.input.touch,
     });
+  }
+
+  /**
+   * Aim the quest guidance: the arrow ahead of the courier, and the minimap's
+   * destination marker.
+   *
+   * Both read the same resolved destination, so the arrow and the map can never
+   * disagree about where the quest wants the courier to go. Rendering only:
+   * nothing here is sent to the server, and nothing moves but HUD elements.
+   */
+  private updateQuestGuide(): void {
+    const active = this.questTracker.getActiveQuest() ?? null;
+    const guide = questDestination({
+      active:
+        active === null
+          ? null
+          : {
+              state: active.state,
+              giverId: active.giverId,
+              targetId: active.targetId,
+              searchObjectId: active.searchObjectId,
+              progress: active.progress,
+            },
+      // With nothing in progress the compass still guides — to whoever hands
+      // out the next leg of the chain, which is the whole point for a courier
+      // who has just arrived and has no quest yet.
+      quests: this.questTracker.getQuests().map((entry) => ({
+        state: entry.state,
+        giverId: entry.giverId,
+        targetId: entry.targetId,
+        searchObjectId: entry.searchObjectId,
+        progress: entry.progress,
+        chainPosition: entry.chainPosition,
+        sideQuest: entry.sideQuest,
+      })),
+      zoneId: this.mapData.id,
+      npcs: NPCS,
+      objects: this.mapData.interactables,
+    });
+    this.questDestination = guide === null ? null : guide.destination;
+
+    const destination = this.questDestination;
+    const player = { x: this.player.x / TILE_SIZE, y: this.player.y / TILE_SIZE };
+    if (destination === null) {
+      this.questCompass.update({
+        origin: this.playerCanvasFraction(),
+        label: "",
+        angleRad: 0,
+        visible: false,
+      });
+      return;
+    }
+
+    // Authored content names tiles by index; the courier's position is
+    // continuous tile units. Measure centre-to-position, or the arrow is half a
+    // tile off and the label reads one tile long.
+    const target = tileCentre(destination.tile);
+    const distance = compassDistanceTiles(player, target);
+    this.questCompass.update({
+      origin: this.playerCanvasFraction(),
+      angleRad: groundCompassAngle(
+        target.x - player.x,
+        target.y - player.y,
+        this.renderForeshortening(),
+      ),
+      label: compassLabel(destination, distance),
+      // Close enough to see them: the arrow would sit on top of the villager it
+      // is pointing at, which is worse than no guidance at all.
+      visible: shouldShowCompass(distance),
+    });
+  }
+
+  /**
+   * Where the courier is on screen, as a fraction of the play area (0–1).
+   *
+   * Asked of whichever renderer is drawing the frame: the 3D camera projects the
+   * ground point, and the sprite camera's visible world rectangle is the same
+   * measurement for the 2D path. Fractions (not pixels) are what lets one HUD
+   * element sit correctly on both, and at every window scale.
+   */
+  private playerCanvasFraction(): { x: number; y: number } {
+    const world = this.world3d;
+    if (world !== null) {
+      return world.projectGround(this.player.x / TILE_SIZE, this.player.y / TILE_SIZE);
+    }
+    const view = this.cameras.main.worldView;
+    if (view.width <= 0 || view.height <= 0) return { x: 0.5, y: 0.5 };
+    return {
+      x: (this.player.x - view.x) / view.width,
+      y: (this.player.y - view.y) / view.height,
+    };
+  }
+
+  /**
+   * How much the frame compresses the north/south axis — 1 in the top-down
+   * sprite world, `sin(pitch)` under the 3/4 3D camera. Shared with the camera
+   * module so the arrow aims along the direction the frame actually draws.
+   */
+  private renderForeshortening(): number {
+    return this.world3d === null ? 1 : groundForeshortening(CAMERA_3D);
   }
 
   /**

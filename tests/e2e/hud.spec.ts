@@ -85,7 +85,7 @@ test.describe("HUD lifecycle", () => {
     // mounted after the canvas was clipped out of the container entirely —
     // while `toBeVisible()` still passed, because a clipped element has a
     // non-empty box. Geometry, not presence, is what catches that.
-    const canvas = await page.locator("#game-container > canvas").first().boundingBox();
+    const canvas = await page.locator(SEL.spriteCanvas).first().boundingBox();
     expect(canvas).not.toBeNull();
     expect(Math.abs(canvas!.x - container!.x)).toBeLessThanOrEqual(1);
     expect(Math.abs(canvas!.y - container!.y)).toBeLessThanOrEqual(1);
@@ -124,11 +124,13 @@ test.describe("HUD lifecycle", () => {
     ).toBeLessThanOrEqual(HUD_COVERAGE_BUDGET);
 
     // Structural invariant that the canvas selectors depend on: exactly one
-    // direct canvas child (Phaser's), with the HUD's own canvases (minimap
-    // base + live layer) nested inside the layer. `#game-container canvas`
-    // would otherwise resolve to the minimap — which is exactly what broke the
-    // focus clicks and the world-brain scene snapshot when the layer landed.
-    await expect(page.locator("#game-container > canvas")).toHaveCount(1);
+    // direct *sprite* canvas child (Phaser's) plus the 3D world canvas when the
+    // 3D renderer runs, with the HUD's own canvases (minimap base + live layer)
+    // nested inside the layer. `#game-container canvas` would otherwise resolve
+    // to the minimap — which is exactly what broke the focus clicks and the
+    // world-brain scene snapshot when the layer landed.
+    await expect(page.locator(SEL.spriteCanvas)).toHaveCount(1);
+    await expect(page.locator(SEL.world3dCanvas)).toHaveCount(1);
     await expect(page.locator(`${SEL.hudLayer} canvas`)).toHaveCount(2);
 
     // The HUD layer is the canvas-relative parent, and it is not in the

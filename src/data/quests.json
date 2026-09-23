@@ -3,137 +3,136 @@
     {
       "id": "quest-village-welcome",
       "title": "Welcome to Clover Village",
-      "description": "Take Pip's welcome card to Biscuit at the café.",
+      "description": "Carry Pip's welcome letter to Biscuit at the café for its first stamp.",
       "type": "delivery",
       "giverId": "npc-pip",
       "targetId": "npc-biscuit",
       "parcelCondition": "normal",
-      "xpReward": 15,
+      "xpReward": 40,
       "reputationPoints": 1,
       "chainPosition": 1,
       "requiredItemId": "item-village-welcome-card",
-      "requiredQuantity": 1,
-      "stampReward": 5,
-      "friendshipReward": 1,
-      "friendshipNpcId": "npc-biscuit",
-      "acceptanceDialogue": {
-        "speakerId": "npc-pip",
-        "lines": ["This is your first official route! Biscuit is expecting a welcome card at the café.", "Keep the parcel with you, follow the paths, and come back when Biscuit has it safely."]
-      },
-      "completionDialogue": {
-        "speakerId": "npc-biscuit",
-        "lines": ["A welcome card! And you carried it all the way here.", "That was a fine first delivery. Clover Village may have a new courier after all."]
-      },
-      "daily": false
-    },
-    {
-      "id": "quest-fresh-bread-biscuit",
-      "title": "A Café Parcel for Maple",
-      "description": "Carry Biscuit's parcel to Maple in the flower garden.",
-      "type": "delivery",
-      "giverId": "npc-biscuit",
-      "targetId": "npc-maple",
-      "parcelCondition": "normal",
-      "xpReward": 20,
-      "reputationPoints": 1,
-      "chainPosition": 2,
-      "prerequisiteIds": ["quest-village-welcome"],
-      "requiredItemId": "item-tiny-parcel",
       "requiredQuantity": 1,
       "stampReward": 8,
       "friendshipReward": 1,
       "friendshipNpcId": "npc-biscuit",
       "acceptanceDialogue": {
+        "speakerId": "npc-pip",
+        "lines": ["Every new courier carries the village welcome letter. It is not official until Clover Village has signed it.", "Take it to Biscuit at the café. She stamps it, and she sends you on to the next villager."]
+      },
+      "completionDialogue": {
         "speakerId": "npc-biscuit",
-        "lines": ["Maple has been waiting for this parcel, but my paws are covered in flour.", "Your satchel has room for one more route, yes? Take it to her flower garden and keep it tidy."]
+        "lines": ["A welcome letter, and still warm from the post office. Let me be the first stamp.", "There. Maple is next — she keeps her stamp in the flower garden."]
+      },
+      "daily": false
+    },
+    {
+      "id": "quest-fresh-bread-biscuit",
+      "title": "Biscuit's Café Stamp",
+      "description": "Take the stamped welcome letter on to Maple in the flower garden.",
+      "type": "delivery",
+      "giverId": "npc-biscuit",
+      "targetId": "npc-maple",
+      "parcelCondition": "normal",
+      "xpReward": 60,
+      "reputationPoints": 1,
+      "chainPosition": 2,
+      "prerequisiteIds": ["quest-village-welcome"],
+      "requiredItemId": "item-village-welcome-card",
+      "requiredQuantity": 1,
+      "stampReward": 12,
+      "friendshipReward": 1,
+      "friendshipNpcId": "npc-biscuit",
+      "acceptanceDialogue": {
+        "speakerId": "npc-biscuit",
+        "lines": ["One stamp down. Mind the ink, and mind the crumbs — my counter is not gentle.", "Maple is in the flower garden. She will want to read the letter before she signs it."]
       },
       "completionDialogue": {
         "speakerId": "npc-maple",
-        "lines": ["Biscuit's parcel... for me? You found the flower garden without getting lost.", "Thank you. I think I can trust you with another route."]
+        "lines": ["A letter from the whole village! I will add my stamp in moonflower ink.", "Lumi should sign it too. She is at the research garden, past the flowering path."]
       },
       "daily": false
     },
     {
       "id": "quest-flower-note-maple",
-      "title": "Maple's Fragile Moon Letter",
-      "description": "Carry Maple's fragile moon letter carefully to Lumi at the research garden.",
+      "title": "Maple's Flower Stamp",
+      "description": "Carry the fragile welcome letter carefully to Lumi at the research garden.",
       "type": "delivery",
       "giverId": "npc-maple",
       "targetId": "npc-lumi",
       "parcelCondition": "fragile",
-      "xpReward": 25,
+      "xpReward": 80,
       "reputationPoints": 1,
       "chainPosition": 3,
       "prerequisiteIds": ["quest-fresh-bread-biscuit"],
-      "requiredItemId": "item-sealed-letter",
+      "requiredItemId": "item-village-welcome-card",
       "requiredQuantity": 1,
-      "stampReward": 10,
+      "stampReward": 16,
       "friendshipReward": 1,
       "friendshipNpcId": "npc-maple",
       "breaksOnDefeat": true,
       "acceptanceDialogue": {
         "speakerId": "npc-maple",
-        "lines": ["This letter is sealed with moonflower wax, and the paper is very delicate.", "Please carry it gently to Lumi. No squeezing it into a crowded bag, all right?"]
+        "lines": ["Here it is again, one stamp richer. The paper is soft, so keep it flat and dry.", "Lumi studies everything, postmarks included. Take it to her research garden."]
       },
       "completionDialogue": {
         "speakerId": "npc-lumi",
-        "lines": ["The seal is unbroken. Even the moonlight approves of your careful paws.", "Maple's message may change what I have been studying. You delivered more than paper today."]
+        "lines": ["A welcome letter, read from top to bottom — twice. My stamp goes right here.", "Moss holds the last one. He is south of the plaza, watering the garden."]
       },
       "daily": false
     },
     {
       "id": "quest-moon-note-lumi",
-      "title": "Lumi's Urgent Garden Parcel",
-      "description": "Deliver Lumi's urgent garden parcel to Moss before the evening watering round.",
+      "title": "Lumi's Research Stamp",
+      "description": "Take the welcome letter to Moss in the south garden.",
       "type": "delivery",
       "giverId": "npc-lumi",
       "targetId": "npc-moss",
-      "parcelCondition": "urgent",
-      "xpReward": 30,
+      "parcelCondition": "normal",
+      "xpReward": 100,
       "reputationPoints": 1,
       "chainPosition": 4,
       "prerequisiteIds": ["quest-flower-note-maple"],
-      "requiredItemId": "item-tiny-parcel",
+      "requiredItemId": "item-village-welcome-card",
       "requiredQuantity": 1,
-      "stampReward": 12,
+      "stampReward": 20,
       "friendshipReward": 1,
       "friendshipNpcId": "npc-lumi",
-      "timeLimitSeconds": 90,
       "acceptanceDialogue": {
         "speakerId": "npc-lumi",
-        "lines": ["Moss waters the garden at sunset, and this parcel needs to reach him before then.", "It is urgent, but do not panic. Follow the southern path and keep your paws moving."]
+        "lines": ["Three stamps already. This letter has travelled further than most of my studies.", "Moss is watering the south garden. Tell him the post office sent you and he will stamp it."]
       },
       "completionDialogue": {
         "speakerId": "npc-moss",
-        "lines": ["You made it before the watering can came out. Wonderful timing.", "The garden says thank you too. It has a very quiet voice, but I heard it."]
+        "lines": ["So this is the famous welcome letter. Let me press my stamp on straight.", "That is every villager who signs. Take it home to Pip at the post office."]
       },
       "daily": false
     },
     {
       "id": "quest-garden-greeting-moss",
-      "title": "The Final Village Route",
-      "description": "Moss has one last parcel for Pip. Complete the circuit and report back to the post office.",
+      "title": "The Last Stamp: Back to Pip",
+      "description": "Return the fully stamped welcome letter to Pip at the post office.",
       "type": "delivery",
       "giverId": "npc-moss",
       "targetId": "npc-pip",
       "parcelCondition": "normal",
-      "xpReward": 60,
+      "xpReward": 120,
       "reputationPoints": 2,
       "chainPosition": 5,
       "courierRankReward": "Courier",
       "prerequisiteIds": ["quest-moon-note-lumi"],
-      "requiredItemId": "item-sealed-letter",
+      "requiredItemId": "item-village-welcome-card",
       "requiredQuantity": 1,
-      "stampReward": 25,
+      "stampReward": 24,
       "friendshipReward": 2,
       "friendshipNpcId": "npc-pip",
       "acceptanceDialogue": {
         "speakerId": "npc-moss",
-        "lines": ["Pip has one last letter for the circuit. I sealed it twice, just to be sure.", "Take it back to the post office. Then perhaps we can call you a proper village courier."]
+        "lines": ["Signed and stamped by everyone but the postmaster himself.", "Take it home to Pip. A letter is not finished until it comes back to where it started."]
       },
       "completionDialogue": {
         "speakerId": "npc-pip",
-        "lines": ["The circuit is complete! Pip, Biscuit, Maple, Lumi, Moss... every stop is checked.", "By the authority of the Clover Post Office, you are now an official Courier!", "The wider forest is waiting, Courier. Your next adventure starts whenever you are ready."]
+        "lines": ["Pip, Biscuit, Maple, Lumi, Moss... every stamp in Clover Village, all on one letter.", "By the authority of the Clover Post Office, you are now an official Courier!", "The wider forest is waiting, Courier. Your next adventure starts whenever you are ready."]
       },
       "daily": false
     },
@@ -290,15 +289,17 @@
       "id": "quest-picnic-for-maple",
       "phase": "4B",
       "title": "A Picnic for the Florist",
-      "description": "Deliver Biscuit's picnic basket to Maple at the flower field.",
+      "description": "Deliver Biscuit's warm picnic basket to Maple at the flower field before the food cools.",
       "type": "delivery",
       "giverId": "npc-biscuit",
       "targetId": "npc-maple",
+      "parcelCondition": "urgent",
       "requiredItemId": "item-picnic-basket",
       "requiredQuantity": 1,
       "stampReward": 14,
       "friendshipReward": 2,
       "friendshipNpcId": "npc-maple",
+      "timeLimitSeconds": 180,
       "daily": false
     },
     {

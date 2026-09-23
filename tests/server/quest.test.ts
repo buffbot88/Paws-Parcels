@@ -45,8 +45,8 @@ describe("Clover Village tutorial quests", () => {
     if (!done.ok) return;
     expect(done.quest.state).toBe("completed");
     expect(done.quests[1].state).toBe("available");
-    expect(done.stamps).toBe(5);
-    expect(done.xp).toBe(15);
+    expect(done.stamps).toBe(8);
+    expect(done.xp).toBe(40);
     expect(getQuestInventory(created.character.id)).toHaveLength(0);
   });
 
@@ -57,24 +57,62 @@ describe("Clover Village tutorial quests", () => {
     const created = await createCharacter({ accountId: account.id, name: "Circuit User", classId: cls.id, appearance: {}, cls });
     if (!created.ok) throw new Error("character creation failed");
 
-    const route: [string, string, string][] = [
-      ["quest-village-welcome", "npc-biscuit", "normal"],
-      ["quest-fresh-bread-biscuit", "npc-maple", "normal"],
-      ["quest-flower-note-maple", "npc-lumi", "fragile"],
-      ["quest-moon-note-lumi", "npc-moss", "urgent"],
-      ["quest-garden-greeting-moss", "npc-pip", "normal"],
+    // Each leg's expected post-grant level and total XP: the circuit is tuned
+    // to finish on level 5 (the closing delivery crosses two levels at once
+    // and promotes the courier).
+    const deliveries: NonNullable<Awaited<ReturnType<typeof completeDelivery>> & { ok: true }>["progression"][] = [];
+    const route: [string, string, string, number, number][] = [
+      ["quest-village-welcome", "npc-biscuit", "normal", 1, 40],
+      ["quest-fresh-bread-biscuit", "npc-maple", "normal", 2, 100],
+      ["quest-flower-note-maple", "npc-lumi", "fragile", 2, 180],
+      ["quest-moon-note-lumi", "npc-moss", "normal", 3, 280],
+      ["quest-garden-greeting-moss", "npc-pip", "normal", 5, 400],
     ];
-    for (const [questId, targetId, condition] of route) {
+    for (const [questId, targetId, condition, expectedLevel, expectedXp] of route) {
       const accepted = await acceptQuest(created.character.id, questId);
       expect(accepted.ok).toBe(true);
       const snapshot = (await getQuestState(created.character.id)).find((quest) => quest.questId === questId);
       expect(snapshot?.parcelCondition).toBe(condition);
+      // Every leg of the tutorial carries the same welcome letter forward.
+      expect(snapshot?.requiredItemId).toBe("item-village-welcome-card");
+      expect(getQuestInventory(created.character.id)).toEqual(expect.arrayContaining([
+        expect.objectContaining({ itemKey: "item-village-welcome-card", locked: true }),
+      ]));
       const completed = await completeDelivery(created.character.id, targetId);
       expect(completed.ok).toBe(true);
+      // Onboarding must never stall on a clock: no leg sets a deadline.
+      expect(snapshot?.deadlineAt).toBeNull();
+      // Every delivery reports the progression it wrote, so the HUD can present
+      // a level-up without re-deriving the curve.
+      if (completed.ok) {
+        expect(completed.progression).toMatchObject({
+          level: expectedLevel,
+          experience: expectedXp,
+        });
+        expect(completed.progression?.levelsGained).toBeGreaterThanOrEqual(0);
+        deliveries.push(completed.progression);
+      }
     }
 
-    const rank = getDb().prepare("SELECT courier_rank FROM characters WHERE id = ?").get(created.character.id) as { courier_rank: string };
+    // The closing delivery is the celebration: two levels crossed and the rank
+    // promoted together, reported as one progression frame.
+    expect(deliveries[4]).toEqual({
+      level: 5,
+      previousLevel: 3,
+      levelsGained: 2,
+      experience: 400,
+      // One skill point per level crossed, plus the one a fresh courier starts
+      // with (level 1).
+      skillPoints: 5,
+      courierRank: "Courier",
+      rankPromotion: "Courier",
+    });
+
+    const rank = getDb().prepare("SELECT courier_rank, level, experience FROM characters WHERE id = ?").get(created.character.id) as { courier_rank: string; level: number; experience: number };
     expect(rank.courier_rank).toBe("Courier");
+    // The circuit is tuned to land the new courier exactly on level 5.
+    expect(rank.experience).toBe(400);
+    expect(rank.level).toBe(5);
     expect((await getQuestState(created.character.id)).filter((quest) => !quest.sideQuest).every((quest) => quest.state === "completed")).toBe(true);
   });
 
@@ -129,15 +167,22 @@ describe("Clover Village tutorial quests", () => {
     expect((await getQuestState(created.character.id)).find((quest) => quest.questId === "quest-flower-note-maple")?.state).toBe("available");
     expect(getQuestInventory(created.character.id)).toHaveLength(0);
 
+    // Finish the circuit — urgent routes are post-tutorial errands, never onboarding steps.
     expect((await acceptQuest(created.character.id, "quest-flower-note-maple")).ok).toBe(true);
     expect((await completeDelivery(created.character.id, "npc-lumi")).ok).toBe(true);
-    expect((await acceptQuest(created.character.id, "quest-moon-note-lumi")).ok).toBe(true);
-    const urgent = (await getQuestState(created.character.id)).find((quest) => quest.questId === "quest-moon-note-lumi");
+    for (const [questId, targetId] of [["quest-moon-note-lumi", "npc-moss"], ["quest-garden-greeting-moss", "npc-pip"]] as const) {
+      expect((await acceptQuest(created.character.id, questId)).ok).toBe(true);
+      expect((await completeDelivery(created.character.id, targetId)).ok).toBe(true);
+    }
+
+    expect((await acceptQuest(created.character.id, "quest-picnic-for-maple")).ok).toBe(true);
+    const urgent = (await getQuestState(created.character.id)).find((quest) => quest.questId === "quest-picnic-for-maple");
+    expect(urgent?.parcelCondition).toBe("urgent");
     expect(urgent?.deadlineAt).toEqual(expect.any(Number));
 
     getDb().prepare("UPDATE character_quest_progress SET accepted_at = ? WHERE character_id = ? AND quest_key = ?")
-      .run(new Date(Date.now() - 91_000).toISOString(), created.character.id, "quest-moon-note-lumi");
-    expect((await getQuestState(created.character.id)).find((quest) => quest.questId === "quest-moon-note-lumi")?.state).toBe("available");
+      .run(new Date(Date.now() - 181_000).toISOString(), created.character.id, "quest-picnic-for-maple");
+    expect((await getQuestState(created.character.id)).find((quest) => quest.questId === "quest-picnic-for-maple")?.state).toBe("available");
     expect(getQuestInventory(created.character.id)).toHaveLength(0);
   });
 

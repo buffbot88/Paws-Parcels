@@ -65,6 +65,7 @@ interface SceneHandles {
       y?: number;
     }>;
     cameras?: { main?: CameraHandles };
+    world3d?: World3DHandles | null;
   } | null;
   game?: { scene?: { getScene?: (key: string) => unknown } };
 }
@@ -75,6 +76,11 @@ interface CameraHandles {
   scrollY?: number;
   centerOn?: (x: number, y: number) => void;
   stopFollow?: () => void;
+}
+
+/** The 3D world renderer, reached the same way the sprite camera is. */
+interface World3DHandles {
+  setFocusOverride?: (focus: { x: number; z: number } | null) => void;
 }
 
 export interface Landmark {
@@ -94,8 +100,12 @@ export interface LandmarkSet {
 
 export interface CameraState {
   zoom: number;
+  /** Sprite renderer: world pixels. 3D renderer: the ground focus, in tiles. */
   scrollX: number;
   scrollY: number;
+  /** Which renderer framed the capture, and where the 3D camera was parked. */
+  renderer?: "sprite" | "world3d";
+  focus?: { x: number; z: number };
 }
 
 export type CaptureMode = "camera-framed" | "player-view" | "hud-state";
@@ -183,8 +193,10 @@ export async function readLandmarks(page: Page): Promise<LandmarkSet> {
 /**
  * Stop the camera following the courier and centre it on a tile.
  *
- * Rendering-only: nothing here writes gameplay state, and `update()` never
- * touches the camera, so the framing holds until the test changes it.
+ * Rendering-only: nothing here writes gameplay state, and neither renderer's
+ * `update()` reclaims the camera on its own, so the framing holds until the
+ * test changes it. The 3D renderer needs its own path — its camera is placed
+ * from tiles every frame, so stopping Phaser's camera would frame nothing.
  */
 export async function frameCameraOnTile(
   page: Page,
@@ -197,6 +209,22 @@ export async function frameCameraOnTile(
       const scene = ((window as unknown as SceneHandles).game?.scene?.getScene?.(
         "overworld",
       ) ?? null) as SceneHandles["scene"];
+      const world = scene?.world3d ?? null;
+      if (world != null && typeof world.setFocusOverride === "function") {
+        // Tile centre, in the world units the 3D renderer uses (1 tile = 1).
+        // The focus *is* the transform here: the camera's position is a
+        // constant offset from it, and reading the live camera would record
+        // the previous frame's placement.
+        const focus = { x: tx + 0.5, z: ty + 0.5 };
+        world.setFocusOverride(focus);
+        return {
+          zoom: 1,
+          scrollX: focus.x,
+          scrollY: focus.z,
+          renderer: "world3d" as const,
+          focus,
+        };
+      }
       const camera = scene?.cameras?.main;
       if (camera == null) return null;
       camera.stopFollow?.();
@@ -205,6 +233,7 @@ export async function frameCameraOnTile(
         zoom: Number(camera.zoom ?? 0),
         scrollX: Number(camera.scrollX ?? 0),
         scrollY: Number(camera.scrollY ?? 0),
+        renderer: "sprite" as const,
       };
     },
     { tx: tileX, ty: tileY, size: tileSize },

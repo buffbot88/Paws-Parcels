@@ -12,6 +12,11 @@ export interface PlayerStatusData {
   level: number;
 }
 
+/** How long the level-up / promotion flash stays on the card. */
+const FLASH_MS = 1800;
+/** How long the rating flash stays on the card when stamps arrive. */
+const RATING_FLASH_MS = 1200;
+
 /** How many stamps the courier rating is scored out of. */
 export const STAMP_RATING_SLOTS = 5;
 
@@ -48,6 +53,8 @@ export class PlayerStatusCard {
   private resourceName = "";
   private rating = 0;
   private stamps = 0;
+  private flashTimer: number | null = null;
+  private ratingFlashTimer: number | null = null;
 
   constructor() {
     const panel = createPanel({ className: "player-card", leaf: true });
@@ -181,7 +188,41 @@ export class PlayerStatusCard {
     this.renderRating();
   }
 
+  /**
+   * Level-up / promotion flash: the card pulses and the level chip pops to the
+   * new value, so the moment is visible in the corner a player is already
+   * looking at — not only in the banner.
+   */
+  flashProgression(options: { level: number; rank?: string | null }): void {
+    this.level.textContent = `Lv. ${options.level}`;
+    this.level.title = `Courier level ${options.level}`;
+    if (typeof options.rank === "string" && options.rank !== "") {
+      this.rank.textContent = options.rank;
+      this.rank.title = `Courier rank ${options.rank}`;
+    }
+    this.root.classList.add("player-card--celebrate");
+    this.level.classList.add("player-card__level--gain");
+    if (this.flashTimer !== null) window.clearTimeout(this.flashTimer);
+    this.flashTimer = window.setTimeout(() => {
+      this.flashTimer = null;
+      this.root.classList.remove("player-card--celebrate");
+      this.level.classList.remove("player-card__level--gain");
+    }, FLASH_MS);
+  }
+
+  /** Flash the stamp rating row when a delivery pays out stamps. */
+  flashStamps(): void {
+    this.ratingRow.classList.add("player-card__rating--gain");
+    if (this.ratingFlashTimer !== null) window.clearTimeout(this.ratingFlashTimer);
+    this.ratingFlashTimer = window.setTimeout(() => {
+      this.ratingFlashTimer = null;
+      this.ratingRow.classList.remove("player-card__rating--gain");
+    }, RATING_FLASH_MS);
+  }
+
   destroy(): void {
+    if (this.flashTimer !== null) window.clearTimeout(this.flashTimer);
+    if (this.ratingFlashTimer !== null) window.clearTimeout(this.ratingFlashTimer);
     this.root.remove();
   }
 

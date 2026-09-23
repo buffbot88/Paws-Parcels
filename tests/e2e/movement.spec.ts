@@ -65,13 +65,28 @@ test.describe("movement (WASD, server-validated)", () => {
     const collector = await bootToOverworld(page);
     await focusCanvas(page);
 
-    /** Where the courier renders, relative to the viewport centre, in screen px. */
+    /**
+     * Where the courier renders, relative to the viewport centre, in fractions
+     * of the viewport — measured in the renderer that is actually drawing.
+     *
+     * The 3D renderer projects the courier's feet through its own camera (its
+     * matrices, multiplied here, so nothing is taken on faith). The sprite
+     * renderer is measured through the live camera's world view. A fraction is
+     * deliberately used rather than pixels: both renderers must place the
+     * courier at the same *place in the frame*, at any window size.
+     */
     const readFraming = async () =>
       page.evaluate(() => {
         const scene = (window as unknown as {
           game: { scene: { getScene: (key: string) => never } };
         }).game.scene.getScene("overworld") as unknown as {
           player: { x: number; y: number };
+          world3d?: {
+            camera: {
+              projectionMatrix: { elements: number[] };
+              matrixWorldInverse: { elements: number[] };
+            };
+          } | null;
           cameras: {
             main: {
               zoom: number;
@@ -81,55 +96,110 @@ test.describe("movement (WASD, server-validated)", () => {
             };
           };
         };
+        const tilePx = 48;
+        const world = scene.world3d ?? null;
+        if (world != null && world.camera != null) {
+          // Column-major 4x4 multiply, the order three composes as P * V * p.
+          const apply = (matrix: number[], point: number[]): number[] => {
+            const out = [0, 0, 0, 0];
+            for (let row = 0; row < 4; row += 1) {
+              out[row] =
+                matrix[row]! * point[0]! +
+                matrix[4 + row]! * point[1]! +
+                matrix[8 + row]! * point[2]! +
+                matrix[12 + row]! * point[3]!;
+            }
+            return out;
+          };
+          // The courier's feet, in the 3D renderer's world units (1 tile = 1).
+          const feet = [scene.player.x / tilePx, 0, scene.player.y / tilePx, 1];
+          const clip = apply(world.camera.projectionMatrix.elements, apply(
+            world.camera.matrixWorldInverse.elements,
+            feet,
+          ));
+          const ndcY = clip[3] === 0 ? 0 : clip[1]! / clip[3];
+          const ndcX = clip[3] === 0 ? 0 : clip[0]! / clip[3];
+          return {
+            renderer: "world3d" as const,
+            belowCentreFraction: (1 - ndcY) / 2 - 0.5,
+            rightOfCentreFraction: ndcX / 2,
+            leadWorldPx: 0,
+            followOffsetYPx: 0,
+            followOffsetXPx: 0,
+          };
+        }
         const camera = scene.cameras.main;
         const view = camera.worldView;
         return {
-          offsetXPx: (scene.player.x - (view.x + view.width / 2)) * camera.zoom,
-          offsetYPx: (scene.player.y - (view.y + view.height / 2)) * camera.zoom,
-          viewportHeightPx: camera.height,
-          zoom: camera.zoom,
+          renderer: "sprite" as const,
+          belowCentreFraction:
+            ((scene.player.y - (view.y + view.height / 2)) * camera.zoom) / camera.height,
+          rightOfCentreFraction:
+            ((scene.player.x - (view.x + view.width / 2)) * camera.zoom) / camera.height,
+          leadWorldPx: 0,
           followOffsetXPx: camera.followOffset.x,
           followOffsetYPx: camera.followOffset.y,
         };
       });
 
+    const leadWorldPx = 0.6 * 48;
+    // The lead is a fraction of a tile of ground, and the frame spans ~10 tiles,
+    // so a full lead moves the courier roughly a twentieth of the frame down.
+    const leadFrameFraction = 0.02;
+
     // Idle: the courier sits below centre (the world ahead gets more of the
     // frame) and stays laterally centred.
     await page.waitForTimeout(500);
     const idle = await readFraming();
-    const bias = idle.offsetYPx / idle.viewportHeightPx;
-    expect(bias).toBeGreaterThan(0.03);
-    expect(bias).toBeLessThan(0.25);
-    expect(Math.abs(idle.offsetXPx)).toBeLessThan(6);
-    expect(idle.followOffsetYPx).toBeGreaterThan(0);
-    expect(Math.abs(idle.followOffsetXPx)).toBeLessThan(6);
+    expect(idle.renderer).toBe("world3d");
+    expect(idle.belowCentreFraction).toBeGreaterThan(0.03);
+    expect(idle.belowCentreFraction).toBeLessThan(0.25);
+    expect(Math.abs(idle.rightOfCentreFraction)).toBeLessThan(0.02);
 
-    // Walking north: the camera leads the direction of travel. Asserted on the
-    // follow offset rather than on where the courier renders, because the
-    // camera's follow *lag* also moves the courier in the frame — the offset is
-    // the rule itself, the rendered position is the rule plus the smoothing.
+    // Walking north: the camera leads the direction of travel, which pushes the
+    // courier further below centre. In the sprite renderer the follow offset is
+    // the rule itself (asserted directly, because follow lag would blur the
+    // rendered position); in the 3D renderer the focus is computed from the live
+    // position every frame, so the rendered frame IS the rule.
     await holdKey(page, "w");
     await page.waitForTimeout(1_600);
     const walking = await readFraming();
     await releaseKey(page, "w");
-    const leadWorldPx = 0.6 * 48;
-    expect(walking.followOffsetYPx).toBeGreaterThan(idle.followOffsetYPx + leadWorldPx * 0.9);
-    expect(walking.followOffsetYPx).toBeLessThanOrEqual(idle.followOffsetYPx + leadWorldPx + 0.5);
+    if (walking.renderer === "world3d") {
+      expect(walking.belowCentreFraction).toBeGreaterThan(
+        idle.belowCentreFraction + leadFrameFraction,
+      );
+      expect(walking.belowCentreFraction).toBeLessThan(idle.belowCentreFraction + 0.12);
+    } else {
+      expect(walking.followOffsetYPx).toBeGreaterThan(idle.followOffsetYPx + leadWorldPx * 0.9);
+      expect(walking.followOffsetYPx).toBeLessThanOrEqual(
+        idle.followOffsetYPx + leadWorldPx + 0.5,
+      );
+    }
 
     // Stopping unwinds the lead, so the frame settles back to the idle bias.
     await page.waitForTimeout(1_600);
     const settled = await readFraming();
-    expect(Math.abs(settled.followOffsetYPx - idle.followOffsetYPx)).toBeLessThan(2);
-    expect(Math.abs(settled.followOffsetXPx)).toBeLessThan(2);
+    expect(Math.abs(settled.belowCentreFraction - idle.belowCentreFraction)).toBeLessThan(0.01);
+    expect(Math.abs(settled.rightOfCentreFraction)).toBeLessThan(0.02);
 
-    // A lateral walk leads sideways instead, and must not add to the bias.
+    // A lateral walk leads sideways instead, and must not add to the bias: the
+    // courier slides to the far side of centre while the camera leans east.
     await holdKey(page, "d");
     await page.waitForTimeout(1_600);
     const eastward = await readFraming();
     await releaseKey(page, "d");
-    expect(eastward.followOffsetXPx).toBeLessThan(-leadWorldPx * 0.9);
-    expect(eastward.followOffsetXPx).toBeGreaterThanOrEqual(-leadWorldPx - 0.5);
-    expect(Math.abs(eastward.followOffsetYPx - idle.followOffsetYPx)).toBeLessThan(2);
+    if (eastward.renderer === "world3d") {
+      expect(eastward.rightOfCentreFraction).toBeLessThan(-leadFrameFraction);
+      expect(eastward.rightOfCentreFraction).toBeGreaterThan(-0.12);
+      expect(
+        Math.abs(eastward.belowCentreFraction - idle.belowCentreFraction),
+      ).toBeLessThan(0.01);
+    } else {
+      expect(eastward.followOffsetXPx).toBeLessThan(-leadWorldPx * 0.9);
+      expect(eastward.followOffsetXPx).toBeGreaterThanOrEqual(-leadWorldPx - 0.5);
+      expect(Math.abs(eastward.followOffsetYPx - idle.followOffsetYPx)).toBeLessThan(2);
+    }
     collector.expectClean();
   });
 

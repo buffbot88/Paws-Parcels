@@ -55,10 +55,23 @@ depth-from-grid-position; sprites stay 2D.
   mitigated because collision is already authoritative server-side in the ASCII maps;
   pointer-picking needs a screen→tile inverse transform.
 
-## 5. Path B — Three.js rendering layer (deferred)
+## 5. Path B — Three.js rendering layer (taken, 2026-09-22)
 
 Keep game state and DOM UI; replace the renderer with Three.js using billboard sprites
 first, real models later. Requires amending `decisions.md`.
+
+> **Status: adopted.** The owner directed this path on 2026-09-22 after the 2D visual
+> passes (1–6) ran out of headroom for the 3/4 camera presence the product targets, and
+> `decisions.md` §0 now carries the amendment this section reserved. What shipped is a
+> hybrid of the plan above: Phaser keeps input, the scene graph, entities, the network
+> systems and the DOM HUD, and three.js draws only the world (billboard cutouts on a
+> locked 3/4 camera). The prediction below — "rewrites `src/scenes`/`src/game`/
+> `src/entities` entirely" — did **not** come true, because the renderer was built behind
+> a `worldView` seam instead of replacing the sprite path; `?renderer=2d` still runs the
+> sprite world. The other predictions held: a second rendering mental model is now in the
+> codebase, the main chunk grew to ~2.19 MB (three is ~600 kB of it, not yet code-split),
+> and raycast/mouse targeting and 3D assets remain open. Worth revisiting Path C only if
+> real models and elevation become core, which they are not today.
 
 - **Pros:** unlocks real 3D (camera, lighting, elevation) while reusing server, protocol,
   and UI; billboard-first migration keeps the current art usable.
@@ -81,8 +94,11 @@ first, real models later. Requires amending `decisions.md`.
 
 ## 7. Decision
 
-- **Adopt Path A** as the 3D-direction recommendation: implement isometric presentation
-  inside Phaser 4 as part of Phase 7. The 2.5D lock in `decisions.md` stays intact — Path
-  A is the pseudo-3D that lock describes.
-- **Paths B/C remain blocked** behind a future amendment to `decisions.md` §0, with this
-  document as the evaluation baseline. Revisit B after Phase 7 ships.
+- **Path A was adopted first, and shipped** (visual Passes 1–6: one world zoom, prop size
+  bands, authored composition bands, named depth bands with a foreground layer, one shadow
+  recipe, entity sizing). Those passes remain in force: they are authored in shared,
+  renderer-agnostic modules, and the 3D renderer consumes them rather than replacing them.
+- **Path B was then adopted by owner directive on 2026-09-22** (see §5), which lifted the
+  §0 block through an explicit amendment rather than leaving it to a follow-up milestone.
+  This document stays the evaluation baseline: any future engine question cites §5–§7.
+- **Path C remains not recommended** and blocked on a further §0 amendment.

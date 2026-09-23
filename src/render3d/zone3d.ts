@@ -14,6 +14,7 @@ import type { MapData } from "../game/Maps.ts";
 import { footprintWidthPx, type PropSizing } from "../game/propSizing.ts";
 import { CAMERA_3D } from "./camera3d.ts";
 import { FLAT_PITCH, buildQuadGeometry, fullUv, type QuadSpec } from "./geometry3d.ts";
+import { billboardRoll, depthLiftTiles, rollPivotOffset } from "./parity3d.ts";
 import { createShadowTexture, shadowQuadFor } from "./shadow3d.ts";
 import { Texture3DCache, frameUvRect, type QuadUv } from "./texture3d.ts";
 
@@ -26,6 +27,13 @@ export interface PlacedPiece {
   readonly scale: number;
   readonly rotation?: number;
   readonly flipX?: boolean;
+  /**
+   * The 2D draw-order nudge, authored for a piece that belongs to a bigger one
+   * (a shop sign, the parcels on the Post Office step). In 3D it becomes the
+   * separation toward the camera — see `parity3d.ts` for why dropping it is a
+   * visible defect rather than a simplification.
+   */
+  readonly depthOffset?: number;
 }
 
 /** Everything a zone needs drawn, and nothing about how it is simulated. */
@@ -371,14 +379,18 @@ export function buildZone3D(cache: Texture3DCache, input: Zone3DInput): Zone3D {
     const size = pieceSize(cache, piece);
     if (size === null) continue;
     const quads = byTexture.get(piece.texture) ?? [];
+    // The two authored fields that only mean something in a draw-order list:
+    // the piece stands `depthOffset` nearer the camera than its host, and a
+    // rolled piece pivots on the ground it stands on rather than its centre.
+    const pivot = rollPivotOffset(piece.rotation, size.height);
     quads.push({
-      x: piece.tileX,
-      y: size.height / 2,
-      z: piece.baseTileY,
+      x: piece.tileX + pivot.x,
+      y: size.height / 2 + pivot.y,
+      z: piece.baseTileY + depthLiftTiles(piece),
       width: size.width,
       height: size.height,
       yaw: BILLBOARD_YAW,
-      roll: piece.rotation ?? 0,
+      roll: billboardRoll(piece.rotation),
       uv: size.uv,
       flipU: piece.flipX === true,
     });

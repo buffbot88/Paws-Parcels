@@ -9,8 +9,13 @@ import * as THREE from "three";
 import { TILE_SIZE } from "../game/GameConfig.ts";
 import { CAMERA_3D } from "./camera3d.ts";
 import { buildQuadGeometry, FLAT_PITCH, fullUv } from "./geometry3d.ts";
+import { hpBarRects, labelRect, type TagAnchor } from "./labels3d.ts";
 import { createShadowTexture, shadowQuadFor } from "./shadow3d.ts";
 import { Texture3DCache, frameUvRect } from "./texture3d.ts";
+
+/** Health bar colours, matching the sprite renderer's own track. */
+const HP_BAR_TRACK_COLOUR = 0x2b2016;
+const HP_BAR_FILL_COLOUR = 0x66bb66;
 
 /** One entity as the 3D renderer needs it: where it stands, and what it shows. */
 export interface EntityBillboard {
@@ -42,6 +47,30 @@ export interface EntityBillboard {
   readonly footprintPx: number;
   /** Hidden entities draw nothing and cast nothing. */
   readonly visible: boolean;
+  /**
+   * The entity's own name tag, as the canvas its text renders into.
+   *
+   * Uploaded rather than re-typeset: the tag is authored once in the entity
+   * classes, and the 3D frame shows the same words, in the same style, at the
+   * same size, as the sprite renderer does.
+   */
+  readonly tag: EntityTag | null;
+  /** How high the tag floats above the entity's feet, in tiles (positive up). */
+  readonly tagAboveFeetTiles: number;
+  /** A monster's health share (0-1), or null for anything without a bar. */
+  readonly hpRatio: number | null;
+  /** The health bar's tint, from the sprite renderer's own rectangle. */
+  readonly hpColour: number;
+}
+
+/** A name tag's source: its rendered canvas and its size in that canvas. */
+export interface EntityTag {
+  readonly canvas: HTMLCanvasElement;
+  /** Identity of the current contents, so a texture upload only happens once. */
+  readonly key: string;
+  readonly widthPx: number;
+  readonly heightPx: number;
+  readonly alpha: number;
 }
 
 interface Billboard {
@@ -51,6 +80,27 @@ interface Billboard {
   readonly shadow: THREE.Mesh;
   readonly shadowMaterial: THREE.MeshBasicMaterial;
   uvKey: string;
+  /** Built the first time the entity has a tag or a bar, then kept. */
+  tag: TagMeshes | null;
+  hp: HpMeshes | null;
+}
+
+/** One mesh carrying an entity's name tag, free to be absent. */
+interface TagMeshes {
+  readonly mesh: THREE.Mesh;
+  readonly material: THREE.MeshBasicMaterial;
+  texture: THREE.CanvasTexture;
+  /** Canvas and contents behind the current texture, so it re-uploads on change. */
+  source: HTMLCanvasElement;
+  key: string;
+}
+
+/** A monster's health bar: the track and the filled portion of it. */
+interface HpMeshes {
+  readonly track: THREE.Mesh;
+  readonly fill: THREE.Mesh;
+  readonly trackMaterial: THREE.MeshBasicMaterial;
+  readonly fillMaterial: THREE.MeshBasicMaterial;
 }
 
 const BILLBOARD_YAW = (CAMERA_3D.yawDeg * Math.PI) / 180;
@@ -122,7 +172,61 @@ export class CharacterBillboards {
     });
     const shadow = new THREE.Mesh(shadowGeometry, shadowMaterial);
     this.root.add(mesh, shadow);
-    return { mesh, geometry, material, shadow, shadowMaterial, uvKey: "" };
+    return { mesh, geometry, material, shadow, shadowMaterial, uvKey: "", tag: null, hp: null };
+  }
+
+  /**
+   * The tag mesh for a billboard, built on first use.
+   *
+   * A unit quad with the tag's canvas as its texture, drawn without writing
+   * depth (a tag must never occlude the world) but with depth *testing* on, so a
+   * canopy in front of a villager still hides their name.
+   */
+  private ensureTag(billboard: Billboard, entity: EntityBillboard, tag: EntityTag): TagMeshes {
+    if (billboard.tag !== null) return billboard.tag;
+    const texture = new THREE.CanvasTexture(tag.canvas);
+    texture.colorSpace = THREE.SRGBColorSpace;
+    const material = new THREE.MeshBasicMaterial({
+      map: texture,
+      transparent: true,
+      depthWrite: false,
+      side: THREE.DoubleSide,
+    });
+    const mesh = new THREE.Mesh(new THREE.PlaneGeometry(1, 1), material);
+    mesh.rotation.y = BILLBOARD_YAW;
+    mesh.renderOrder = 5;
+    this.root.add(mesh);
+    const built: TagMeshes = { mesh, material, texture, source: tag.canvas, key: tag.key };
+    billboard.tag = built;
+    return built;
+  }
+
+  /** The health bar's two quads, built on first use, tinted once per change. */
+  private ensureHp(billboard: Billboard): HpMeshes {
+    if (billboard.hp !== null) return billboard.hp;
+    const quad = (colour: number): THREE.Mesh => {
+      const material = new THREE.MeshBasicMaterial({
+        color: colour,
+        transparent: true,
+        depthWrite: false,
+        side: THREE.DoubleSide,
+      });
+      const mesh = new THREE.Mesh(new THREE.PlaneGeometry(1, 1), material);
+      mesh.rotation.y = BILLBOARD_YAW;
+      mesh.renderOrder = 6;
+      this.root.add(mesh);
+      return mesh;
+    };
+    const track = quad(HP_BAR_TRACK_COLOUR);
+    const fill = quad(HP_BAR_FILL_COLOUR);
+    const built: HpMeshes = {
+      track,
+      fill,
+      trackMaterial: track.material as THREE.MeshBasicMaterial,
+      fillMaterial: fill.material as THREE.MeshBasicMaterial,
+    };
+    billboard.hp = built;
+    return built;
   }
 
   private update(billboard: Billboard, entity: EntityBillboard): void {
@@ -131,7 +235,18 @@ export class CharacterBillboards {
       mesh.visible = entity.visible;
       shadow.visible = entity.visible;
     }
-    if (!entity.visible) return;
+    if (!entity.visible) {
+      // A hidden entity's tag and bar go with it: a defeated monster with a
+      // floating name over empty ground is worse than no label at all.
+      if (billboard.tag !== null) billboard.tag.mesh.visible = false;
+      if (billboard.hp !== null) {
+        billboard.hp.track.visible = false;
+        billboard.hp.fill.visible = false;
+      }
+      return;
+    }
+    this.updateTag(billboard, entity);
+    this.updateHp(billboard, entity);
 
     mesh.scale.set(entity.widthTiles, entity.heightTiles, 1);
     mesh.position.set(
@@ -179,13 +294,86 @@ export class CharacterBillboards {
     shadowMaterial.opacity = tint[3];
   }
 
+  /** Draw the entity's name tag, uploading its canvas only when it changes. */
+  private updateTag(billboard: Billboard, entity: EntityBillboard): void {
+    const tag = entity.tag;
+    if (tag === null) {
+      if (billboard.tag !== null) billboard.tag.mesh.visible = false;
+      return;
+    }
+    const meshes = this.ensureTag(billboard, entity, tag);
+    if (meshes.source !== tag.canvas || meshes.key !== tag.key) {
+      meshes.texture.dispose();
+      const texture = new THREE.CanvasTexture(tag.canvas);
+      texture.colorSpace = THREE.SRGBColorSpace;
+      meshes.texture = texture;
+      meshes.material.map = texture;
+      meshes.material.needsUpdate = true;
+      meshes.source = tag.canvas;
+      meshes.key = tag.key;
+    }
+    const rect = labelRect(anchorOf(entity), tag.widthPx, tag.heightPx);
+    meshes.mesh.visible = true;
+    meshes.material.opacity = tag.alpha;
+    meshes.mesh.scale.set(rect.width, rect.height, 1);
+    meshes.mesh.position.set(rect.x, rect.y, rect.z);
+  }
+
+  /** Draw a monster's health bar from the share the client already mirrors. */
+  private updateHp(billboard: Billboard, entity: EntityBillboard): void {
+    const ratio = entity.hpRatio;
+    if (ratio === null) {
+      if (billboard.hp !== null) {
+        billboard.hp.track.visible = false;
+        billboard.hp.fill.visible = false;
+      }
+      return;
+    }
+    const meshes = this.ensureHp(billboard);
+    const rects = hpBarRects(anchorOf(entity), ratio);
+    // The sprite renderer owns the colour ramp (green, amber, red), so the 3D
+    // bar reads the same as the 2D one at the same share.
+    meshes.fillMaterial.color.setHex(entity.hpColour);
+    meshes.track.visible = true;
+    meshes.track.scale.set(rects.track.width, rects.track.height, 1);
+    meshes.track.position.set(rects.track.x, rects.track.y, rects.track.z);
+    meshes.fill.visible = rects.fill.width > 0;
+    meshes.fill.scale.set(rects.fill.width, rects.fill.height, 1);
+    meshes.fill.position.set(rects.fill.x, rects.fill.y, rects.fill.z);
+  }
+
   private retire(billboard: Billboard): void {
     this.root.remove(billboard.mesh, billboard.shadow);
     billboard.geometry.dispose();
     billboard.material.dispose();
     billboard.shadow.geometry.dispose();
     billboard.shadowMaterial.dispose();
+    if (billboard.tag !== null) {
+      this.root.remove(billboard.tag.mesh);
+      billboard.tag.mesh.geometry.dispose();
+      billboard.tag.material.dispose();
+      billboard.tag.texture.dispose();
+      billboard.tag = null;
+    }
+    if (billboard.hp !== null) {
+      for (const bar of [billboard.hp.track, billboard.hp.fill]) {
+        this.root.remove(bar);
+        bar.geometry.dispose();
+        (bar.material as THREE.MeshBasicMaterial).dispose();
+      }
+      billboard.hp = null;
+    }
   }
+}
+
+/** The placement anchor a billboard's tag and health bar are measured from. */
+function anchorOf(entity: EntityBillboard): TagAnchor {
+  return {
+    x: entity.x,
+    z: entity.z,
+    tagAboveFeetTiles: entity.tagAboveFeetTiles,
+    tilePx: TILE_SIZE,
+  };
 }
 
 /** Convert a pixel measurement from the 2D renderer into tiles. */

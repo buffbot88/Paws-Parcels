@@ -8,8 +8,12 @@ This is a preparation baseline, not a request to rebuild the game. Continue exis
 
 ## Current architecture
 
-- **Client:** Phaser 4 + TypeScript + Vite.
-- **UI:** DOM-over-Canvas HTML/CSS layered over the Phaser canvas.
+- **Client:** Phaser 4 + TypeScript + Vite, with a three.js world renderer
+  (`src/render3d/`) drawing the world as camera-facing billboards of the cutout art on a
+  locked 3/4 perspective camera. Phaser still owns input, entities, the scene graph and the
+  network systems; `?renderer=2d` runs the sprite world instead. See `decisions.md` §0.
+- **UI:** DOM-over-Canvas HTML/CSS layered over the world canvas (above it in the stack, so
+  no HUD panel is ever painted over by the world).
 - **Server:** Node + TypeScript HTTP/WebSocket server.
 - **Persistence:** SQLite, accessed only by the server. Runtime databases live outside Git at the configured `persist/` path.
 - **Content:** JSON-authored catalogs under `src/data/`, validated and synchronized into server lookup tables.
@@ -43,6 +47,10 @@ These are not claims that the game is finished:
 - Broader Happy Valley progression and additional quest content remain future work.
 - The local map panel is intentionally conservative: waypoint selection and interactive pan/zoom are not complete. Its unfinished controls are marked as coming soon rather than presented as working.
 - The visual presentation still needs browser/gameplay review for layout, camera, depth sorting, sprite alignment, animation, mobile behavior, HUD overlap, and overall feel.
+- The 3D world renderer is new and unjudged by eye: whether billboard cutouts read well at
+  a 3/4 angle, whether the fixed camera's pitch/span feels right, and how depth, shadows and
+  scale look in motion are all open review items. `three` is not code-split yet, and
+  mouse/raycast world picking does not exist.
 - Some production art categories remain reference-only or require future runtime selection; the asset catalog is an inventory and review tool, not permission to replace authored art.
 - Admin editors for mobs, drops, NPCs, quests, dialogue, markets, seasons, events, zones, and draft/publish workflows are deferred.
 - Load testing, browser compatibility review, security review for public alpha, and large-scale operational hardening remain future gates.

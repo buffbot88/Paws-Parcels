@@ -81,13 +81,33 @@ parcel carrying, and delivery completion.
 
 **Chain: "Clover Village Courier Circuit"**
 
+One welcome letter travels the whole circuit. Every leg requires the same bound item,
+`item-village-welcome-card` (displayed as the welcome letter): each villager stamps it
+and hands it on, so the tracker shows a single parcel carried from the post office back
+to the post office. Finishing the chain visits all five main villagers — Pip, Biscuit,
+Maple, Lumi, and Moss — and is tuned so a new courier who completes it arrives at
+exactly **level 5** (400 XP, the level-5 threshold in `server/src/models/leveling.ts`).
+
 | Position | Quest | Type | Route | Reward |
 |---|---|---|---|---|
-| 1 | `quest-village-welcome` | Delivery | Pip → Biscuit | 5 Stamps, 15 XP, +1 Biscuit rep |
-| 2 | `quest-fresh-bread-biscuit` | Delivery | Biscuit → Maple | Normal parcel; 8 Stamps, 20 XP, +1 Biscuit rep |
-| 3 | `quest-flower-note-maple` | Delivery | Maple → Lumi | Fragile parcel; 10 Stamps, 25 XP, +1 Maple rep |
-| 4 | `quest-moon-note-lumi` | Delivery | Lumi → Moss | Urgent parcel; 12 Stamps, 30 XP, +1 Lumi rep |
-| 5 | `quest-garden-greeting-moss` | Delivery | Moss → Pip | Final normal parcel; 25 Stamps, 60 XP, +2 Pip rep; promotes Trainee → Courier |
+| 1 | `quest-village-welcome` | Delivery | Pip → Biscuit | Welcome letter; 8 Stamps, 40 XP, +1 Biscuit rep |
+| 2 | `quest-fresh-bread-biscuit` | Delivery | Biscuit → Maple | Welcome letter; 12 Stamps, 60 XP, +1 Biscuit rep |
+| 3 | `quest-flower-note-maple` | Delivery | Maple → Lumi | Welcome letter, fragile; 16 Stamps, 80 XP, +1 Maple rep |
+| 4 | `quest-moon-note-lumi` | Delivery | Lumi → Moss | Welcome letter; 20 Stamps, 100 XP, +1 Lumi rep |
+| 5 | `quest-garden-greeting-moss` | Delivery | Moss → Pip | Welcome letter, final stamp; 24 Stamps, 120 XP, +2 Pip rep; promotes Trainee → Courier |
+
+The closing leg is where the courier's progress is celebrated on screen: the server's
+`progression` block on the delivery frame reports the two levels it crossed and the rank it
+granted, and the HUD turns that into the level-up/promotion banner, the status-card flash and
+the chime (see `design/decisions.md` §1, "Level-ups are presented from server-reported
+progression").
+
+Onboarding never runs on a clock: no tutorial leg sets `timeLimitSeconds`, so a new
+courier exploring Clover Village cannot lose the letter to a timer. Leg 3 is the only
+conditioned step, and `fragile` can only reset on defeat — impossible in the
+monster-free village — so it teaches the fragile badge without risk of a stall.
+The one `urgent` route (`timeLimitSeconds`) now lives in the post-tutorial 4B set
+(`quest-picnic-for-maple`), where the player already knows the map.
 
 Quest definitions are authored in [`src/data/quests.json`](../src/data/quests.json),
 which is the single source of truth for titles, routes, rewards, prerequisites, parcel
@@ -117,7 +137,7 @@ content; SQLite stores only each character's state.
 | Moss's Lost Pebble | Search an authored village location | Find the pebble at the rabbit burrows, then return it to Moss |
 | Pip's Missing Letter Opener | Search an authored village location | Find it behind the post counter, then return it to Pip |
 | Biscuit's Ingredient Run | Gather a quantity at a route location | Search the blueberry bushes in Happy Valley, then return to Biscuit |
-| Maple's Picnic Delivery | Carry a normal parcel | Deliver Biscuit's basket to Maple |
+| Maple's Picnic Delivery | Carry an urgent parcel | Deliver Biscuit's warm basket to Maple before it cools |
 | Lumi's Lost Notebook | Search an authored village location | Find it at the pond edge, then return it to Lumi |
 
 Errand and gathering quests do not create locked parcels. The client sends a

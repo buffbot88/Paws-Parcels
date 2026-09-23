@@ -8,10 +8,11 @@ import {
   type SpriteDirection,
 } from "../game/classAssets.ts";
 import type { MoveVector } from "../systems/InputSystem.ts";
-import { worldDepth } from "../game/WorldDepth.ts";
+import { DEPTH_OFFSET, worldDepth } from "../game/WorldDepth.ts";
 import {
   courierSizing,
   entityFeetOffsetPx,
+  entityNameTagOffsetPx,
   entityScale,
   type EntitySizing,
 } from "../game/entitySizing.ts";
@@ -43,6 +44,17 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
   facing: Facing = "down";
   private moving = false;
   private readonly attackCompleteHandler = (): void => this.playIdle();
+  /**
+   * The courier's own name, above their head.
+   *
+   * The local player used to be the one figure in the world without a label,
+   * which reads as an oversight the moment anyone else is on screen with one.
+   * It is created on demand (the name arrives from the character desk, after
+   * the sprite exists) and styled like a remote courier's tag, because that is
+   * exactly what it is: how the player is identified to the rest of the zone.
+   */
+  private nameTag: Phaser.GameObjects.Text | null = null;
+  private nameTagOffsetY = 0;
 
   constructor(scene: Phaser.Scene, x: number, y: number, classId = 1) {
     const classKey = classKeyFromId(classId);
@@ -68,6 +80,31 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
   /** Pixels below the courier's centre where its feet (and cast shadow) sit. */
   get feetOffsetPx(): number {
     return entityFeetOffsetPx(this.sizing);
+  }
+
+  /** Show this courier's name above their head. Ignored for a blank name. */
+  setDisplayName(name: string): void {
+    const label = name.trim();
+    if (label === "") return;
+    this.nameTagOffsetY = entityNameTagOffsetPx(this.sizing);
+    this.nameTag = this.scene.add
+      .text(this.x, this.y + this.nameTagOffsetY, label, {
+        fontFamily: "Georgia, serif",
+        fontSize: "14px",
+        color: "#3a5a3a",
+        backgroundColor: "#ffffffcc",
+        padding: { x: 5, y: 2 },
+      })
+      .setOrigin(0.5)
+      .setDepth(worldDepth(this.y, DEPTH_OFFSET.overlay));
+  }
+
+  /** Keep the name over the courier as they move. */
+  preUpdate(time: number, delta: number): void {
+    super.preUpdate(time, delta);
+    if (this.nameTag === null) return;
+    this.nameTag.setPosition(this.x, this.y + this.nameTagOffsetY);
+    this.nameTag.setDepth(worldDepth(this.y, DEPTH_OFFSET.overlay));
   }
 
   /** Adjust the rendered speed to the server's gear-adjusted px/s. */

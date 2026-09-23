@@ -25,9 +25,12 @@ test.describe("boot: reach the Overworld", () => {
     const collector = await bootToOverworld(page, { characterName: "Milestone" });
     const ws = observeWebSocket(page, collector.frames);
 
-    // Phaser canvas exists (direct child; the minimap's canvases are nested).
-    await expect(page.locator("#game-container > canvas")).toHaveCount(1);
-    const canvasBox = await page.locator("#game-container > canvas").first().boundingBox();
+    // Two canvases, by design: Phaser's sprite canvas (the game's own, with its
+    // world camera hidden while the 3D renderer draws) and the WebGL world
+    // canvas above it. The minimap's canvases are nested in the HUD, not here.
+    await expect(page.locator(SEL.spriteCanvas)).toHaveCount(1);
+    await expect(page.locator(SEL.world3dCanvas)).toHaveCount(1);
+    const canvasBox = await page.locator(SEL.spriteCanvas).first().boundingBox();
     expect(canvasBox).not.toBeNull();
     expect(canvasBox!.width).toBeGreaterThan(100);
     expect(canvasBox!.height).toBeGreaterThan(100);

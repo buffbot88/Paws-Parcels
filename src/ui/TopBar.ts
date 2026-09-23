@@ -1,4 +1,5 @@
 import { createIcon } from "./hud/icons.ts";
+import { sfx } from "../audio/sfx.ts";
 import type { AuthFinishDetail, CharacterListItem } from "./LoginOverlay.ts";
 
 type Account = AuthFinishDetail["account"];
@@ -31,6 +32,8 @@ export class TopBar {
   private couriers: CourierMenuOptions | null = null;
   private accountMenuOpen = false;
   private readonly onSignOut: () => void;
+  /** Unsubscribe handles for the sound toggle's mute subscription. */
+  private readonly soundListeners: (() => void)[] = [];
   private readonly onAccountClick = (): void => this.toggleAccountMenu();
   private readonly onDocumentPointerDown = (event: PointerEvent): void => {
     const target = event.target as Node | null;
@@ -118,8 +121,37 @@ export class TopBar {
     account.className = "top-navbar__account";
     account.append(identity, this.signOutButton);
 
-    bar.append(brand, world, account);
+    bar.append(brand, world, this.createSoundToggle(), account);
     document.body.prepend(bar);
+  }
+
+  /**
+   * The one sound control in the game: the HUD chime is the only audio there
+   * is, so muting it needs a control that is always reachable and never covers
+   * the world. State lives in the audio bus (a local preference), and the
+   * button subscribes to it so it stays correct if anything else mutes.
+   */
+  private createSoundToggle(): HTMLElement {
+    const toggle = document.createElement("button");
+    toggle.id = "navbar-sound";
+    toggle.type = "button";
+    toggle.className = "top-navbar__sound";
+    const label = document.createElement("span");
+    label.className = "top-navbar__sound-label";
+    const render = (muted: boolean): void => {
+      toggle.replaceChildren(
+        createIcon(muted ? "volume-x" : "volume-2", { size: 16 }),
+        label,
+      );
+      label.textContent = muted ? "Sound off" : "Sound on";
+      toggle.title = muted ? "Sound effects are off" : "Sound effects are on";
+      toggle.setAttribute("aria-pressed", String(!muted));
+      toggle.setAttribute("aria-label", muted ? "Turn sound effects on" : "Turn sound effects off");
+    };
+    render(sfx.isMuted());
+    this.soundListeners.push(sfx.subscribe(render));
+    toggle.addEventListener("click", () => sfx.toggleMuted());
+    return toggle;
   }
 
   /** Configure the account controls without accumulating document listeners. */
@@ -165,6 +197,7 @@ export class TopBar {
 
   /** Remove DOM and all listeners owned by the top bar. */
   destroy(): void {
+    for (const unsubscribe of this.soundListeners.splice(0)) unsubscribe();
     this.accountButton.removeEventListener("click", this.onAccountClick);
     this.signOutButton.removeEventListener("click", this.onSignOut);
     document.removeEventListener("pointerdown", this.onDocumentPointerDown);

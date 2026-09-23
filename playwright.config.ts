@@ -36,9 +36,11 @@ export default defineConfig({
     locale: "en-US",
     timezoneId: "UTC",
     actionTimeout: 10_000,
-    // The dev client's first cold load (Vite dep optimization + the eager art
-    // pack) can outrun a 30s window; explicit state waits do the real gating.
-    navigationTimeout: 60_000,
+    // The dev client's first cold load (Vite dependency optimization for Phaser
+    // and three, plus the eager art pack) can outrun a whole minute and was
+    // failing the run's first navigation rather than a real assertion; explicit
+    // state waits do the real gating, so a generous window costs nothing.
+    navigationTimeout: 150_000,
   },
   webServer: [
     {

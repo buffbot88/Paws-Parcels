@@ -176,6 +176,13 @@ Goal: instanced dungeon + crafting station with recipes.
 ### Phase 7 — 2.5D Presentation and Content
 Goal: sprites, depth sorting, animations, audio.
 
+**Built ahead of the milestone (2026-09-22):** the world is drawn by a three.js renderer on
+a locked 3/4 perspective camera, using the existing cutout art as billboards, with real
+depth and occlusion (`src/render3d/`; `decisions.md` §0). The sprite world remains
+reachable with `?renderer=2d`. What is *not* done: elevation/height, mouse picking, code
+splitting `three` out of the main chunk, and any browser review of whether the frame reads
+well — see `design/AI-HANDOFF.md`.
+
 ### Phase 8 — Testing and Online Release
 Goal: security review, load tests, browser matrix, alpha.
 

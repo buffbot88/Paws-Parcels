@@ -97,7 +97,11 @@ async function readLocationFilterState(
  * a failed focus click must not fail the spec.
  */
 async function focusCanvasSafe(page: import("@playwright/test").Page): Promise<void> {
-  await page.locator("#game-container > canvas").first().click({ position: { x: 20, y: 20 } }).catch(() => {
-    /* the panel may be blurring the canvas; M is document-scoped */
-  });
+  await page
+    .locator(SEL.spriteCanvas)
+    .first()
+    .click({ position: { x: 20, y: 20 } })
+    .catch(() => {
+      /* the panel may be blurring the canvas; M is document-scoped */
+    });
 }

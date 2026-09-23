@@ -102,6 +102,11 @@ export class QuestTracker {
     return this.quests.find((quest) => quest.state === "active");
   }
 
+  /** Every quest the server has sent, so the compass can find the next stop. */
+  getQuests(): readonly NetQuestSnapshot[] {
+    return this.quests;
+  }
+
   showMessage(message: string): void {
     this.status.textContent = message;
     this.status.classList.add("quest-tracker__status--notice");

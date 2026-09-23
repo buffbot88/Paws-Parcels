@@ -29,6 +29,15 @@ export const SEL = {
   gameContainer: "#game-container",
   /** Canvas-relative world HUD layer (HUD v4). */
   hudLayer: "#hud-layer",
+  /**
+   * Phaser's sprite canvas: the only direct canvas child that is not the 3D
+   * world surface. In 3D mode it is still mounted (the sprite camera is just
+   * hidden), so `#game-container > canvas` resolves to TWO elements — every
+   * selector that means "the game canvas" must say which one it means.
+   */
+  spriteCanvas: "#game-container > canvas:not([data-renderer])",
+  /** The WebGL world canvas, present only while the 3D renderer is running. */
+  world3dCanvas: 'canvas[data-renderer="world3d"]',
   /* The single account surface: the top bar's account button and its
      dropdown. The floating courier pill was merged into this menu. */
   courierMenuButton: "#navbar-account",
@@ -417,13 +426,18 @@ export function isJoinedOverworld(probe: GameProbe): boolean {
  * Open the dev-login entry. The client only opens its login overlay with
  * `auth=1`, and the dev-login shortcut additionally needs `dev-login=1`
  * (localhost only) — see src/ui/LoginOverlay.ts.
+ *
+ * `query` carries any extra non-authoritative preference the boot needs (the
+ * `?renderer=2d` sprite-world comparison). The overlay's post-login reload
+ * deletes `dev-login` and keeps everything else, so the preference survives.
  */
-export async function gotoDevLogin(page: Page): Promise<void> {
+export async function gotoDevLogin(page: Page, query = ""): Promise<void> {
+  const extra = query === "" ? "" : `&${query.replace(/^[?&]/, "")}`;
   // `domcontentloaded`, not `load`: the dev client pulls Phaser plus the whole
   // eager art pack through Vite, and the dev-login overlay reloads the page as
   // soon as the session is issued — waiting on `load` can outlast the timeout.
   // Every meaningful state is awaited explicitly afterwards.
-  await page.goto("/?auth=1&dev-login=1", { waitUntil: "domcontentloaded" });
+  await page.goto(`/?auth=1&dev-login=1${extra}`, { waitUntil: "domcontentloaded" });
 }
 
 /**
@@ -459,10 +473,10 @@ export async function startFreshCourier(page: Page): Promise<void> {
  */
 export async function bootToOverworld(
   page: Page,
-  options: { characterName?: string } = {},
+  options: { characterName?: string; query?: string } = {},
 ): Promise<RuntimeIssueCollector> {
   const collector = collectRuntimeIssues(page);
-  await gotoDevLogin(page);
+  await gotoDevLogin(page, options.query ?? "");
 
   // The overlay issues the session then reloads the page.
   await expect(page.locator(SEL.topBar)).toBeVisible({ timeout: 30_000 });
@@ -553,7 +567,7 @@ export async function releaseKey(page: Page, key: string): Promise<void> {
  * selector would click the minimap instead.
  */
 export async function focusCanvas(page: Page): Promise<void> {
-  await page.locator("#game-container > canvas").first().click({ position: { x: 20, y: 20 } });
+  await page.locator(SEL.spriteCanvas).first().click({ position: { x: 20, y: 20 } });
 }
 
 /** Stable-name screenshot checkpoint under artifacts/<subdirectory>/. */

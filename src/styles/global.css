@@ -156,6 +156,30 @@ body {
   font-size: 0.7rem;
 }
 
+/* Sound toggle — the HUD's only audio control (the level-up chime). Shares the
+   `.top-navbar button` base treatment; it only adds the icon + label layout and
+   the muted state. */
+.top-navbar__sound {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.72rem;
+  letter-spacing: 0.02em;
+}
+
+.top-navbar__sound svg { flex: none; }
+
+/* Muted reads as desaturated rather than hidden: the control must stay
+   findable, or a player who silences the chime cannot get it back. */
+.top-navbar__sound[aria-pressed="false"] {
+  color: #c7bda1;
+  border-color: rgba(199, 189, 161, 0.45);
+}
+
+@media (max-width: 760px) {
+  .top-navbar__sound-label { display: none; }
+}
+
 .navbar-account-menu {
   position: absolute;
   top: calc(100% + 0.55rem);

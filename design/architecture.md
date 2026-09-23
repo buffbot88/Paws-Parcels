@@ -8,8 +8,8 @@
 
 ```text
 ┌────────────────────────────┐        ┌────────────────────────────────────┐        ┌──────────┐
-│  Browser client (Phaser 4) │  HTTPS  │   API Server (auth, character,     │        │          │
-│  - renders server state    │ ──────► │   content, health, static content) │  SQL   │  SQLite   │
+│  Browser client            │  HTTPS  │   API Server (auth, character,     │        │          │
+│  (Phaser 4 + three.js)     │ ──────► │   content, health, static content) │  SQL   │  SQLite   │
 │  - sends intents (WS)      │  WSS    │────────────────────────────────────│ ─────► │  (single │
 │  - local non-auth settings │ ──────► │  Game Server (authoritative)       │        │  writer) │
 └────────────────────────────┘        │  - zone sync, movement validation  │        └──────────┘
@@ -24,7 +24,10 @@
 ## 2. Responsibilities
 
 ### Browser client
-- Render zones/players/monsters/NPCs from server state; depth sorting (2.5D).
+- Render zones/players/monsters/NPCs from server state. The world is drawn by the 3D
+  renderer (`src/render3d/`) on a WebGL canvas over Phaser's hidden sprite camera; the
+  sprite renderer remains reachable with `?renderer=2d`. The renderer draws only — it
+  never simulates, never validates, and never opens a socket (see `decisions.md` §0).
 - Capture input (movement, interact, attack, UI) and send as **intents**.
 - Predict movement locally; reconcile with authoritative snapshots.
 - Display server-approved results (combat events, quest updates, inventory).

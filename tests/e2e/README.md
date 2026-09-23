@@ -58,14 +58,21 @@ Nothing after `boot` should be treated as green until `boot` is reliably green.
 | `map.spec.ts` | `M` opens the Local Map, locations render, search filters, waypoint is honestly disabled |
 | `movement.spec.ts` | WASD moves the courier through server-validated intents; snapshots stream; bounds hold |
 | `interact.spec.ts` | walking to Pip and pressing `E` opens dialogue, which advances and closes |
-| `combat.spec.ts` | travel to Happy Valley, `J` produces a server `combat_event`, the client HP bar mirrors the server |
+| `combat.spec.ts` | travel to Happy Valley, `1` produces a server `combat_event`, the client HP bar mirrors the server |
+| `render3d.spec.ts` | the world renderer: the WebGL canvas fills the window, the sprite camera stepped aside, the HUD paints above it, and `?renderer=2d` still gives the sprite world |
 | `reconnect.spec.ts` | reload restores session/socket/HUD with no duplicate presence |
 | `visual-baseline.spec.ts` | **visual overhaul baseline** — the fixed set of review framings (see below) |
 
 `tests/e2e/support/harness.ts` owns the shared plumbing: the dev-login boot
-(all three desk steps), per-test fresh couriers (state isolation), console /
-network / WebSocket collection with the failure rules below, white-box probes
-into `window.game`, and screenshot helpers.
+(all three desk steps, plus an optional `query` for non-authoritative boot
+preferences such as `renderer=2d`), per-test fresh couriers (state isolation),
+console / network / WebSocket collection with the failure rules below, white-box
+probes into `window.game`, and screenshot helpers.
+
+**Two canvases.** The 3D world renderer draws into its own canvas stacked over
+Phaser's, so `#game-container > canvas` resolves to two elements. `SEL.spriteCanvas`
+is Phaser's (`:not([data-renderer])`) and `SEL.world3dCanvas` is the world surface;
+every spec that means "the game canvas" uses one of those by name.
 
 ## Failure rules
 

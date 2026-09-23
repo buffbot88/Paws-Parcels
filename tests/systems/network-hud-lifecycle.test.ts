@@ -19,11 +19,33 @@ class FakeElement {
   children: FakeElement[] = [];
   style: Record<string, string> = {};
   appendedTo: FakeElement | null = null;
+  hidden = false;
+  title = "";
+  private readonly classNames = new Set<string>();
+  // The banner's tone/visibility is driven by classList, so the stub needs a
+  // real (if minimal) one rather than a no-op.
+  readonly classList = {
+    add: (...names: string[]): void => { for (const name of names) this.classNames.add(name); },
+    remove: (...names: string[]): void => { for (const name of names) this.classNames.delete(name); },
+    toggle: (name: string, force?: boolean): boolean => {
+      const next = force ?? !this.classNames.has(name);
+      if (next) this.classNames.add(name);
+      else this.classNames.delete(name);
+      return next;
+    },
+    contains: (name: string): boolean => this.classNames.has(name),
+  };
 
   appendChild(child: FakeElement): FakeElement {
     child.appendedTo = this;
     this.children.push(child);
     return child;
+  }
+  // HUD components build their rows with ParentNode.append (the real DOM
+  // method), so the stub has to provide it too — the level-up banner is
+  // constructed for real in this suite.
+  append(...children: FakeElement[]): void {
+    for (const child of children) this.appendChild(child);
   }
   remove(): void {
     if (this.appendedTo) {
@@ -42,7 +64,8 @@ class FakeElement {
 
 class FakeDocument {
   private root = new FakeElement();
-  private container = new FakeElement();
+  /** Exposed so tests can inspect what the HUD mounted into the container. */
+  readonly container = new FakeElement();
 
   constructor() {
     this.root.id = "body";
@@ -109,6 +132,10 @@ let statusCardCreateCount = 0;
 let statusCardDestroyCount = 0;
 /** Every resource the card was told to adopt, in order. */
 let statusCardResources: string[] = [];
+/** Every level-up/promotion flash the HUD asked the card to show. */
+let statusCardFlashes: { level: number; rank?: string | null }[] = [];
+/** How many times a stamp payout flashed the rating row. */
+let statusCardStampFlashes = 0;
 
 vi.mock("../../src/ui/PlayerStatusCard.ts", () => {
   return {
@@ -123,16 +150,40 @@ vi.mock("../../src/ui/PlayerStatusCard.ts", () => {
       }
       setResource(_current: number, _max: number): void { /* no-op */ }
       setStampRating(_earned: number): void { /* no-op */ }
+      // The celebration hooks the network layer calls on a level crossing. A
+      // mock without them would only fail at runtime, like the resource above.
+      flashProgression(options: { level: number; rank?: string | null }): void {
+        statusCardFlashes.push(options);
+      }
+      flashStamps(): void { statusCardStampFlashes++; }
       destroy(): void { statusCardDestroyCount++; }
     },
   };
 });
 
+// ---- Audio bus ---------------------------------------------------------------
+
+let progressionSfx: string[] = [];
+
+vi.mock("../../src/audio/sfx.ts", () => ({
+  sfx: {
+    isMuted: () => false,
+    setMuted: vi.fn(),
+    toggleMuted: vi.fn(),
+    subscribe: () => () => undefined,
+    playProgression: (tone: string) => { progressionSfx.push(tone); },
+  },
+}));
+
 // ---- GameSocket stub ---------------------------------------------------------
+
+/** The socket the system built, so tests can drive its inbound callbacks. */
+let lastSocket: { callbacks: Record<string, (...args: never[]) => void> } | null = null;
 
 vi.mock("../../src/net/GameSocket.ts", () => ({
   GameSocket: class {
     callbacks: Record<string, unknown> = {};
+    constructor() { lastSocket = this as unknown as typeof lastSocket; }
     connect = vi.fn().mockResolvedValue(undefined);
     close = vi.fn();
     joinZone = vi.fn();
@@ -158,8 +209,15 @@ beforeEach(() => {
   statusCardCreateCount = 0;
   statusCardDestroyCount = 0;
   statusCardResources = [];
+  statusCardFlashes = [];
+  statusCardStampFlashes = 0;
+  progressionSfx = [];
+  lastSocket = null;
   fakeDoc = new FakeDocument();
   vi.stubGlobal("document", fakeDoc);
+  // The real LevelUpBanner is constructed on mount and schedules its hold with
+  // window.setTimeout; node has no window, so point it at the global timers.
+  vi.stubGlobal("window", globalThis);
 
   // Stub localStorage/sessionStorage so readToken() doesn't throw
   vi.stubGlobal("localStorage", { getItem: () => null, setItem: vi.fn(), removeItem: vi.fn() });
@@ -247,6 +305,80 @@ describe("NetworkSystem HUD lifecycle", () => {
     sys.start("zone-clover-village", 42);
     sys.mountHUD();
     expect(statusCardCreateCount).toBe(2);
+
+    NetworkSystem.resetForTests();
+  });
+
+  it("celebrates the level and promotion a delivery reports", async () => {
+    const { NetworkSystem } = await import("../../src/systems/NetworkSystem.ts");
+    NetworkSystem.resetForTests();
+
+    const sys = NetworkSystem.get();
+    sys.start("zone-clover-village", 42);
+    sys.mountHUD();
+    expect(lastSocket).not.toBeNull();
+
+    // The tutorial's closing delivery: two levels crossed and the rank
+    // promotion, which the server reports as one progression frame.
+    lastSocket!.callbacks.onQuestUpdated!({
+      action: "delivery",
+      quest: { questId: "quest-garden-greeting-moss", state: "completed" },
+      quests: [],
+      inventory: [],
+      stamps: 80,
+      xp: 400,
+      message: "Delivery complete: The Last Stamp: Back to Pip — you are now an official Courier!",
+      progression: {
+        level: 5,
+        previousLevel: 3,
+        levelsGained: 2,
+        experience: 400,
+        skillPoints: 4,
+        courierRank: "Courier",
+        rankPromotion: "Courier",
+      },
+    } as never);
+
+    expect(statusCardFlashes).toEqual([{ level: 5, rank: "Courier" }]);
+    expect(statusCardStampFlashes).toBe(1);
+    expect(progressionSfx).toEqual(["both"]);
+    const banner = fakeDoc.container.children.find((child) => child.id === "level-up-banner");
+    expect(banner?.hidden).toBe(false);
+
+    NetworkSystem.resetForTests();
+  });
+
+  it("stays quiet on a delivery that crosses no level", async () => {
+    const { NetworkSystem } = await import("../../src/systems/NetworkSystem.ts");
+    NetworkSystem.resetForTests();
+
+    const sys = NetworkSystem.get();
+    sys.start("zone-clover-village", 42);
+    sys.mountHUD();
+
+    lastSocket!.callbacks.onQuestUpdated!({
+      action: "delivery",
+      quest: { questId: "quest-village-welcome", state: "completed" },
+      quests: [],
+      inventory: [],
+      stamps: 8,
+      xp: 40,
+      message: "Delivery complete: Welcome to Clover Village",
+      progression: {
+        level: 1,
+        previousLevel: 1,
+        levelsGained: 0,
+        experience: 40,
+        skillPoints: 0,
+        courierRank: "Trainee",
+        rankPromotion: null,
+      },
+    } as never);
+
+    expect(statusCardFlashes).toEqual([]);
+    expect(progressionSfx).toEqual([]);
+    // The stamp payout still flashes the rating row.
+    expect(statusCardStampFlashes).toBe(1);
 
     NetworkSystem.resetForTests();
   });

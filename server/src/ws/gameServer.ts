@@ -809,6 +809,9 @@ export class GameServer {
       stamps: result.stamps,
       xp: result.xp,
       message: result.message,
+      // Deliveries only: the level/rank the grant produced, so the HUD can show
+      // a level-up without re-deriving the curve from total XP.
+      ...(result.progression === undefined ? {} : { progression: result.progression }),
     });
     session.socket.send({
       type: "inventory_updated",

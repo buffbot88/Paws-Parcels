@@ -82,6 +82,18 @@ export function awayGroundAxis(cfg: Camera3DConfig): GroundPoint {
   return { x: -Math.sin(yaw), z: -Math.cos(yaw) };
 }
 
+/**
+ * How much the camera compresses the ground's north/south axis on screen.
+ *
+ * A camera looking down at `pitch` foreshortens the axis it looks along by
+ * `sin(pitch)`, which is what the HUD's quest compass needs to aim an arrow
+ * along a ground direction in the 3D frame. The top-down sprite renderer has no
+ * tilt, so its factor is 1.
+ */
+export function groundForeshortening(cfg: Camera3DConfig): number {
+  return Math.sin(toRadians(cfg.pitchDeg));
+}
+
 /** Ground direction pointing to the camera's right: screen-right, in world terms. */
 export function screenRightGroundAxis(cfg: Camera3DConfig): GroundPoint {
   const yaw = toRadians(cfg.yawDeg);
@@ -137,6 +149,10 @@ export function placeCamera(
   camera.position.set(focus.x + offset.x, offset.y, focus.z + offset.z);
   camera.lookAt(focus.x, 0, focus.z);
   camera.updateProjectionMatrix();
+  // `Vector3.project` reads `matrixWorldInverse`, which only the renderer would
+  // otherwise refresh. Updating it here keeps the camera's own geometry honest
+  // for anything that measures the frame before a draw (the framing test does).
+  camera.updateMatrixWorld();
 }
 
 /** Centre of a tile, in world units. */

@@ -9,6 +9,7 @@ import {
   type NetSnapshotMeta,
   type NetQuestSnapshot,
   type NetQuestInventoryItem,
+  type NetQuestProgression,
   type NetInventoryState,
   type NetStatus,
 } from "../net/GameSocket.ts";
@@ -26,6 +27,9 @@ import { apiPath, getWsUrl } from "../config.ts";
 import { classKeyFromId, classSpeedFromId, playAttackEffect } from "../game/classAssets.ts";
 import { classResourceFromId } from "../game/classStats.ts";
 import { PlayerStatusCard } from "../ui/PlayerStatusCard.ts";
+import { LevelUpBanner } from "../ui/LevelUpBanner.ts";
+import { levelUpMoment } from "../ui/hud/progression.ts";
+import { sfx } from "../audio/sfx.ts";
 import {
   isNewerSnapshotSequence,
   isSnapshotForZone,
@@ -82,6 +86,7 @@ export class NetworkSystem {
   private monsters = new Map<string, Monster>();
   private myCharacterId: number | null = null;
   private statusCard: PlayerStatusCard | null = null;
+  private levelUpBanner: LevelUpBanner | null = null;
   private myHp = 0;
   private myMaxHp = 0;
   /** Callback when the server confirms this courier has been defeated. */
@@ -102,7 +107,16 @@ export class NetworkSystem {
   onChatMessage: ((message: { characterId: number; name: string; text: string }) => void) | null = null;
   onNpcInteraction: ((npcId: string, quests: NetQuestSnapshot[]) => void) | null = null;
   onQuestState: ((quests: NetQuestSnapshot[]) => void) | null = null;
-  onQuestUpdated: ((payload: { action: string; quest: NetQuestSnapshot; quests: NetQuestSnapshot[]; inventory: NetQuestInventoryItem[]; stamps: number; xp: number; message: string }) => void) | null = null;
+  onQuestUpdated: ((payload: {
+    action: string;
+    quest: NetQuestSnapshot;
+    quests: NetQuestSnapshot[];
+    inventory: NetQuestInventoryItem[];
+    stamps: number;
+    xp: number;
+    progression?: NetQuestProgression;
+    message: string;
+  }) => void) | null = null;
   onQuestNotice: ((message: string) => void) | null = null;
   onInventoryUpdated: ((items: NetQuestInventoryItem[], stamps: number, state?: NetInventoryState) => void) | null = null;
   /** Called only after the server confirms this courier's attack hit a monster. */
@@ -404,6 +418,8 @@ export class NetworkSystem {
     this.destroyEntities();
     this.statusCard?.destroy();
     this.statusCard = null;
+    this.levelUpBanner?.destroy();
+    this.levelUpBanner = null;
   }
 
   /**
@@ -485,6 +501,8 @@ export class NetworkSystem {
     socket.callbacks.onQuestUpdated = (payload) => {
       // Quest rewards carry the post-grant Stamps + level (XP may level up).
       this.statusCard?.setStatus({ stamps: payload.stamps });
+      this.statusCard?.flashStamps();
+      this.celebrateProgression(payload.progression);
       this.onQuestUpdated?.(payload);
     };
     socket.callbacks.onQuestNotice = (message) => this.onQuestNotice?.(message);
@@ -742,9 +760,28 @@ export class NetworkSystem {
 
   // --- DOM HUD (player status card + HP bar) ---
 
+  /**
+   * Present the level-up / promotion the server just wrote.
+   *
+   * `progression` is absent on accepts and searches, and a plain delivery
+   * awards XP without crossing a level — in both cases `levelUpMoment` returns
+   * null and nothing is shown. The card flash is deliberately unconditional of
+   * the banner: the level chip must be correct even if the banner is missing.
+   */
+  private celebrateProgression(progression: NetQuestProgression | undefined): void {
+    const moment = levelUpMoment(progression);
+    if (moment === null) return;
+    this.statusCard?.flashProgression({ level: moment.level, rank: moment.rankPromotion });
+    sfx.playProgression(moment.tone);
+    this.levelUpBanner?.show(moment);
+  }
+
   private ensureStatusCard(): void {
     if (this.statusCard !== null) return;
     this.statusCard = new PlayerStatusCard();
+    // The celebration banner shares the card's lifecycle — created with it and
+    // destroyed by shutdown() — so both the mountHUD() path and the scene-restart
+    // path in attach() always leave the HUD with a banner to show.
     const character = pickCharacter(readBootCharacters(), readSelectedCharacterId());
     this.statusCard.setStatus({
       name: character?.name ?? "Courier",
@@ -754,6 +791,7 @@ export class NetworkSystem {
     // the card's second bar. Its ceiling is authored content — the same
     // classes.json the server seeds from — not something this client invents.
     this.statusCard.setResourceKind(classResourceFromId(character?.class_id ?? 1));
+    if (this.levelUpBanner === null) this.levelUpBanner = new LevelUpBanner();
     // Restore any HP the socket already knows (reconnect / scene restart).
     this.renderHp();
   }

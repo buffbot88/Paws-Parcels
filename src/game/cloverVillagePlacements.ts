@@ -407,7 +407,22 @@ interface FenceRun {
   y1: number;
   /** Piece stride in tiles (defaults to the art's visual width). */
   step?: number;
+  /**
+   * Draw-order nudge for this run's pieces. Corners close a run and must sit in
+   * front of the pieces they meet, including the ones that share their tile; the
+   * 3D renderer turns this into a real depth separation (`render3d/parity3d.ts`),
+   * where two pieces on one tile with one value would fight for the same pixel.
+   */
+  depthOffset?: number;
 }
+
+/** Authored draw-order nudges for fence pieces. */
+const FENCE_DEPTH = {
+  /** The common run piece. */
+  piece: 0.005,
+  /** A corner or gate closing a run: in front of the pieces it meets. */
+  joint: 0.008,
+} as const;
 
 const FENCE_RUNS: readonly FenceRun[] = [
   // Garden perimeter (opening on the west side at y43).
@@ -416,10 +431,10 @@ const FENCE_RUNS: readonly FenceRun[] = [
   { texture: CloverVillageTextureKeys.fenceLongStraight, scale: 0.2497, x0: 52.6, y0: 40.2, x1: 52.6, y1: 47.6, step: 2.4 },
   { texture: CloverVillageTextureKeys.fenceStraight, scale: 0.2506, x0: 39.7, y0: 40.4, x1: 39.7, y1: 42.2, step: 1.8 },
   { texture: CloverVillageTextureKeys.fenceStraight, scale: 0.2506, x0: 39.7, y0: 44.2, x1: 39.7, y1: 47.2, step: 1.8 },
-  { texture: CloverVillageTextureKeys.fenceCorner, scale: 0.2491, x0: 40.2, y0: 39.8, x1: 40.2, y1: 39.8 },
-  { texture: CloverVillageTextureKeys.fenceCorner, scale: 0.2491, x0: 52.4, y0: 39.8, x1: 52.4, y1: 39.8 },
-  { texture: CloverVillageTextureKeys.fenceCorner, scale: 0.2491, x0: 52.4, y0: 47.8, x1: 52.4, y1: 47.8 },
-  { texture: CloverVillageTextureKeys.fenceGate, scale: 0.25, x0: 39.7, y0: 43.2, x1: 39.7, y1: 43.2 },
+  { texture: CloverVillageTextureKeys.fenceCorner, scale: 0.2491, x0: 40.2, y0: 39.8, x1: 40.2, y1: 39.8, depthOffset: FENCE_DEPTH.joint },
+  { texture: CloverVillageTextureKeys.fenceCorner, scale: 0.2491, x0: 52.4, y0: 39.8, x1: 52.4, y1: 39.8, depthOffset: FENCE_DEPTH.joint },
+  { texture: CloverVillageTextureKeys.fenceCorner, scale: 0.2491, x0: 52.4, y0: 47.8, x1: 52.4, y1: 47.8, depthOffset: FENCE_DEPTH.joint },
+  { texture: CloverVillageTextureKeys.fenceGate, scale: 0.25, x0: 39.7, y0: 43.2, x1: 39.7, y1: 43.2, depthOffset: FENCE_DEPTH.joint },
   // NW cottage lawn dressing.
   { texture: CloverVillageTextureKeys.fenceStraight, scale: 0.2327, x0: 12.6, y0: 47.6, x1: 14, y1: 47.6, step: 1.5 },
   { texture: CloverVillageTextureKeys.fencePost, scale: 0.2493, x0: 17.2, y0: 47.4, x1: 17.2, y1: 47.4 },
@@ -459,7 +474,7 @@ function expandFenceRuns(runs: readonly FenceRun[]): CloverVillageSetPieceDefini
         baseTileY: run.y0,
         scale: run.scale,
         rotation,
-        depthOffset: 0.005,
+        depthOffset: run.depthOffset ?? FENCE_DEPTH.piece,
       });
       continue;
     }
@@ -474,7 +489,7 @@ function expandFenceRuns(runs: readonly FenceRun[]): CloverVillageSetPieceDefini
         baseTileY: y,
         scale: run.scale,
         rotation,
-        depthOffset: 0.005,
+        depthOffset: run.depthOffset ?? FENCE_DEPTH.piece,
       });
     }
   }

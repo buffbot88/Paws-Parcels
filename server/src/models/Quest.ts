@@ -79,8 +79,36 @@ export interface QuestInventoryItem {
   locked: boolean;
 }
 
+/**
+ * Post-grant courier progression, attached to deliveries only.
+ *
+ * `xp` on the mutation result is the character's new *total* XP, which is not
+ * the same thing as its level: the client cannot tell a level-up happened, or
+ * to what, without the server doing the arithmetic it already did. These are
+ * the authoritative values the delivery just wrote, so the HUD can present a
+ * level-up (and a rank promotion) without recomputing the curve.
+ */
+export interface QuestProgression {
+  level: number;
+  /** Level before the grant — the server already had it, so the client needn't. */
+  previousLevel: number;
+  /** Levels crossed by this grant (0 when a delivery awards no level). */
+  levelsGained: number;
+  experience: number;
+  skillPoints: number;
+  /** Rank after the grant — the promoted rank, or the one already held. */
+  courierRank: string;
+  /**
+   * The rank this delivery promoted the courier to, or null. Explicit rather
+   * than a comparison: a client that only just connected has no previous rank
+   * to compare against, and guessing "Trainee" would fake a promotion for a
+   * returning courier on their first delivery.
+   */
+  rankPromotion: string | null;
+}
+
 export type QuestMutationResult =
-  | { ok: true; quest: QuestSnapshot; quests: QuestSnapshot[]; inventory: QuestInventoryItem[]; stamps: number; xp: number; message: string }
+  | { ok: true; quest: QuestSnapshot; quests: QuestSnapshot[]; inventory: QuestInventoryItem[]; stamps: number; xp: number; message: string; progression?: QuestProgression }
   | { ok: false; reason: "QUEST_NOT_AVAILABLE" | "QUEST_PREREQUISITES_NOT_MET" | "QUEST_ALREADY_ACTIVE" | "QUEST_ALREADY_COMPLETE" | "INVENTORY_FULL" | "QUEST_NOT_ACTIVE" | "QUEST_ITEM_MISSING" | "WRONG_DELIVERY_TARGET" };
 
 /** Return the JSON-defined tutorial chain and make its initial state available. */
@@ -182,6 +210,7 @@ export async function completeDelivery(characterId: number, targetNpcId: string)
   const xpReward = Math.round((active.xpReward ?? 0) * getGameplayRates().expRate);
   const nextXp = oldXp + Math.max(0, xpReward);
   const levelRow = getDb().prepare("SELECT level, skill_points FROM characters WHERE id = ?").get(characterId) as SqlRow | undefined;
+  const previousLevel = Number(levelRow?.level ?? 1);
   const { level, skillPoints } = applyExperience(
     Number(levelRow?.level ?? 1),
     Number(levelRow?.skill_points ?? 0),
@@ -238,6 +267,7 @@ export async function completeDelivery(characterId: number, targetNpcId: string)
 
   const quests = await getQuestState(characterId);
   const completed = quests.find((entry) => entry.questId === active.id) as QuestSnapshot;
+  const rankRow = getDb().prepare("SELECT courier_rank FROM characters WHERE id = ?").get(characterId) as SqlRow | undefined;
   return {
     ok: true,
     quest: completed,
@@ -245,6 +275,15 @@ export async function completeDelivery(characterId: number, targetNpcId: string)
     inventory: getQuestInventory(characterId),
     stamps: newStamps,
     xp: nextXp,
+    progression: {
+      level,
+      previousLevel,
+      levelsGained: Math.max(0, level - previousLevel),
+      experience: nextXp,
+      skillPoints,
+      courierRank: rankReward ?? String(rankRow?.courier_rank ?? "Trainee"),
+      rankPromotion: rankReward,
+    },
     message: rankReward !== null
       ? `Delivery complete: ${active.title} — you are now an official ${rankReward}!`
       : `Delivery complete: ${active.title}`,

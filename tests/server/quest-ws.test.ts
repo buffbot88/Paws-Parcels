@@ -20,6 +20,7 @@ import { issueWsToken, resetWsTokenStore } from "../../server/src/ws/tokenStore.
 
 const ZONE = "zone-clover-village";
 const PIP_TILE = { x: 29, y: 31 };
+const BISCUIT_TILE = { x: 34, y: 33 };
 
 interface FakeSocket extends SocketLike {
   sent: unknown[];
@@ -52,7 +53,14 @@ function makeServer(characterId: number, accountId: number) {
       zoneId: ZONE, width: 100, height: 100, spawn: { x: 0, y: 0 },
       isWalkable: () => true, monsterSpawns: [],
     }),
-    getNpcPosition: (npcId: string, zoneId: string) => (npcId === "npc-pip" && zoneId === ZONE ? { ...PIP_TILE } : null),
+    // The circuit's first two stops: Pip hands out the welcome letter, Biscuit
+    // receives it.
+    getNpcPosition: (npcId: string, zoneId: string) => {
+      if (zoneId !== ZONE) return null;
+      if (npcId === "npc-pip") return { ...PIP_TILE };
+      if (npcId === "npc-biscuit") return { ...BISCUIT_TILE };
+      return null;
+    },
     getQuestState,
     acceptQuest,
     completeDelivery,
@@ -131,6 +139,43 @@ describe("GameServer quest flow (WS)", () => {
 
     await server.onMessage(socket, JSON.stringify({ type: "unequip_item", slot: "weapon" }));
     expect(lastOfType(socket, "inventory_updated")).toMatchObject({ message: "Weapon unequipped." });
+  });
+
+  it("a delivery frame carries the progression the server just wrote", async () => {
+    await runMigrations();
+    const account = await findOrCreateAccountByAshatId({ ashatUserId: "ws-delivery-user", username: "ws-delivery-user", displayName: "WS Delivery User", role: "Member" });
+    const cls = (await getCharacterClasses())[0];
+    const created = await createCharacter({ accountId: account.id, name: "WS Delivery User", classId: cls.id, appearance: {}, cls });
+    if (!created.ok) throw new Error("character creation failed");
+
+    const server = makeServer(created.character.id, account.id);
+    const socket = fakeSocket();
+    await connectAndJoin(server, socket, created.character.id, account.id);
+    const player = (server as unknown as { zones: { get: (z: string, c: number) => { pos: { x: number; y: number } } | null } }).zones.get(ZONE, created.character.id);
+
+    await server.onMessage(socket, JSON.stringify({ type: "accept_quest", questId: "quest-village-welcome" }));
+    expect(lastOfType(socket, "quest_updated")).toMatchObject({ action: "accepted" });
+    // Accepting awards nothing, so it carries no progression block at all.
+    expect(lastOfType(socket, "quest_updated")).not.toHaveProperty("progression");
+
+    if (player) player.pos = { ...BISCUIT_TILE };
+    await server.onMessage(socket, JSON.stringify({ type: "interact", targetId: "npc-biscuit", kind: "npc" }));
+
+    // The HUD reads level/rank straight off this frame — the first delivery
+    // crosses no level, so it reports level 1 with zero levels gained.
+    expect(lastOfType(socket, "quest_updated")).toMatchObject({
+      action: "delivery",
+      stamps: 8,
+      xp: 40,
+      progression: {
+        level: 1,
+        previousLevel: 1,
+        levelsGained: 0,
+        experience: 40,
+        courierRank: "Trainee",
+        rankPromotion: null,
+      },
+    });
   });
 
   it("interact with an out-of-range NPC is rejected with OUT_OF_RANGE", async () => {

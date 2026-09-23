@@ -762,6 +762,172 @@
 .inventory-button[hidden] { display: none; }
 
 /* ------------------------------------------------------------------ */
+/* Level-up / promotion celebration                                    */
+/* ------------------------------------------------------------------ */
+
+/* Top-centre, under the top bar and clear of the status card and minimap: the
+   moment belongs to the middle of the frame the player is looking at. Sits on
+   the pointer-events:none HUD layer, so it never blocks the world. */
+.level-up-banner {
+  position: absolute;
+  top: calc(var(--hud-edge) * 2.5);
+  left: 50%;
+  display: flex;
+  align-items: center;
+  gap: calc(var(--hud-scale) * 10px);
+  padding: calc(var(--hud-scale) * 10px) calc(var(--hud-scale) * 16px);
+  border: calc(var(--hud-scale) * 2px) solid var(--gold-500, #c99a4a);
+  border-radius: var(--hud-radius);
+  background: var(--hud-card-surface);
+  box-shadow: 0 calc(var(--hud-scale) * 8px) calc(var(--hud-scale) * 18px) rgba(31, 48, 35, 0.3);
+  transform: translate(-50%, calc(var(--hud-scale) * -10px)) scale(0.96);
+  opacity: 0;
+  transition: opacity 200ms ease, transform 200ms ease;
+  pointer-events: none;
+}
+
+.level-up-banner[hidden] { display: none; }
+
+.level-up-banner--visible {
+  transform: translate(-50%, 0) scale(1);
+  opacity: 1;
+}
+
+.level-up-banner__glyph {
+  display: grid;
+  place-items: center;
+  width: calc(var(--hud-scale) * 34px);
+  height: calc(var(--hud-scale) * 34px);
+  border-radius: 50%;
+  background: radial-gradient(circle at 35% 30%, #fff3cd, #e8bd5e);
+  color: #7a5417;
+}
+
+.level-up-banner__text {
+  display: flex;
+  flex-direction: column;
+  gap: calc(var(--hud-scale) * 1px);
+}
+
+.level-up-banner__title {
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: calc(var(--hud-scale) * 12px);
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: #8a6320;
+}
+
+.level-up-banner__headline {
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: calc(var(--hud-scale) * 20px);
+  font-weight: 700;
+  color: var(--forest-900, #1f3023);
+}
+
+.level-up-banner__details {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0 calc(var(--hud-scale) * 10px);
+}
+
+.level-up-banner__detail {
+  font-size: calc(var(--hud-scale) * 11px);
+  color: #5c6b52;
+}
+
+/* A promotion dresses as a postal-formal moment: deeper green, gold kept for
+   the level crossing. */
+.level-up-banner--rank { border-color: #4f7a4a; }
+.level-up-banner--rank .level-up-banner__title { color: #3f6b3c; }
+.level-up-banner--rank .level-up-banner__glyph { background: radial-gradient(circle at 35% 30%, #eaf6d8, #a8cf82); color: #33562f; }
+
+/* The status card's own flash, so the corner mirrors the banner. */
+.player-card--celebrate {
+  animation: player-card-celebrate 1.8s ease-out;
+  box-shadow: 0 0 0 calc(var(--hud-scale) * 3px) rgba(201, 154, 74, 0.45);
+}
+
+.player-card__level--gain {
+  animation: player-card-level-gain 1.8s ease-out;
+  color: #8a6320;
+}
+
+.player-card__rating--gain {
+  animation: player-card-rating-gain 1.2s ease-out;
+}
+
+@keyframes player-card-celebrate {
+  0% { box-shadow: 0 0 0 0 rgba(201, 154, 74, 0.65); }
+  35% { box-shadow: 0 0 0 calc(var(--hud-scale) * 6px) rgba(201, 154, 74, 0.4); }
+  100% { box-shadow: 0 0 0 calc(var(--hud-scale) * 3px) rgba(201, 154, 74, 0); }
+}
+
+@keyframes player-card-level-gain {
+  0% { transform: scale(1); }
+  30% { transform: scale(1.25); }
+  100% { transform: scale(1); }
+}
+
+@keyframes player-card-rating-gain {
+  0% { transform: translateY(0); opacity: 1; }
+  40% { transform: translateY(calc(var(--hud-scale) * -3px)); opacity: 0.6; }
+  100% { transform: translateY(0); opacity: 1; }
+}
+
+/* ------------------------------------------------------------------ */
+/* Quest compass                                                       */
+/* ------------------------------------------------------------------ */
+
+/* The arrow floats one offset ahead of the courier along the bearing. Position
+   and rotation are both set by the scene each frame (left/top as percentages of
+   the play area, --compass-angle as a canvas-space angle), so this only has to
+   make it legible and give it a hover. */
+.quest-compass {
+  position: absolute;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: calc(var(--hud-scale) * 26px);
+  height: calc(var(--hud-scale) * 26px);
+  transform: translate(-50%, -50%);
+  animation: quest-compass-bob 2.4s ease-in-out infinite;
+  pointer-events: none;
+}
+
+.quest-compass[hidden] { display: none; }
+
+.quest-compass__arrow {
+  display: grid;
+  place-items: center;
+  width: 100%;
+  height: 100%;
+  color: #f0b62c;
+  transform: rotate(var(--compass-angle, 0rad));
+  /* A dark halo rather than a plate: the arrow has to read over bright grass
+     and over the cream paths without becoming a HUD panel of its own. */
+  filter: drop-shadow(0 0 calc(var(--hud-scale) * 1.5px) rgba(24, 36, 26, 0.95))
+    drop-shadow(0 0 calc(var(--hud-scale) * 4px) rgba(24, 36, 26, 0.5));
+}
+
+.quest-compass__label {
+  position: absolute;
+  top: calc(100% + var(--hud-scale) * 2px);
+  left: 50%;
+  transform: translateX(-50%);
+  padding: calc(var(--hud-scale) * 1px) calc(var(--hud-scale) * 7px);
+  border-radius: 999px;
+  background: rgba(31, 48, 35, 0.82);
+  color: #fff8e8;
+  font-size: calc(var(--hud-scale) * 11px);
+  white-space: nowrap;
+}
+
+@keyframes quest-compass-bob {
+  0%, 100% { transform: translate(-50%, -50%) scale(1); }
+  50% { transform: translate(-50%, -50%) scale(1.07); }
+}
+
+/* ------------------------------------------------------------------ */
 /* Narrow game windows                                                 */
 /* ------------------------------------------------------------------ */
 
@@ -781,4 +947,17 @@
   .skill-slot--cooldown .skill-slot__cooldown {
     animation: none;
   }
+  /* The celebration still appears — it is information, not decoration — but
+     without the pulse, pop and slide. */
+  .player-card--celebrate,
+  .player-card__level--gain,
+  .player-card__rating--gain {
+    animation: none;
+  }
+  .level-up-banner {
+    transition: opacity 120ms linear;
+    transform: translate(-50%, 0) scale(1);
+  }
+  /* The guidance arrow still points; it just stops bobbing. */
+  .quest-compass { animation: none; }
 }

@@ -1,6 +1,7 @@
 import type { MapData } from "../game/Maps.ts";
 import { TILES } from "../game/Tiles.ts";
 import type { NPC as NPCDefinition } from "../types/NPCtypes.ts";
+import { questMarkerPulse } from "./hud/questCompass.ts";
 import { createIcon } from "./hud/icons.ts";
 import { createIconButton, createPanel } from "./hud/primitives.ts";
 import { hudLayer } from "./hud/layer.ts";
@@ -18,6 +19,9 @@ const MONSTER_COLOR = "#d0564a";
 const NPC_COLOR = "#2f7d3a";
 const OBJECT_COLOR = "#c98a2e";
 const TRANSITION_COLOR = "#2ba0b8";
+/** The active quest's destination — the only marker that is not a landmark. */
+const QUEST_COLOR = "#e5a72a";
+const QUEST_RING = "#6a3d1e";
 
 /**
  * Max displayed width in *internal game units* (the 960x540 canvas space, so
@@ -37,6 +41,8 @@ export interface MinimapFrame {
   player: MinimapPoint;
   players: MinimapPoint[];
   monsters: MinimapPoint[];
+  /** The active quest's destination, or null when there is nothing to mark. */
+  quest?: MinimapPoint | null;
 }
 
 /**
@@ -181,6 +187,21 @@ export class Minimap {
     if (ctx === null) return;
     ctx.clearRect(0, 0, this.mapWidth, this.mapHeight);
 
+    // The quest destination goes down first: it is drawn over by the courier if
+    // they are standing on it, and its own pulse rides on top of everything.
+    const quest = frame.quest ?? null;
+    if (quest !== null) {
+      ctx.save();
+      ctx.setLineDash([2, 2]);
+      ctx.strokeStyle = QUEST_COLOR;
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.moveTo(frame.player.x + 0.5, frame.player.y + 0.5);
+      ctx.lineTo(quest.x + 0.5, quest.y + 0.5);
+      ctx.stroke();
+      ctx.restore();
+    }
+
     for (const monster of frame.monsters) {
       this.dot(ctx, monster.x, monster.y, MONSTER_COLOR, 1.6);
     }
@@ -196,6 +217,30 @@ export class Minimap {
     ctx.arc(px, py, 2.6, 0, Math.PI * 2);
     ctx.stroke();
     this.dot(ctx, frame.player.x, frame.player.y, PLAYER_COLOR, 1.8);
+
+    // Quest destination last, so no landmark or monster can bury the one marker
+    // the player is actually looking for: a solid gold dot inside a dark ring,
+    // with an expanding pulse that is pure maths (`questMarkerPulse`) rather
+    // than a per-frame wobble. It sits still when the player prefers reduced
+    // motion, which is why the pulse is drawn from a clock we control.
+    if (quest !== null) {
+      const now = typeof performance === "undefined" ? 0 : performance.now();
+      const pulse = questMarkerPulse(Minimap.prefersReducedMotion() ? 0 : now);
+      const qx = quest.x + 0.5;
+      const qy = quest.y + 0.5;
+      ctx.strokeStyle = QUEST_COLOR;
+      ctx.globalAlpha = pulse.alpha;
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.arc(qx, qy, pulse.radiusTiles, 0, Math.PI * 2);
+      ctx.stroke();
+      ctx.globalAlpha = 1;
+      ctx.strokeStyle = QUEST_RING;
+      ctx.beginPath();
+      ctx.arc(qx, qy, 2.7, 0, Math.PI * 2);
+      ctx.stroke();
+      this.dot(ctx, quest.x, quest.y, QUEST_COLOR, 1.7);
+    }
 
     // Caption: current tile coordinates (floor — matches map tiles).
     this.coordsLabel.textContent =
@@ -245,6 +290,18 @@ export class Minimap {
     this.caret.replaceChildren(createIcon(this.expanded ? "chevron-down" : "chevron-up", { size: 14 }));
     const header = this.root.querySelector<HTMLButtonElement>(".minimap__header");
     header?.setAttribute("aria-expanded", String(this.expanded));
+  }
+
+  /**
+   * Reduced motion keeps the marker and drops its pulse — the ring renders at
+   * phase 0, i.e. a steady halo around the destination.
+   */
+  private static prefersReducedMotion(): boolean {
+    return (
+      typeof window !== "undefined" &&
+      typeof window.matchMedia === "function" &&
+      window.matchMedia("(prefers-reduced-motion: reduce)").matches === true
+    );
   }
 
   private dot(

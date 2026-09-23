@@ -88,6 +88,14 @@ npm run dev:server   # API + WebSocket on localhost:3001
 > `node_modules/.bin` PATH shims. Scripts call tools via explicit
 > `node node_modules/...` paths — keep them that way.
 
+### Choosing the world renderer
+
+The world is drawn in 3D by default (three.js billboards on a fixed 3/4 perspective
+camera over the authored tile data). The sprite renderer that preceded it is still
+shipped and still correct — append **`?renderer=2d`** to the client URL to compare the
+same zone, camera framing, placements and HUD in either renderer. The choice is a
+non-authoritative local preference (URL only); nothing about it is sent to the server.
+
 ## Project structure (client)
 
 ```
@@ -98,7 +106,8 @@ admin.html         Admin Control Panel entry (second Vite build entry)
 src/
   data/            Content JSON (npcs, items, quests, upgrades, dialogue) + maps/
   entities/        Player, NPC (placeholder blobs + name tags)
-  game/            GameConfig, ErrorLog, GameConstants, Maps registry, Tiles catalog
+  game/            GameConfig, ErrorLog, GameConstants, Maps registry, Tiles catalog, camera framing, terrain/prop sizing/composition
+  render3d/        three.js world renderer (locked 3/4 camera, billboard cutouts, ground/fringe/plaza quads, shadows)
   scenes/          Boot → Preloader → Overworld (zone-capable world scene)
   styles/          tokens, global/primitives, game UI, profile/map/login/admin CSS
   systems/         ContentValidator + MapValidator + InputSystem + InteractionSystem + DialogueService

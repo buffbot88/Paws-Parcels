@@ -40,7 +40,7 @@ async function makeCharacter(username: string): Promise<number> {
 }
 
 describe("exp_rate scales quest XP rewards", () => {
-  it("doubles the welcome quest's 15 XP at exp_rate 2", async () => {
+  it("doubles the welcome quest's 40 XP at exp_rate 2", async () => {
     const characterId = await makeCharacter("quest-rate-user");
     expect((await acceptQuest(characterId, "quest-village-welcome")).ok).toBe(true);
 
@@ -50,8 +50,8 @@ describe("exp_rate scales quest XP rewards", () => {
     const done = await completeDelivery(characterId, "npc-biscuit");
     expect(done.ok).toBe(true);
     if (!done.ok) return;
-    // 15 base XP × 2.0 = 30.
-    expect(done.xp).toBe(30);
+    // 40 base XP × 2.0 = 80.
+    expect(done.xp).toBe(80);
   });
 
   it("keeps base XP at the default 1.0 rate", async () => {
@@ -60,6 +60,6 @@ describe("exp_rate scales quest XP rewards", () => {
     const done = await completeDelivery(characterId, "npc-biscuit");
     expect(done.ok).toBe(true);
     if (!done.ok) return;
-    expect(done.xp).toBe(15);
+    expect(done.xp).toBe(40);
   });
 });

@@ -84,6 +84,7 @@ export class WorldRenderer3D {
   private readonly canvas: HTMLCanvasElement;
   private zone: Zone3D | null = null;
   private lookAhead = { x: 0, y: 0 };
+  private focusOverride: GroundPoint | null = null;
   private readonly badge: THREE.Mesh;
   private readonly badgeMaterial: THREE.MeshBasicMaterial;
   private readonly badgeTextures = new Map<string, THREE.Texture>();
@@ -140,6 +141,20 @@ export class WorldRenderer3D {
     this.resize();
   }
 
+  /**
+   * Where a ground point lands on screen, as a fraction of the canvas (0–1).
+   *
+   * This is the HUD's way of aiming at the world: the quest compass points at a
+   * tile, and the answer depends on the renderer, so the renderer answers it.
+   * `{ x: -1, y: -1 }` means the point is behind the camera, which the caller
+   * treats as "cannot be pointed at" rather than aiming at a mirrored ghost.
+   */
+  projectGround(x: number, z: number): { x: number; y: number } {
+    const projected = new THREE.Vector3(x, 0, z).project(this.camera);
+    if (projected.z > 1) return { x: -1, y: -1 };
+    return { x: (projected.x + 1) / 2, y: (1 - projected.y) / 2 };
+  }
+
   /** The canvas the world is drawn into, for captures and diagnostics. */
   get worldCanvas(): HTMLCanvasElement {
     return this.canvas;
@@ -156,6 +171,18 @@ export class WorldRenderer3D {
     this.scene.add(this.zone.group);
   }
 
+  /**
+   * Park the camera on a tile regardless of where the courier stands.
+   *
+   * Rendering-only: this moves the camera, never the courier, and its only
+   * caller is the visual-baseline capture suite, which needs the same
+   * "centred on this landmark" frame the sprite renderer's `centerOn` gives.
+   * `null` hands the camera back to the courier.
+   */
+  setFocusOverride(focus: GroundPoint | null): void {
+    this.focusOverride = focus ?? null;
+  }
+
   /** Match the WebGL canvas to the game window's box. */
   resize(): void {
     const width = this.host.clientWidth || GAME_WIDTH;
@@ -168,6 +195,17 @@ export class WorldRenderer3D {
   /** Draw one frame of world state. */
   frame(state: World3DFrame): void {
     if (this.disposed) return;
+    const override = this.focusOverride;
+    if (override !== null) {
+      // A capture framing: centred exactly on the landmark, no bias and no
+      // look-ahead, so the frame matches the sprite renderer's `centerOn`.
+      this.lookAhead = { x: 0, y: 0 };
+      placeCamera(this.camera, CAMERA_3D, override);
+      this.characters.sync(state.entities);
+      this.updateBadge(state.badge, state.badgeTouch);
+      this.renderer.render(this.scene, this.camera);
+      return;
+    }
     const framed = framedGroundFocus(
       CAMERA_3D,
       state.framing,
