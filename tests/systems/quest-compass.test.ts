@@ -167,7 +167,9 @@ describe("compass distance and label", () => {
     expect(shouldShowCompass(40)).toBe(true);
   });
 
-  it("names the destination and the remaining distance", () => {
+  it("still names the destination for the tracker and minimap tooltip", () => {
+    // The HUD arrow no longer shows a caption, but the scene still passes the
+    // label through — the pure model keeps it, so nothing else regresses.
     const pip = { id: "npc-pip", label: "Pip", kind: "npc" as const, tile: { x: 0, y: 0 } };
     expect(compassLabel(pip, 12.4)).toBe("Pip · 12 tiles");
     expect(compassLabel(pip, 1)).toBe("Pip · 1 tile");
@@ -323,7 +325,7 @@ describe("QuestCompass", () => {
     expect(fakeDoc.layer.children).toHaveLength(0);
   });
 
-  it("aims, positions and captions itself from the frame's numbers", async () => {
+  it("aims and positions itself from the frame's numbers, with no caption", async () => {
     const { QuestCompass } = await import("../../src/ui/QuestCompass.ts");
     const compass = new QuestCompass();
     const root = fakeDoc.layer.children[0]!;
@@ -338,9 +340,9 @@ describe("QuestCompass", () => {
     expect(top).toBeLessThan(60);
     expect(root.style.get("--compass-angle")).toBe(`${Math.PI / 2}rad`);
 
-    const label = root.children[1]!;
-    expect(label.className).toBe("quest-compass__label");
-    expect(label.textContent).toBe("Biscuit · 9 tiles");
+    // The arrow is the whole compass: no caption element is built.
+    expect(root.children).toHaveLength(1);
+    expect(root.children[0]!.className).toBe("quest-compass__arrow");
 
     compass.update({ origin: { x: 0.5, y: 0.5 }, label: "Biscuit · 8 tiles", angleRad: 0, visible: false });
     expect(root.hidden).toBe(true);

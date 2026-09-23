@@ -10,8 +10,7 @@ import {
 
 /**
  * The quest compass: a gold arrow floating just ahead of the courier, aimed at
- * the active quest's next destination, with the destination's name and the
- * remaining distance under it.
+ * the active quest's next destination.
  *
  * It is a HUD element rather than a world object on purpose. The world is drawn
  * by two renderers — sprites and a 3D camera — and a marker that lives in the
@@ -24,15 +23,18 @@ import {
  * percentages, so the compass scales with the game window exactly like the rest
  * of the HUD; the offset and clamp are in the 960×540 internal canvas space.
  *
+ * The arrow carries no caption: "who and how far" was a distance readout that
+ * re-rendered every few tiles and cluttered the world — the quest tracker
+ * already names the objective in text, and the minimap shows where. The arrow
+ * is the whole compass.
+ *
  * Decorative for assistive tech: it is a live pointer that would re-announce
  * every frame, and the tracker already carries the same instruction as text.
  */
 export class QuestCompass {
   private readonly root: HTMLElement;
   private readonly arrow: HTMLElement;
-  private readonly label: HTMLElement;
   private visible = false;
-  private lastLabel = "";
 
   constructor() {
     this.root = document.createElement("div");
@@ -45,17 +47,15 @@ export class QuestCompass {
     this.arrow.className = "quest-compass__arrow";
     this.arrow.appendChild(createIcon("navigation", { size: 20 }));
 
-    this.label = document.createElement("span");
-    this.label.className = "quest-compass__label";
-
-    this.root.append(this.arrow, this.label);
+    this.root.appendChild(this.arrow);
     hudLayer()?.appendChild(this.root);
   }
 
   /**
    * Place and aim the arrow. `origin` is the courier's on-screen position as a
-   * fraction of the play area, `angleRad` the bearing from the pure model, and
-   * `label` its pre-formatted caption (empty when hidden).
+   * fraction of the play area and `angleRad` the bearing from the pure model.
+   * `label` is accepted (callers pass it) and deliberately unused — the caption
+   * was removed from the HUD; the tracker carries the same text.
    */
   update(view: {
     origin: CanvasFraction;
@@ -82,10 +82,6 @@ export class QuestCompass {
     // Rotation is the bearing itself: the icon is authored pointing right, and
     // the compass angle convention has 0 at east.
     this.root.style.setProperty("--compass-angle", `${view.angleRad}rad`);
-    if (this.lastLabel !== view.label) {
-      this.lastLabel = view.label;
-      this.label.textContent = view.label;
-    }
     if (!this.visible) {
       this.visible = true;
       this.root.hidden = false;

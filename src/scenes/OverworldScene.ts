@@ -116,7 +116,7 @@ function promptOffsetAbove(artCentrePx: number, artHeightPx: number): number {
 }
 
 /** Min ms between AI NPC line requests (server also rate-limits). */
-const NPC_TALK_MIN_INTERVAL_MS = 6_000;
+const NPC_TALK_MIN_INTERVAL_MS = 1_200;
 /** Min ms between scene snapshots sent to the model (1-core protection). */
 const SCENE_SNAPSHOT_MIN_INTERVAL_MS = 8_000;
 /** Scene snapshot max width before downscaling (keeps VL calls cheap). */
@@ -1148,24 +1148,45 @@ export class OverworldScene extends Phaser.Scene {
     if (script === undefined || script.lines.length === 0) return;
     const speaker = NPCS.find((npc) => npc.id === script.speakerId)?.name ?? "Village resident";
     if (dialoguePanel.isOpen()) {
-      for (const line of script.lines) dialoguePanel.appendLine(line);
+      // Milestones can land while the villager is still on screen (a delivery
+      // completing mid-conversation) — replace the beat instead of appending.
+      dialoguePanel.present({ speaker, lines: [...script.lines] });
       return;
     }
-    dialoguePanel.open({ speaker, lines: script.lines }, () => undefined);
+    dialoguePanel.open({ speaker, lines: [...script.lines] }, () => undefined);
   }
+
+  /**
+   * Every conversation ends in the villager's menu — the same hub for all
+   * five villagers, so the loop is learnable in one meeting. Quest hands the
+   * conversation back to the scene's accept flow; Shop answers honestly
+   * (no shop is built); Exit closes.
+   */
+  private static readonly NPC_MENU: { id: string; label: string }[] = [
+    { id: "quest", label: "Quest" },
+    { id: "shop", label: "Shop" },
+    { id: "exit", label: "Exit" },
+  ];
 
   private startInteraction(target: InteractionTarget): void {
     if (target.kind === "npc") {
-      const set = selectDialogueSet(DIALOGUE, target.npcId ?? "", 0);
-      if (!set) {
-        console.error(`OverworldScene: no dialogue for npc "${target.npcId}"`);
-        return;
-      }
-      dialoguePanel.open({ speaker: target.label, lines: set.lines }, () => undefined);
-      this.network.interact(target.npcId ?? "");
-      // AI game engine: the world-brain answers in character with a scene
-      // snapshot; the line is appended when it arrives (canned stays the base).
-      void this.requestAiNpcLine(target.npcId ?? "");
+      const npcId = target.npcId ?? "";
+      const set = selectDialogueSet(DIALOGUE, npcId, 0);
+      const introLines = set !== null && set.lines.length > 0 ? set.lines : [`${target.label} greets you warmly.`];
+      dialoguePanel.open(
+        {
+          speaker: target.label,
+          lines: introLines,
+          menu: OverworldScene.NPC_MENU,
+          onSelect: (id) => this.handleNpcMenuChoice(npcId, id),
+        },
+        () => undefined,
+      );
+      this.network.interact(npcId);
+      // AI game engine: the world-brain opens the conversation in character
+      // (the canned intro is the fallback that must never block) with a scene
+      // snapshot; the line replaces the first one while the reader is on it.
+      void this.requestAiNpcLine(npcId);
     } else {
       dialoguePanel.open({ speaker: target.label, lines: target.lines ?? [] }, () => undefined);
       const active = this.questTracker.getActiveQuest();
@@ -1173,11 +1194,78 @@ export class OverworldScene extends Phaser.Scene {
     }
   }
 
+  /** The villager menu's three choices. Quest reuses the accept flow; the
+   * rest stay conversational — the panel stays open so the menu survives. */
+  private handleNpcMenuChoice(npcId: string, id: string): void {
+    if (id === "quest") {
+      // The panel stays open: the offer is presented in the conversation, and
+      // the tracker's Accept button (revealed by setOffer) completes it.
+      this.offerNpcQuest(npcId);
+      return;
+    }
+    if (id === "shop") {
+      const name = NPCS.find((npc) => npc.id === npcId)?.name ?? "This villager";
+      dialoguePanel.present({
+        speaker: name,
+        lines: [`${name} rummages behind the counter... "No shop out here yet — deliveries first!"`],
+        menu: OverworldScene.NPC_MENU,
+        onSelect: (next) => this.handleNpcMenuChoice(npcId, next),
+      });
+      return;
+    }
+    // "exit" — and anything unrecognized — ends the conversation.
+    dialoguePanel.close();
+  }
+
+  /**
+   * Surface the villager's quest as an accept offer, or say why there is
+   * nothing to take. Uses the server's quest state only — nothing here decides
+   * quest availability client-side. Previously this flow only ran on proximity
+   * (npc_interaction), so a player standing beside the villager before opening
+   * the menu never saw an offer appear.
+   */
+  private offerNpcQuest(npcId: string): void {
+    const quests = [...this.questTracker.getQuests()];
+    const offered = quests.find(
+      (quest) => quest.giverId === npcId && quest.state === "available",
+    );
+    const name = NPCS.find((npc) => npc.id === npcId)?.name ?? "This villager";
+    if (offered !== undefined) {
+      this.questTracker.setQuests(quests);
+      this.questTracker.setOffer(offered.questId);
+      dialoguePanel.present({
+        speaker: name,
+        lines: [offered.description],
+        menu: OverworldScene.NPC_MENU,
+        onSelect: (next) => this.handleNpcMenuChoice(npcId, next),
+      });
+      return;
+    }
+    const active = this.questTracker.getActiveQuest();
+    const line =
+      active !== undefined
+        ? `You still have a delivery in your paws — finish "${active.title}" first!`
+        : `${name} has nothing new just now. Check back after your next delivery!`;
+    dialoguePanel.present({
+      speaker: name,
+      lines: [line],
+      menu: OverworldScene.NPC_MENU,
+      onSelect: (next) => this.handleNpcMenuChoice(npcId, next),
+    });
+  }
+
   /**
    * Ask the game server's world-brain for an AI line from this NPC. Never
    * blocks the dialogue (canned lines already open); every failure keeps the
    * canned dialogue. Includes a throttled scene snapshot so the model can
    * "see" what the courier is looking at.
+   */
+  /**
+   * Ask the game server's world-brain (the Qwen-class local model behind the
+   * AI game engine) for the NPC's introduction in character. The panel opens
+   * instantly with the canned intro; the AI line replaces it in place when it
+   * arrives — so the model's answer is what the player reads first, and every
+   * failure keeps the canned line (the model is never on the critical path).
    */
   private async requestAiNpcLine(npcId: string): Promise<void> {
     const now = Date.now();
@@ -1204,7 +1292,7 @@ export class OverworldScene extends Phaser.Scene {
       if (!res.ok) return;
       const data = (await res.json()) as { line?: unknown; source?: unknown };
       if (data.source === "ai" && typeof data.line === "string" && data.line !== "") {
-        dialoguePanel.appendLine(data.line);
+        dialoguePanel.setIntroLine(data.line);
       }
     } catch {
       // Canned dialogue remains — the world-brain can be unavailable.

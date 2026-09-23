@@ -8,6 +8,7 @@ import {
   type SpriteDirection,
 } from "../game/classAssets.ts";
 import type { NetPlayerInfo } from "../net/GameSocket.ts";
+import { Player } from "./Player.ts";
 import { worldDepth } from "../game/WorldDepth.ts";
 import {
   courierSizing,
@@ -66,14 +67,11 @@ export class RemotePlayer extends Phaser.GameObjects.Container {
       recipe.alpha,
     );
     this.nameTagY = entityNameTagOffsetPx(sizing);
+    // The local courier's plate style (Player.NAME_TAG_STYLE): a courier is
+    // identified the same way whether you drive it or meet it, and both tags
+    // must read over any tile art.
     this.nameTag = scene.add
-      .text(0, this.nameTagY, info.name, {
-        fontFamily: "Georgia, serif",
-        fontSize: "14px",
-        color: "#3a5a3a",
-        backgroundColor: "#ffffffcc",
-        padding: { x: 5, y: 2 },
-      })
+      .text(0, this.nameTagY, info.name, Player.NAME_TAG_STYLE)
       .setOrigin(0.5);
 
     this.add([shadow, this.sprite, this.nameTag]);

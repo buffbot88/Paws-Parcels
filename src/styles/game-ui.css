@@ -61,6 +61,48 @@
   font-style: italic;
 }
 
+/* The villager's menu: the Quest/Shop/Exit row every conversation ends in.
+   Buttons, not text, so they are obvious targets at HUD distance and Enter
+   (focused on arrival) picks the first one. */
+.dialogue-menu {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 12px;
+}
+
+.dialogue-menu[hidden] {
+  display: none;
+}
+
+.dialogue-option {
+  padding: 8px 22px;
+  font-family: inherit;
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: #fff8ec;
+  background: #6da56b;
+  border: 2px solid #4f7a4a;
+  border-radius: 10px;
+  box-shadow: 0 2px 0 rgba(58, 58, 40, 0.25);
+  cursor: pointer;
+}
+
+.dialogue-option:hover {
+  filter: brightness(1.08);
+  transform: translateY(-1px);
+}
+
+.dialogue-option:focus-visible {
+  outline: 3px solid #d08a3e;
+  outline-offset: 2px;
+}
+
+.dialogue-option:active {
+  transform: translateY(1px);
+  box-shadow: none;
+}
+
 .dialogue-close {
   position: absolute;
   top: 8px;

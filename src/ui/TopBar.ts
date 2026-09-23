@@ -121,7 +121,7 @@ export class TopBar {
     account.className = "top-navbar__account";
     account.append(identity, this.signOutButton);
 
-    bar.append(brand, world, this.createSoundToggle(), account);
+    bar.append(brand, world, account, this.createSoundToggle());
     document.body.prepend(bar);
   }
 
@@ -130,20 +130,18 @@ export class TopBar {
    * is, so muting it needs a control that is always reachable and never covers
    * the world. State lives in the audio bus (a local preference), and the
    * button subscribes to it so it stays correct if anything else mutes.
+   *
+   * Icon-only by design — the speaker glyph itself reads as "sound", so the
+   * label would be redundant; state carries in the on/off glyphs and the
+   * desaturated muted treatment, with accessible names for screen readers.
    */
   private createSoundToggle(): HTMLElement {
     const toggle = document.createElement("button");
     toggle.id = "navbar-sound";
     toggle.type = "button";
     toggle.className = "top-navbar__sound";
-    const label = document.createElement("span");
-    label.className = "top-navbar__sound-label";
     const render = (muted: boolean): void => {
-      toggle.replaceChildren(
-        createIcon(muted ? "volume-x" : "volume-2", { size: 16 }),
-        label,
-      );
-      label.textContent = muted ? "Sound off" : "Sound on";
+      toggle.replaceChildren(createIcon(muted ? "volume-x" : "volume-2", { size: 16 }));
       toggle.title = muted ? "Sound effects are off" : "Sound effects are on";
       toggle.setAttribute("aria-pressed", String(!muted));
       toggle.setAttribute("aria-label", muted ? "Turn sound effects on" : "Turn sound effects off");

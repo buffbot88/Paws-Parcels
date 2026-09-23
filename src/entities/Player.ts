@@ -30,6 +30,22 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
   static readonly BODY_WIDTH = 28;
   static readonly BODY_HEIGHT = 20;
 
+  /**
+   * Shared nameplate style. The tag is the way every other player identifies
+   * this courier, so it must be readable over any tile art: heavy dark type on
+   * an opaque cream chip with a dark stroke, not the translucent wash a villager
+   * can afford. RemotePlayer mirrors it so the whole cast reads as one rule.
+   */
+  static readonly NAME_TAG_STYLE = {
+    fontFamily: "Georgia, serif",
+    fontSize: "15px",
+    color: "#2b1d0f",
+    backgroundColor: "#fff8ec",
+    padding: { x: 7, y: 3 },
+    stroke: "#2b1d0f",
+    strokeThickness: 3,
+  } as const;
+
   readonly classKey: ClassKey;
   /**
    * The courier's size row from the shared entity convention. Everything the
@@ -88,13 +104,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     if (label === "") return;
     this.nameTagOffsetY = entityNameTagOffsetPx(this.sizing);
     this.nameTag = this.scene.add
-      .text(this.x, this.y + this.nameTagOffsetY, label, {
-        fontFamily: "Georgia, serif",
-        fontSize: "14px",
-        color: "#3a5a3a",
-        backgroundColor: "#ffffffcc",
-        padding: { x: 5, y: 2 },
-      })
+      .text(this.x, this.y + this.nameTagOffsetY, label, Player.NAME_TAG_STYLE)
       .setOrigin(0.5)
       .setDepth(worldDepth(this.y, DEPTH_OFFSET.overlay));
   }

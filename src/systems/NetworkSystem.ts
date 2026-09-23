@@ -168,6 +168,11 @@ export class NetworkSystem {
     // scene restarts that happen to run before auth completes.
     if (this.myCharacterId !== null) {
       this.ensureStatusCard();
+      // The scene is attached and about to build the world: reveal the status
+      // card over it. The card mounts hidden (it is created at auth time,
+      // while the boot/preloader screens are still up), and reveal() is
+      // idempotent so repeated scene attaches never replay the transition.
+      this.statusCard?.reveal();
     }
     // The socket can now be started before Phaser finishes loading art. If the
     // server answered during the preloader, replay that authoritative snapshot
@@ -779,9 +784,7 @@ export class NetworkSystem {
   private ensureStatusCard(): void {
     if (this.statusCard !== null) return;
     this.statusCard = new PlayerStatusCard();
-    // The celebration banner shares the card's lifecycle — created with it and
-    // destroyed by shutdown() — so both the mountHUD() path and the scene-restart
-    // path in attach() always leave the HUD with a banner to show.
+    // The card mounts hidden and attach() reveals it once a scene exists.
     const character = pickCharacter(readBootCharacters(), readSelectedCharacterId());
     this.statusCard.setStatus({
       name: character?.name ?? "Courier",

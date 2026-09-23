@@ -60,6 +60,26 @@
    canvas — which is also where the e2e harness focuses the game. */
 #player-hp.player-card { pointer-events: none; }
 
+/* Mounted-hidden: the card is created at auth time, while the boot/preloader
+   screens are still up, so it waits for the Overworld to attach before it
+   shows. Visibility (not display) keeps the card's geometry measurable and
+   keeps the lifecycle e2e contract ("exactly one card once mounted") true
+   before the world appears. */
+.player-card--hidden { visibility: hidden; }
+
+.player-card--reveal { animation: player-card-reveal 260ms ease-out; }
+
+@keyframes player-card-reveal {
+  from {
+    opacity: 0;
+    transform: translateY(calc(var(--hud-scale) * -6px));
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
 #player-hp.player-card > .hud-panel__body {
   padding: calc(var(--hud-scale) * 6px) calc(var(--hud-scale) * 7px);
   gap: calc(var(--hud-scale) * 6px);
@@ -909,19 +929,6 @@
     drop-shadow(0 0 calc(var(--hud-scale) * 4px) rgba(24, 36, 26, 0.5));
 }
 
-.quest-compass__label {
-  position: absolute;
-  top: calc(100% + var(--hud-scale) * 2px);
-  left: 50%;
-  transform: translateX(-50%);
-  padding: calc(var(--hud-scale) * 1px) calc(var(--hud-scale) * 7px);
-  border-radius: 999px;
-  background: rgba(31, 48, 35, 0.82);
-  color: #fff8e8;
-  font-size: calc(var(--hud-scale) * 11px);
-  white-space: nowrap;
-}
-
 @keyframes quest-compass-bob {
   0%, 100% { transform: translate(-50%, -50%) scale(1); }
   50% { transform: translate(-50%, -50%) scale(1.07); }
@@ -944,7 +951,8 @@
   .skill-bar,
   .skill-slot--pressed,
   .minimap__server[data-status]::before,
-  .skill-slot--cooldown .skill-slot__cooldown {
+  .skill-slot--cooldown .skill-slot__cooldown,
+  .player-card--reveal {
     animation: none;
   }
   /* The celebration still appears — it is information, not decoration — but

@@ -7,6 +7,7 @@
  *   - repeated mountHUD() calls do not duplicate the card
  *   - attach() before mountHUD() does not create the card
  *   - attach() after mountHUD() restores the card (character switch / scene restart)
+ *   - the card mounts hidden and is revealed only once a scene attaches
  *   - shutdown() destroys the card; mountHUD() after shutdown re-creates it
  */
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
@@ -136,10 +137,15 @@ let statusCardResources: string[] = [];
 let statusCardFlashes: { level: number; rank?: string | null }[] = [];
 /** How many times a stamp payout flashed the rating row. */
 let statusCardStampFlashes = 0;
+/** How many times the card was revealed over the live world. */
+let statusCardReveals = 0;
 
 vi.mock("../../src/ui/PlayerStatusCard.ts", () => {
   return {
     PlayerStatusCard: class {
+      // Mirrors the real card: reveal() is idempotent, so repeated scene
+      // attaches must not replay the reveal.
+      private revealed = false;
       constructor() { statusCardCreateCount++; }
       setStatus(_d: unknown): void { /* no-op */ }
       setHp(_hp: number, _max: number): void { /* no-op */ }
@@ -156,6 +162,11 @@ vi.mock("../../src/ui/PlayerStatusCard.ts", () => {
         statusCardFlashes.push(options);
       }
       flashStamps(): void { statusCardStampFlashes++; }
+      reveal(): void {
+        if (this.revealed) return;
+        this.revealed = true;
+        statusCardReveals++;
+      }
       destroy(): void { statusCardDestroyCount++; }
     },
   };
@@ -211,6 +222,7 @@ beforeEach(() => {
   statusCardResources = [];
   statusCardFlashes = [];
   statusCardStampFlashes = 0;
+  statusCardReveals = 0;
   progressionSfx = [];
   lastSocket = null;
   fakeDoc = new FakeDocument();
@@ -284,6 +296,41 @@ describe("NetworkSystem HUD lifecycle", () => {
     const fakeScene = { add: {}, tweens: {}, cameras: { main: {} } } as unknown as import("phaser").Scene;
     sys.attach(fakeScene, "zone-clover-village");
     expect(statusCardCreateCount).toBe(0);
+
+    NetworkSystem.resetForTests();
+  });
+
+  it("mountHUD() mounts the card hidden until a scene attaches", async () => {
+    const { NetworkSystem } = await import("../../src/systems/NetworkSystem.ts");
+    NetworkSystem.resetForTests();
+
+    const sys = NetworkSystem.get();
+    sys.start("zone-clover-village", 42);
+    // Auth-time mount: the boot/preloader screens are still up, so the card
+    // must not be revealed yet.
+    sys.mountHUD();
+    expect(statusCardReveals).toBe(0);
+
+    // The Overworld attaches and the card appears over the live world.
+    const fakeScene = { add: {}, tweens: {}, cameras: { main: {} } } as unknown as import("phaser").Scene;
+    sys.attach(fakeScene, "zone-clover-village");
+    expect(statusCardReveals).toBe(1);
+
+    NetworkSystem.resetForTests();
+  });
+
+  it("reveals the card once across repeated scene attaches", async () => {
+    const { NetworkSystem } = await import("../../src/systems/NetworkSystem.ts");
+    NetworkSystem.resetForTests();
+
+    const sys = NetworkSystem.get();
+    sys.start("zone-clover-village", 42);
+    sys.mountHUD();
+    const fakeScene = { add: {}, tweens: {}, cameras: { main: {} } } as unknown as import("phaser").Scene;
+    sys.attach(fakeScene, "zone-clover-village");
+    sys.attach(fakeScene, "zone-clover-village");
+    sys.attach(fakeScene, "zone-clover-village");
+    expect(statusCardReveals).toBe(1);
 
     NetworkSystem.resetForTests();
   });

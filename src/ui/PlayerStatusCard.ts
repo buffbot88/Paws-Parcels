@@ -14,6 +14,8 @@ export interface PlayerStatusData {
 
 /** How long the level-up / promotion flash stays on the card. */
 const FLASH_MS = 1800;
+/** How long the reveal transition takes once the card is shown. */
+const REVEAL_TRANSITION_MS = 260;
 /** How long the rating flash stays on the card when stamps arrive. */
 const RATING_FLASH_MS = 1200;
 
@@ -35,6 +37,8 @@ export const STAMP_RATING_SLOTS = 5;
  */
 export class PlayerStatusCard {
   private readonly root: HTMLElement;
+  private revealed = false;
+  private revealTimer: number | null = null;
   private readonly name: HTMLElement;
   private readonly rank: HTMLElement;
   private readonly level: HTMLElement;
@@ -123,6 +127,10 @@ export class PlayerStatusCard {
     panel.body.style.flexDirection = "row";
     panel.body.style.alignItems = "center";
     hudLayer()?.appendChild(this.root);
+    // Hidden at mount: the card is created at auth time, while the boot and
+    // preloader screens are still on screen. NetworkSystem.revealStatusCard()
+    // shows it once the Overworld scene has attached.
+    this.root.classList.add("player-card--hidden");
     this.renderHp();
     this.renderResource();
     this.renderRating();
@@ -223,7 +231,30 @@ export class PlayerStatusCard {
   destroy(): void {
     if (this.flashTimer !== null) window.clearTimeout(this.flashTimer);
     if (this.ratingFlashTimer !== null) window.clearTimeout(this.ratingFlashTimer);
+    if (this.revealTimer !== null) window.clearTimeout(this.revealTimer);
     this.root.remove();
+  }
+
+  /**
+   * Reveal the card over the live world. The card mounts hidden — the auth
+   * flow constructs it while the boot/preloader screens are still up — and
+   * stays hidden until the Overworld scene attaches, so it never floats over
+   * loading screens or a green placeholder canvas.
+   *
+   * Idempotent: scene restarts call this again and must not replay the
+   * transition. The class is removed after the transition so the celebrate
+   * animation can always run from a settled state.
+   */
+  reveal(): void {
+    if (this.revealed) return;
+    this.revealed = true;
+    if (this.revealTimer !== null) window.clearTimeout(this.revealTimer);
+    this.root.classList.remove("player-card--hidden");
+    this.root.classList.add("player-card--reveal");
+    this.revealTimer = window.setTimeout(() => {
+      this.revealTimer = null;
+      this.root.classList.remove("player-card--reveal");
+    }, REVEAL_TRANSITION_MS);
   }
 
   private renderHp(): void {
