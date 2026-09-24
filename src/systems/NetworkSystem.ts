@@ -24,7 +24,15 @@ import {
 import { TILE_SIZE } from "../game/GameConfig.ts";
 import type { MapPoint } from "../game/Maps.ts";
 import { apiPath, getWsUrl } from "../config.ts";
-import { classKeyFromId, classSpeedFromId, playAttackEffect } from "../game/classAssets.ts";
+import {
+  attackEffectArt,
+  classKeyFromId,
+  classSpeedFromId,
+  playAttackEffect,
+} from "../game/classAssets.ts";
+import { CREATURE_SIZING } from "../game/entitySizing.ts";
+import { activeWorldEffects, damageNumberStyle } from "../render3d/effects3d.ts";
+import { getSettings } from "../ui/settings.ts";
 import { classResourceFromId } from "../game/classStats.ts";
 import { PlayerStatusCard } from "../ui/PlayerStatusCard.ts";
 import { LevelUpBanner } from "../ui/LevelUpBanner.ts";
@@ -674,13 +682,13 @@ export class NetworkSystem {
       const monster = this.monsters.get(m.id);
       if (monster === undefined) continue; // not yet in zone_state — ignore
       if (!m.alive) {
-        monster.setVisible(false);
+        monster.defeat();
         continue;
       }
       // A respawn appears at its spawn point instead of gliding from the death spot.
-      if (!monster.visible) monster.snapTo(m.pos);
+      if (!monster.shown) monster.snapTo(m.pos);
       else monster.setTarget(m.pos);
-      monster.setVisible(true);
+      monster.reveal();
       monster.setHp(m.hp);
     }
   }
@@ -695,18 +703,28 @@ export class NetworkSystem {
         instigator === this.myCharacterId
           ? classKeyFromId(pickPlayCharacter()?.class_id ?? 1)
           : this.players.get(instigator)?.classKey;
-      if (classKey !== undefined && this.scene !== null) {
+      const effects = activeWorldEffects();
+      if (classKey !== undefined && effects !== null) {
+        effects.attackEffect(
+          attackEffectArt(classKey),
+          monster.x / TILE_SIZE,
+          monster.y / TILE_SIZE,
+          CREATURE_SIZING.tiles / 2,
+        );
+      } else if (classKey !== undefined && this.scene !== null) {
         playAttackEffect(this.scene, classKey, monster.x, monster.y);
       }
       monster.setHp(event.targetHp);
-      this.showDamageNumber(monster.x, monster.y - 24, event.damage, event.outcome);
-      if (event.outcome === "defeated") monster.setVisible(false);
+      monster.flash();
+      this.showDamageNumber(monster, event.damage, event.outcome);
+      if (event.outcome === "defeated") monster.defeat();
       return;
     }
     // Player was hit — update the HUD HP chip.
     if (Number(event.targetId) === this.myCharacterId) {
       this.myHp = event.targetHp;
       this.renderHp();
+      if (event.damage > 0) this.flashHurtVignette();
       if (event.outcome === "defeated") {
         this.myHp = 0;
         this.onPlayerDefeated?.();
@@ -756,20 +774,24 @@ export class NetworkSystem {
 
   /** Floating damage number over a monster (tiny tween, then removed). */
   private showDamageNumber(
-    x: number,
-    y: number,
+    monster: Monster,
     damage: number,
     outcome: NetCombatEvent["outcome"],
   ): void {
-    if (this.scene === null) return;
-    const color =
-      outcome === "crit" ? "#e0c040" : outcome === "defeated" ? "#d05050" : "#ffffff";
-    const label = outcome === "crit" ? `${damage}!` : String(damage);
+    if (this.scene === null || !getSettings().damageNumbers) return;
+    const effects = activeWorldEffects();
+    if (effects !== null) {
+      effects.damageNumber(monster.x / TILE_SIZE, monster.y / TILE_SIZE, CREATURE_SIZING.tiles, damage, outcome);
+      return;
+    }
+    const x = monster.x;
+    const y = monster.y - 24;
+    const style = damageNumberStyle(damage, outcome);
     const text = this.scene.add
-      .text(x, y, label, {
+      .text(x, y, style.label, {
         fontFamily: "Georgia, serif",
-        fontSize: outcome === "crit" ? "18px" : "15px",
-        color,
+        fontSize: `${style.fontPx}px`,
+        color: style.colour,
         stroke: "#2b2b2b",
         strokeThickness: 3,
       })
@@ -783,6 +805,24 @@ export class NetworkSystem {
       ease: "Quad.easeOut",
       onComplete: () => text.destroy(),
     });
+  }
+
+  /** A short red edge flash when the courier takes damage (skipped for reduced motion). */
+  private flashHurtVignette(): void {
+    if (getSettings().reducedMotion) return;
+    const host = document.getElementById("game-container");
+    if (host === null) return;
+    let vignette = host.querySelector<HTMLElement>(".hurt-vignette");
+    if (vignette === null) {
+      vignette = document.createElement("div");
+      vignette.className = "hurt-vignette";
+      vignette.setAttribute("aria-hidden", "true");
+      host.appendChild(vignette);
+    }
+    // Restart the animation even if the last flash is still playing.
+    vignette.classList.remove("hurt-vignette--on");
+    void vignette.offsetWidth;
+    vignette.classList.add("hurt-vignette--on");
   }
 
   // --- DOM HUD (player status card + HP bar) ---

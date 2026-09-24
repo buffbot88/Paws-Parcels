@@ -16,6 +16,7 @@ import {
   entityShadow,
   villagerSizing,
 } from "../game/entitySizing.ts";
+import { getSettings } from "../ui/settings.ts";
 
 /**
  * A static NPC with supplied Clover Village artwork where mapped; unmapped
@@ -35,6 +36,14 @@ export class NPC extends Phaser.Physics.Arcade.Sprite {
    * same reason every prop's shadow is placed from its own base line.
    */
   private readonly shadow: Phaser.GameObjects.Ellipse;
+  /**
+   * Where the villager stands; `y` bobs above it in 2D. The 3D renderer reads
+   * this for depth and `bobY` for height, so a hop is not a slide.
+   */
+  readonly groundY: number;
+  private readonly nameTagY: number;
+  /** Tweened 0-3px idle bob. */
+  private bob = 0;
 
   constructor(scene: Phaser.Scene, definition: NPCDefinition) {
     const x = definition.homeTile.x * TILE_SIZE + TILE_SIZE / 2;
@@ -99,9 +108,11 @@ export class NPC extends Phaser.Physics.Arcade.Sprite {
       .setShadow(0, 2, "#172219", 3, true, true)
       .setDepth(worldDepth(y, DEPTH_OFFSET.overlay));
 
+    this.groundY = y;
+    this.nameTagY = this.nameTag.y;
     scene.tweens.add({
-      targets: [this, this.nameTag],
-      y: "-=3",
+      targets: this,
+      bob: 3,
       duration: 1400,
       ease: "sine.inout",
       yoyo: true,
@@ -109,9 +120,17 @@ export class NPC extends Phaser.Physics.Arcade.Sprite {
     });
   }
 
-  /** Keep the static NPC's draw order aligned with its gentle vertical bob. */
+  /** The idle bob's current height in pixels; zero under reduced motion. */
+  get bobY(): number {
+    return getSettings().reducedMotion ? 0 : this.bob;
+  }
+
+  /** Apply the idle bob and keep the draw order aligned with it. */
   preUpdate(time: number, delta: number): void {
     super.preUpdate(time, delta);
+    const lift = this.bobY;
+    this.y = this.groundY - lift;
+    this.nameTag.y = this.nameTagY - lift;
     this.setDepth(worldDepth(this.y));
     this.nameTag.setDepth(worldDepth(this.y, DEPTH_OFFSET.overlay));
     this.shadow.setDepth(worldDepth(this.y, DEPTH_OFFSET.contactShadow));

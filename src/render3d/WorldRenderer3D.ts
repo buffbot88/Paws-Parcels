@@ -15,6 +15,12 @@ import { CharacterBillboards, type EntityBillboard } from "./characters3d.ts";
 import { buildQuadGeometry, fullUv } from "./geometry3d.ts";
 import { Texture3DCache } from "./texture3d.ts";
 import { buildZone3D, type Zone3D, type Zone3DInput } from "./zone3d.ts";
+import { AmbientParticles, zoneAtmosphere } from "./ambient3d.ts";
+import { WorldEffects3D } from "./effects3d.ts";
+import { getSettings, onSettingsChange } from "../ui/settings.ts";
+
+/** The void beyond the map when there is no fog to match. */
+const BACKGROUND_COLOUR = 0x121d13;
 
 /** Where the prompt badge hangs, in world units. */
 export interface BadgePlacement {
@@ -88,6 +94,12 @@ export class WorldRenderer3D {
   private readonly badge: THREE.Mesh;
   private readonly badgeMaterial: THREE.MeshBasicMaterial;
   private readonly badgeTextures = new Map<string, THREE.Texture>();
+  private readonly effects: WorldEffects3D;
+  private ambient: AmbientParticles | null = null;
+  private zoneId = "";
+  /** Seconds of frames drawn, the motes' clock. */
+  private clock = 0;
+  private readonly unsubscribeSettings: () => void;
   private disposed = false;
 
   constructor(
@@ -111,7 +123,7 @@ export class WorldRenderer3D {
     });
     this.renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
     this.renderer.outputColorSpace = THREE.SRGBColorSpace;
-    this.scene.background = new THREE.Color(0x121d13);
+    this.scene.background = new THREE.Color(BACKGROUND_COLOUR);
 
     this.camera = new THREE.PerspectiveCamera(
       CAMERA_3D.fovDeg,
@@ -123,12 +135,15 @@ export class WorldRenderer3D {
 
     this.cache = new Texture3DCache(textures);
     this.characters = new CharacterBillboards(this.scene, this.cache);
+    this.effects = new WorldEffects3D(this.scene, this.cache);
+    this.unsubscribeSettings = onSettingsChange(() => this.applyAtmosphere());
 
     this.badgeMaterial = new THREE.MeshBasicMaterial({
       map: this.badgeTexture("E"),
       transparent: true,
       depthTest: false,
       depthWrite: false,
+      fog: false,
     });
     const badgeGeometry = buildQuadGeometry([
       { x: 0, y: 0, z: 0, width: 1, height: 1, uv: fullUv() },
@@ -169,6 +184,26 @@ export class WorldRenderer3D {
     }
     this.zone = buildZone3D(this.cache, input);
     this.scene.add(this.zone.group);
+    this.zoneId = input.map.id;
+    this.applyAtmosphere();
+  }
+
+  /** Fog and motes for the current zone, as the graphics settings allow. */
+  private applyAtmosphere(): void {
+    if (this.disposed) return;
+    const { graphicsQuality, reducedMotion } = getSettings();
+    const atmosphere = zoneAtmosphere(this.zoneId);
+    const high = graphicsQuality === "high";
+    const { colour, near, far } = atmosphere.fog;
+    // The background is the fog colour, so the far edge fades into it rather than a seam.
+    this.scene.fog = high ? new THREE.Fog(colour, near, far) : null;
+    this.scene.background = new THREE.Color(high ? colour : BACKGROUND_COLOUR);
+    this.ambient?.dispose();
+    this.ambient = null;
+    if (high && !reducedMotion) {
+      this.ambient = new AmbientParticles(atmosphere.ambient);
+      this.scene.add(this.ambient.points);
+    }
   }
 
   /**
@@ -195,12 +230,16 @@ export class WorldRenderer3D {
   /** Draw one frame of world state. */
   frame(state: World3DFrame): void {
     if (this.disposed) return;
+    this.clock += state.dtSeconds;
+    this.effects.step(state.dtSeconds);
     const override = this.focusOverride;
     if (override !== null) {
       // A capture framing: centred exactly on the landmark, no bias and no
       // look-ahead, so the frame matches the sprite renderer's `centerOn`.
+      // Motes are hidden so a capture does not depend on the clock.
       this.lookAhead = { x: 0, y: 0 };
       placeCamera(this.camera, CAMERA_3D, override);
+      if (this.ambient !== null) this.ambient.points.visible = false;
       this.characters.sync(state.entities);
       this.updateBadge(state.badge, state.badgeTouch);
       this.renderer.render(this.scene, this.camera);
@@ -216,6 +255,10 @@ export class WorldRenderer3D {
     );
     this.lookAhead = framed.lookAhead;
     placeCamera(this.camera, CAMERA_3D, framed.focus);
+    if (this.ambient !== null) {
+      this.ambient.points.visible = true;
+      this.ambient.update(this.clock, framed.focus);
+    }
     this.characters.sync(state.entities);
     this.updateBadge(state.badge, state.badgeTouch);
     this.renderer.render(this.scene, this.camera);
@@ -225,7 +268,11 @@ export class WorldRenderer3D {
   destroy(): void {
     if (this.disposed) return;
     this.disposed = true;
+    this.unsubscribeSettings();
     this.characters.dispose();
+    this.effects.dispose();
+    this.ambient?.dispose();
+    this.ambient = null;
     if (this.zone !== null) {
       this.scene.remove(this.zone.group);
       this.zone.dispose();

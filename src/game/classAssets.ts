@@ -167,6 +167,18 @@ export function animationKey(
   return classAssetKey(classKey, animation, direction, 0);
 }
 
+function effectScale(classKey: ClassKey): number {
+  return classKey === "cat-mage" ? 0.15 : 0.18;
+}
+
+/** A class's attack effect as texture keys and sprite scale, for the 3D renderer. */
+export function attackEffectArt(classKey: ClassKey): { keys: string[]; scale: number } {
+  return {
+    keys: findEffectUrls(classKey).map((_, index) => effectAssetKey(classKey, index)),
+    scale: effectScale(classKey),
+  };
+}
+
 /** Play the selected class's compact attack effect at a world position. */
 export function playAttackEffect(
   scene: Phaser.Scene,
@@ -178,7 +190,7 @@ export function playAttackEffect(
   if (!scene.anims.exists(key) || !scene.textures.exists(key)) return;
   const effect = scene.add
     .sprite(x, y, key)
-    .setScale(classKey === "cat-mage" ? 0.15 : classKey === "fox-archer" ? 0.18 : 0.18)
+    .setScale(effectScale(classKey))
     .setDepth(4);
   effect.once(Phaser.Animations.Events.ANIMATION_COMPLETE, () => effect.destroy());
   effect.play(key);

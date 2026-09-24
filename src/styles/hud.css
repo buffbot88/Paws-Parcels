@@ -935,6 +935,34 @@
 }
 
 /* ------------------------------------------------------------------ */
+/* Hurt vignette                                                       */
+/* ------------------------------------------------------------------ */
+
+/* A red edge flash when the courier takes damage: over the world canvases,
+   under #hud-layer, never catching input. */
+.hurt-vignette {
+  position: absolute;
+  inset: 0;
+  z-index: 8;
+  pointer-events: none;
+  opacity: 0;
+  background: radial-gradient(
+    ellipse at center,
+    rgba(160, 20, 20, 0) 55%,
+    rgba(160, 20, 20, 0.55) 100%
+  );
+}
+
+.hurt-vignette--on {
+  animation: hurt-vignette 420ms ease-out;
+}
+
+@keyframes hurt-vignette {
+  0% { opacity: 1; }
+  100% { opacity: 0; }
+}
+
+/* ------------------------------------------------------------------ */
 /* Narrow game windows                                                 */
 /* ------------------------------------------------------------------ */
 
@@ -968,4 +996,5 @@
   }
   /* The guidance arrow still points; it just stops bobbing. */
   .quest-compass { animation: none; }
+  .hurt-vignette--on { animation: none; }
 }

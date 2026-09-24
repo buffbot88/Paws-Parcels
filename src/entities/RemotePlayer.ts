@@ -8,7 +8,8 @@ import {
   type SpriteDirection,
 } from "../game/classAssets.ts";
 import type { NetPlayerInfo } from "../net/GameSocket.ts";
-import { Player } from "./Player.ts";
+import { Player, walkBobPx } from "./Player.ts";
+import { getSettings } from "../ui/settings.ts";
 import { worldDepth } from "../game/WorldDepth.ts";
 import {
   courierSizing,
@@ -39,6 +40,8 @@ export class RemotePlayer extends Phaser.GameObjects.Container {
   private facing: Facing = "south";
   /** Tag height, derived from the courier's figure rather than hand-placed. */
   private readonly nameTagY: number;
+  /** Walk hop height in pixels, drawn by the 3D renderer only. */
+  bobY = 0;
 
   constructor(scene: Phaser.Scene, info: NetPlayerInfo) {
     const px = info.pos.x * TILE_SIZE + TILE_SIZE / 2;
@@ -105,6 +108,7 @@ export class RemotePlayer extends Phaser.GameObjects.Container {
     this.setDepth(worldDepth(this.y));
     this.nameTag.setPosition(0, this.nameTagY);
     this.playAnimation(rendered.moving ? "walk" : "idle", this.facing);
+    this.bobY = rendered.moving && !getSettings().reducedMotion ? walkBobPx(now) : 0;
   }
 
   snapTo(pos: { x: number; y: number }, sampleAt = Date.now()): void {

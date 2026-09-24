@@ -10,6 +10,7 @@ import {
   entityScale,
   entityShadow,
 } from "../game/entitySizing.ts";
+import { getSettings } from "../ui/settings.ts";
 
 /** One cozy tint per species family (placeholder palette; art lands Phase 8). */
 const SPECIES_TINTS: Readonly<Record<string, number>> = {
@@ -22,6 +23,12 @@ const SPECIES_TINTS: Readonly<Record<string, number>> = {
 
 /** How quickly a monster eases toward its server target each frame. */
 const LERP = 0.22;
+
+/** Hit flash: a bright red multiply, distinct from every species tint. */
+const HIT_FLASH_TINT = 0xff6a6a;
+const HIT_FLASH_MS = 110;
+/** How long a defeated monster takes to shrink and fade out. */
+const DEFEAT_PUFF_MS = 250;
 
 /**
  * A monster in the world: tinted placeholder blob + name tag + tiny HP bar.
@@ -38,6 +45,9 @@ export class Monster extends Phaser.GameObjects.Container {
   private hpMax: number;
   /** Tag height, derived from the creature's figure rather than hand-placed. */
   private readonly nameTagY: number;
+  private readonly blob: Phaser.GameObjects.Image;
+  private readonly speciesTint: number;
+  private defeatTween: Phaser.Tweens.Tween | null = null;
 
   constructor(scene: Phaser.Scene, info: NetMonsterInfo) {
     const px = info.pos.x * TILE_SIZE + TILE_SIZE / 2;
@@ -53,10 +63,12 @@ export class Monster extends Phaser.GameObjects.Container {
     // Placeholder art, sized by the shared entity convention rather than a
     // literal: a monster must read as bigger than the courier it chases, and
     // "1.1" only looked bigger while the courier was mis-measured by its canvas.
+    this.speciesTint = SPECIES_TINTS[info.key] ?? 0x777777;
     const blob = scene.add
       .image(0, 0, TextureKeys.NpcBlob)
-      .setTint(SPECIES_TINTS[info.key] ?? 0x777777)
+      .setTint(this.speciesTint)
       .setScale(entityScale(CREATURE_SIZING));
+    this.blob = blob;
     const recipe = entityShadow(CREATURE_SIZING);
     const shadow = scene.add.ellipse(
       0,
@@ -110,6 +122,54 @@ export class Monster extends Phaser.GameObjects.Container {
     this.setDepth(worldDepth(this.y));
     this.nameTag.setPosition(0, this.nameTagY);
     this.hpBar.setPosition(0, -18);
+  }
+
+  /** Briefly flash the creature red on a hit. */
+  flash(): void {
+    this.blob.setTint(HIT_FLASH_TINT);
+    this.scene.time.delayedCall(HIT_FLASH_MS, () => {
+      if (this.active) this.blob.setTint(this.speciesTint);
+    });
+  }
+
+  /** Whether the monster is on screen and not already puffing out. */
+  get shown(): boolean {
+    return this.visible && this.defeatTween === null;
+  }
+
+  /** Shrink and fade out, then hide; hides at once under reduced motion. */
+  defeat(): void {
+    if (!this.shown) return;
+    if (getSettings().reducedMotion) {
+      this.setVisible(false);
+      return;
+    }
+    this.defeatTween = this.scene.tweens.add({
+      targets: this,
+      alpha: 0,
+      scale: 0.4,
+      duration: DEFEAT_PUFF_MS,
+      ease: "quad.in",
+      onComplete: () => {
+        this.defeatTween = null;
+        this.endPuff(false);
+      },
+    });
+  }
+
+  /** Show the monster at full size, cutting short any defeat puff. */
+  reveal(): void {
+    this.endPuff(true);
+  }
+
+  private endPuff(visible: boolean): void {
+    const tween = this.defeatTween;
+    this.defeatTween = null;
+    tween?.stop();
+    if (!this.active) return;
+    // The container's identity scale; the creature's size lives on the blob.
+    this.scale = 1;
+    this.setAlpha(1).setVisible(visible);
   }
 
   /** Directly place (spawn teleport) without easing — used on join. */

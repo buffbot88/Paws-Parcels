@@ -127,6 +127,10 @@ vi.mock("../../src/entities/Monster.ts", () => ({
     snapTo(pos: { x: number; y: number }): void { monsterMoves.push(`snap ${pos.x},${pos.y}`); }
     setTarget(pos: { x: number; y: number }): void { monsterMoves.push(`glide ${pos.x},${pos.y}`); }
     setVisible(visible: boolean): void { this.visible = visible; }
+    get shown(): boolean { return this.visible; }
+    defeat(): void { this.visible = false; }
+    reveal(): void { this.visible = true; }
+    flash(): void { /* no-op */ }
     setHp(): void { /* no-op */ }
     destroy(): void { /* no-op */ }
   },

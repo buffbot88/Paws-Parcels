@@ -16,8 +16,14 @@ import {
   entityScale,
   type EntitySizing,
 } from "../game/entitySizing.ts";
+import { getSettings } from "../ui/settings.ts";
 
 export type Facing = "down" | "up" | "left" | "right";
+
+/** A walking courier's hop height in pixels at `timeMs`: a gentle bounce per step. */
+export function walkBobPx(timeMs: number): number {
+  return 2 * Math.abs(Math.sin(timeMs / 110));
+}
 
 function directionForFacing(facing: Facing): SpriteDirection {
   if (facing === "down") return "south";
@@ -71,6 +77,8 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
    */
   private nameTag: Phaser.GameObjects.Text | null = null;
   private nameTagOffsetY = 0;
+  /** Walk hop height in pixels, drawn by the 3D renderer only. */
+  bobY = 0;
 
   constructor(scene: Phaser.Scene, x: number, y: number, classId = 1) {
     const classKey = classKeyFromId(classId);
@@ -112,6 +120,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
   /** Keep the name over the courier as they move. */
   preUpdate(time: number, delta: number): void {
     super.preUpdate(time, delta);
+    this.bobY = this.moving && !getSettings().reducedMotion ? walkBobPx(time) : 0;
     if (this.nameTag === null) return;
     this.nameTag.setPosition(this.x, this.y + this.nameTagOffsetY);
     this.nameTag.setDepth(worldDepth(this.y, DEPTH_OFFSET.overlay));

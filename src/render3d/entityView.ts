@@ -51,6 +51,8 @@ interface View {
   readonly art: Art;
   readonly sizing: EntitySizing;
   readonly tint: number;
+  /** Idle or walk bob, in pixels of height (positive up). */
+  readonly bobPx: number;
 }
 
 /** The art a container draws, which is its sprite-shaped child. */
@@ -66,7 +68,7 @@ function artIn(container: Phaser.GameObjects.Container): Art | null {
 /** Resolve one Phaser object into the art and sizing the 3D world needs. */
 function viewOf(object: Phaser.GameObjects.GameObject): View | null {
   if (object instanceof Player) {
-    return { object, art: object, sizing: object.sizing, tint: 0xffffff };
+    return { object, art: object, sizing: object.sizing, tint: 0xffffff, bobPx: object.bobY };
   }
   if (object instanceof NPC) {
     return {
@@ -74,6 +76,7 @@ function viewOf(object: Phaser.GameObjects.GameObject): View | null {
       art: object,
       sizing: villagerSizing(npcArtForDefinition(object.definition)),
       tint: 0xffffff,
+      bobPx: object.bobY,
     };
   }
   if (object instanceof Monster) {
@@ -85,6 +88,7 @@ function viewOf(object: Phaser.GameObjects.GameObject): View | null {
           art,
           sizing: CREATURE_SIZING,
           tint: art.isTinted ? art.tintTopLeft : 0xffffff,
+          bobPx: 0,
         };
   }
   if (object instanceof RemotePlayer) {
@@ -96,6 +100,7 @@ function viewOf(object: Phaser.GameObjects.GameObject): View | null {
           art,
           sizing: courierSizing(object.classKey, art.texture.key !== TextureKeys.NpcBlob),
           tint: 0xffffff,
+          bobPx: object.bobY,
         };
   }
   return null;
@@ -148,10 +153,15 @@ export function entityBillboards(
     if (frame === undefined) continue;
     const visible = object.visible && art.visible;
     const hp = hpOf(object);
+    // A container's own scale and alpha (a monster's defeat puff) reach the
+    // art in 2D, so they have to reach the billboard too.
+    const containerScale = object === art ? { x: 1, y: 1 } : { x: object.scaleX, y: object.scaleY };
+    const alpha = object === art ? art.alpha : object.alpha * art.alpha;
     billboards.push({
       id: object,
       x: object.x / tilePx,
-      z: object.y / tilePx,
+      // An NPC's idle bob moves its sprite `y`, which here would be depth, not height.
+      z: (object instanceof NPC ? object.groundY : object.y) / tilePx,
       centreAboveFeetTiles: entityFeetOffsetPx(sizing) / tilePx,
       imageKey: art.texture.key,
       frame: {
@@ -162,11 +172,13 @@ export function entityBillboards(
         sourceWidth: frame.source.width,
         sourceHeight: frame.source.height,
       },
-      widthTiles: Math.abs(art.displayWidth) / tilePx,
-      heightTiles: Math.abs(art.displayHeight) / tilePx,
+      widthTiles: Math.abs(art.displayWidth * containerScale.x) / tilePx,
+      heightTiles: Math.abs(art.displayHeight * containerScale.y) / tilePx,
       flipX: art.flipX === true,
       footprintPx: entityContactWidthPx(sizing),
       tint: view.tint,
+      alpha,
+      liftTiles: view.bobPx / tilePx,
       visible,
       tag: tagOf(object),
       // Measured from the shared sizing rule, so a tag rides the figure's own

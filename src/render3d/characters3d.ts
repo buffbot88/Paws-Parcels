@@ -43,6 +43,10 @@ export interface EntityBillboard {
   readonly flipX: boolean;
   /** Multiplicative colour, which the placeholder monster art relies on. */
   readonly tint: number;
+  /** Opacity 0-1, for a figure fading out (a defeated monster's puff). */
+  readonly alpha: number;
+  /** Idle or walk bob: height above the ground, in tiles. Never moves the shadow. */
+  readonly liftTiles: number;
   /** Ground contact width in pixels, for the shared shadow recipe. */
   readonly footprintPx: number;
   /** Hidden entities draw nothing and cast nothing. */
@@ -80,6 +84,7 @@ interface Billboard {
   readonly shadow: THREE.Mesh;
   readonly shadowMaterial: THREE.MeshBasicMaterial;
   uvKey: string;
+  tint: number;
   /** Built the first time the entity has a tag or a bar, then kept. */
   tag: TagMeshes | null;
   hp: HpMeshes | null;
@@ -172,7 +177,17 @@ export class CharacterBillboards {
     });
     const shadow = new THREE.Mesh(shadowGeometry, shadowMaterial);
     this.root.add(mesh, shadow);
-    return { mesh, geometry, material, shadow, shadowMaterial, uvKey: "", tag: null, hp: null };
+    return {
+      mesh,
+      geometry,
+      material,
+      shadow,
+      shadowMaterial,
+      uvKey: "",
+      tint: entity.tint,
+      tag: null,
+      hp: null,
+    };
   }
 
   /**
@@ -191,6 +206,7 @@ export class CharacterBillboards {
       transparent: true,
       depthWrite: false,
       side: THREE.DoubleSide,
+      fog: false,
     });
     const mesh = new THREE.Mesh(new THREE.PlaneGeometry(1, 1), material);
     mesh.rotation.y = BILLBOARD_YAW;
@@ -210,6 +226,7 @@ export class CharacterBillboards {
         transparent: true,
         depthWrite: false,
         side: THREE.DoubleSide,
+        fog: false,
       });
       const mesh = new THREE.Mesh(new THREE.PlaneGeometry(1, 1), material);
       mesh.rotation.y = BILLBOARD_YAW;
@@ -251,9 +268,15 @@ export class CharacterBillboards {
     mesh.scale.set(entity.widthTiles, entity.heightTiles, 1);
     mesh.position.set(
       entity.x,
-      entity.centreAboveFeetTiles + entity.heightTiles / 2,
+      entity.centreAboveFeetTiles + entity.heightTiles / 2 + entity.liftTiles,
       entity.z,
     );
+    // Tints change after creation (a monster's hit flash), so follow them.
+    if (billboard.tint !== entity.tint) {
+      material.color.setHex(entity.tint);
+      billboard.tint = entity.tint;
+    }
+    material.opacity = entity.alpha;
 
     const frameKey = `${entity.imageKey}:${entity.frame.cutX},${entity.frame.cutY},${entity.frame.cutWidth},${entity.frame.cutHeight}:${entity.flipX ? 1 : 0}`;
     if (billboard.uvKey !== frameKey) {
@@ -291,7 +314,7 @@ export class CharacterBillboards {
     shadow.position.set(shadowQuad.x, shadowQuad.y, shadowQuad.z);
     shadow.scale.set(shadowQuad.width, shadowQuad.height, 1);
     shadowMaterial.color.setRGB(tint[0], tint[1], tint[2]);
-    shadowMaterial.opacity = tint[3];
+    shadowMaterial.opacity = tint[3] * entity.alpha;
   }
 
   /** Draw the entity's name tag, uploading its canvas only when it changes. */
@@ -314,7 +337,7 @@ export class CharacterBillboards {
     }
     const rect = labelRect(anchorOf(entity), tag.widthPx, tag.heightPx);
     meshes.mesh.visible = true;
-    meshes.material.opacity = tag.alpha;
+    meshes.material.opacity = tag.alpha * entity.alpha;
     meshes.mesh.scale.set(rect.width, rect.height, 1);
     meshes.mesh.position.set(rect.x, rect.y, rect.z);
   }
@@ -334,6 +357,8 @@ export class CharacterBillboards {
     // The sprite renderer owns the colour ramp (green, amber, red), so the 3D
     // bar reads the same as the 2D one at the same share.
     meshes.fillMaterial.color.setHex(entity.hpColour);
+    meshes.trackMaterial.opacity = entity.alpha;
+    meshes.fillMaterial.opacity = entity.alpha;
     meshes.track.visible = true;
     meshes.track.scale.set(rects.track.width, rects.track.height, 1);
     meshes.track.position.set(rects.track.x, rects.track.y, rects.track.z);
