@@ -11,6 +11,7 @@ import { describe, expect, it } from "vitest";
 import {
   MONSTER_HP_BAR,
   TAG_LIFT_TILES,
+  TAG_SCALE_3D,
   hpBarRects,
   labelRect,
   type TagAnchor,
@@ -20,10 +21,10 @@ const TILE = 48;
 const anchor: TagAnchor = { x: 20, z: 30, tagAboveFeetTiles: 2.25, tilePx: TILE };
 
 describe("3D name tags", () => {
-  it("floats above the figure, in front of its plane", () => {
+  it("rests on the anchor, so the plate never covers the head, in front of its plane", () => {
     const rect = labelRect(anchor, 96, 24);
-    expect(rect.y).toBeCloseTo(anchor.tagAboveFeetTiles, 6);
-    expect(rect.y).toBeGreaterThan(0);
+    expect(rect.y - rect.height / 2).toBeCloseTo(anchor.tagAboveFeetTiles, 6);
+    expect(rect.y).toBeGreaterThan(anchor.tagAboveFeetTiles);
     expect(rect.z).toBeCloseTo(anchor.z + TAG_LIFT_TILES, 6);
     // A hair in front: enough that body and tag are never coplanar, small enough
     // that the tag still reads as belonging to the figure it names.
@@ -34,8 +35,8 @@ describe("3D name tags", () => {
 
   it("keeps the tag's own proportions, so the text is never stretched", () => {
     const rect = labelRect(anchor, 96, 24);
-    expect(rect.width).toBeCloseTo(96 / TILE, 6);
-    expect(rect.height).toBeCloseTo(24 / TILE, 6);
+    expect(rect.width).toBeCloseTo((96 * TAG_SCALE_3D) / TILE, 6);
+    expect(rect.height).toBeCloseTo((24 * TAG_SCALE_3D) / TILE, 6);
     expect(rect.width / rect.height).toBeCloseTo(4, 6);
     // A two-word villager name is wider than a one-word monster name, and the
     // quad tracks the canvas rather than a fixed width.
@@ -51,6 +52,7 @@ describe("3D monster health bars", () => {
     expect(track.width).toBeCloseTo(MONSTER_HP_BAR.widthPx / TILE, 6);
     expect(track.height).toBeCloseTo(MONSTER_HP_BAR.heightPx / TILE, 6);
     expect(track.y).toBeLessThan(anchor.tagAboveFeetTiles);
+    expect(track.y + track.height / 2).toBeLessThanOrEqual(labelRect(anchor, 96, 24).y - labelRect(anchor, 96, 24).height / 2 + 0.01);
     expect(track.x).toBeCloseTo(anchor.x, 6);
   });
 

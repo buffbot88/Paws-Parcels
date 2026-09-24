@@ -23,7 +23,7 @@ import { Player } from "../entities/Player.ts";
 import { RemotePlayer } from "../entities/RemotePlayer.ts";
 import { TILE_SIZE } from "../game/GameConfig.ts";
 import type { EntityBillboard, EntityTag } from "./characters3d.ts";
-import { MONSTER_HP_BAR } from "./labels3d.ts";
+import { MONSTER_HP_BAR, TAG_SCALE_3D } from "./labels3d.ts";
 
 type Art = Phaser.GameObjects.Sprite | Phaser.GameObjects.Image;
 type Placed = Phaser.GameObjects.Sprite | Phaser.GameObjects.Container;
@@ -141,7 +141,8 @@ function markerOf(
   const text = (object as unknown as TagCarrier).questMarker;
   const marker = text?.visible === true ? textTag(text) : null;
   if (marker === null || !(object instanceof NPC)) return { marker: null, markerAboveFeetTiles: tagAboveFeetTiles };
-  const abovePx = ((tag?.heightPx ?? 0) + marker.heightPx) / 2 + MARKER_GAP_PX + object.markerBobY;
+  // Both plates rest on their anchor, so the marker's anchor is the name plate's top edge.
+  const abovePx = (tag?.heightPx ?? 0) * TAG_SCALE_3D + MARKER_GAP_PX + object.markerBobY;
   return { marker, markerAboveFeetTiles: tagAboveFeetTiles + abovePx / tilePx };
 }
 

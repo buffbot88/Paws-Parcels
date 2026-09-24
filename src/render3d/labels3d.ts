@@ -18,6 +18,9 @@
 /** How far in front of the body plane a tag sits, in tiles. */
 export const TAG_LIFT_TILES = 0.004;
 
+/** 3D tags draw smaller than their canvas: the 3/4 camera magnifies width, so full-size plates bury the figures. */
+export const TAG_SCALE_3D = 0.6;
+
 /** The monster health bar, in the sprite renderer's own pixels. */
 export const MONSTER_HP_BAR = {
   /** Track width, matching `Monster`'s 36px rectangle. */
@@ -42,25 +45,25 @@ export interface TagAnchor {
   readonly x: number;
   readonly z: number;
   /**
-   * How high the tag's centre floats above the ground the figure stands on, in
-   * tiles — positive, measured up from the feet. The sprite renderer's own tag
-   * offset is screen-space (negative is up there); `entityView.ts` flips it once.
+   * How high the tag's bottom edge floats above the ground the figure stands on,
+   * in tiles — positive, measured up from the feet, so the plate never covers the head.
    */
   readonly tagAboveFeetTiles: number;
   readonly tilePx: number;
 }
 
 /**
- * The name tag's quad: sized from the tag's own canvas, so the text keeps its
- * proportions, and centred on the height the entities already place it at.
+ * The name tag's quad: sized from the tag's own canvas (scaled by TAG_SCALE_3D),
+ * so the text keeps its proportions, resting on the anchor height.
  */
 export function labelRect(anchor: TagAnchor, tagWidthPx: number, tagHeightPx: number): Rect3D {
+  const height = (tagHeightPx * TAG_SCALE_3D) / anchor.tilePx;
   return {
     x: anchor.x,
-    y: anchor.tagAboveFeetTiles,
+    y: anchor.tagAboveFeetTiles + height / 2,
     z: anchor.z + TAG_LIFT_TILES,
-    width: tagWidthPx / anchor.tilePx,
-    height: tagHeightPx / anchor.tilePx,
+    width: (tagWidthPx * TAG_SCALE_3D) / anchor.tilePx,
+    height,
   };
 }
 
