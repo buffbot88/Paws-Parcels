@@ -31,6 +31,7 @@ import {
   shouldShowCompass,
   tileCentre,
   COMPASS_OFFSET_PX,
+  COMPASS_RING_SQUASH,
   COMPASS_SIZE_PX,
   QUEST_MARKER_PERIOD_MS,
   type ActiveQuest,
@@ -240,14 +241,14 @@ describe("compass bearing", () => {
 });
 
 describe("compass layout", () => {
-  it("floats the arrow a fixed pixel distance ahead, measured in canvas pixels", () => {
+  it("floats the arrow on a flattened ring around the feet, measured in canvas pixels", () => {
     const origin = { x: 0.5, y: 0.5 };
     const east = compassArrowPoint(origin, 0, CANVAS);
     const south = compassArrowPoint(origin, Math.PI / 2, CANVAS);
     const px = (a: { x: number; y: number }, b: { x: number; y: number }): number =>
       Math.hypot((a.x - b.x) * CANVAS.width, (a.y - b.y) * CANVAS.height);
     expect(px(origin, east)).toBeCloseTo(COMPASS_OFFSET_PX, 6);
-    expect(px(origin, south)).toBeCloseTo(COMPASS_OFFSET_PX, 6);
+    expect(px(origin, south)).toBeCloseTo(COMPASS_OFFSET_PX * COMPASS_RING_SQUASH, 6);
     // ...and the offset is resolved per axis, so east and south are different
     // fractions of a 16:9 canvas.
     expect(east.x - origin.x).not.toBeCloseTo(south.y - origin.y, 6);

@@ -83,7 +83,10 @@ export function terrainPlanInput(
 export interface TerrainMaterials {
   /** Opaque continuous ground surface, drawn under everything else. */
   base: string;
-  /** Grass island shape scattered over the base (from the same art family). */
+  /**
+   * Grass island shape scattered over the base (from the same art family), and
+   * the clump that rounds the seam's inside corners.
+   */
   patch?: string;
   /** Road fill. Must be a centre/fill tile — see `road_5` below. */
   path: string;
@@ -204,8 +207,8 @@ export function addTerrainSurface(
 
   // Roads and the paved plaza. Both fills are seamless centre tiles, so an
   // identical image per tile already forms a continuous surface; the seeded
-  // mirror breaks the one-tile-forever repetition without inventing the compass
-  // topology the road kit has not verified.
+  // mirror and quarter turn break the one-tile-forever repetition without
+  // inventing the compass topology the road kit has not verified.
   const pathKey = scene.textures.exists(materials.path) ? materials.path : null;
   const plazaKey =
     materials.plaza !== undefined && scene.textures.exists(materials.plaza)
@@ -223,6 +226,7 @@ export function addTerrainSurface(
         .setDisplaySize(TILE_SIZE, TILE_SIZE)
         .setFlipX(surface.flipX)
         .setFlipY(surface.flipY)
+        .setAngle(surface.quarterTurns * 90)
         .setDepth(TERRAIN_DEPTH.surface),
     );
   }
@@ -238,6 +242,7 @@ export function addTerrainSurface(
         .setDisplaySize(TILE_SIZE, TILE_SIZE)
         .setFlipX(surface.flipX)
         .setFlipY(surface.flipY)
+        .setAngle(surface.quarterTurns * 90)
         .setDepth(TERRAIN_DEPTH.surface),
     );
   }
@@ -276,6 +281,20 @@ export function addTerrainSurface(
         else image.setFlipY(true);
       }
       added.push(image);
+    }
+  }
+
+  // A clump on each inside corner of the seam, where two fringes stop short of
+  // each other; drawn after the fringes so it covers both ends.
+  if (materials.patch !== undefined && scene.textures.exists(materials.patch)) {
+    for (const corner of plan.corners) {
+      added.push(
+        scene.add
+          .image(corner.x * TILE_SIZE, corner.y * TILE_SIZE, materials.patch)
+          .setScale(corner.scale)
+          .setFlipX(corner.flipX)
+          .setDepth(TERRAIN_DEPTH.fringe),
+      );
     }
   }
 

@@ -69,14 +69,14 @@ import { shadowRecipe } from "./lighting.ts";
  */
 export const ENTITY_BANDS = {
   /** The player's couriers: small animal adventurers, and the yardstick. */
-  courier: { min: 0.7, max: 0.8 },
+  courier: { min: 1.0, max: 1.2 },
   /** Villagers: one head taller than a courier, so adults read as adults. */
-  villager: { min: 0.85, max: 1.05 },
+  villager: { min: 1.25, max: 1.55 },
   /**
    * Monsters. Deliberately the widest band: placeholder art is one blob for
    * every species, and a boar and a hare must not be forced to agree.
    */
-  creature: { min: 0.85, max: 1.3 },
+  creature: { min: 1.2, max: 1.9 },
 } as const;
 
 export type EntityBand = keyof typeof ENTITY_BANDS;
@@ -157,7 +157,7 @@ export const COURIER_SIZING: Readonly<Record<ClassKey, EntitySizing>> = {
     visibleWidth: 25,
     feet: 13,
     band: "courier",
-    tiles: 0.75,
+    tiles: 1.1,
   },
   "cat-mage": {
     source: "authored",
@@ -168,7 +168,7 @@ export const COURIER_SIZING: Readonly<Record<ClassKey, EntitySizing>> = {
     visibleWidth: 24,
     feet: 14,
     band: "courier",
-    tiles: 0.75,
+    tiles: 1.1,
   },
   "fox-archer": {
     source: "authored",
@@ -179,7 +179,7 @@ export const COURIER_SIZING: Readonly<Record<ClassKey, EntitySizing>> = {
     visibleWidth: 28,
     feet: 15,
     band: "courier",
-    tiles: 0.75,
+    tiles: 1.1,
   },
 };
 
@@ -204,7 +204,7 @@ export const COURIER_FALLBACK_SIZING: EntitySizing = {
   canvas: BLOB_CANVAS,
   ...BLOB_FIGURE,
   band: "courier",
-  tiles: 0.75,
+  tiles: 1.1,
 };
 
 /**
@@ -226,7 +226,7 @@ export const VILLAGER_SIZING: Readonly<Record<CloverNpcArt, EntitySizing>> = {
     visibleWidth: 440,
     feet: 301,
     band: "villager",
-    tiles: 0.95,
+    tiles: 1.4,
   },
   astrologer: {
     source: "authored",
@@ -237,7 +237,7 @@ export const VILLAGER_SIZING: Readonly<Record<CloverNpcArt, EntitySizing>> = {
     visibleWidth: 434,
     feet: 301,
     band: "villager",
-    tiles: 0.95,
+    tiles: 1.4,
   },
   citizen: {
     source: "authored",
@@ -248,7 +248,7 @@ export const VILLAGER_SIZING: Readonly<Record<CloverNpcArt, EntitySizing>> = {
     visibleWidth: 394,
     feet: 301,
     band: "villager",
-    tiles: 0.95,
+    tiles: 1.4,
   },
 };
 
@@ -260,7 +260,7 @@ export const VILLAGER_FALLBACK_SIZING: EntitySizing = {
   canvas: BLOB_CANVAS,
   ...BLOB_FIGURE,
   band: "villager",
-  tiles: 0.95,
+  tiles: 1.4,
 };
 
 /**
@@ -279,7 +279,7 @@ export const CREATURE_SIZING: EntitySizing = {
   canvas: BLOB_CANVAS,
   ...BLOB_FIGURE,
   band: "creature",
-  tiles: 1.15,
+  tiles: 1.65,
 };
 
 /**
@@ -321,6 +321,15 @@ export function entityShadow(spec: EntitySizing): ShadowRecipe {
  */
 export function entityFeetOffsetPx(spec: EntitySizing): number {
   return spec.feet * entityScale(spec);
+}
+
+/**
+ * Where the cast shadow's centre sits: half its height above the feet line.
+ * `feet` is the lowest pixel across every frame, so centring on it left a gap
+ * under the resting stance; tucked up, the figure stands in its shadow.
+ */
+export function entityShadowOffsetPx(spec: EntitySizing): number {
+  return entityFeetOffsetPx(spec) - entityShadow(spec).heightPx / 2;
 }
 
 /** Pixels from the entity's centre up to the top of its head (negative = up). */

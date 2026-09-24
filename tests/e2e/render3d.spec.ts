@@ -4,8 +4,8 @@
  * Phaser still owns the game — input, entities, network, HUD — and the WebGL
  * canvas owns the frame. This spec proves the handover from a real browser:
  * the world canvas exists and fills the window, the sprite camera stepped
- * aside, the frame is a varied scene rather than a blank buffer, and the
- * documented `?renderer=2d` escape hatch still gives the player the sprite
+ * aside, and the frame is a varied scene rather than a blank buffer. The 3D
+ * world is opt-in (`?renderer=3d`); the default session draws the sprite
  * world. Whether the frame *looks* right is a human review task: the captures
  * it writes are the frames to look at.
  */
@@ -86,10 +86,10 @@ async function distinctCanvasColours(page: import("@playwright/test").Page): Pro
 }
 
 test.describe("3D world renderer", () => {
-  test("the shipped default draws the world in WebGL and the HUD stays on top", async ({
+  test("?renderer=3d draws the world in WebGL and the HUD stays on top", async ({
     page,
   }) => {
-    const collector = await bootToOverworld(page);
+    const collector = await bootToOverworld(page, { query: "renderer=3d" });
     await focusCanvas(page);
     await page.waitForTimeout(1_000);
 
@@ -178,9 +178,8 @@ test.describe("3D world renderer", () => {
     // A tag whose canvas holds no pixels is invisible no matter how it is placed.
     for (const ink of cast!.tagWidths) expect(ink).toBeGreaterThan(0);
 
-    // The player's own courier carries a name in 3D too: its tag canvas (the same
-    // object the sprite renderer draws) has a quad standing at the courier's own
-    // tile, sized from that canvas.
+    // The player's own courier carries no name plate (it only hid the face):
+    // nothing textured floats above the courier's own tile.
     const self = await page.evaluate(() => {
       interface TexMesh {
         position?: { x?: number; y?: number; z?: number };
@@ -219,15 +218,14 @@ test.describe("3D world renderer", () => {
       });
       return near === undefined ? null : { x: near.position?.x ?? 0, y: near.position?.y ?? 0 };
     });
-    expect(self, "the courier has no name over their head in 3D").not.toBeNull();
-    expect(self!.y).toBeGreaterThan(1);
+    expect(self, "the courier's own name plate is hidden").toBeNull();
 
     await screenshot(page, "render-3d.png");
     collector.expectClean();
   });
 
-  test("?renderer=2d keeps the sprite world reachable", async ({ page }) => {
-    const collector = await bootToOverworld(page, { query: "renderer=2d" });
+  test("the shipped default draws the sprite world", async ({ page }) => {
+    const collector = await bootToOverworld(page);
     await focusCanvas(page);
 
     const state = await readRenderState(page);

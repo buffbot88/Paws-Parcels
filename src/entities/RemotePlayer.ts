@@ -13,7 +13,7 @@ import { getSettings } from "../ui/settings.ts";
 import { worldDepth } from "../game/WorldDepth.ts";
 import {
   courierSizing,
-  entityFeetOffsetPx,
+  entityShadowOffsetPx,
   entityNameTagOffsetPx,
   entityScale,
   entityShadow,
@@ -63,7 +63,7 @@ export class RemotePlayer extends Phaser.GameObjects.Container {
     const recipe = entityShadow(sizing);
     const shadow = scene.add.ellipse(
       0,
-      entityFeetOffsetPx(sizing),
+      entityShadowOffsetPx(sizing),
       recipe.widthPx,
       recipe.heightPx,
       recipe.color,
@@ -81,6 +81,11 @@ export class RemotePlayer extends Phaser.GameObjects.Container {
     this.setDepth(worldDepth(py));
     scene.add.existing(this);
     this.playAnimation("idle", this.facing);
+  }
+
+  /** Show or hide the name tag (the scene shows names near the courier or under the pointer). */
+  showName(visible: boolean): void {
+    this.nameTag.setVisible(visible);
   }
 
   setTarget(pos: { x: number; y: number }, sampleAt = Date.now()): void {

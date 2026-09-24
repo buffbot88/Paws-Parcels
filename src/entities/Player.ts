@@ -11,7 +11,7 @@ import type { MoveVector } from "../systems/InputSystem.ts";
 import { DEPTH_OFFSET, worldDepth } from "../game/WorldDepth.ts";
 import {
   courierSizing,
-  entityFeetOffsetPx,
+  entityShadowOffsetPx,
   entityNameTagOffsetPx,
   entityScale,
   type EntitySizing,
@@ -33,8 +33,9 @@ function directionForFacing(facing: Facing): SpriteDirection {
 
 /** A server-selected class-aware local courier with an authoritative physics body. */
 export class Player extends Phaser.Physics.Arcade.Sprite {
-  static readonly BODY_WIDTH = 28;
-  static readonly BODY_HEIGHT = 20;
+  /** Collision box in world px, fixed whatever scale the art renders at. */
+  static readonly BODY_WIDTH = 37;
+  static readonly BODY_HEIGHT = 27;
 
   /**
    * Shared nameplate style. The tag is the way every other player identifies
@@ -66,17 +67,6 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
   facing: Facing = "down";
   private moving = false;
   private readonly attackCompleteHandler = (): void => this.playIdle();
-  /**
-   * The courier's own name, above their head.
-   *
-   * The local player used to be the one figure in the world without a label,
-   * which reads as an oversight the moment anyone else is on screen with one.
-   * It is created on demand (the name arrives from the character desk, after
-   * the sprite exists) and styled like a remote courier's tag, because that is
-   * exactly what it is: how the player is identified to the rest of the zone.
-   */
-  private nameTag: Phaser.GameObjects.Text | null = null;
-  private nameTagOffsetY = 0;
   /** Walk hop height in pixels, drawn by the 3D renderer only. */
   bobY = 0;
 
@@ -88,42 +78,29 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     this.speed = classSpeed(classKey);
     scene.add.existing(this);
     scene.physics.add.existing(this);
-    (this.body as Phaser.Physics.Arcade.Body).setSize(
-      Player.BODY_WIDTH,
-      Player.BODY_HEIGHT,
-    );
     // Sized by the shared entity convention rather than a literal: the courier
-    // renders at 0.75 tiles of figure whether its class art is present or the
+    // renders at the same figure height whether its class art is present or the
     // placeholder blob is standing in for it (see entitySizing.ts).
     this.sizing = courierSizing(classKey, this.texture.key !== TextureKeys.PlayerIdleDown);
-    this.setScale(entityScale(this.sizing));
+    const scale = entityScale(this.sizing);
+    this.setScale(scale);
+    // Arcade scales the body with the sprite, so undo that to keep collision fixed.
+    (this.body as Phaser.Physics.Arcade.Body).setSize(
+      Player.BODY_WIDTH / scale,
+      Player.BODY_HEIGHT / scale,
+    );
     this.setDepth(worldDepth(this.y));
     this.playIfAvailable("idle", "south");
   }
 
-  /** Pixels below the courier's centre where its feet (and cast shadow) sit. */
-  get feetOffsetPx(): number {
-    return entityFeetOffsetPx(this.sizing);
+  /** Pixels below the courier's centre where its cast shadow sits. */
+  get shadowOffsetPx(): number {
+    return entityShadowOffsetPx(this.sizing);
   }
 
-  /** Show this courier's name above their head. Ignored for a blank name. */
-  setDisplayName(name: string): void {
-    const label = name.trim();
-    if (label === "") return;
-    this.nameTagOffsetY = entityNameTagOffsetPx(this.sizing);
-    this.nameTag = this.scene.add
-      .text(this.x, this.y + this.nameTagOffsetY, label, Player.NAME_TAG_STYLE)
-      .setOrigin(0.5)
-      .setDepth(worldDepth(this.y, DEPTH_OFFSET.overlay));
-  }
-
-  /** Keep the name over the courier as they move. */
   preUpdate(time: number, delta: number): void {
     super.preUpdate(time, delta);
     this.bobY = this.moving && !getSettings().reducedMotion ? walkBobPx(time) : 0;
-    if (this.nameTag === null) return;
-    this.nameTag.setPosition(this.x, this.y + this.nameTagOffsetY);
-    this.nameTag.setDepth(worldDepth(this.y, DEPTH_OFFSET.overlay));
   }
 
   /** Adjust the rendered speed to the server's gear-adjusted px/s. */

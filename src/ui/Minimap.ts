@@ -29,7 +29,7 @@ const QUEST_RING = "#6a3d1e";
  * `src/styles/hud.css` can scale it by --hud-scale). Height follows the map
  * aspect.
  */
-const MAX_WIDTH = 150;
+const MAX_WIDTH = 128;
 
 /** A position in tile units (fractional allowed). */
 export interface MinimapPoint {

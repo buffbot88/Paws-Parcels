@@ -44,7 +44,7 @@ describe("settings store", () => {
       damageNumbers: true,
       reducedMotion: false,
       sfxVolume: 1,
-      chatCollapsed: false,
+      chatCollapsed: true,
       minimapCollapsed: false,
     });
 
@@ -84,7 +84,7 @@ describe("settings store", () => {
 
   it("clamps sfxVolume to 0..1 and rejects non-numeric volume or collapse values", async () => {
     storage.setItem("paws.settings", JSON.stringify({ sfxVolume: "loud", chatCollapsed: 1, minimapCollapsed: "yes" }));
-    expect((await load()).getSettings()).toMatchObject({ sfxVolume: 1, chatCollapsed: false, minimapCollapsed: false });
+    expect((await load()).getSettings()).toMatchObject({ sfxVolume: 1, chatCollapsed: true, minimapCollapsed: false });
 
     const { updateSettings, getSettings } = await load();
     expect(updateSettings({ sfxVolume: 2.5 }).sfxVolume).toBe(1);

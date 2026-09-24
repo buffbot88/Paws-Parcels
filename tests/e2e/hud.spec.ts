@@ -124,13 +124,13 @@ test.describe("HUD lifecycle", () => {
     ).toBeLessThanOrEqual(HUD_COVERAGE_BUDGET);
 
     // Structural invariant that the canvas selectors depend on: exactly one
-    // direct *sprite* canvas child (Phaser's) plus the 3D world canvas when the
-    // 3D renderer runs, with the HUD's own canvases (minimap base + live layer)
+    // direct *sprite* canvas child (Phaser's), no 3D world canvas in the default
+    // 2D session, with the HUD's own canvases (minimap base + live layer)
     // nested inside the layer. `#game-container canvas` would otherwise resolve
     // to the minimap — which is exactly what broke the focus clicks and the
     // world-brain scene snapshot when the layer landed.
     await expect(page.locator(SEL.spriteCanvas)).toHaveCount(1);
-    await expect(page.locator(SEL.world3dCanvas)).toHaveCount(1);
+    await expect(page.locator(SEL.world3dCanvas)).toHaveCount(0);
     await expect(page.locator(`${SEL.hudLayer} canvas`)).toHaveCount(2);
 
     // The HUD layer is the canvas-relative parent, and it is not in the
@@ -247,7 +247,7 @@ test.describe("HUD lifecycle", () => {
     collector.expectClean();
   });
 
-  test("the chat collapses to its header, reopens, and stays see-through", async ({ page }) => {
+  test("the chat starts collapsed to its header, opens, and stays see-through", async ({ page }) => {
     const collector = await bootToOverworld(page);
 
     const chat = page.locator(SEL.chatBox);
@@ -256,9 +256,8 @@ test.describe("HUD lifecycle", () => {
     await expect(chat).toBeVisible({ timeout: 15_000 });
     await expect(page.locator(SEL.chatBoxToggle)).toBeVisible();
 
-    // Collapsing hides the log and composer — but the header holding the
-    // toggle has to survive, or nothing on screen could reopen the chat.
-    await toggle.click();
+    // Starts collapsed: the log and composer are hidden — but the header
+    // holding the toggle has to survive, or nothing on screen could open it.
     await expect(chat).toHaveClass(/chat-box--collapsed/);
     await expect(body).toBeHidden();
     await expect(toggle).toBeVisible();
@@ -280,6 +279,10 @@ test.describe("HUD lifecycle", () => {
       return parts.length === 4 ? parts[3] : 1;
     });
     expect(alpha, "chat panel background alpha").toBeLessThan(0.8);
+
+    await toggle.click();
+    await expect(chat).toHaveClass(/chat-box--collapsed/);
+    await expect(body).toBeHidden();
 
     collector.expectClean();
   });

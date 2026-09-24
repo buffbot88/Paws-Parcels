@@ -117,7 +117,7 @@ function tagOf(object: Phaser.GameObjects.GameObject): EntityTag | null {
 
 /** A text object's canvas as an uploadable tag. */
 function textTag(tag: Phaser.GameObjects.Text | undefined): EntityTag | null {
-  if (tag === undefined || tag.canvas === undefined) return null;
+  if (tag === undefined || tag.canvas === undefined || !tag.visible) return null;
   const style = tag.style;
   return {
     canvas: tag.canvas,

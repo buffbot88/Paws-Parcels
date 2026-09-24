@@ -186,6 +186,8 @@ export class QuestTracker {
     this.objective.textContent = next === undefined
       ? "Meet village friends to unlock errands, stories, and keepsakes."
       : `${next.description}${next.state === "active" && next.type === "delivery" ? ` · Parcel: ${parcelConditionLabel(next.parcelCondition)}` : ""}`;
+    // Clamped to two lines by CSS; the tooltip keeps the full text.
+    this.objective.title = this.objective.textContent ?? "";
     let status: string;
     if (active !== undefined) {
       const deadline = active.deadlineAt === null ? "" : ` · ${formatDeadline(active.deadlineAt)}`;

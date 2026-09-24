@@ -5,7 +5,7 @@ import type { NetMonsterInfo } from "../net/GameSocket.ts";
 import { worldDepth } from "../game/WorldDepth.ts";
 import {
   CREATURE_SIZING,
-  entityFeetOffsetPx,
+  entityShadowOffsetPx,
   entityNameTagOffsetPx,
   entityScale,
   entityShadow,
@@ -72,7 +72,7 @@ export class Monster extends Phaser.GameObjects.Container {
     const recipe = entityShadow(CREATURE_SIZING);
     const shadow = scene.add.ellipse(
       0,
-      entityFeetOffsetPx(CREATURE_SIZING),
+      entityShadowOffsetPx(CREATURE_SIZING),
       recipe.widthPx,
       recipe.heightPx,
       recipe.color,
@@ -103,6 +103,11 @@ export class Monster extends Phaser.GameObjects.Container {
   }
 
   /** Update the interpolation target from a server snapshot (tile units). */
+  /** Show or hide the name tag (the scene shows names near the courier or under the pointer). */
+  showName(visible: boolean): void {
+    this.nameTag.setVisible(visible);
+  }
+
   setTarget(pos: { x: number; y: number }): void {
     this.targetX = pos.x * TILE_SIZE + TILE_SIZE / 2;
     this.targetY = pos.y * TILE_SIZE + TILE_SIZE / 2;

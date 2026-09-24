@@ -38,7 +38,7 @@ function defaults(): Settings {
     damageNumbers: true,
     reducedMotion,
     sfxVolume: 1,
-    chatCollapsed: false,
+    chatCollapsed: true,
     minimapCollapsed: false,
   };
 }

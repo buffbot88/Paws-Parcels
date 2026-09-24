@@ -81,13 +81,13 @@
 }
 
 #player-hp.player-card > .hud-panel__body {
-  padding: calc(var(--hud-scale) * 6px) calc(var(--hud-scale) * 7px);
-  gap: calc(var(--hud-scale) * 6px);
+  padding: calc(var(--hud-scale) * 4px) calc(var(--hud-scale) * 6px);
+  gap: calc(var(--hud-scale) * 5px);
 }
 
 .player-card__portrait {
-  width: calc(var(--hud-scale) * 28px);
-  height: calc(var(--hud-scale) * 28px);
+  width: calc(var(--hud-scale) * 24px);
+  height: calc(var(--hud-scale) * 24px);
   border-width: calc(var(--hud-scale) * 1.5px);
   font-size: calc(var(--hud-scale) * 13px);
 }
@@ -96,7 +96,7 @@
   display: flex;
   flex: 1;
   flex-direction: column;
-  gap: calc(var(--hud-scale) * 3px);
+  gap: calc(var(--hud-scale) * 2px);
   min-width: 0;
 }
 
@@ -111,7 +111,7 @@
   overflow: hidden;
   color: var(--brown-900);
   font-family: var(--font-display);
-  font-size: calc(var(--hud-scale) * 11px);
+  font-size: calc(var(--hud-scale) * 10px);
   line-height: 1.1;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -162,7 +162,7 @@
 .player-card__bar--focus .player-card__resource-icon { color: var(--resource-focus); }
 
 .player-card__bar .hud-progress {
-  height: calc(var(--hud-scale) * 11px);
+  height: calc(var(--hud-scale) * 9px);
 }
 
 .player-card__bar-track--stamina {
@@ -185,7 +185,7 @@
   display: grid;
   place-items: center;
   color: var(--cream-50);
-  font-size: calc(var(--hud-scale) * 8px);
+  font-size: calc(var(--hud-scale) * 7px);
   font-weight: 700;
   font-variant-numeric: tabular-nums;
   text-shadow: 0 1px 1px rgba(43, 29, 15, 0.55);
@@ -223,7 +223,7 @@
   right: var(--hud-edge);
   display: flex;
   flex-direction: column;
-  width: calc(var(--hud-scale) * var(--minimap-width, 150) * 1px);
+  width: calc(var(--hud-scale) * var(--minimap-width, 128) * 1px);
   overflow: hidden;
   color: var(--cream-50);
   background: rgba(23, 54, 31, 0.92);
@@ -237,14 +237,14 @@
 .minimap__header {
   display: flex;
   align-items: center;
-  gap: calc(var(--hud-scale) * 6px);
-  height: calc(var(--hud-scale) * 24px);
-  padding: 0 calc(var(--hud-scale) * 8px);
+  gap: calc(var(--hud-scale) * 5px);
+  height: calc(var(--hud-scale) * 20px);
+  padding: 0 calc(var(--hud-scale) * 7px);
   color: var(--cream-50);
   background: transparent;
   border: 0;
   font-family: var(--font-display);
-  font-size: calc(var(--hud-scale) * 11px);
+  font-size: calc(var(--hud-scale) * 10px);
   font-weight: 700;
   text-align: left;
   cursor: pointer;
@@ -276,7 +276,7 @@
   position: relative;
   width: 100%;
   height: calc(
-    var(--hud-scale) * var(--minimap-width, 150) * var(--minimap-aspect, 1) * 1px
+    var(--hud-scale) * var(--minimap-width, 128) * var(--minimap-aspect, 1) * 1px
   );
   background: #8fc98a;
 }
@@ -294,9 +294,9 @@
 .minimap__footer {
   display: flex;
   align-items: center;
-  gap: calc(var(--hud-scale) * 6px);
-  height: calc(var(--hud-scale) * 20px);
-  padding: 0 calc(var(--hud-scale) * 8px);
+  gap: calc(var(--hud-scale) * 5px);
+  height: calc(var(--hud-scale) * 17px);
+  padding: 0 calc(var(--hud-scale) * 7px);
   border-top: 1px solid rgba(231, 188, 85, 0.22);
   font-size: calc(var(--hud-scale) * 9px);
 }
@@ -376,7 +376,7 @@
 .hud-column--bottom-left {
   left: var(--hud-edge);
   bottom: var(--hud-edge);
-  width: calc(var(--hud-scale) * 224px);
+  width: calc(var(--hud-scale) * 200px);
 }
 
 /* Mount order is not the layout: the tracker owns the upper slot whichever
@@ -395,9 +395,9 @@
 }
 
 .quest-tracker > .hud-panel__body {
-  padding: calc(var(--hud-scale) * 12px) calc(var(--hud-scale) * 12px)
-    calc(var(--hud-scale) * 10px);
-  gap: calc(var(--hud-scale) * 6px);
+  padding: calc(var(--hud-scale) * 10px) calc(var(--hud-scale) * 9px)
+    calc(var(--hud-scale) * 7px);
+  gap: calc(var(--hud-scale) * 4px);
 }
 
 /* Category tab sitting on the card's top edge — and the control that brings
@@ -426,20 +426,24 @@
   flex: 1;
   color: var(--brown-900);
   font-family: var(--font-display);
-  font-size: calc(var(--hud-scale) * 13px);
+  font-size: calc(var(--hud-scale) * 12px);
   line-height: 1.15;
 }
 
 .quest-tracker__toggle {
-  width: calc(var(--hud-scale) * 22px);
-  height: calc(var(--hud-scale) * 22px);
+  width: calc(var(--hud-scale) * 18px);
+  height: calc(var(--hud-scale) * 18px);
 }
 
 .quest-tracker__objective {
-  display: block;
+  display: -webkit-box;
+  overflow: hidden;
   color: var(--brown-600);
-  font-size: calc(var(--hud-scale) * 10px);
-  line-height: 1.35;
+  font-size: calc(var(--hud-scale) * 9px);
+  line-height: 1.3;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
 }
 
 .quest-tracker__row {
@@ -451,7 +455,7 @@
 .quest-tracker__status {
   flex: 1;
   color: var(--brown-900);
-  font-size: calc(var(--hud-scale) * 10px);
+  font-size: calc(var(--hud-scale) * 9px);
   font-weight: 700;
   line-height: 1.3;
 }
@@ -612,7 +616,8 @@
    must survive — hiding the whole panel body would hide the only control that
    can expand the chat again. */
 .chat-box--collapsed > .hud-panel__body {
-  padding: calc(var(--hud-scale) * 6px) calc(var(--hud-scale) * 9px);
+  padding: calc(var(--hud-scale) * 3px) calc(var(--hud-scale) * 5px)
+    calc(var(--hud-scale) * 3px) calc(var(--hud-scale) * 9px);
   gap: 0;
 }
 
@@ -622,6 +627,7 @@
   align-self: flex-start;
   width: max-content;
   max-width: 100%;
+  border-radius: var(--radius-pill);
   background: rgba(23, 54, 31, 0.58);
 }
 
@@ -636,6 +642,7 @@
   align-items: center;
   gap: calc(var(--hud-scale) * 6px);
   font-size: calc(var(--hud-scale) * 10px);
+  cursor: pointer;
 }
 
 .chat-box__title {
@@ -666,7 +673,7 @@
   display: flex;
   flex-direction: column;
   gap: calc(var(--hud-scale) * 4px);
-  height: calc(var(--hud-scale) * 62px);
+  height: calc(var(--hud-scale) * 56px);
   overflow-y: auto;
   scrollbar-width: thin;
   font-size: calc(var(--hud-scale) * 10px);

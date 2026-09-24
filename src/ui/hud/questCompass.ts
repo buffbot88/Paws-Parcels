@@ -45,6 +45,13 @@ export const COMPASS_NEAR_TILES = 1.5;
  */
 export const COMPASS_OFFSET_PX = 40;
 
+/**
+ * The arrow circles the courier's feet on a ring flattened like the ground
+ * plane: vertical reach is this fraction of the horizontal, so pointing north
+ * never lifts the arrow onto the courier's head and name.
+ */
+export const COMPASS_RING_SQUASH = 0.5;
+
 /** The arrow's own box, in internal canvas pixels — also its edge margin. */
 export const COMPASS_SIZE_PX = 28;
 
@@ -230,7 +237,7 @@ export function groundCompassAngle(dx: number, dy: number, foreshortening = 1): 
 }
 
 /**
- * Where the arrow floats: one offset from the courier along the bearing.
+ * Where the arrow floats: on the flattened ring around the courier's feet.
  *
  * `origin` is in fraction space and the offset in internal canvas pixels, so
  * the offset is resolved per axis — on a 16:9 canvas, the same *pixel* nudge
@@ -245,7 +252,7 @@ export function compassArrowPoint(
 ): CanvasFraction {
   return {
     x: origin.x + (Math.cos(angleRad) * offsetPx) / canvas.width,
-    y: origin.y + (Math.sin(angleRad) * offsetPx) / canvas.height,
+    y: origin.y + (Math.sin(angleRad) * offsetPx * COMPASS_RING_SQUASH) / canvas.height,
   };
 }
 

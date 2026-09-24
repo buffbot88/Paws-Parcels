@@ -18,6 +18,9 @@ import { toasts } from "../ui/ToastStack.ts";
 import { apiPath } from "../config.ts";
 import { Player } from "../entities/Player.ts";
 import { NPC } from "../entities/NPC.ts";
+import { RemotePlayer } from "../entities/RemotePlayer.ts";
+import { Monster } from "../entities/Monster.ts";
+import { AmbientMotes2D } from "./ambient2d.ts";
 import { InteractionSystem, type InteractionTarget } from "../systems/InteractionSystem.ts";
 import { sanitizeSpawn } from "../systems/MapValidator.ts";
 import { selectDialogueSet } from "../systems/DialogueService.ts";
@@ -59,7 +62,12 @@ import {
 } from "../game/cameraFraming.ts";
 import { reservedTilesFor, COMPOSITION_DEFAULTS } from "../game/terrainComposition.ts";
 import { buildTerrainPlan, type TerrainPlan } from "../game/terrainSurface.ts";
-import { entityNameTagOffsetPx, entityShadow, villagerSizing } from "../game/entitySizing.ts";
+import {
+  entityHeadOffsetPx,
+  entityRenderedWidthPx,
+  entityShadow,
+  villagerSizing,
+} from "../game/entitySizing.ts";
 import { npcArtForDefinition } from "../game/cloverVillageNpcAssets.ts";
 import {
   CLOVER_VILLAGE_PROP_SIZING,
@@ -74,8 +82,7 @@ import type { NPC as NPCDefinition } from "../types/NPCtypes.ts";
 import type { DialogueSet } from "../types/DialogueTypes.ts";
 import type { QuestDefinition } from "../types/QuestTypes.ts";
 import { DEPTH_OFFSET, worldDepth } from "../game/WorldDepth.ts";
-import { WorldRenderer3D } from "../render3d/WorldRenderer3D.ts";
-import { CAMERA_3D, groundForeshortening } from "../render3d/camera3d.ts";
+import type { WorldRenderer3D } from "../render3d/WorldRenderer3D.ts";
 import { entityBillboards } from "../render3d/entityView.ts";
 import { readRendererMode, type RendererMode } from "../render3d/rendererMode.ts";
 
@@ -106,8 +113,8 @@ const ATTACK_TARGET_RANGE = 6;
 const PROMPT_BADGE_HEIGHT_PX = 22;
 /** Clearance between the badge and whatever art is already drawn there. */
 const PROMPT_BADGE_GAP_PX = 6;
-/** A villager name tag: 11-12px text plus 3px padding, see NPC.ts. */
-const NPC_NAME_TAG_HEIGHT_PX = 20;
+/** Half the widest badge ("Tap" on touch is 40px). */
+const PROMPT_BADGE_HALF_WIDTH_PX = 20;
 
 /**
  * Where the badge hangs for a target whose own annotation — a villager's name
@@ -118,6 +125,10 @@ const NPC_NAME_TAG_HEIGHT_PX = 20;
 function promptOffsetAbove(artCentrePx: number, artHeightPx: number): number {
   return artCentrePx - artHeightPx / 2 - PROMPT_BADGE_GAP_PX - PROMPT_BADGE_HEIGHT_PX / 2;
 }
+
+/** Names show within this many px of the courier, or under the pointer. */
+const NAME_NEAR_PX = 5 * TILE_SIZE;
+const NAME_HOVER_PX = TILE_SIZE;
 
 /** Min ms between AI NPC line requests (server also rate-limits). */
 const NPC_TALK_MIN_INTERVAL_MS = 1_200;
@@ -200,7 +211,13 @@ export class OverworldScene extends Phaser.Scene {
   private lastTileY = -1;
   /** The 3D world renderer, when this session runs one. */
   private world3d: WorldRenderer3D | null = null;
-  /** Which world renderer this session runs (3D is the shipped default). */
+  /** Fireflies / pollen over the 2D world (the 3D renderer draws its own). */
+  private ambient2d: AmbientMotes2D | null = null;
+  /** Bumped on teardown so a 3D build still loading never attaches to a later zone. */
+  private world3dBuild = 0;
+  /** The 3D camera's ground foreshortening, set once the 3D modules have loaded. */
+  private world3dForeshortening = 1;
+  /** Which world renderer this session runs (2D is the shipped default). */
   private readonly renderMode: RendererMode = readRendererMode();
   /** Where the 3D badge hangs, or null when nothing is focused. */
   private badge3d: { x: number; y: number; z: number } | null = null;
@@ -324,9 +341,6 @@ export class OverworldScene extends Phaser.Scene {
       spawn.y * TILE_SIZE + TILE_SIZE / 2,
       character?.class_id ?? 1,
     );
-    // The courier's own name over their head, from the same session character
-    // the status card and the top bar use — so it can never disagree with them.
-    this.player.setDisplayName(character?.name ?? "Courier");
     // The courier's shadow comes from the same recipe as every prop's (Pass 6),
     // sized from its own ground contact, and sits at the figure's feet as the
     // entity convention measures them — not at a fixed 12px below centre.
@@ -334,7 +348,7 @@ export class OverworldScene extends Phaser.Scene {
     this.shadow = this.add
       .ellipse(
         this.player.x,
-        this.player.y + this.player.feetOffsetPx,
+        this.player.y + this.player.shadowOffsetPx,
         playerShadow.widthPx,
         playerShadow.heightPx,
         playerShadow.color,
@@ -391,11 +405,10 @@ export class OverworldScene extends Phaser.Scene {
     this.localMap = new LocalMapPanel();
     this.localMap.attach(resolved);
     this.buildPrompt();
-    // The world itself is drawn in 3D from here on: Phaser keeps owning input,
-    // entities, collision and the HUD, while the frame comes from the WebGL
-    // canvas under the HUD layers. The sprite renderer stays reachable through
-    // `?renderer=2d` so a regression can be compared against it.
-    this.buildWorld3D(resolved, terrain);
+    // Opt-in `?renderer=3d`: Phaser keeps owning input, entities, collision and
+    // the HUD, while the frame comes from a WebGL canvas under the HUD layers.
+    void this.buildWorld3D(resolved, terrain);
+    if (this.renderMode === "2d") this.ambient2d = new AmbientMotes2D(this, resolved.id);
 
     // Phase 4 — world minimap: pre-renders this zone's terrain once and
     // tracks the courier + network entities live each frame.
@@ -533,6 +546,9 @@ export class OverworldScene extends Phaser.Scene {
       this.events.off(Phaser.Scenes.Events.SHUTDOWN, teardown);
       this.events.off(Phaser.Scenes.Events.DESTROY, teardown);
       dialoguePanel.close();
+      this.world3dBuild++;
+      this.ambient2d?.destroy();
+      this.ambient2d = null;
       this.world3d?.destroy();
       this.world3d = null;
       for (const object of this.visualGround) object.destroy();
@@ -558,14 +574,14 @@ export class OverworldScene extends Phaser.Scene {
     if (this.isDefeated) {
       this.updateCameraFraming({ x: 0, y: 0 });
       this.questCompass.update({
-        origin: this.playerCanvasFraction(),
+        origin: this.playerCanvasFraction(this.player.shadowOffsetPx),
         label: "",
         angleRad: 0,
         visible: false,
       });
       this.player.move({ x: 0, y: 0 });
       this.player.setDepth(worldDepth(this.player.y));
-      this.shadow.setPosition(this.player.x, this.player.y + this.player.feetOffsetPx);
+      this.shadow.setPosition(this.player.x, this.player.y + this.player.shadowOffsetPx);
       this.shadow.setDepth(worldDepth(this.player.y, DEPTH_OFFSET.contactShadow));
       this.skillBar.setVisible(false);
       this.inputSystem.discardQueued();
@@ -582,7 +598,7 @@ export class OverworldScene extends Phaser.Scene {
       this.updateCameraFraming({ x: 0, y: 0 });
       this.player.move({ x: 0, y: 0 });
       this.player.setDepth(worldDepth(this.player.y));
-      this.shadow.setPosition(this.player.x, this.player.y + this.player.feetOffsetPx);
+      this.shadow.setPosition(this.player.x, this.player.y + this.player.shadowOffsetPx);
       this.shadow.setDepth(worldDepth(this.player.y, DEPTH_OFFSET.contactShadow));
       this.skillBar.setVisible(false);
       if (this.inputSystem.consumeInteract()) dialoguePanel.advance();
@@ -596,7 +612,7 @@ export class OverworldScene extends Phaser.Scene {
     const vector = this.inputSystem.getMoveVector();
     this.player.move(vector);
     this.player.setDepth(worldDepth(this.player.y));
-    this.shadow.setPosition(this.player.x, this.player.y + this.player.feetOffsetPx);
+    this.shadow.setPosition(this.player.x, this.player.y + this.player.shadowOffsetPx);
     this.shadow.setDepth(worldDepth(this.player.y, DEPTH_OFFSET.contactShadow));
     // Lead the direction of travel a little, so the road ahead is revealed
     // before the courier reaches it.
@@ -661,7 +677,22 @@ export class OverworldScene extends Phaser.Scene {
     }
 
     this.checkTransition();
+    this.updateNameTags();
+    this.ambient2d?.update(this.time.now / 1000, { x: this.player.x / TILE_SIZE, y: this.player.y / TILE_SIZE });
     this.updateWorld3D(vector);
+  }
+
+  /** Names only where they help: near the courier, or under the pointer. */
+  private updateNameTags(): void {
+    const pointer = this.input.activePointer;
+    const hover = this.cameras.main.getWorldPoint(pointer.x, pointer.y);
+    const near = (x: number, y: number): boolean =>
+      Math.hypot(x - this.player.x, y - this.player.y) <= NAME_NEAR_PX ||
+      Math.hypot(x - hover.x, y - hover.y) <= NAME_HOVER_PX;
+    for (const object of this.children.list) {
+      if (object instanceof NPC) object.showName(object.visible && near(object.x, object.y));
+      else if (object instanceof RemotePlayer || object instanceof Monster) object.showName(near(object.x, object.y));
+    }
   }
 
   /**
@@ -669,13 +700,21 @@ export class OverworldScene extends Phaser.Scene {
    *
    * A zone with no authored terrain keeps the sprite renderer: the 3D world is
    * built from the terrain plan and the placement tables, and without them there
-   * is nothing to stand up in three dimensions.
+   * is nothing to stand up in three dimensions. three.js loads only here, so
+   * the default 2D session never downloads it.
    */
-  private buildWorld3D(map: MapData, terrain: TerrainMaterials | undefined): void {
+  private async buildWorld3D(map: MapData, terrain: TerrainMaterials | undefined): Promise<void> {
     if (this.renderMode !== "3d" || terrain === undefined || this.terrainPlan === null) return;
     const host = document.getElementById("game-container");
     if (host === null) return;
+    const build = ++this.world3dBuild;
     try {
+      const [{ WorldRenderer3D }, camera] = await Promise.all([
+        import("../render3d/WorldRenderer3D.ts"),
+        import("../render3d/camera3d.ts"),
+      ]);
+      if (build !== this.world3dBuild) return;
+      this.world3dForeshortening = camera.groundForeshortening(camera.CAMERA_3D);
       const world = new WorldRenderer3D(this.sys.textures, host);
       world.attachZone({
         map,
@@ -757,7 +796,7 @@ export class OverworldScene extends Phaser.Scene {
     const player = { x: this.player.x / TILE_SIZE, y: this.player.y / TILE_SIZE };
     if (destination === null) {
       this.questCompass.update({
-        origin: this.playerCanvasFraction(),
+        origin: this.playerCanvasFraction(this.player.shadowOffsetPx),
         label: "",
         angleRad: 0,
         visible: false,
@@ -771,7 +810,7 @@ export class OverworldScene extends Phaser.Scene {
     const target = tileCentre(destination.tile);
     const distance = compassDistanceTiles(player, target);
     this.questCompass.update({
-      origin: this.playerCanvasFraction(),
+      origin: this.playerCanvasFraction(this.player.shadowOffsetPx),
       angleRad: groundCompassAngle(
         target.x - player.x,
         target.y - player.y,
@@ -790,9 +829,10 @@ export class OverworldScene extends Phaser.Scene {
    * Asked of whichever renderer is drawing the frame: the 3D camera projects the
    * ground point, and the sprite camera's visible world rectangle is the same
    * measurement for the 2D path. Fractions (not pixels) are what lets one HUD
-   * element sit correctly on both, and at every window scale.
+   * element sit correctly on both, and at every window scale. `groundOffsetPx`
+   * moves the 2D point down to the feet; the 3D projection is already the ground.
    */
-  private playerCanvasFraction(): { x: number; y: number } {
+  private playerCanvasFraction(groundOffsetPx = 0): { x: number; y: number } {
     const world = this.world3d;
     if (world !== null) {
       return world.projectGround(this.player.x / TILE_SIZE, this.player.y / TILE_SIZE);
@@ -801,7 +841,7 @@ export class OverworldScene extends Phaser.Scene {
     if (view.width <= 0 || view.height <= 0) return { x: 0.5, y: 0.5 };
     return {
       x: (this.player.x - view.x) / view.width,
-      y: (this.player.y - view.y) / view.height,
+      y: (this.player.y + groundOffsetPx - view.y) / view.height,
     };
   }
 
@@ -811,7 +851,7 @@ export class OverworldScene extends Phaser.Scene {
    * module so the arrow aims along the direction the frame actually draws.
    */
   private renderForeshortening(): number {
-    return this.world3d === null ? 1 : groundForeshortening(CAMERA_3D);
+    return this.world3d === null ? 1 : this.world3dForeshortening;
   }
 
   /**
@@ -1053,12 +1093,13 @@ export class OverworldScene extends Phaser.Scene {
       x: n.homeTile.x * TILE_SIZE + TILE_SIZE / 2,
       y: n.homeTile.y * TILE_SIZE + TILE_SIZE / 2,
       npcId: n.id,
-      // Over the name tag: that is what already occupies the space above a
-      // villager's head, and the badge must not sit on it.
-      promptOffsetPx: promptOffsetAbove(
-        entityNameTagOffsetPx(villagerSizing(npcArtForDefinition(n))),
-        NPC_NAME_TAG_HEIGHT_PX,
-      ),
+      // Beside the villager at chest height: above the head is the name tag
+      // and quest marker, and over the figure it would hide the face.
+      promptOffsetPx: entityHeadOffsetPx(villagerSizing(npcArtForDefinition(n))) / 2,
+      promptOffsetXPx:
+        entityRenderedWidthPx(villagerSizing(npcArtForDefinition(n))) / 2 +
+        PROMPT_BADGE_GAP_PX +
+        PROMPT_BADGE_HALF_WIDTH_PX,
     }));
     const objectTargets: InteractionTarget[] = map.interactables.map(
       (o: MapInteractable) => ({
@@ -1119,12 +1160,13 @@ export class OverworldScene extends Phaser.Scene {
     }
     const moved = this.promptTargetId !== focused.id;
     this.promptTargetId = focused.id;
-    this.prompt.setPosition(focused.x, focused.y + focused.promptOffsetPx);
+    const badgeX = focused.x + (focused.promptOffsetXPx ?? 0);
+    this.prompt.setPosition(badgeX, focused.y + focused.promptOffsetPx);
     // The 3D badge hangs the same distance above the target's own art; the
     // sprite badge stays positioned too, so `?renderer=2d` and the visual
     // probes see the same focus either way.
     this.badge3d = {
-      x: focused.x / TILE_SIZE,
+      x: badgeX / TILE_SIZE,
       y: -focused.promptOffsetPx / TILE_SIZE,
       z: focused.y / TILE_SIZE,
     };

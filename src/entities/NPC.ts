@@ -10,7 +10,7 @@ import {
   type CloverNpcArt,
 } from "../game/cloverVillageNpcAssets.ts";
 import {
-  entityFeetOffsetPx,
+  entityShadowOffsetPx,
   entityNameTagOffsetPx,
   entityScale,
   entityShadow,
@@ -100,7 +100,7 @@ export class NPC extends Phaser.Physics.Arcade.Sprite {
     this.shadow = scene.add
       .ellipse(
         x,
-        y + entityFeetOffsetPx(sizing),
+        y + entityShadowOffsetPx(sizing),
         recipe.widthPx,
         recipe.heightPx,
         recipe.color,
@@ -145,6 +145,11 @@ export class NPC extends Phaser.Physics.Arcade.Sprite {
   }
 
   /** Show or clear the quest marker; a no-op when unchanged, so it is safe per frame. */
+  /** Show or hide the name tag (the scene shows names near the courier or under the pointer). */
+  showName(visible: boolean): void {
+    this.nameTag.setVisible(visible);
+  }
+
   setQuestMarker(kind: NpcQuestMarker | null): void {
     if (kind === this.markerKind) return;
     this.markerKind = kind;

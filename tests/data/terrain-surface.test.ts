@@ -140,6 +140,17 @@ describe("terrain plan — full surface coverage", () => {
     }
   });
 
+  it("turns road and plaza fills a seeded quarter as well as mirroring them", () => {
+    for (const tile of [...cloverPlan.paths, ...cloverPlan.paved]) {
+      expect([0, 1, 2, 3]).toContain(tile.quarterTurns);
+    }
+    const looks = new Set(
+      cloverPlan.paved.map((tile) => `${tile.quarterTurns},${tile.flipX},${tile.flipY}`),
+    );
+    // Every turn/mirror combination occurs (16 tuples, eight distinct looks).
+    expect(looks.size).toBe(16);
+  });
+
   it("classifies the plaza as the generated disc, not the old rectangle", () => {
     const paved = pavedTiles(CLOVER);
     // The generator fills a disc of radius 7.6 around (37,28); its interior
@@ -204,6 +215,23 @@ describe("terrain plan — seams (no machine-straight grass/paving boundary)", (
     }
     expect(cloverPlan.fringes.length).toBe(expected);
     expect(expected).toBeGreaterThan(300);
+  });
+
+  it("rounds each inside corner of the seam with exactly one clump", () => {
+    expect(cloverPlan.corners.length).toBeGreaterThan(0);
+    const points = new Set(cloverPlan.corners.map((c) => `${c.x},${c.y}`));
+    expect(points.size).toBe(cloverPlan.corners.length);
+    for (const corner of cloverPlan.corners) {
+      // The four tiles meeting at the point: three paving, one grass.
+      const around = [
+        tileCodeAt(CLOVER, corner.x - 1, corner.y - 1),
+        tileCodeAt(CLOVER, corner.x, corner.y - 1),
+        tileCodeAt(CLOVER, corner.x - 1, corner.y),
+        tileCodeAt(CLOVER, corner.x, corner.y),
+      ];
+      expect(around.filter((code) => code === "P")).toHaveLength(3);
+      expect(around.filter((code) => code !== null && GRASS_COVER_CODES.has(code))).toHaveLength(1);
+    }
   });
 
   it("hangs each fringe from the side its grass is actually on", () => {

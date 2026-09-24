@@ -168,8 +168,8 @@ describe("entity sizing — the cast obeys one convention", () => {
     // disagreed with it rather than moving the character the world is tuned
     // around, so the derived scale must reproduce the old 1.33 within 5%.
     for (const [classKey, spec] of Object.entries(COURIER_SIZING)) {
-      expect(entityScale(spec)).toBeCloseTo(1.33, 1);
-      expect(spec.tiles).toBe(0.75);
+      expect(entityScale(spec)).toBeCloseTo(1.92, 1);
+      expect(spec.tiles).toBe(1.1);
       expect(ENTITY_BANDS.courier.min).toBeLessThanOrEqual(spec.tiles);
       expect(ENTITY_BANDS.courier.max).toBeGreaterThanOrEqual(spec.tiles);
       expect(classKey).toMatch(/^(bear-warrior|cat-mage|fox-archer)$/);

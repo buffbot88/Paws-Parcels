@@ -17,6 +17,8 @@ const MAX_MESSAGES = 40;
  * "same zone" pill header, low-contrast empty state, 48px composer with a gold
  * circular send button. Server remains authoritative for delivery.
  *
+ * Starts collapsed to its header (a small pill with the unread badge); the
+ * whole header toggles it, and Enter opens it straight into the composer.
  * The header carries a collapse toggle and stays on screen when collapsed —
  * only the log and composer are hidden. Same defect class the quest tracker
  * had: hiding the whole panel body would hide the one control that could
@@ -63,14 +65,14 @@ export class ChatBox {
     });
     this.toggle.classList.add("chat-box__toggle");
     this.toggle.setAttribute("aria-controls", "chat-box-body");
-    this.toggle.addEventListener("click", () => {
-      this.setCollapsed(!this.collapsed);
-      updateSettings({ chatCollapsed: this.collapsed });
-    });
     this.unreadBadge = document.createElement("span");
     this.unreadBadge.className = "chat-box__unread";
     this.unreadBadge.hidden = true;
     header.append(titleGroup, hint, this.unreadBadge, this.toggle);
+    header.addEventListener("click", () => {
+      this.setCollapsed(!this.collapsed);
+      updateSettings({ chatCollapsed: this.collapsed });
+    });
 
     this.log = document.createElement("div");
     this.log.className = "chat-box__log";

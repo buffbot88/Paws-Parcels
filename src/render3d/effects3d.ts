@@ -6,25 +6,18 @@
  * registers itself, which is how `NetworkSystem` finds it without scene wiring.
  */
 import * as THREE from "three";
-import type { NetCombatEvent } from "../net/GameSocket.ts";
 import { TILE_SIZE } from "../game/tileGrid.ts";
 import { CAMERA_3D } from "./camera3d.ts";
 import type { Texture3DCache } from "./texture3d.ts";
 import { getSettings } from "../ui/settings.ts";
+import {
+  activeWorldEffects,
+  damageNumberStyle,
+  setActiveWorldEffects,
+  type DamageOutcome,
+} from "./worldEffectsHandle.ts";
 
-export type DamageOutcome = NetCombatEvent["outcome"];
-
-/** A damage number's text and look, shared by both renderers. */
-export function damageNumberStyle(
-  damage: number,
-  outcome: DamageOutcome,
-): { label: string; colour: string; fontPx: number } {
-  return {
-    label: outcome === "crit" ? `${damage}!` : String(damage),
-    colour: outcome === "crit" ? "#e0c040" : outcome === "defeated" ? "#d05050" : "#ffffff",
-    fontPx: outcome === "crit" ? 18 : 15,
-  };
-}
+export { damageNumberStyle, activeWorldEffects, type DamageOutcome };
 
 /** How long a damage number lives, matching the 2D tween. */
 export const DAMAGE_NUMBER_SECONDS = 0.7;
@@ -83,13 +76,6 @@ interface Burst {
   age: number;
 }
 
-let active: WorldEffects3D | null = null;
-
-/** The live 3D effects layer, or null when the sprite renderer is drawing. */
-export function activeWorldEffects(): WorldEffects3D | null {
-  return active;
-}
-
 /** Pools and steps the transient combat quads. */
 export class WorldEffects3D {
   private readonly root = new THREE.Group();
@@ -102,7 +88,7 @@ export class WorldEffects3D {
     private readonly cache: Texture3DCache,
   ) {
     this.scene.add(this.root);
-    active = this;
+    setActiveWorldEffects(this);
   }
 
   /** Float a damage number up from above a figure `headTiles` tall. */
@@ -176,7 +162,7 @@ export class WorldEffects3D {
   }
 
   dispose(): void {
-    if (active === this) active = null;
+    if (activeWorldEffects() === this) setActiveWorldEffects(null);
     this.scene.remove(this.root);
     for (const floater of this.floaters) {
       floater.material.dispose();

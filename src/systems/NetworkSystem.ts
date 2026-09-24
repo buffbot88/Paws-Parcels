@@ -31,7 +31,7 @@ import {
   playAttackEffect,
 } from "../game/classAssets.ts";
 import { CREATURE_SIZING } from "../game/entitySizing.ts";
-import { activeWorldEffects, damageNumberStyle } from "../render3d/effects3d.ts";
+import { activeWorldEffects, damageNumberStyle } from "../render3d/worldEffectsHandle.ts";
 import { getSettings } from "../ui/settings.ts";
 import { classResourceFromId } from "../game/classStats.ts";
 import { PlayerStatusCard } from "../ui/PlayerStatusCard.ts";

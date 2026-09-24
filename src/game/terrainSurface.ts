@@ -178,6 +178,12 @@ export interface SurfacePlacement {
   /** Deterministic mirror, used to break up an otherwise identical repeat. */
   flipX: boolean;
   flipY: boolean;
+  /**
+   * Clockwise quarter turns (0-3). Both fills are square, seamless centre tiles
+   * with no light direction baked in, so every orientation is valid art; with
+   * the mirrors that is eight looks per tile instead of four.
+   */
+  quarterTurns: number;
 }
 
 export interface FringePlacement {
@@ -187,6 +193,23 @@ export interface FringePlacement {
   variant: number;
   /** Mirror across the fringe's safe axis (see `fringeSafeFlip`). */
   flip: boolean;
+}
+
+/**
+ * A grass clump over an inside corner of the seam: a point where three paving
+ * tiles meet one grass tile.
+ *
+ * Edge fringes run along whole tile sides, so at each step of the boundary two
+ * of them stop short of each other and leave a square notch; a staircase of
+ * those notches is what reads as 48px blocks. One clump centred on the point
+ * hides the notch and rounds the step.
+ */
+export interface CornerPlacement {
+  /** The corner point in tile units (a tile's top-left corner is its own x, y). */
+  x: number;
+  y: number;
+  scale: number;
+  flipX: boolean;
 }
 
 export interface FoliagePlacement {
@@ -213,6 +236,8 @@ export interface TerrainPlan {
   paved: SurfacePlacement[];
   /** Grass fringes laid across each grass/surface boundary. */
   fringes: FringePlacement[];
+  /** Grass clumps over the inside corners of the grass/surface seam. */
+  corners: CornerPlacement[];
   /** Forest cover for the blocking `T` mass, plus the framing clusters. */
   foliage: FoliagePlacement[];
   /** The subset of `foliage` placed by the blocking-cover rule, in order. */
@@ -379,6 +404,7 @@ export function buildTerrainPlan(
   const paths: SurfacePlacement[] = [];
   const paved: SurfacePlacement[] = [];
   const fringes: FringePlacement[] = [];
+  const corners: CornerPlacement[] = [];
   const foliage: FoliagePlacement[] = [];
   /** Anchors of every placed piece, for the spacing floor. */
   const foliagePlaced: Array<{ x: number; y: number }> = [];
@@ -402,6 +428,7 @@ export function buildTerrainPlan(
           tileY: y,
           flipX: hash01(x, y, 0x51ed) < 0.5,
           flipY: hash01(x, y, 0x9e37) < 0.5,
+          quarterTurns: Math.floor(hash01(x, y, 0x3c6f) * 4),
         };
         (isPavedTile(map, x, y) ? paved : paths).push(placement);
 
@@ -419,6 +446,20 @@ export function buildTerrainPlan(
             // Applied on the fringe's safe axis by the renderer, so variation
             // can re-orient the fuzz but never the side the grass is on.
             flip: hash01(x, y, 0x7a11) < 0.5,
+          });
+        }
+
+        // Inside corners: grass only on the diagonal, paving on both sides.
+        // Only this tile of the three around the grass sees that shape, so
+        // each corner point gets exactly one clump.
+        for (const [sx, sy] of [[-1, -1], [1, -1], [-1, 1], [1, 1]] as const) {
+          if (tileCodeAt(map, x + sx, y) !== "P" || tileCodeAt(map, x, y + sy) !== "P") continue;
+          if (!isGrassCover(tileCodeAt(map, x + sx, y + sy))) continue;
+          corners.push({
+            x: x + (sx > 0 ? 1 : 0),
+            y: y + (sy > 0 ? 1 : 0),
+            scale: 0.22 + hash01(x, y, 0x3a5d + sx * 3 + sy) * 0.08,
+            flipX: hash01(x, y, 0x6c1f + sx * 3 + sy) < 0.5,
           });
         }
         continue;
@@ -572,6 +613,7 @@ export function buildTerrainPlan(
     paths,
     paved,
     fringes,
+    corners,
     foliage,
     cover,
     coveredBlockingTiles: coveredBlocking.tiles(),

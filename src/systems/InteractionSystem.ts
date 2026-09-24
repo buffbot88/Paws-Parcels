@@ -21,6 +21,8 @@ export interface InteractionTarget {
    * already drawn over that spot: a villager's name tag, an object marker.
    */
   promptOffsetPx: number;
+  /** Horizontal offset (px) of the badge; villagers carry it beside them, clear of name and marker. */
+  promptOffsetXPx?: number;
 }
 
 /**
