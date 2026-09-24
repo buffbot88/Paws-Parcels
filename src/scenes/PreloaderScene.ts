@@ -22,6 +22,7 @@ export class PreloaderScene extends Phaser.Scene {
   }
 
   preload(): void {
+    this.showLoadingBar();
     queueClassAssets(this);
     queueCloverVillageAssets(this);
     queueHappyValleyAssets(this);
@@ -32,7 +33,6 @@ export class PreloaderScene extends Phaser.Scene {
     registerClassAnimations(this);
     registerCloverVillageNpcAnimations(this);
     this.generatePlaceholderTextures();
-    this.showLoadingBar();
     this.time.delayedCall(400, () => this.scene.start(SceneKeys.Overworld));
   }
 
@@ -76,17 +76,26 @@ export class PreloaderScene extends Phaser.Scene {
     o.destroy();
   }
 
+  /** Shown while the art downloads (tens of MB), so a slow link never looks frozen. */
   private showLoadingBar(): void {
     const { width, height } = this.scale;
+    const barWidth = 240;
     this.add
-      .rectangle(width / 2, height / 2, 240, 10, 0xffffff, 0.35)
+      .rectangle(width / 2, height / 2, barWidth, 10, 0xffffff, 0.35)
       .setOrigin(0.5);
-    this.add
-      .text(width / 2, height / 2 - 24, "Preparing the forest…", {
+    const fill = this.add
+      .rectangle(width / 2 - barWidth / 2, height / 2, 0, 10, 0x4f7a3f, 1)
+      .setOrigin(0, 0.5);
+    const label = this.add
+      .text(width / 2, height / 2 - 24, "Preparing the forest… 0%", {
         fontFamily: "Georgia, serif",
         fontSize: "18px",
         color: "#3a5a3a",
       })
       .setOrigin(0.5);
+    this.load.on(Phaser.Loader.Events.PROGRESS, (value: number) => {
+      fill.width = barWidth * value;
+      label.setText(`Preparing the forest… ${Math.round(value * 100)}%`);
+    });
   }
 }
