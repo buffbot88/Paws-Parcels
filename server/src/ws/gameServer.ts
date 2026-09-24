@@ -91,6 +91,10 @@ export interface GameServerDeps {
   acceptQuest?: (characterId: number, questId: string) => Promise<QuestMutationResult>;
   completeDelivery?: (characterId: number, targetNpcId: string) => Promise<QuestMutationResult>;
   searchQuest?: (characterId: number, objectId: string) => Promise<QuestMutationResult>;
+  /** Multi-stop delivery stop visit; null when the NPC is not a pending stop. */
+  visitDeliveryStop?: (characterId: number, npcId: string) => Promise<Extract<QuestMutationResult, { ok: true }> | null>;
+  /** Kill-count credit for the killer's active quest; null when nothing advanced. */
+  recordMonsterDefeat?: (characterId: number, monsterKey: string) => Promise<Extract<QuestMutationResult, { ok: true }> | null>;
   getQuestInventory?: (characterId: number) => QuestInventoryItem[];
   getInventoryState?: (characterId: number) => InventoryState;
   moveInventoryItem?: (characterId: number, itemInstanceId: number, targetSlot: number) => EquipmentMutationResult;
@@ -680,6 +684,11 @@ export class GameServer {
       this.sendError(session, "OUT_OF_RANGE", "NPC is out of interaction range", "interact");
       return;
     }
+    const stop = (await this.deps.visitDeliveryStop?.(characterId, targetId)) ?? null;
+    if (stop !== null) {
+      this.sendQuestMutation(session, stop, "stop_visited");
+      return;
+    }
     const delivery = this.deps.completeDelivery === undefined
       ? null
       : await this.deps.completeDelivery(characterId, targetId);
@@ -689,6 +698,9 @@ export class GameServer {
     }
     const quests = this.deps.getQuestState === undefined ? [] : await this.deps.getQuestState(characterId);
     session.socket.send({ type: "npc_interaction", npcId: targetId, quests });
+    if (delivery?.ok === false && delivery.message !== undefined) {
+      session.socket.send({ type: "quest_notice", message: delivery.message });
+    }
   }
 
   private async handleSearchQuest(session: Session, msg: Record<string, unknown>): Promise<void> {
@@ -835,7 +847,7 @@ export class GameServer {
     this.sendQuestMutation(session, result, "accepted");
   }
 
-  private sendQuestMutation(session: Session, result: Extract<QuestMutationResult, { ok: true }>, action: "accepted" | "delivery" | "searched"): void {
+  private sendQuestMutation(session: Session, result: Extract<QuestMutationResult, { ok: true }>, action: "accepted" | "delivery" | "searched" | "progress" | "stop_visited"): void {
     session.socket.send({
       type: "quest_updated",
       action,
@@ -1057,6 +1069,11 @@ export class GameServer {
           error: String(err),
         });
       }
+    }
+    if (this.deps.recordMonsterDefeat !== undefined) {
+      const progress = await this.deps.recordMonsterDefeat(killerId, defKey);
+      const session = this.findSession(killerId);
+      if (progress !== null && session !== null) this.sendQuestMutation(session, progress, "progress");
     }
   }
 

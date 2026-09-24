@@ -161,7 +161,7 @@ export class QuestTracker {
     if (active !== undefined) {
       const deadline = active.deadlineAt === null ? "" : ` · ${formatDeadline(active.deadlineAt)}`;
       const objective = active.searchObjectId !== null && active.progress === 0 ? ` · Search: ${active.findAt ?? "the marked location"}` : "";
-      status = `${active.type === "delivery" ? "Delivery" : "Objective"} ${active.progress}/${active.requiredQuantity} · Circuit ${tutorialCompleted}/${circuitSize} · Side quests ${sideCompleted}${deadline}${objective}`;
+      status = `${questProgressLabel(active)} · Circuit ${tutorialCompleted}/${circuitSize} · Side quests ${sideCompleted}${deadline}${objective}`;
       this.action.hidden = true;
     } else if (available !== undefined) {
       status = this.offeredQuestId === available.questId
@@ -181,6 +181,15 @@ export class QuestTracker {
     this.status.classList.remove("quest-tracker__status--notice");
     this.status.textContent = status;
   }
+}
+
+/** The active quest's tally: "Wild Boar 2/4", "Delivery 0/1 · Stops 1/2", or "Objective 1/3". */
+export function questProgressLabel(quest: Pick<NetQuestSnapshot, "type" | "progress" | "requiredQuantity" | "defeat" | "additionalStops" | "visitedStops">): string {
+  if (quest.defeat !== null) return `${quest.defeat.monsterName} ${Math.min(quest.progress, quest.defeat.count)}/${quest.defeat.count}`;
+  const base = `${quest.type === "delivery" ? "Delivery" : "Objective"} ${quest.progress}/${quest.requiredQuantity}`;
+  if (quest.additionalStops.length === 0) return base;
+  const visited = quest.additionalStops.filter((stop) => quest.visitedStops.includes(stop)).length;
+  return `${base} · Stops ${visited}/${quest.additionalStops.length}`;
 }
 
 function formatDeadline(deadlineAt: number): string {

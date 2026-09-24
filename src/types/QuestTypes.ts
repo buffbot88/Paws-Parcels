@@ -10,6 +10,12 @@ export interface QuestDialogue {
   lines: string[];
 }
 
+/** Kill-count objective: defeat `count` of a monsters.json key, then report to targetId. */
+export interface DefeatObjective {
+  monsterKey: string;
+  count: number;
+}
+
 export interface QuestDefinition {
   id: string;
   /** Release slice that exposes optional content to the live quest catalog. */
@@ -19,8 +25,10 @@ export interface QuestDefinition {
   type: QuestType;
   giverId: string;
   targetId?: string;
-  /** Extra stops for multi-stop deliveries, in visit order. */
+  /** Extra NPC stops for multi-stop deliveries, visited in any order before targetId. */
   additionalStops?: string[];
+  /** Errand-only kill-count objective. */
+  defeat?: DefeatObjective;
   requiredItemId?: string;
   requiredQuantity?: number;
   /** Tutorial parcel handling lesson; expanded parcel rules arrive later. */

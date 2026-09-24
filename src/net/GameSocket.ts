@@ -100,6 +100,10 @@ export interface NetQuestSnapshot {
   searchObjectId: string | null;
   rewardItemId: string | null;
   friendshipGate: { npcId: string; level: number } | null;
+  /** Kill-count objective; `progress`/`requiredQuantity` carry the tally. */
+  defeat: { monsterKey: string; monsterName: string; count: number } | null;
+  additionalStops: string[];
+  visitedStops: string[];
 }
 
 /**
@@ -813,8 +817,21 @@ function normalizeQuests(raw: unknown): NetQuestSnapshot[] {
             level: Number((q.friendshipGate as Record<string, unknown>).level ?? 0),
           }
         : null,
+      defeat: q.defeat && typeof q.defeat === "object"
+        ? {
+            monsterKey: String((q.defeat as Record<string, unknown>).monsterKey ?? ""),
+            monsterName: String((q.defeat as Record<string, unknown>).monsterName ?? ""),
+            count: Number((q.defeat as Record<string, unknown>).count ?? 1),
+          }
+        : null,
+      additionalStops: normalizeStringList(q.additionalStops),
+      visitedStops: normalizeStringList(q.visitedStops),
     };
   }).filter((q) => q.questId !== "");
+}
+
+function normalizeStringList(raw: unknown): string[] {
+  return Array.isArray(raw) ? raw.filter((entry): entry is string => typeof entry === "string") : [];
 }
 
 /**

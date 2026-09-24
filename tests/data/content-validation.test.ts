@@ -7,7 +7,7 @@ import type { QuestDefinition } from "../../src/types/QuestTypes.ts";
 import type { UpgradeDefinition } from "../../src/types/UpgradeTypes.ts";
 import type { DialogueSet } from "../../src/types/DialogueTypes.ts";
 import type { StaticContentData } from "../../src/types/ContentData.ts";
-import { validateStaticContent } from "../../src/systems/ContentValidator.ts";
+import { validateQuestDefeatMonsters, validateStaticContent } from "../../src/systems/ContentValidator.ts";
 
 // ---- Compile-time schema conformance (the JSON must satisfy the interfaces) ----
 // TS widens string literals when importing JSON, so we widen the interface unions
@@ -77,7 +77,7 @@ describe("shipped content", () => {
     const data = realContent();
     expect(data.npcs).toHaveLength(5);
     expect(data.items).toHaveLength(37);
-    expect(data.quests).toHaveLength(23);
+    expect(data.quests).toHaveLength(32);
     expect(data.upgrades).toHaveLength(3);
     expect(data.dialogue).toHaveLength(6);
   });
@@ -304,6 +304,67 @@ describe("quest rules", () => {
     const data = baseContent();
     data.quests[0] = { ...data.quests[0], type: "errand", findAt: 42 as never };
     expect(validateContent(data).errors.some((e) => e.includes("findAt must be a string"))).toBe(true);
+  });
+
+  it("rejects a delivery whose requiredQuantity is not 1", () => {
+    const data = baseContent();
+    data.quests[0] = { ...data.quests[0], requiredQuantity: 2 };
+    expect(validateContent(data).errors.some((e) => e.includes("requiredQuantity 1"))).toBe(true);
+  });
+
+  it("rejects prerequisite cycles", () => {
+    const data = baseContent();
+    data.quests[0] = { ...data.quests[0], prerequisiteIds: ["quest-2"] };
+    data.quests.push({ ...data.quests[0], id: "quest-2", prerequisiteIds: ["quest-1"] });
+    expect(validateContent(data).errors.some((e) => e.includes("prerequisite cycle: quest-1 -> quest-2 -> quest-1"))).toBe(true);
+  });
+
+  it("rejects a shipped quest that depends on an unshipped prerequisite", () => {
+    const data = baseContent();
+    data.quests.push({ ...data.quests[0], id: "quest-2", phase: "4B", prerequisiteIds: ["quest-1"] });
+    expect(validateContent(data).errors.some((e) => e.includes("unshipped prerequisite \"quest-1\""))).toBe(true);
+  });
+
+  it("checks the two-level jump against reputationPoints when it overrides friendshipReward", () => {
+    const data = baseContent();
+    data.quests[0] = { ...data.quests[0], friendshipReward: 1, reputationPoints: 5, friendshipNpcId: "npc-a" };
+    expect(validateContent(data).errors.some((e) => e.includes("jump two levels"))).toBe(true);
+  });
+
+  it("accepts a well-formed errand defeat objective", () => {
+    const data = baseContent();
+    data.quests[0] = { id: "quest-1", title: "T", description: "d", type: "errand", giverId: "npc-a", targetId: "npc-a", defeat: { monsterKey: "monster-x", count: 3 }, stampReward: 5 };
+    expect(validateContent(data).errors).toEqual([]);
+  });
+
+  it("rejects a defeat objective on a non-errand, with a bad count, or mixed with item objectives", () => {
+    const data = baseContent();
+    data.quests[0] = { ...data.quests[0], searchObjectId: "object-x", defeat: { monsterKey: "monster-x", count: 0 } };
+    const errors = validateContent(data).errors;
+    expect(errors.some((e) => e.includes("only allowed on errand"))).toBe(true);
+    expect(errors.some((e) => e.includes("defeat.count must be an integer >= 1"))).toBe(true);
+    expect(errors.some((e) => e.includes("defeat objective cannot coexist"))).toBe(true);
+  });
+
+  it("rejects additionalStops that repeat the target, repeat each other, or sit on a non-delivery", () => {
+    const data = baseContent();
+    data.npcs.push({ ...data.npcs[0], id: "npc-b" });
+    data.dialogue.push({ ...data.dialogue[0], id: "dialogue-2", npcId: "npc-b" });
+    data.quests[0] = { ...data.quests[0], additionalStops: ["npc-a", "npc-b", "npc-b"] };
+    data.quests.push({ id: "quest-2", title: "T", description: "d", type: "errand", giverId: "npc-a", targetId: "npc-a", additionalStops: ["npc-b"], stampReward: 5 });
+    const errors = validateContent(data).errors;
+    expect(errors.some((e) => e.includes("duplicates targetId"))).toBe(true);
+    expect(errors.some((e) => e.includes("contains duplicates"))).toBe(true);
+    expect(errors.some((e) => e.includes("only allowed on delivery"))).toBe(true);
+  });
+});
+
+describe("validateQuestDefeatMonsters", () => {
+  it("passes the real quests and rejects an unknown monster key", () => {
+    const monsterKeys = new Set(monstersJson.monsters.map((m) => m.key));
+    expect(validateQuestDefeatMonsters(realContent().quests, monsterKeys).errors).toEqual([]);
+    const bad: QuestDefinition[] = [{ id: "quest-x", title: "T", description: "d", type: "errand", giverId: "npc-a", defeat: { monsterKey: "monster-ghost", count: 1 }, stampReward: 5 }];
+    expect(validateQuestDefeatMonsters(bad, monsterKeys).errors[0]).toContain("monster-ghost");
   });
 });
 

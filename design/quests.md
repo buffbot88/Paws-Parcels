@@ -8,21 +8,33 @@
 
 ## 1. Quest chains
 
-Quests are organized into **chains** — ordered sequences with prerequisites. A quest
-cannot be started unless every prerequisite (quest, reputation, level) is met.
+Quests are organized into **chains** via `prerequisiteIds` in `src/data/quests.json`. A quest
+becomes available once every prerequisite is completed, any `requiresFriendship` gate is met,
+and (for non-tutorial quests) the whole tutorial circuit is complete. Only one quest can be
+active at a time. `chainPosition` is reserved for the tutorial circuit; everything else ships
+with `phase: "4B"`. The validator rejects prerequisite cycles and shipped quests that depend on
+unshipped ones.
 
-**Chain structure:**
+**Shipped chains:**
 ```
-quest-primer (gathering 3 berries)
-  ↓ prerequisite
-quest-warm-letter-maple (delivery: Pip → Maple)
-  ↓ prerequisite
-quest-maple-moonflower (delivery: Maple → Lumi, also requires friendship ≥ 1 with Maple)
-  ↓ prerequisite
-quest-lumis-letter (delivery: Lumi → Moss, rewards the parcel-quest unlock for next chain)
+Tutorial (§6): quest-village-welcome → quest-fresh-bread-biscuit → quest-flower-note-maple
+  → quest-moon-note-lumi → quest-garden-greeting-moss
+Moss:       quest-lost-pebble-moss → quest-moss-burrow-boars (defeat 4 Wild Boar)
+  → quest-moss-fox-watch (defeat 4 Valley Fox) → quest-golden-acorn-moss (Moss friendship ≥ 2)
+Safe Roads: quest-biscuit-ingredient-run → quest-valley-hides-for-satchels (3 boar hides)
+  → quest-valley-feathers-for-quills (3 grouse feathers)
+  → quest-valley-roads-safe (Pip → Biscuit, Honey Jar, Biscuit friendship ≥ 1)
+Moonlight:  quest-lumis-lost-notebook → quest-lumi-grouse-survey (defeat 3 Black Grouse)
+  → quest-lumi-antler-study (1 deer antler) → quest-lumi-findings-to-maple (delivery Lumi → Maple)
+  → quest-maple-moonflower-thanks (Cozy Scarf, Maple friendship ≥ 1)
 ```
+All other side quests are standalone once the tutorial is done (friendship-gated keepsakes
+included). `daily` is authored but not implemented, so every shipped quest sets `daily: false`.
 
-Each quest has a `chain_position` (1-indexed) and `next_quest_id` pointer.
+**Objective kinds:** delivery (bound parcel, optional `additionalStops` visited in any order
+before `targetId`), search (`searchObjectId`), hand-in (gathering with no search object; the
+item drops from monsters), talk/reward (`rewardItemId`), and kill-count (`defeat` on an errand:
+kills credit the killing courier, capped at `count`, then report to `targetId`).
 
 ## 2. Quest states
 
@@ -139,6 +151,9 @@ content; SQLite stores only each character's state.
 | Biscuit's Ingredient Run | Gather a quantity at a route location | Search the blueberry bushes in Happy Valley, then return to Biscuit |
 | Maple's Picnic Delivery | Carry an urgent parcel | Deliver Biscuit's warm basket to Maple before it cools |
 | Lumi's Lost Notebook | Search an authored village location | Find it at the pond edge, then return it to Lumi |
+| Letters to the Clearing | Multi-stop delivery | Visit Biscuit with the sealed letter, then deliver it to Maple |
+| Boars at the Burrows / Fox Watch | Kill-count objective | Defeat 4 of the named monster in Happy Valley, then report to Moss |
+| Strawberry Basket / Herbs for the Café | Hand in monster drops | Strawberries drop from meadow hares, wild herbs from forest deer |
 
 Errand and gathering quests do not create locked parcels. The client sends a
 `search_quest` intent when the courier interacts with the quest's authored search

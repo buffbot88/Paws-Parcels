@@ -48,7 +48,7 @@ Friendship levels (Spec §7): 0 Stranger · 1 Acquaintance · 2 Friend · 3 Clos
 - **Personality:** Drowsy, kind, slow to wake. Loves polished pebbles.
 - **Favorite items:** `item-polished-pebble`
 - **Home:** `zone-clover-village` @ (46,43)
-- **Unlocks (in data):** L2 → `quest-lost-pebble-moss` (one-time side quest, `daily: false`); L3 → `quest-golden-acorn-moss` (gated on friendship 3); L4 → `quest-moss-garden-key` (rewards `item-garden-key`, unlocks a hidden garden plot)
+- **Unlocks (in data):** L2 → `quest-lost-pebble-moss` (one-time side quest, `daily: false`); L2 → `quest-golden-acorn-moss` (gated on friendship 2, after `quest-moss-fox-watch`); L4 → `quest-moss-garden-key` (rewards `item-garden-key`, unlocks a hidden garden plot)
 
 ## Dialogue rules
 - One `dialogue-<npc>-greet` set at friendship 0; variants at 1+ (implemented in `dialogue.json`).

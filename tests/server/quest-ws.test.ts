@@ -13,7 +13,7 @@ import { closeDb } from "../../server/src/db/connection.ts";
 import { findOrCreateAccountByAshatId } from "../../server/src/models/Account.ts";
 import { createCharacter, getCharacterWithClass, grantInventoryItems } from "../../server/src/models/Character.ts";
 import { getCharacterClasses } from "../../server/src/models/CharacterClass.ts";
-import { acceptQuest, completeDelivery, getQuestInventory, getQuestState } from "../../server/src/models/Quest.ts";
+import { acceptQuest, completeDelivery, getQuestInventory, getQuestState, visitDeliveryStop } from "../../server/src/models/Quest.ts";
 import { equipItem, getInventoryState, unequipItem } from "../../server/src/models/Equipment.ts";
 import { GameServer, type SocketLike } from "../../server/src/ws/gameServer.ts";
 import { issueWsToken, resetWsTokenStore } from "../../server/src/ws/tokenStore.ts";
@@ -21,6 +21,7 @@ import { issueWsToken, resetWsTokenStore } from "../../server/src/ws/tokenStore.
 const ZONE = "zone-clover-village";
 const PIP_TILE = { x: 29, y: 31 };
 const BISCUIT_TILE = { x: 34, y: 33 };
+const MAPLE_TILE = { x: 40, y: 40 };
 
 interface FakeSocket extends SocketLike {
   sent: unknown[];
@@ -59,11 +60,13 @@ function makeServer(characterId: number, accountId: number) {
       if (zoneId !== ZONE) return null;
       if (npcId === "npc-pip") return { ...PIP_TILE };
       if (npcId === "npc-biscuit") return { ...BISCUIT_TILE };
+      if (npcId === "npc-maple") return { ...MAPLE_TILE };
       return null;
     },
     getQuestState,
     acceptQuest,
     completeDelivery,
+    visitDeliveryStop,
     getQuestInventory,
     getInventoryState,
     equipItem,
@@ -176,6 +179,48 @@ describe("GameServer quest flow (WS)", () => {
         rankPromotion: null,
       },
     });
+  });
+
+  it("a multi-stop route rejects an early delivery with a notice, then accepts the stop and the delivery", async () => {
+    await runMigrations();
+    const account = await findOrCreateAccountByAshatId({ ashatUserId: "ws-stops-user", username: "ws-stops-user", displayName: "WS Stops User", role: "Member" });
+    const cls = (await getCharacterClasses())[0];
+    const created = await createCharacter({ accountId: account.id, name: "WS Stops User", classId: cls.id, appearance: {}, cls });
+    if (!created.ok) throw new Error("character creation failed");
+    const circuit: [string, string][] = [
+      ["quest-village-welcome", "npc-biscuit"],
+      ["quest-fresh-bread-biscuit", "npc-maple"],
+      ["quest-flower-note-maple", "npc-lumi"],
+      ["quest-moon-note-lumi", "npc-moss"],
+      ["quest-garden-greeting-moss", "npc-pip"],
+    ];
+    for (const [questId, targetId] of circuit) {
+      await acceptQuest(created.character.id, questId);
+      await completeDelivery(created.character.id, targetId);
+    }
+    expect((await acceptQuest(created.character.id, "quest-letters-two-stops")).ok).toBe(true);
+
+    const server = makeServer(created.character.id, account.id);
+    const socket = fakeSocket();
+    await connectAndJoin(server, socket, created.character.id, account.id);
+    const player = (server as unknown as { zones: { get: (z: string, c: number) => { pos: { x: number; y: number } } | null } }).zones.get(ZONE, created.character.id);
+    if (player === null) throw new Error("player not joined");
+
+    player.pos = { ...MAPLE_TILE };
+    await server.onMessage(socket, JSON.stringify({ type: "interact", targetId: "npc-maple", kind: "npc" }));
+    expect(lastOfType(socket, "npc_interaction")).toMatchObject({ npcId: "npc-maple" });
+    expect(lastOfType(socket, "quest_notice")?.message).toContain("Stop by Biscuit");
+
+    player.pos = { ...BISCUIT_TILE };
+    await server.onMessage(socket, JSON.stringify({ type: "interact", targetId: "npc-biscuit", kind: "npc" }));
+    expect(lastOfType(socket, "quest_updated")).toMatchObject({
+      action: "stop_visited",
+      quest: { questId: "quest-letters-two-stops", state: "active", visitedStops: ["npc-biscuit"] },
+    });
+
+    player.pos = { ...MAPLE_TILE };
+    await server.onMessage(socket, JSON.stringify({ type: "interact", targetId: "npc-maple", kind: "npc" }));
+    expect(lastOfType(socket, "quest_updated")).toMatchObject({ action: "delivery", quest: { questId: "quest-letters-two-stops", state: "completed" } });
   });
 
   it("interact with an out-of-range NPC is rejected with OUT_OF_RANGE", async () => {

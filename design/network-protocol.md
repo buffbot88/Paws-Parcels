@@ -89,9 +89,13 @@ processes each message independently.
 ```
 - **Validation:** target must be a valid NPC in the character's current zone and within
   interaction range (≤ 2 tiles); `kind` is accepted but only NPC interaction is wired.
-- **Behavior:** the server first attempts to complete an active delivery at that NPC
-  (`quest_updated` with `action: "delivery"` on success); if no delivery completes, it
-  returns `npc_interaction` with the current quest offers/state for the NPC.
+- **Behavior:** if the NPC is a pending `additionalStops` entry of the active delivery and the
+  courier holds its bound parcel, the stop is recorded (`quest_updated` with
+  `action: "stop_visited"`). Otherwise the server attempts to complete an active quest at that
+  NPC (`quest_updated` with `action: "delivery"` on success); if nothing completes, it
+  returns `npc_interaction` with the current quest offers/state for the NPC, followed by a
+  `quest_notice` when the target is right but the objective is unfinished (kills remaining, or
+  a stop still to visit — the notice names it). Stops may be visited in any order.
 - **Failure cases:** out of range, target not in zone, invalid targetId.
 
 ### zone_chat
@@ -375,7 +379,7 @@ processes each message independently.
   "message": "Quest accepted: Welcome to Clover Village"
 }
 ```
-- **Payload:** a server-validated quest transition. `action` is `accepted`, `searched`, or `delivery`. Side-quest snapshots include the search object, friendship gate, and reward item metadata.
+- **Payload:** a server-validated quest transition. `action` is `accepted`, `searched`, `delivery`, `stop_visited` (a multi-stop delivery stop was recorded), or `progress` (a monster kill advanced the killer's kill-count objective; sent only to the killing courier and never past the count). Side-quest snapshots include the search object, friendship gate, and reward item metadata. Every snapshot also carries `defeat` (`{ monsterKey, monsterName, count }` or `null`; `progress`/`requiredQuantity` hold the kill tally), `additionalStops`, and `visitedStops` (NPC ids). Clients that ignore these fields keep working.
 - **Client action:** update the tutorial tracker and authoritative parcel state.
 
 ### quest_notice

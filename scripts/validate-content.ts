@@ -11,6 +11,7 @@ import {
   validateContent,
   validateStaticContent,
   validateQuestSearchObjects,
+  validateQuestDefeatMonsters,
   validateZoneMapParity,
   validateMonsterSpawnKeys,
 } from "../src/systems/ContentValidator.ts";
@@ -60,14 +61,13 @@ for (const map of Object.values(ARCHIVED_MAPS)) {
 }
 const searchResult = validateQuestSearchObjects(data.quests, interactableIds);
 const parityResult = validateZoneMapParity(staticData.zones, ARCHIVED_MAPS);
-const spawnKeyResult = validateMonsterSpawnKeys(
-  ARCHIVED_MAPS,
-  new Set(staticData.monsters.map((monster) => monster.key)),
-);
+const monsterKeys = new Set(staticData.monsters.map((monster) => monster.key));
+const spawnKeyResult = validateMonsterSpawnKeys(ARCHIVED_MAPS, monsterKeys);
+const defeatResult = validateQuestDefeatMonsters(data.quests, monsterKeys);
 
 for (const w of [...result.warnings, ...searchResult.warnings]) console.warn(`  ! ${w}`);
 
-const allResults = [result, staticResult, searchResult, parityResult, spawnKeyResult];
+const allResults = [result, staticResult, searchResult, parityResult, spawnKeyResult, defeatResult];
 if (allResults.some((r) => !r.ok)) {
   const errors = allResults.flatMap((r) => r.errors);
   console.error(`Content validation FAILED (${errors.length} error${errors.length > 1 ? "s" : ""}):`);

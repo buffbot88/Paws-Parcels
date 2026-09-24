@@ -18,7 +18,7 @@
       "friendshipNpcId": "npc-biscuit",
       "acceptanceDialogue": {
         "speakerId": "npc-pip",
-        "lines": ["Every new courier carries the village welcome letter. It is not official until Clover Village has signed it.", "Take it to Biscuit at the café. She stamps it, and she sends you on to the next villager."]
+        "lines": ["Every new courier carries the village welcome letter. It is not official until Clover Village has signed it.", "Take it to Biscuit at the café. He stamps it, and he sends you on to the next villager."]
       },
       "completionDialogue": {
         "speakerId": "npc-biscuit",
@@ -138,6 +138,7 @@
     },
     {
       "id": "quest-warm-letter-maple",
+      "phase": "4B",
       "title": "A Warm Letter for Maple",
       "description": "Deliver a letter from Pip to Maple at the flower field.",
       "type": "delivery",
@@ -146,9 +147,18 @@
       "requiredItemId": "item-sealed-letter",
       "requiredQuantity": 1,
       "stampReward": 15,
+      "xpReward": 40,
       "friendshipReward": 1,
       "friendshipNpcId": "npc-maple",
-      "daily": true
+      "acceptanceDialogue": {
+        "speakerId": "npc-pip",
+        "lines": ["A sealed letter for Maple — wax paw print and everything! Very official, very important.", "Straight to the flower field, please. Maple gets flustered when the post runs late."]
+      },
+      "completionDialogue": {
+        "speakerId": "npc-maple",
+        "lines": ["Oh! A letter, for me? Thank you for carrying it so gently.", "I will read it among the tulips, where nobody can see me blush."]
+      },
+      "daily": false
     },
     {
       "id": "quest-lost-pebble-moss",
@@ -177,22 +187,33 @@
     },
     {
       "id": "quest-berry-basket-postmaster",
+      "phase": "4B",
       "title": "Strawberry Basket for the Post Office",
-      "description": "Gather three strawberries for the post office pantry.",
+      "description": "Gather three strawberries for the post office pantry. Happy Valley's meadow hares guard the best patches.",
       "type": "gathering",
       "giverId": "npc-pip",
       "targetId": "npc-pip",
       "requiredItemId": "item-strawberry",
       "requiredQuantity": 3,
       "stampReward": 8,
+      "xpReward": 30,
       "friendshipReward": 1,
       "friendshipNpcId": "npc-pip",
-      "daily": true
+      "acceptanceDialogue": {
+        "speakerId": "npc-pip",
+        "lines": ["The post office pantry is empty, and a hungry postmaster sorts letters crooked!", "The meadow hares in Happy Valley guard the best strawberry patches. Bring me three, quick as you can!"]
+      },
+      "completionDialogue": {
+        "speakerId": "npc-pip",
+        "lines": ["Three strawberries, perfectly sorted! You would make a fine postmaster.", "One for me, one for the pantry, and one for the next courier through the door."]
+      },
+      "daily": false
     },
     {
       "id": "quest-letters-two-stops",
+      "phase": "4B",
       "title": "Letters to the Clearing",
-      "description": "A multi-stop run: deliver the sealed letter to Maple, then stop by Biscuit's picnic corner.",
+      "description": "A multi-stop run: stop by Biscuit's picnic corner with the sealed letter, then deliver it to Maple.",
       "type": "delivery",
       "giverId": "npc-pip",
       "targetId": "npc-maple",
@@ -200,37 +221,68 @@
       "requiredItemId": "item-sealed-letter",
       "requiredQuantity": 1,
       "stampReward": 20,
+      "xpReward": 60,
       "friendshipReward": 1,
       "friendshipNpcId": "npc-maple",
+      "acceptanceDialogue": {
+        "speakerId": "npc-pip",
+        "lines": ["Two stops on one route — now that is real courier work!", "Let Biscuit add his note at the picnic corner, then carry the letter on to Maple."]
+      },
+      "completionDialogue": {
+        "speakerId": "npc-maple",
+        "lines": ["Biscuit's note is on the back — he drew a little honey pot.", "Two stops and not a single crease. You really are a careful courier."]
+      },
       "daily": false
     },
     {
       "id": "quest-moonflower-for-lumi",
+      "phase": "4B",
       "title": "A Moonflower for the Moth",
-      "description": "Bring a rare moonflower to Lumi for her moonlight research.",
+      "description": "Search the pond edge for a rare moonflower and bring it to Lumi for her moonlight research.",
       "type": "gathering",
       "giverId": "npc-lumi",
       "targetId": "npc-lumi",
       "requiredItemId": "item-moonflower",
       "requiredQuantity": 1,
+      "findAt": "pond edge",
+      "searchObjectId": "object-pond-edge",
       "stampReward": 12,
+      "xpReward": 35,
       "friendshipReward": 1,
       "friendshipNpcId": "npc-lumi",
-      "daily": true
+      "acceptanceDialogue": {
+        "speakerId": "npc-lumi",
+        "lines": ["Moonflowers open only when the pond is still and the light is silver.", "One grows at the pond edge. Search there, and bring it to me before it closes."]
+      },
+      "completionDialogue": {
+        "speakerId": "npc-lumi",
+        "lines": ["It is still glowing... the petals remember the moon.", "My research thanks you. So do I, quietly."]
+      },
+      "daily": false
     },
     {
       "id": "quest-herbs-for-cafe",
+      "phase": "4B",
       "title": "Herbs for the Café",
-      "description": "Gather two wild herbs for Biscuit's famous tea.",
+      "description": "Gather two wild herbs for Biscuit's famous tea. The forest deer of Happy Valley graze through the herb patches.",
       "type": "gathering",
       "giverId": "npc-biscuit",
       "targetId": "npc-biscuit",
       "requiredItemId": "item-wild-herb",
       "requiredQuantity": 2,
       "stampReward": 8,
+      "xpReward": 30,
       "friendshipReward": 1,
       "friendshipNpcId": "npc-biscuit",
-      "daily": true
+      "acceptanceDialogue": {
+        "speakerId": "npc-biscuit",
+        "lines": ["My famous tea needs two wild herbs, and my tin is down to crumbs!", "The forest deer in Happy Valley graze right through the herb patches. Bring me two sprigs and the first pot is yours."]
+      },
+      "completionDialogue": {
+        "speakerId": "npc-biscuit",
+        "lines": ["Smell that! The café will be cozy all afternoon.", "Sit down, friend. The kettle is already singing."]
+      },
+      "daily": false
     },
     {
       "id": "quest-lumis-lost-notebook",
@@ -259,6 +311,7 @@
     },
     {
       "id": "quest-maple-package-to-pip",
+      "phase": "4B",
       "title": "Parcel for the Postmaster",
       "description": "Maple sent a parcel to Pip. Deliver it to the post office counter.",
       "type": "delivery",
@@ -267,23 +320,44 @@
       "requiredItemId": "item-tiny-parcel",
       "requiredQuantity": 1,
       "stampReward": 12,
+      "xpReward": 35,
       "friendshipReward": 1,
       "friendshipNpcId": "npc-maple",
-      "daily": true
+      "acceptanceDialogue": {
+        "speakerId": "npc-maple",
+        "lines": ["Could you take this little parcel to Pip? It is pressed flowers for the post office window.", "Please don't tell him they're from me until he opens it."]
+      },
+      "completionDialogue": {
+        "speakerId": "npc-pip",
+        "lines": ["A parcel from Maple! Pressed flowers for the window? Oh, she is too kind!", "Filed under 'wonderful', delivered by the best courier in Clover Village."]
+      },
+      "daily": false
     },
     {
       "id": "quest-shells-for-biscuit",
+      "phase": "4B",
       "title": "River Shells for the Window",
-      "description": "Collect three river shells from the pond for Biscuit's shelf.",
+      "description": "Search by the Happy Valley pond sign for three river shells for Biscuit's window shelf.",
       "type": "gathering",
       "giverId": "npc-biscuit",
       "targetId": "npc-biscuit",
       "requiredItemId": "item-river-shell",
       "requiredQuantity": 3,
+      "findAt": "the valley pond sign",
+      "searchObjectId": "object-valley-pond-sign",
       "stampReward": 10,
+      "xpReward": 35,
       "friendshipReward": 1,
       "friendshipNpcId": "npc-biscuit",
-      "daily": true
+      "acceptanceDialogue": {
+        "speakerId": "npc-biscuit",
+        "lines": ["My window shelf looks bare without a few river shells.", "The pond in Happy Valley has the smoothest ones, right by the sign. Three would be perfect!"]
+      },
+      "completionDialogue": {
+        "speakerId": "npc-biscuit",
+        "lines": ["Look how they shine in the window! The café feels brand new.", "Every customer is going to ask where these came from. I'll tell them all about you."]
+      },
+      "daily": false
     },
     {
       "id": "quest-picnic-for-maple",
@@ -304,6 +378,7 @@
     },
     {
       "id": "quest-golden-acorn-moss",
+      "phase": "4B",
       "title": "The Golden Acorn",
       "description": "The legendary golden acorn rests in the hollow oak. Retrieve it for Moss at the burrows.",
       "type": "errand",
@@ -314,9 +389,19 @@
       "findAt": "hollow oak",
       "searchObjectId": "object-hollow-oak",
       "stampReward": 20,
+      "xpReward": 80,
       "friendshipReward": 3,
       "friendshipNpcId": "npc-moss",
-      "requiresFriendship": { "npcId": "npc-moss", "level": 3 },
+      "prerequisiteIds": ["quest-moss-fox-watch"],
+      "requiresFriendship": { "npcId": "npc-moss", "level": 2 },
+      "acceptanceDialogue": {
+        "speakerId": "npc-moss",
+        "lines": ["Mm... you kept the burrows and the garden safe, so I can tell you a secret.", "The golden acorn sleeps in the hollow oak. Bring it here... slowly. It is very old."]
+      },
+      "completionDialogue": {
+        "speakerId": "npc-moss",
+        "lines": ["The golden acorn... it is warmer than I remembered.", "I will plant it where the whole village can watch it grow. Thank you, friend."]
+      },
       "daily": false
     },
     {
@@ -431,6 +516,227 @@
       "rewardItemId": "item-garden-key",
       "stampReward": 15,
       "requiresFriendship": { "npcId": "npc-moss", "level": 1 },
+      "daily": false
+    },
+    {
+      "id": "quest-moss-burrow-boars",
+      "phase": "4B",
+      "title": "Boars at the Burrows",
+      "description": "Wild boars from Happy Valley keep trampling toward Moss's burrows. Defeat four of them, then report back to Moss.",
+      "type": "errand",
+      "giverId": "npc-moss",
+      "targetId": "npc-moss",
+      "defeat": { "monsterKey": "monster-wild-boar", "count": 4 },
+      "stampReward": 14,
+      "xpReward": 50,
+      "friendshipReward": 3,
+      "friendshipNpcId": "npc-moss",
+      "prerequisiteIds": ["quest-lost-pebble-moss"],
+      "acceptanceDialogue": {
+        "speakerId": "npc-moss",
+        "lines": ["Mmh... the wild boars in Happy Valley keep trampling toward my burrows. The rabbits cannot sleep. Neither can I.", "Could you chase off four of them? Then come and tell me, so I can finally nap."]
+      },
+      "completionDialogue": {
+        "speakerId": "npc-moss",
+        "lines": ["Four boars, and the burrows are quiet again... *yawn*... thank you.", "The rabbits left you a clover. I think that means you are family now."]
+      },
+      "daily": false
+    },
+    {
+      "id": "quest-moss-fox-watch",
+      "phase": "4B",
+      "title": "Fox Watch",
+      "description": "Valley foxes have been sneaking into Moss's garden beds at night. Defeat four in Happy Valley, then report back to Moss.",
+      "type": "errand",
+      "giverId": "npc-moss",
+      "targetId": "npc-moss",
+      "defeat": { "monsterKey": "monster-valley-fox", "count": 4 },
+      "stampReward": 16,
+      "xpReward": 60,
+      "friendshipReward": 3,
+      "friendshipNpcId": "npc-moss",
+      "prerequisiteIds": ["quest-moss-burrow-boars"],
+      "acceptanceDialogue": {
+        "speakerId": "npc-moss",
+        "lines": ["Something has been digging up my seedlings at night... fox paw prints, everywhere.", "Four valley foxes should teach the rest to stay in the valley. I will be here. Probably asleep."]
+      },
+      "completionDialogue": {
+        "speakerId": "npc-moss",
+        "lines": ["No new paw prints this morning. My seedlings are standing tall.", "You look after my garden like it is your own. I have one more secret to share... when you are ready."]
+      },
+      "daily": false
+    },
+    {
+      "id": "quest-valley-hides-for-satchels",
+      "phase": "4B",
+      "title": "Hides for New Satchels",
+      "description": "Pip is stitching sturdy satchels for couriers crossing Happy Valley. Bring him three boar hides.",
+      "type": "gathering",
+      "giverId": "npc-pip",
+      "targetId": "npc-pip",
+      "requiredItemId": "item-boar-hide",
+      "requiredQuantity": 3,
+      "stampReward": 12,
+      "xpReward": 45,
+      "friendshipReward": 1,
+      "friendshipNpcId": "npc-pip",
+      "prerequisiteIds": ["quest-biscuit-ingredient-run"],
+      "acceptanceDialogue": {
+        "speakerId": "npc-pip",
+        "lines": ["Couriers keep coming back from Happy Valley with torn satchels! Unacceptable. Unorganized!", "Boar hide is the toughest leather there is. Bring me three and I will start stitching tonight."]
+      },
+      "completionDialogue": {
+        "speakerId": "npc-pip",
+        "lines": ["Three hides! Tough, thick, and very nearly satchel-shaped already.", "Next I need quills to write the route cards. Come and see me when you are ready!"]
+      },
+      "daily": false
+    },
+    {
+      "id": "quest-valley-feathers-for-quills",
+      "phase": "4B",
+      "title": "Feathers for Route Quills",
+      "description": "Pip needs fresh quills to write safe-route cards for Happy Valley. Bring him three grouse feathers.",
+      "type": "gathering",
+      "giverId": "npc-pip",
+      "targetId": "npc-pip",
+      "requiredItemId": "item-grouse-feather",
+      "requiredQuantity": 3,
+      "stampReward": 12,
+      "xpReward": 45,
+      "friendshipReward": 1,
+      "friendshipNpcId": "npc-pip",
+      "prerequisiteIds": ["quest-valley-hides-for-satchels"],
+      "acceptanceDialogue": {
+        "speakerId": "npc-pip",
+        "lines": ["Every satchel gets a route card, and every route card needs a good quill!", "Black grouse feathers write the smoothest lines. Three should do it!"]
+      },
+      "completionDialogue": {
+        "speakerId": "npc-pip",
+        "lines": ["Look at these quills — the route cards practically write themselves!", "One last thing: Biscuit worries about couriers on the valley roads. Let us tell him the good news."]
+      },
+      "daily": false
+    },
+    {
+      "id": "quest-valley-roads-safe",
+      "phase": "4B",
+      "title": "Safe Roads Through Happy Valley",
+      "description": "The satchels are stitched and the route cards written. Tell Biscuit the valley roads are safe for couriers again.",
+      "type": "errand",
+      "giverId": "npc-pip",
+      "targetId": "npc-biscuit",
+      "rewardItemId": "item-honey-jar",
+      "stampReward": 15,
+      "xpReward": 50,
+      "friendshipReward": 2,
+      "friendshipNpcId": "npc-biscuit",
+      "prerequisiteIds": ["quest-valley-feathers-for-quills"],
+      "requiresFriendship": { "npcId": "npc-biscuit", "level": 1 },
+      "acceptanceDialogue": {
+        "speakerId": "npc-pip",
+        "lines": ["Satchels stitched, route cards written — the valley roads are officially safe!", "Go and tell Biscuit. He has been packing extra snacks for every courier, just in case."]
+      },
+      "completionDialogue": {
+        "speakerId": "npc-biscuit",
+        "lines": ["The roads are safe? That is the best news I have had all season!", "Here — a jar of forest honey, for the courier who made it happen."]
+      },
+      "daily": false
+    },
+    {
+      "id": "quest-lumi-grouse-survey",
+      "phase": "4B",
+      "title": "Lumi's Moonlight Survey",
+      "description": "Black grouse keep scattering Lumi's moonlight markers in Happy Valley. Defeat three, then report back to Lumi.",
+      "type": "errand",
+      "giverId": "npc-lumi",
+      "targetId": "npc-lumi",
+      "defeat": { "monsterKey": "monster-black-grouse", "count": 3 },
+      "stampReward": 14,
+      "xpReward": 50,
+      "friendshipReward": 2,
+      "friendshipNpcId": "npc-lumi",
+      "prerequisiteIds": ["quest-lumis-lost-notebook"],
+      "acceptanceDialogue": {
+        "speakerId": "npc-lumi",
+        "lines": ["The black grouse in Happy Valley keep scattering my moonlight markers. My survey cannot begin while they do.", "Drive off three of them, then come back. I will be counting stars until you return."]
+      },
+      "completionDialogue": {
+        "speakerId": "npc-lumi",
+        "lines": ["The markers stand undisturbed tonight. The survey can finally begin.", "Next I must study something the moon leaves behind... deer antlers catch its light, you know."]
+      },
+      "daily": false
+    },
+    {
+      "id": "quest-lumi-antler-study",
+      "phase": "4B",
+      "title": "An Antler Under Moonlight",
+      "description": "Lumi wants to study how moonlight settles on a forest deer's antler. Bring her one deer antler.",
+      "type": "gathering",
+      "giverId": "npc-lumi",
+      "targetId": "npc-lumi",
+      "requiredItemId": "item-deer-antler",
+      "requiredQuantity": 1,
+      "stampReward": 12,
+      "xpReward": 45,
+      "friendshipReward": 2,
+      "friendshipNpcId": "npc-lumi",
+      "prerequisiteIds": ["quest-lumi-grouse-survey"],
+      "acceptanceDialogue": {
+        "speakerId": "npc-lumi",
+        "lines": ["Forest deer shed their antlers where the moonlight pools. I want to know why.", "Bring me one antler from Happy Valley. Carefully... it is a quiet kind of treasure."]
+      },
+      "completionDialogue": {
+        "speakerId": "npc-lumi",
+        "lines": ["See how it glows along the ridges? The moon has been writing on it.", "My findings are nearly complete. Someone else should read them first."]
+      },
+      "daily": false
+    },
+    {
+      "id": "quest-lumi-findings-to-maple",
+      "phase": "4B",
+      "title": "Findings for the Florist",
+      "description": "Lumi sealed her moonlight survey for Maple, whose moonflowers began the research. Deliver the letter to Maple.",
+      "type": "delivery",
+      "giverId": "npc-lumi",
+      "targetId": "npc-maple",
+      "parcelCondition": "normal",
+      "requiredItemId": "item-sealed-letter",
+      "requiredQuantity": 1,
+      "stampReward": 14,
+      "xpReward": 45,
+      "friendshipReward": 2,
+      "friendshipNpcId": "npc-maple",
+      "prerequisiteIds": ["quest-lumi-antler-study"],
+      "acceptanceDialogue": {
+        "speakerId": "npc-lumi",
+        "lines": ["Maple's moonflowers were where all of this began. She should read my findings first.", "The letter is sealed. Take it to her at the flower field."]
+      },
+      "completionDialogue": {
+        "speakerId": "npc-maple",
+        "lines": ["Lumi wrote this... about my moonflowers? I did not think anyone noticed them.", "I need a moment. Please come back and see me soon."]
+      },
+      "daily": false
+    },
+    {
+      "id": "quest-maple-moonflower-thanks",
+      "phase": "4B",
+      "title": "Maple's Moonflower Thanks",
+      "description": "Maple wants to thank the courier who carried Lumi's findings to her flower field.",
+      "type": "errand",
+      "giverId": "npc-maple",
+      "targetId": "npc-maple",
+      "rewardItemId": "item-cozy-scarf",
+      "stampReward": 15,
+      "xpReward": 40,
+      "prerequisiteIds": ["quest-lumi-findings-to-maple"],
+      "requiresFriendship": { "npcId": "npc-maple", "level": 1 },
+      "acceptanceDialogue": {
+        "speakerId": "npc-maple",
+        "lines": ["I read Lumi's letter three times. It made me feel a little braver.", "I have something for you... could you stay a moment?"]
+      },
+      "completionDialogue": {
+        "speakerId": "npc-maple",
+        "lines": ["I knitted this scarf while the moonflowers were blooming. It is a little lopsided.", "The nights are getting cooler. I would like you to stay warm on your routes."]
+      },
       "daily": false
     }
   ]

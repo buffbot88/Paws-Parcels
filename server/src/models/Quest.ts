@@ -1,4 +1,6 @@
 import questsJson from "../../../src/data/quests.json" with { type: "json" };
+import monstersJson from "../../../src/data/monsters.json" with { type: "json" };
+import npcsJson from "../../../src/data/npcs.json" with { type: "json" };
 import { getDb } from "../db/connection.ts";
 import { getEffectiveSlotCount, getInventoryState } from "./Equipment.ts";
 import { applyExperience } from "./leveling.ts";
@@ -17,6 +19,8 @@ type QuestContent = {
   type: string;
   giverId: string;
   targetId?: string;
+  additionalStops?: string[];
+  defeat?: { monsterKey: string; count: number };
   requiredItemId?: string;
   requiredQuantity?: number;
   findAt?: string;
@@ -69,6 +73,10 @@ export interface QuestSnapshot {
   searchObjectId: string | null;
   rewardItemId: string | null;
   friendshipGate: { npcId: string; level: number } | null;
+  /** Kill-count objective; `progress`/`requiredQuantity` carry the tally. */
+  defeat: { monsterKey: string; monsterName: string; count: number } | null;
+  additionalStops: string[];
+  visitedStops: string[];
 }
 
 export interface QuestInventoryItem {
@@ -109,7 +117,7 @@ export interface QuestProgression {
 
 export type QuestMutationResult =
   | { ok: true; quest: QuestSnapshot; quests: QuestSnapshot[]; inventory: QuestInventoryItem[]; stamps: number; xp: number; message: string; progression?: QuestProgression }
-  | { ok: false; reason: "QUEST_NOT_AVAILABLE" | "QUEST_PREREQUISITES_NOT_MET" | "QUEST_ALREADY_ACTIVE" | "QUEST_ALREADY_COMPLETE" | "INVENTORY_FULL" | "QUEST_NOT_ACTIVE" | "QUEST_ITEM_MISSING" | "WRONG_DELIVERY_TARGET" };
+  | { ok: false; reason: "QUEST_NOT_AVAILABLE" | "QUEST_PREREQUISITES_NOT_MET" | "QUEST_ALREADY_ACTIVE" | "QUEST_ALREADY_COMPLETE" | "INVENTORY_FULL" | "QUEST_NOT_ACTIVE" | "QUEST_ITEM_MISSING" | "WRONG_DELIVERY_TARGET" | "QUEST_OBJECTIVE_INCOMPLETE" | "DELIVERY_STOPS_REMAINING"; message?: string };
 
 /** Return the JSON-defined tutorial chain and make its initial state available. */
 export async function getQuestState(characterId: number): Promise<QuestSnapshot[]> {
@@ -176,7 +184,7 @@ export async function completeDelivery(characterId: number, targetNpcId: string)
   ensureCharacterQuestRows(characterId);
   expireUrgentDeliveries(characterId);
   const activeRows = getDb().prepare(`
-    SELECT quest_key, state, accepted_at
+    SELECT quest_key, state, progress, accepted_at
       FROM character_quest_progress
      WHERE character_id = ? AND state = 'active'
      ORDER BY quest_key ASC`).all(characterId) as SqlRow[];
@@ -202,6 +210,20 @@ export async function completeDelivery(characterId: number, targetNpcId: string)
         (active.type === "delivery" ? isQuestBound(candidate.stack_meta, active.id) : !isLocked(candidate.stack_meta)),
       );
   if (active.requiredItemId !== undefined && item === undefined) return { ok: false, reason: "QUEST_ITEM_MISSING" };
+  const progressState = progressObject(activeEntry.state.progress);
+  const defeated = defeatedCount(progressState);
+  if (active.defeat !== undefined && defeated < active.defeat.count) {
+    return {
+      ok: false,
+      reason: "QUEST_OBJECTIVE_INCOMPLETE",
+      message: `Defeat ${active.defeat.count - defeated} more ${monsterName(active.defeat.monsterKey)} before reporting to ${npcName(targetNpcId)}.`,
+    };
+  }
+  const visited = visitedStops(progressState);
+  const nextStop = (active.additionalStops ?? []).find((stop) => !visited.includes(stop));
+  if (nextStop !== undefined) {
+    return { ok: false, reason: "DELIVERY_STOPS_REMAINING", message: `Stop by ${npcName(nextStop)} before delivering to ${npcName(targetNpcId)}.` };
+  }
 
   const oldStamps = getStamps(characterId);
   const oldXp = getExperience(characterId);
@@ -239,7 +261,7 @@ export async function completeDelivery(characterId: number, targetNpcId: string)
       rewardItemDefinitionId = Number(reward.id);
     }
     db.prepare(`UPDATE character_quest_progress SET state = 'completed', progress = ?, delivered_item_id = ?, completed_at = ?
-      WHERE character_id = ? AND quest_key = ?`).run(JSON.stringify({ delivered: requiredQuantity }), item === undefined ? null : Number(item.id), new Date().toISOString(), characterId, active.id);
+      WHERE character_id = ? AND quest_key = ?`).run(JSON.stringify({ ...progressState, delivered: requiredQuantity }), item === undefined ? null : Number(item.id), new Date().toISOString(), characterId, active.id);
     db.prepare("UPDATE characters SET stamps = ?, experience = ?, level = ?, skill_points = ?, courier_rank = COALESCE(?, courier_rank), updated_at = ? WHERE id = ?")
       .run(newStamps, nextXp, level, skillPoints, rankReward, new Date().toISOString(), characterId);
     if (reputationNpcId !== null && reputationPoints > 0) {
@@ -325,6 +347,65 @@ export async function searchQuest(characterId: number, objectId: string): Promis
     stamps: getStamps(characterId),
     xp: getExperience(characterId),
     message: `Found ${active.title} objective at ${active.findAt ?? objectId}. Return it to ${active.targetId?.replace("npc-", "") ?? "the quest giver"}.`,
+  };
+}
+
+/** Credit one kill to the killer's active defeat objective; null when no objective advanced. */
+export async function recordMonsterDefeat(characterId: number, monsterKey: string): Promise<Extract<QuestMutationResult, { ok: true }> | null> {
+  const rows = getDb().prepare("SELECT quest_key, progress FROM character_quest_progress WHERE character_id = ? AND state = 'active'").all(characterId) as SqlRow[];
+  const entry = rows
+    .map((row) => ({ quest: findQuestContent(String(row.quest_key)), row }))
+    .find(({ quest }) => quest?.defeat?.monsterKey === monsterKey);
+  const objective = entry?.quest?.defeat;
+  if (entry?.quest == null || objective === undefined) return null;
+  const progress = progressObject(entry.row.progress);
+  const defeated = defeatedCount(progress);
+  if (defeated >= objective.count) return null;
+  getDb().prepare("UPDATE character_quest_progress SET progress = ? WHERE character_id = ? AND quest_key = ?")
+    .run(JSON.stringify({ ...progress, defeated: defeated + 1 }), characterId, entry.quest.id);
+  const quests = await getQuestState(characterId);
+  const updated = quests.find((quest) => quest.questId === entry.quest?.id) as QuestSnapshot;
+  const tally = `${monsterName(monsterKey)} ${defeated + 1}/${objective.count}`;
+  return {
+    ok: true,
+    quest: updated,
+    quests,
+    inventory: getQuestInventory(characterId),
+    stamps: getStamps(characterId),
+    xp: getExperience(characterId),
+    message: defeated + 1 >= objective.count ? `${tally} — report back to ${npcName(entry.quest.targetId ?? entry.quest.giverId)}.` : tally,
+  };
+}
+
+/** Mark a pending stop visited on the active multi-stop delivery; null when npcId is not a pending stop. */
+export async function visitDeliveryStop(characterId: number, npcId: string): Promise<Extract<QuestMutationResult, { ok: true }> | null> {
+  expireUrgentDeliveries(characterId);
+  const rows = getDb().prepare("SELECT quest_key, progress FROM character_quest_progress WHERE character_id = ? AND state = 'active'").all(characterId) as SqlRow[];
+  const entry = rows
+    .map((row) => ({ quest: findQuestContent(String(row.quest_key)), row }))
+    .find(({ quest }) => quest?.type === "delivery" && (quest.additionalStops ?? []).includes(npcId));
+  if (entry?.quest == null) return null;
+  const quest = entry.quest;
+  const progress = progressObject(entry.row.progress);
+  const visited = visitedStops(progress);
+  if (visited.includes(npcId)) return null;
+  const items = getDb().prepare("SELECT stack_meta FROM inventory_items WHERE character_id = ?").all(characterId) as SqlRow[];
+  if (!items.some((item) => isQuestBound(item.stack_meta, quest.id))) return null;
+  const nextVisited = [...visited, npcId];
+  getDb().prepare("UPDATE character_quest_progress SET progress = ? WHERE character_id = ? AND quest_key = ?")
+    .run(JSON.stringify({ ...progress, stops: nextVisited }), characterId, quest.id);
+  const stops = quest.additionalStops ?? [];
+  const remaining = stops.find((stop) => !nextVisited.includes(stop));
+  const quests = await getQuestState(characterId);
+  return {
+    ok: true,
+    quest: quests.find((entry) => entry.questId === quest.id) as QuestSnapshot,
+    quests,
+    inventory: getQuestInventory(characterId),
+    stamps: getStamps(characterId),
+    xp: getExperience(characterId),
+    message: `Stop ${nextVisited.length}/${stops.length}: ${npcName(npcId)} signed for the route. ` +
+      (remaining === undefined ? `Deliver the parcel to ${npcName(quest.targetId ?? quest.giverId)}.` : `Next, stop by ${npcName(remaining)}.`),
   };
 }
 
@@ -468,7 +549,7 @@ function rowToQuest(quest: QuestContent, row: SqlRow | undefined): QuestSnapshot
     giverId: quest.giverId,
     targetId: quest.targetId ?? null,
     requiredItemId: quest.requiredItemId ?? null,
-    requiredQuantity: Math.max(1, quest.requiredQuantity ?? 1),
+    requiredQuantity: Math.max(1, quest.defeat?.count ?? quest.requiredQuantity ?? 1),
     state: normalizeState(row?.state),
     progress: parseProgress(row?.progress),
     stampReward: quest.stampReward,
@@ -485,7 +566,36 @@ function rowToQuest(quest: QuestContent, row: SqlRow | undefined): QuestSnapshot
     searchObjectId: quest.searchObjectId ?? null,
     rewardItemId: quest.rewardItemId ?? null,
     friendshipGate: quest.requiresFriendship ?? null,
+    defeat: quest.defeat === undefined
+      ? null
+      : { monsterKey: quest.defeat.monsterKey, monsterName: monsterName(quest.defeat.monsterKey), count: quest.defeat.count },
+    additionalStops: quest.additionalStops ?? [],
+    visitedStops: visitedStops(progressObject(row?.progress)),
   };
+}
+
+function progressObject(raw: unknown): Record<string, unknown> {
+  if (typeof raw !== "string") return {};
+  try {
+    const parsed: unknown = JSON.parse(raw);
+    return parsed !== null && typeof parsed === "object" && !Array.isArray(parsed) ? parsed as Record<string, unknown> : {};
+  } catch { return {}; }
+}
+
+function defeatedCount(progress: Record<string, unknown>): number {
+  return Math.max(0, Number(progress.defeated ?? 0) || 0);
+}
+
+function visitedStops(progress: Record<string, unknown>): string[] {
+  return Array.isArray(progress.stops) ? progress.stops.filter((stop): stop is string => typeof stop === "string") : [];
+}
+
+function monsterName(monsterKey: string): string {
+  return monstersJson.monsters.find((monster) => monster.key === monsterKey)?.displayName ?? monsterKey;
+}
+
+function npcName(npcId: string): string {
+  return npcsJson.npcs.find((npc) => npc.id === npcId)?.name ?? npcId.replace("npc-", "");
 }
 
 function normalizeParcelCondition(raw: unknown): ParcelCondition {
@@ -499,8 +609,8 @@ function normalizeState(raw: unknown): QuestState {
 function parseProgress(raw: unknown): number {
   if (typeof raw !== "string") return 0;
   try {
-    const parsed = JSON.parse(raw) as { delivered?: unknown; found?: unknown };
-    return Math.max(Number(parsed.delivered ?? 0) || 0, Number(parsed.found ?? 0) || 0);
+    const parsed = JSON.parse(raw) as { delivered?: unknown; found?: unknown; defeated?: unknown };
+    return Math.max(Number(parsed.delivered ?? 0) || 0, Number(parsed.found ?? 0) || 0, Number(parsed.defeated ?? 0) || 0);
   } catch { return 0; }
 }
 

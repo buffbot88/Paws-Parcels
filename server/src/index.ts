@@ -37,8 +37,10 @@ import {
   acceptQuest,
   completeDelivery,
   getQuestInventory,
+  recordMonsterDefeat,
   resetFragileDeliveriesOnDefeat,
   searchQuest,
+  visitDeliveryStop,
 } from "./models/Quest.ts";
 import { getInventoryState, moveInventoryItem, equipItem, unequipItem } from "./models/Equipment.ts";
 import { createAdminRuntime } from "./ws/adminRuntime.ts";
@@ -180,6 +182,8 @@ async function main(): Promise<void> {
     acceptQuest,
     completeDelivery,
     searchQuest,
+    visitDeliveryStop,
+    recordMonsterDefeat,
     getQuestInventory,
     resetFragileDeliveriesOnDefeat,
     getInventoryState,

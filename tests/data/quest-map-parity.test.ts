@@ -25,22 +25,58 @@ describe("shipped quest set is pinned", () => {
   it("ships exactly the authored tutorial/side quests", () => {
     const shipped = quests.filter(isShippedQuest).map((q) => q.id).sort();
     expect(shipped).toEqual([
+      "quest-berry-basket-postmaster",
       "quest-biscuit-golden-honey",
       "quest-biscuit-ingredient-run",
       "quest-flower-note-maple",
       "quest-fresh-bread-biscuit",
       "quest-garden-greeting-moss",
+      "quest-golden-acorn-moss",
+      "quest-herbs-for-cafe",
+      "quest-letters-two-stops",
       "quest-lost-pebble-moss",
+      "quest-lumi-antler-study",
+      "quest-lumi-findings-to-maple",
       "quest-lumi-golden-acorn",
+      "quest-lumi-grouse-survey",
       "quest-lumis-lost-notebook",
       "quest-maple-flower-crown",
+      "quest-maple-moonflower-thanks",
+      "quest-maple-package-to-pip",
       "quest-moon-note-lumi",
+      "quest-moonflower-for-lumi",
+      "quest-moss-burrow-boars",
+      "quest-moss-fox-watch",
       "quest-moss-garden-key",
       "quest-picnic-for-maple",
       "quest-pip-courier-cap",
       "quest-pip-letter-opener",
+      "quest-shells-for-biscuit",
+      "quest-valley-feathers-for-quills",
+      "quest-valley-hides-for-satchels",
+      "quest-valley-roads-safe",
       "quest-village-welcome",
+      "quest-warm-letter-maple",
     ]);
+  });
+
+  it("never ships a daily quest, since dailies are not implemented server-side", () => {
+    expect(quests.filter(isShippedQuest).filter((q) => q.daily === true).map((q) => q.id)).toEqual([]);
+  });
+});
+
+describe("shipped hand-in items have a source", () => {
+  it("every gathering hand-in (no search object) is dropped by some monster", () => {
+    const dropped = new Set(monstersJson.monsters.flatMap((m) => m.lootTable.map((loot) => loot.key)));
+    const handIns = quests.filter((q) => isShippedQuest(q) && q.type === "gathering" && q.searchObjectId === undefined);
+    expect(handIns.length).toBeGreaterThan(0);
+    for (const quest of handIns) expect(dropped, quest.id).toContain(quest.requiredItemId);
+  });
+
+  it("meadow hares drop strawberries and forest deer drop wild herbs", () => {
+    const loot = (key: string) => monstersJson.monsters.find((m) => m.key === key)?.lootTable;
+    expect(loot("monster-meadow-hare")).toContainEqual({ key: "item-strawberry", chance: 0.35, quantity: 1 });
+    expect(loot("monster-forest-deer")).toContainEqual({ key: "item-wild-herb", chance: 0.35, quantity: 1 });
   });
 });
 

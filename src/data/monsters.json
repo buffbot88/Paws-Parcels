@@ -55,7 +55,8 @@
       "attackBehavior": "melee",
       "lootTable": [
         { "key": "item-hare-fur", "chance": 0.5, "quantity": 1 },
-        { "key": "item-lucky-foot", "chance": 0.1, "quantity": 1 }
+        { "key": "item-lucky-foot", "chance": 0.1, "quantity": 1 },
+        { "key": "item-strawberry", "chance": 0.35, "quantity": 1 }
       ],
       "respawnSeconds": 20,
       "experienceReward": 8
@@ -75,7 +76,8 @@
       "attackBehavior": "melee",
       "lootTable": [
         { "key": "item-deer-antler", "chance": 0.4, "quantity": 1 },
-        { "key": "item-deer-hide", "chance": 0.5, "quantity": 1 }
+        { "key": "item-deer-hide", "chance": 0.5, "quantity": 1 },
+        { "key": "item-wild-herb", "chance": 0.35, "quantity": 1 }
       ],
       "respawnSeconds": 40,
       "experienceReward": 12

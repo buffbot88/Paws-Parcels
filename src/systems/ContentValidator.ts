@@ -137,6 +137,26 @@ export function validateContent(data: ContentData): ValidationResult {
     if (q.requiredItemId && !q.requiredQuantity) {
       warnings.push(`quest ${q.id}: requiredItemId set but no requiredQuantity (defaults to 1)`);
     }
+    // The server grants and consumes exactly one bound parcel per delivery.
+    if (q.type === "delivery" && q.requiredQuantity !== undefined && q.requiredQuantity !== 1) {
+      fail(`quest ${q.id}: delivery quests must have requiredQuantity 1`);
+    }
+    if (q.defeat !== undefined) {
+      if (q.type !== "errand") fail(`quest ${q.id}: defeat objective is only allowed on errand quests`);
+      if (typeof q.defeat.monsterKey !== "string" || q.defeat.monsterKey === "") fail(`quest ${q.id}: defeat.monsterKey must be a non-empty string`);
+      if (!Number.isInteger(q.defeat.count) || q.defeat.count < 1) fail(`quest ${q.id}: defeat.count must be an integer >= 1`);
+      if (q.requiredItemId || q.searchObjectId || q.findAt) {
+        fail(`quest ${q.id}: defeat objective cannot coexist with requiredItemId/searchObjectId/findAt`);
+      }
+    }
+    if (isShippedQuest(q)) {
+      for (const prerequisiteId of q.prerequisiteIds ?? []) {
+        const prerequisite = data.quests.find((candidate) => candidate.id === prerequisiteId);
+        if (prerequisite !== undefined && !isShippedQuest(prerequisite)) {
+          fail(`quest ${q.id}: shipped quest depends on unshipped prerequisite "${prerequisiteId}"`);
+        }
+      }
+    }
     // Lost-item recovery quests must say where the item is found.
     if (q.type === "errand" && q.requiredItemId && !q.findAt) {
       fail(`quest ${q.id}: errand with requiredItemId must specify findAt (lost-item recovery location)`);
@@ -172,13 +192,15 @@ export function validateContent(data: ContentData): ValidationResult {
     // No two-level jump invariant: a single reward must never move a player up two levels.
     // Worst case = player at the top of the start level + reward. For gated quests the start
     // level is the gate; for ungated quests the tightest bound is the lowest level (0).
-    if (typeof q.friendshipReward === "number" && q.friendshipReward > 0) {
+    // The server awards reputationPoints ?? friendshipReward, so that is the value checked.
+    const friendshipPoints = q.reputationPoints ?? q.friendshipReward;
+    if (typeof friendshipPoints === "number" && friendshipPoints > 0) {
       const startLevel = q.requiresFriendship ? q.requiresFriendship.level : 0;
       const topOfStart = FRIENDSHIP_THRESHOLDS[startLevel + 1] - 1;
       const twoUp = FRIENDSHIP_THRESHOLDS[startLevel + 2];
-      if (twoUp !== undefined && topOfStart + q.friendshipReward >= twoUp) {
+      if (twoUp !== undefined && topOfStart + friendshipPoints >= twoUp) {
         fail(
-          `quest ${q.id}: friendshipReward ${q.friendshipReward} can jump two levels ` +
+          `quest ${q.id}: friendshipReward ${friendshipPoints} can jump two levels ` +
           `(from level ${startLevel} top ${topOfStart} pts, level ${startLevel + 2} starts at ${twoUp})`
         );
       }
@@ -187,9 +209,12 @@ export function validateContent(data: ContentData): ValidationResult {
       fail(`quest ${q.id}: friendshipNpcId "${q.friendshipNpcId}" is not a known npc`);
     }
     if (q.additionalStops) {
+      if (q.type !== "delivery") fail(`quest ${q.id}: additionalStops are only allowed on delivery quests`);
       for (const stop of q.additionalStops) {
         if (!npcIds.has(stop)) fail(`quest ${q.id}: additionalStop "${stop}" is not a known npc`);
+        if (stop === q.targetId) fail(`quest ${q.id}: additionalStop "${stop}" duplicates targetId`);
       }
+      if (new Set(q.additionalStops).size !== q.additionalStops.length) fail(`quest ${q.id}: additionalStops contains duplicates`);
     }
     if (q.requiresFriendship) {
       const { npcId, level } = q.requiresFriendship;
@@ -198,6 +223,10 @@ export function validateContent(data: ContentData): ValidationResult {
         fail(`quest ${q.id}: requiresFriendship.level must be an integer 0-4`);
       }
     }
+  }
+
+  for (const cycle of findPrerequisiteCycles(data.quests)) {
+    fail(`quest prerequisite cycle: ${cycle.join(" -> ")}`);
   }
 
   // ---- Upgrade checks ----
@@ -278,12 +307,46 @@ export function validateQuestSearchObjects(
   for (const q of quests) {
     if (q.searchObjectId === undefined) continue;
     if (interactableIds.has(q.searchObjectId)) continue;
-    const shipped = (q.chainPosition ?? 0) > 0 || q.phase === "4B";
     const msg = `quest ${q.id}: searchObjectId "${q.searchObjectId}" is not a known map interactable`;
-    if (shipped) errors.push(msg);
+    if (isShippedQuest(q)) errors.push(msg);
     else warnings.push(`${msg} (quest is not currently shipped)`);
   }
   return { errors, warnings, ok: errors.length === 0 };
+}
+
+/** Every quest defeat objective must name a monster defined in monsters.json. */
+export function validateQuestDefeatMonsters(
+  quests: readonly QuestDefinition[],
+  monsterKeys: ReadonlySet<string>,
+): ValidationResult {
+  const errors = quests
+    .filter((q) => q.defeat !== undefined && !monsterKeys.has(q.defeat.monsterKey))
+    .map((q) => `quest ${q.id}: defeat.monsterKey "${q.defeat?.monsterKey}" is not a known monster`);
+  return { errors, warnings: [], ok: errors.length === 0 };
+}
+
+/** Mirrors the server's shipped-quest filter (server/src/models/questFilter.ts). */
+function isShippedQuest(q: QuestDefinition): boolean {
+  return (q.chainPosition ?? 0) > 0 || q.phase === "4B";
+}
+
+/** Each prerequisite cycle, as the quest ids walked from its first repeated node. */
+function findPrerequisiteCycles(quests: readonly QuestDefinition[]): string[][] {
+  const byId = new Map(quests.map((q) => [q.id, q]));
+  const done = new Set<string>();
+  const cycles: string[][] = [];
+  const visit = (id: string, path: string[]): void => {
+    const start = path.indexOf(id);
+    if (start >= 0) {
+      cycles.push([...path.slice(start), id]);
+      return;
+    }
+    if (done.has(id)) return;
+    for (const prerequisiteId of byId.get(id)?.prerequisiteIds ?? []) visit(prerequisiteId, [...path, id]);
+    done.add(id);
+  };
+  for (const q of quests) visit(q.id, []);
+  return cycles;
 }
 
 /** Minimal map shape the parity checks need (avoids importing the full MapData). */
