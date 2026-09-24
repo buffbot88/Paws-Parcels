@@ -2,6 +2,7 @@ import type { IncomingMessage, ServerResponse } from "node:http";
 import { extractBearerToken, verifyAccessToken } from "../auth/index.ts";
 import { readSessionCookie } from "../auth/sessionCookie.ts";
 import { getAccountByAshatId, type AccountRow } from "../models/Account.ts";
+import { adminTierForRole, tierSatisfies } from "../models/Admin.ts";
 import { errorResponse } from "./index.ts";
 
 /**
@@ -15,14 +16,14 @@ const BLOCKED_ACCOUNT_STATUSES = new Set(["suspended", "banned"]);
  * the linked account row. On success returns the account; on failure writes
  * the appropriate 401 response and returns null (callers must return).
  */
-/** Require a valid session whose canonical account role is exactly Admin. */
+/** Require a valid session whose account role maps to the admin tier or above. */
 export async function requireAdmin(
   req: IncomingMessage,
   res: ServerResponse,
 ): Promise<AccountRow | null> {
   const account = await requireAccount(req, res);
   if (account === null) return null;
-  if (account.role !== "Admin") {
+  if (!tierSatisfies(adminTierForRole(account.role), "admin")) {
     errorResponse(res, 403, "ADMIN_REQUIRED", "Admin role required");
     return null;
   }

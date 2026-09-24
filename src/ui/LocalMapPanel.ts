@@ -5,6 +5,8 @@ const mapAssets = import.meta.glob(
   { eager: true, query: "?url", import: "default" },
 ) as Record<string, string>;
 const CLOVER_VILLAGE_IMAGE = Object.values(mapAssets)[0] ?? "";
+/** Open modals that M must not stack the map over. */
+const MAP_BLOCKING_PANELS = ".profile-panel:not([hidden]), .dialogue-panel:not(.hidden), .character-desk:not([hidden])";
 
 /** Full-screen local map: solid parchment content over a softly revealed world. */
 export class LocalMapPanel {
@@ -114,7 +116,7 @@ export class LocalMapPanel {
         item.hidden = query !== "" && !item.textContent!.toLowerCase().includes(query);
       });
     });
-    document.addEventListener("keydown", this.handleKeyDown);
+    document.addEventListener("keydown", this.handleKeyDown, true);
   }
 
   attach(map: MapData): void {
@@ -152,14 +154,24 @@ export class LocalMapPanel {
   isOpen(): boolean { return this.openState; }
 
   destroy(): void {
-    document.removeEventListener("keydown", this.handleKeyDown);
+    document.removeEventListener("keydown", this.handleKeyDown, true);
     document.body.classList.remove("map-open");
     this.root.remove();
   }
 
   private handleKeyDown = (event: KeyboardEvent): void => {
-    if (event.key.toLowerCase() !== "m") return;
+    // `key` is missing on some synthetic/autofill keydown events.
+    const key = (event.key ?? "").toLowerCase();
+    if (key === "escape" && this.openState) {
+      // Capture phase: close only the map, not a panel underneath it.
+      event.preventDefault();
+      event.stopPropagation();
+      this.close();
+      return;
+    }
+    if (key !== "m") return;
     if (event.target instanceof HTMLInputElement || event.target instanceof HTMLTextAreaElement) return;
+    if (!this.openState && document.querySelector(MAP_BLOCKING_PANELS) !== null) return;
     event.preventDefault();
     this.toggle();
   };

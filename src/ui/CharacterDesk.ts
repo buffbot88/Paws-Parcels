@@ -35,6 +35,8 @@ export type DeskPlayHandler = (
 export interface CharacterDeskShowOptions {
   /** Open straight into the creation form (in-game "create a courier"). */
   forceCreate?: boolean;
+  /** In-game only: the back button hides the desk and calls this instead of re-routing. */
+  onCancel?: () => void;
 }
 
 /** Placeholder animal faces until the Phase 7 art lands. */
@@ -64,6 +66,7 @@ export class CharacterDesk {
   private selectedClassId: number | null = null;
   private onPlay: DeskPlayHandler | null = null;
   private forceCreate = false;
+  private onCancel: (() => void) | null = null;
 
   /** Show the desk for an authenticated account. */
   show(
@@ -75,6 +78,7 @@ export class CharacterDesk {
     this.characters = [...detail.characters];
     this.selectedClassId = null;
     this.forceCreate = opts?.forceCreate ?? false;
+    this.onCancel = opts?.onCancel ?? null;
     this.onPlay = onPlay;
     this.ensureRoot();
     if (this.root) {
@@ -298,10 +302,14 @@ export class CharacterDesk {
     const backBtn = document.createElement("button");
     backBtn.type = "button";
     backBtn.className = "desk-btn desk-btn--text";
+    const onCancel = this.onCancel;
     backBtn.textContent =
-      this.characters.length > 0 ? "Back to my couriers" : "Sign out";
+      onCancel !== null ? "Back to the game" : this.characters.length > 0 ? "Back to my couriers" : "Sign out";
     backBtn.addEventListener("click", () => {
-      if (this.characters.length > 0) {
+      if (onCancel !== null) {
+        this.hide();
+        onCancel();
+      } else if (this.characters.length > 0) {
         this.forceCreate = false;
         this.render();
       } else {

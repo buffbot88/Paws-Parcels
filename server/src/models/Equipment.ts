@@ -201,8 +201,12 @@ export function unequipItem(characterId: number, slot: string): EquipmentMutatio
   if (equipped === undefined) return { ok: false, reason: "NOT_EQUIPPED" };
   const state = getInventoryState(characterId);
   const used = new Set(state.items.filter((item) => item.slot !== null).map((item) => item.slot as number));
+  // A courier bag's bonus slots vanish with it: refuse if they hold items, and never unequip into them.
+  const lostCapacity = state.equipment.find((entry) => entry.slot === slot)?.courierEffects.parcelCapacity ?? 0;
+  const slotCount = getEffectiveSlotCount(characterId, { ...state.stats, parcelCapacity: state.stats.parcelCapacity - lostCapacity });
+  if ([...used].some((occupied) => occupied >= slotCount)) return { ok: false, reason: "INVENTORY_FULL" };
   let free: number | null = null;
-  for (let candidate = 0; candidate < state.slotCount; candidate += 1) if (!used.has(candidate)) { free = candidate; break; }
+  for (let candidate = 0; candidate < slotCount; candidate += 1) if (!used.has(candidate)) { free = candidate; break; }
   if (free === null) return { ok: false, reason: "INVENTORY_FULL" };
   const instanceId = Number(equipped.item_instance_id);
   db.exec("BEGIN");

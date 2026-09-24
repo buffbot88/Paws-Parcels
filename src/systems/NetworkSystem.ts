@@ -126,9 +126,14 @@ export class NetworkSystem {
   /** The authenticated session landed in a different zone than the boot scene
    * (another tab moved the courier) — the scene should restart there. */
   onServerZoneRedirect: ((zoneId: string) => void) | null = null;
+  /** The server refused a zone switch — the scene should return to `zoneId`
+   * (the last zone the server confirmed) and show `message`. */
+  onZoneJoinRejected: ((zoneId: string, message: string) => void) | null = null;
   private currentStatus: NetStatus = "idle";
   private currentStatusDetail: string | undefined;
   private currentZoneId: string | null = null;
+  /** Last zone a zone_state confirmed; survives scene restarts so a refused switch can roll back. */
+  private confirmedZoneId: string | null = null;
   private expectedZoneId: string | null = null;
   private latestZoneState: {
     zoneId: string;
@@ -163,6 +168,8 @@ export class NetworkSystem {
     if (zoneId !== undefined) this.expectedZoneId = zoneId;
     this.destroyEntities();
     this.scene = scene;
+    // The scene read the authenticated zone before attaching; it is consumed now.
+    this.authoritativeZone = null;
     // shutdown() removes the status card; re-create it on scene attach only when
     // an authenticated character is known — avoids mounting HUD before login on
     // scene restarts that happen to run before auth completes.
@@ -380,8 +387,12 @@ export class NetworkSystem {
     return out;
   }
 
-  /** Forget the scene and its remote entities (scene shutdown). */
-  detach(): void {
+  /**
+   * Forget the scene and its remote entities (scene shutdown). Passing the
+   * scene makes a late teardown of a replaced scene a no-op.
+   */
+  detach(scene?: Phaser.Scene): void {
+    if (scene !== undefined && this.scene !== scene) return;
     this.destroyEntities();
     this.scene = null;
     this.currentZoneId = null;
@@ -405,22 +416,22 @@ export class NetworkSystem {
     this.onGameplayNotice = null;
     this.onSelfPosition = null;
     this.onServerZoneRedirect = null;
+    this.onZoneJoinRejected = null;
     this.selfPosition = null;
     this.authoritativeZone = null;
   }
 
-  /** Close the socket for good (logout / page teardown). */
+  /** Close the socket for good (logout / courier switch) and drop per-session state. */
   shutdown(): void {
     this.socket?.close();
     this.socket = null;
-    this.currentZoneId = null;
-    this.latestZoneState = null;
+    this.detach();
     this.latestPlayers = null;
-    this.selfPosition = null;
-    this.authoritativeZone = null;
     this.latestSnapshotSequence.clear();
     this.expectedZoneId = null;
-    this.destroyEntities();
+    this.confirmedZoneId = null;
+    this.myHp = 0;
+    this.myMaxHp = 0;
     this.statusCard?.destroy();
     this.statusCard = null;
     this.levelUpBanner?.destroy();
@@ -523,6 +534,15 @@ export class NetworkSystem {
     socket.callbacks.onRespawn = (info) => this.handleRespawn(info);
     socket.callbacks.onLoot = (sourceId, items) => this.onLoot?.(sourceId, items);
     socket.callbacks.onError = (code, message, requestType) => {
+      if (
+        requestType === "join_zone" &&
+        this.confirmedZoneId !== null &&
+        this.confirmedZoneId !== this.expectedZoneId &&
+        this.onZoneJoinRejected !== null
+      ) {
+        this.onZoneJoinRejected(this.confirmedZoneId, message);
+        return;
+      }
       // Collision/range rejections are normal gameplay feedback — stay quiet.
       if (
         code === "MOVE_COLLISION" ||
@@ -561,7 +581,7 @@ export class NetworkSystem {
       players: players.map((player) => ({ ...player, pos: { ...player.pos } })),
     };
     this.latestSnapshotSequence.delete(zoneId);
-    this.authoritativeZone = null;
+    this.confirmedZoneId = zoneId;
     this.destroyEntities();
     for (const p of players) {
       if (p.characterId === this.myCharacterId) {
@@ -657,8 +677,10 @@ export class NetworkSystem {
         monster.setVisible(false);
         continue;
       }
+      // A respawn appears at its spawn point instead of gliding from the death spot.
+      if (!monster.visible) monster.snapTo(m.pos);
+      else monster.setTarget(m.pos);
       monster.setVisible(true);
-      monster.setTarget(m.pos);
       monster.setHp(m.hp);
     }
   }

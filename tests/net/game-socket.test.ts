@@ -385,6 +385,84 @@ describe("GameSocket message dispatch", () => {
     ws.receive({ type: "zone_chat", characterId: 9, name: "Birch", text: "Welcome!" });
     expect(onChat).toHaveBeenCalledWith({ characterId: 9, name: "Birch", text: "Welcome!" });
   });
+
+  it("reads zone_state stamps from inventoryState and inventory_updated stamps from the top level", async () => {
+    const socket = makeSocket();
+    const onInventory = vi.fn();
+    socket.callbacks.onInventoryUpdated = onInventory;
+    const ws = await connectedSocket(socket);
+
+    // Shapes the server actually sends (gameServer.ts handleJoinZone / sendInventoryState).
+    ws.receive({
+      type: "zone_state",
+      zoneId: "zone-clover-village",
+      players: [],
+      monsters: [],
+      inventoryState: { slotCount: 12, stamps: 37, items: [], equipment: [], stats: {} },
+    });
+    expect(onInventory).toHaveBeenLastCalledWith([], 37, expect.objectContaining({ slotCount: 12 }));
+
+    ws.receive({ type: "inventory_updated", items: [], equipment: [], slotCount: 12, stats: {}, stamps: 41 });
+    expect(onInventory).toHaveBeenLastCalledWith([], 41, expect.anything());
+  });
+});
+
+describe("GameSocket zone join rollback", () => {
+  it("only counts a zone as joined once zone_state arrives", async () => {
+    const socket = makeSocket();
+    await socket.connect();
+    const ws = FakeWebSocket.instances[0];
+    ws.open();
+    ws.receive({ type: "authenticated", accountId: 7, characterId: 5, zoneId: "zone-clover-village" });
+    socket.joinZone("zone-clover-village");
+    socket.chat("too early");
+    expect(ws.sentOfType("zone_chat")).toHaveLength(0);
+    ws.receive({ type: "zone_state", zoneId: "zone-clover-village", players: [], monsters: [] });
+    socket.chat("now joined");
+    expect(ws.sentOfType("zone_chat")).toHaveLength(1);
+  });
+
+  it("rejoins the last confirmed zone, not the refused one, after a rejected switch and reconnect", async () => {
+    vi.useFakeTimers();
+    const socket = makeSocket({ reconnectDelayMs: 100 });
+    const onError = vi.fn();
+    socket.callbacks.onError = onError;
+    const ws1 = await connectedSocket(socket, "zone-clover-village");
+
+    socket.joinZone("zone-happy-valley");
+    ws1.receive({ type: "error", code: "ZONE_FULL", message: "full", requestType: "join_zone" });
+    expect(onError).toHaveBeenCalledWith("ZONE_FULL", "full", "join_zone");
+
+    ws1.close();
+    await vi.advanceTimersByTimeAsync(100);
+    const ws2 = FakeWebSocket.instances[1];
+    ws2.open();
+    ws2.receive({ type: "authenticated", accountId: 7, characterId: 5, zoneId: "zone-clover-village" });
+    expect(ws2.sentOfType("join_zone")).toEqual([{ type: "join_zone", zoneId: "zone-clover-village" }]);
+  });
+});
+
+describe("GameSocket stale socket events", () => {
+  it("ignores a replaced socket's late close so the new connection's status stands", async () => {
+    const socket = makeSocket();
+    const statuses: string[] = [];
+    socket.callbacks.onStatus = (status) => statuses.push(status);
+    const ws1 = await connectedSocket(socket);
+    const lateClose = ws1.onclose;
+    socket.close();
+
+    const ws2 = await connectedSocket(socket);
+    expect(socket.statusValue).toBe("joined");
+    statuses.length = 0;
+
+    // Browsers fire onclose asynchronously; close() must have detached it.
+    expect(ws1.onclose).toBeNull();
+    lateClose?.();
+    ws1.receive({ type: "error", code: "LATE", message: "late" });
+    expect(socket.statusValue).toBe("joined");
+    expect(statuses).toEqual([]);
+    expect(ws2.readyState).toBe(1);
+  });
 });
 
 describe("GameSocket reconnect", () => {

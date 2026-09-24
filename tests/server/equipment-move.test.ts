@@ -13,7 +13,7 @@ import { closeDb, getDb } from "../../server/src/db/connection.ts";
 import { findOrCreateAccountByAshatId } from "../../server/src/models/Account.ts";
 import { createCharacter, grantInventoryItems } from "../../server/src/models/Character.ts";
 import { getCharacterClasses } from "../../server/src/models/CharacterClass.ts";
-import { equipItem, getInventoryState, moveInventoryItem } from "../../server/src/models/Equipment.ts";
+import { equipItem, getInventoryState, moveInventoryItem, unequipItem } from "../../server/src/models/Equipment.ts";
 
 afterEach(async () => {
   await closeDb();
@@ -100,5 +100,25 @@ describe("moveInventoryItem", () => {
     expect(moved?.slot).toBe(0);
     const untouched = result.inventory.items.find((i) => i.itemKey === "item-blueberry");
     expect(untouched?.slot).toBe(1);
+  });
+});
+
+describe("unequipItem — courier satchel capacity", () => {
+  it("refuses to unequip a satchel while its bonus slots hold items, and never unequips into them", async () => {
+    const id = await makeCharacter();
+    const satchel = grantOne(id, "item-courier-satchel");
+    expect(equipItem(id, satchel.instanceId).ok).toBe(true);
+    const base = getInventoryState(id).slotCount - 6;
+    const db = getDb();
+    const def = db.prepare("SELECT id FROM item_definitions WHERE key = ?").get("item-strawberry") as { id: number };
+    const bonus = db.prepare("INSERT INTO inventory_items (character_id, item_definition_id, slot, quantity) VALUES (?, ?, ?, 1)").run(id, def.id, base);
+    expect(unequipItem(id, "courier-bag")).toEqual({ ok: false, reason: "INVENTORY_FULL" });
+
+    // Base slots full, bonus slots empty: still no room once the satchel is gone.
+    db.prepare("DELETE FROM inventory_items WHERE id = ?").run(Number(bonus.lastInsertRowid));
+    for (let slot = 0; slot < base; slot++) {
+      db.prepare("INSERT INTO inventory_items (character_id, item_definition_id, slot, quantity) VALUES (?, ?, ?, 1)").run(id, def.id, slot);
+    }
+    expect(unequipItem(id, "courier-bag")).toEqual({ ok: false, reason: "INVENTORY_FULL" });
   });
 });

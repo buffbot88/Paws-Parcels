@@ -91,6 +91,7 @@ function fakeSocket(): FakeSocket {
 function makeServer(overrides: {
   loadCharacter?: GameServer["deps"]["loadCharacter"];
   persistPosition?: GameServer["deps"]["persistPosition"];
+  persistHp?: GameServer["deps"]["persistHp"];
   graceMs?: number;
   persistIntervalMs?: number;
 } = {}) {
@@ -478,6 +479,18 @@ describe("GameServer", () => {
     expect(lastOfType(socket, "player_snapshot")).toBeDefined();
   });
 
+  it("logs and survives a tick that throws", async () => {
+    const server = makeServer();
+    const socket = fakeSocket();
+    await connectAndJoin(server, socket);
+    vi.spyOn(server["zones"], "snapshot").mockImplementationOnce(() => {
+      throw new Error("SQLITE_BUSY");
+    });
+    expect(() => server.runTick()).not.toThrow();
+    server.runTick();
+    expect(lastOfType(socket, "player_snapshot")).toBeDefined();
+  });
+
   it("rejects a join to a zone the current zone is not connected to", async () => {
     const server = makeServer();
     const far = { ...TEST_ZONE, zoneId: "zone-far", transitions: [] };
@@ -496,25 +509,87 @@ describe("GameServer", () => {
     expect(lastOfType(socket, "zone_state")).toBeUndefined();
   });
 
-  it("allows a join to a zone connected by a map transition", async () => {
-    const server = makeServer();
-    const next = { ...TEST_ZONE, zoneId: "zone-next", transitions: [] };
+  /** zone-test with a transition at `at` into zone-next (arrival spawn (4,4)). */
+  function withNextZone(server: GameServer, at: { x: number; y: number }, nextOverrides: Partial<ZoneData> = {}): void {
+    const next = { ...TEST_ZONE, zoneId: "zone-next", transitions: [], ...nextOverrides };
     const current = {
       ...TEST_ZONE,
-      transitions: [{ x: 4, y: 4, toZone: "zone-next" }],
+      transitions: [{ ...at, toZone: "zone-next", spawn: { x: 4, y: 4 } }],
     };
     server["deps"] = {
       ...server["deps"],
       getZoneData: (zoneId: string) =>
         zoneId === TEST_ZONE.zoneId ? current : zoneId === next.zoneId ? next : null,
     };
+  }
+
+  it("allows a join from a transition tile and arrives at the transition's spawn", async () => {
+    const server = makeServer();
+    // The saved position (1,1) is adjacent to the transition at (1,2).
+    withNextZone(server, { x: 1, y: 2 });
     const socket = fakeSocket();
-    server.registerSocket(socket);
-    const token = issueWsToken(7, 10);
-    await server.onMessage(socket, JSON.stringify({ type: "authenticate", token }));
-    await server.onMessage(socket, JSON.stringify({ type: "join_zone", zoneId: "zone-next" }));
+    await connectAndJoin(server, socket, 10, "zone-next");
     expect(lastOfType(socket, "error")).toBeUndefined();
-    expect(lastOfType(socket, "zone_state")).toMatchObject({ zoneId: "zone-next" });
+    expect(lastOfType(socket, "zone_state")).toMatchObject({
+      zoneId: "zone-next",
+      players: [{ characterId: 10, pos: { x: 4, y: 4 } }],
+    });
+  });
+
+  it("rejects a cross-zone join when the player is not on a transition", async () => {
+    const server = makeServer();
+    withNextZone(server, { x: 8, y: 8 }); // beyond transition reach of (1,1)
+    const socket = fakeSocket();
+    await connectAndJoin(server, socket);
+    await server.onMessage(socket, JSON.stringify({ type: "join_zone", zoneId: "zone-next" }));
+    expect(lastOfType(socket, "error")).toMatchObject({ code: "ZONE_UNREACHABLE", requestType: "join_zone" });
+    expect(server["zones"].get("zone-test", 10)?.connected).toBe(true);
+  });
+
+  it("does not let leave_zone bypass the transition check", async () => {
+    const server = makeServer();
+    withNextZone(server, { x: 8, y: 8 }); // beyond transition reach of (1,1)
+    const socket = fakeSocket();
+    await connectAndJoin(server, socket);
+    await server.onMessage(socket, JSON.stringify({ type: "leave_zone" }));
+    await server.onMessage(socket, JSON.stringify({ type: "join_zone", zoneId: "zone-next" }));
+    expect(lastOfType(socket, "error")).toMatchObject({ code: "ZONE_UNREACHABLE" });
+    expect(server["zones"].get("zone-next", 10)).toBeNull();
+  });
+
+  it("keeps the player in their zone when the target zone is full", async () => {
+    const server = makeServer();
+    withNextZone(server, { x: 1, y: 1 }, { maxPlayers: 1 });
+    const a = fakeSocket();
+    const b = fakeSocket();
+    await connectAndJoin(server, b, 11);
+    await server.onMessage(b, JSON.stringify({ type: "join_zone", zoneId: "zone-next" }));
+    await connectAndJoin(server, a, 10);
+    await server.onMessage(a, JSON.stringify({ type: "join_zone", zoneId: "zone-next" }));
+    expect(lastOfType(a, "error")).toMatchObject({ code: "ZONE_FULL" });
+    expect(server["zones"].get("zone-test", 10)?.connected).toBe(true);
+  });
+
+  it("persists HP when a player leaves the zone", async () => {
+    const persistHp = vi.fn(async () => {});
+    const server = makeServer({ persistHp });
+    const socket = fakeSocket();
+    await connectAndJoin(server, socket);
+    Object.assign(server["zones"].get("zone-test", 10)!, { hp: 42, maxHp: 100 });
+    await server.onMessage(socket, JSON.stringify({ type: "leave_zone" }));
+    expect(persistHp).toHaveBeenCalledWith(10, 42, 100);
+  });
+
+  it("rejects a second authenticate on an already-authenticated socket", async () => {
+    const server = makeServer();
+    const socket = fakeSocket();
+    await connectAndJoin(server, socket, 10);
+    const token = issueWsToken(8, 11);
+    await server.onMessage(socket, JSON.stringify({ type: "authenticate", token }));
+    expect(lastOfType(socket, "error")).toMatchObject({ code: "ALREADY_AUTHENTICATED", requestType: "authenticate" });
+    expect(messages(socket).filter((m) => m.type === "authenticated")).toHaveLength(1);
+    await server.onMessage(socket, JSON.stringify({ type: "move_intent", dx: 1, dy: 0 }));
+    expect(server["zones"].get("zone-test", 10)?.pos).toEqual({ x: 2, y: 1 });
   });
 
   it("expires a stale session when the same character re-authenticates", async () => {
@@ -744,6 +819,47 @@ describe("GameServer — Phase 3 combat", () => {
       });
       expect(grantXp).toHaveBeenCalledWith(11, 20);
       expect(grantInventory).toHaveBeenCalledWith(11, [{ itemKey: "item-boar-hide", quantity: 1 }]);
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  /** Two archer hits (28 each) kill the 55hp boar; waits out the 2s cooldown. */
+  async function killBoar(server: GameServer, socket: FakeSocket): Promise<void> {
+    await server.onMessage(socket, JSON.stringify({ type: "attack", targetEntityId: "spawn-boar" }));
+    vi.setSystemTime(Date.now() + 2500);
+    await server.onMessage(socket, JSON.stringify({ type: "attack", targetEntityId: "spawn-boar" }));
+    await vi.advanceTimersByTimeAsync(0);
+  }
+
+  it("sends loot only to the killer, followed by inventory_updated", async () => {
+    vi.useFakeTimers();
+    try {
+      const server = makeCombatServer();
+      server["deps"].getInventoryState = () => ({ slotCount: 12, stamps: 0, items: [], equipment: [], stats: {} } as never);
+      const killer = fakeSocket();
+      const bystander = fakeSocket();
+      await joinCombat(server, killer, 11);
+      await joinCombat(server, bystander, 10);
+      await killBoar(server, killer);
+      expect(lastOfType(killer, "loot_received")).toMatchObject({ sourceId: "spawn-boar" });
+      const types = messages(killer).map((m) => m.type);
+      expect(types.lastIndexOf("inventory_updated")).toBeGreaterThan(types.lastIndexOf("loot_received"));
+      expect(lastOfType(bystander, "loot_received")).toBeUndefined();
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it("does not announce loot the inventory could not hold", async () => {
+    vi.useFakeTimers();
+    try {
+      const server = makeCombatServer({ grantInventory: async () => [] });
+      const socket = fakeSocket();
+      await joinCombat(server, socket, 11);
+      await killBoar(server, socket);
+      expect(lastOfType(socket, "combat_event")).toMatchObject({ outcome: "defeated" });
+      expect(lastOfType(socket, "loot_received")).toBeUndefined();
     } finally {
       vi.useRealTimers();
     }

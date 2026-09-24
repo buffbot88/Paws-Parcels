@@ -128,6 +128,21 @@ describe("SQLite persistence layer", () => {
     expect(untouched?.pos_y).toBe(5);
   });
 
+  it("creates characters with the class's camelCase crit stats and migration 017 repairs old rows", async () => {
+    await runMigrations();
+    const account = await findOrCreateAccountByAshatId({ ashatUserId: "u-crit", username: "crit", displayName: "Crit", role: "Member" });
+    const fox = (await getCharacterClasses()).find((c) => c.key === "fox-archer")!;
+    const created = await createCharacter({ accountId: account.id, name: "Vixen", classId: fox.id, appearance: {}, cls: fox });
+    if (!created.ok) throw new Error("character creation failed");
+    const crit = () => getDb().prepare("SELECT crit_chance, crit_multiplier FROM character_stats WHERE character_id = ?").get(created.character.id);
+    expect(crit()).toEqual({ crit_chance: 10, crit_multiplier: 1.8 });
+
+    getDb().prepare("UPDATE character_stats SET crit_chance = 5, crit_multiplier = 1.5 WHERE character_id = ?").run(created.character.id);
+    getDb().prepare("DELETE FROM schema_version WHERE version = '017_fix_class_crit_stats'").run();
+    await runMigrations();
+    expect(crit()).toEqual({ crit_chance: 10, crit_multiplier: 1.8 });
+  });
+
   it("upserts an account by ashat_user_id and syncs the display name", async () => {
     await runMigrations();
     const created = await findOrCreateAccountByAshatId({

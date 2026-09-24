@@ -339,18 +339,23 @@ export class GameSocket {
       return;
     }
     this.ws = ws;
+    // A replaced socket's late events must never touch the current connection.
     ws.onopen = () => {
+      if (this.ws !== ws) return;
       if (this.wsToken !== null) {
         this.setStatus("authenticating");
         ws.send(encodeMessage({ type: "authenticate", token: this.wsToken }));
       }
     };
     ws.onmessage = (event: MessageEvent) => {
+      if (this.ws !== ws) return;
       const msg = decodeMessage(event.data);
       if (msg === null) return;
       this.dispatch(msg);
     };
-    ws.onclose = () => this.handleClose();
+    ws.onclose = () => {
+      if (this.ws === ws) this.handleClose();
+    };
     ws.onerror = () => {
       // onclose follows; leave status to handleClose.
     };
@@ -397,12 +402,14 @@ export class GameSocket {
     return body.wsToken;
   }
 
-  /** Join (or switch to) a zone. Safe to call before authentication completes. */
+  /**
+   * Join (or switch to) a zone. Safe to call before authentication completes;
+   * the zone only counts as joined once the server answers with zone_state.
+   */
   joinZone(zoneId: string): void {
     this.pendingZoneId = zoneId;
     if (this.ws !== null && this.authenticated && this.ws.readyState === WS_READY_OPEN) {
       this.ws.send(encodeMessage({ type: "join_zone", zoneId }));
-      this.joinedZoneId = zoneId;
     }
   }
 
@@ -495,8 +502,15 @@ export class GameSocket {
       clearTimeout(this.reconnectTimer);
       this.reconnectTimer = null;
     }
-    this.ws?.close();
+    const ws = this.ws;
     this.ws = null;
+    if (ws !== null) {
+      ws.onopen = null;
+      ws.onmessage = null;
+      ws.onclose = null;
+      ws.onerror = null;
+      ws.close();
+    }
     this.authenticated = false;
     this.joinedZoneId = null;
     this.pendingZoneId = null;
@@ -533,7 +547,9 @@ export class GameSocket {
         if (Array.isArray(msg.quests)) this.callbacks.onQuestState?.(normalizeQuests(msg.quests));
         if (msg.inventoryState !== undefined) {
           const state = normalizeInventoryState(msg.inventoryState);
-          this.callbacks.onInventoryUpdated?.(state.items, Number(msg.stamps ?? 0), state);
+          // zone_state carries the balance inside inventoryState, not at the top level.
+          const stamps = (msg.inventoryState as Record<string, unknown> | null)?.stamps ?? msg.stamps ?? 0;
+          this.callbacks.onInventoryUpdated?.(state.items, Number(stamps), state);
         }
         break;
       }
@@ -636,6 +652,9 @@ export class GameSocket {
         const code = typeof msg.code === "string" ? msg.code : "UNKNOWN";
         const message = typeof msg.message === "string" ? msg.message : "Server error";
         const requestType = typeof msg.requestType === "string" ? msg.requestType : undefined;
+        // A rejected switch leaves the server in the last confirmed zone —
+        // don't resurrect the refused zone on the next reconnect.
+        if (requestType === "join_zone" && this.joinedZoneId !== null) this.pendingZoneId = this.joinedZoneId;
         this.callbacks.onError?.(code, message, requestType);
         break;
       }

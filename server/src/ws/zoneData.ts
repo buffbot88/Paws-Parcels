@@ -37,8 +37,15 @@ export interface ZoneData {
   monsterSpawns: { id: string; key: string; x: number; y: number }[];
   /** Zone capacity (zones.json maxPlayers) — enforced in handleJoinZone. */
   maxPlayers: number;
-  /** Map-authored zone transitions — the only legal cross-zone joins. */
-  transitions: { x: number; y: number; toZone: string }[];
+  /** Map-authored zone transitions — the only legal cross-zone joins; `spawn` is the arrival tile in `toZone`. */
+  transitions: ZoneTransition[];
+}
+
+export interface ZoneTransition {
+  x: number;
+  y: number;
+  toZone: string;
+  spawn?: { x: number; y: number };
 }
 
 interface MapFile {
@@ -47,7 +54,7 @@ interface MapFile {
   rows: string[];
   spawn?: { x: number; y: number };
   monsterSpawns?: { id: string; key: string; x: number; y: number }[];
-  transitions?: { x: number; y: number; toZone: string }[];
+  transitions?: ZoneTransition[];
 }
 
 // Resolve relative to this module, never process.cwd() — the server must find
@@ -57,8 +64,17 @@ const MAPS_DIR = resolve(
   "../../../src/data/maps",
 );
 
-/** Load zone geometry for a zone id, or null when the map is unknown. */
+const zoneCache = new Map<string, ZoneData | null>();
+
+/** Load (cached) zone geometry for a zones.json zone id, or null when unknown. */
 export function loadZoneData(zoneId: string): ZoneData | null {
+  // Client-supplied ids never reach the filesystem unless zones.json authors them.
+  if (!ZONE_CAPACITY.has(zoneId)) return null;
+  if (!zoneCache.has(zoneId)) zoneCache.set(zoneId, readZoneData(zoneId));
+  return zoneCache.get(zoneId) ?? null;
+}
+
+function readZoneData(zoneId: string): ZoneData | null {
   const file = resolve(MAPS_DIR, `${zoneId.replace(/^zone-/, "")}.json`);
   let map: MapFile;
   try {
@@ -86,12 +102,10 @@ export function loadZoneData(zoneId: string): ZoneData | null {
   };
 }
 
-/** Keep only well-formed transition entries (x, y + a non-empty toZone). */
-function normalizeTransitions(
-  raw: MapFile["transitions"],
-): { x: number; y: number; toZone: string }[] {
+/** Keep only well-formed transition entries (x, y + a non-empty toZone, optional integer spawn). */
+function normalizeTransitions(raw: MapFile["transitions"]): ZoneTransition[] {
   if (!Array.isArray(raw)) return [];
-  const out: { x: number; y: number; toZone: string }[] = [];
+  const out: ZoneTransition[] = [];
   for (const t of raw) {
     if (
       Number.isInteger(t.x) &&
@@ -99,7 +113,10 @@ function normalizeTransitions(
       typeof t.toZone === "string" &&
       t.toZone !== ""
     ) {
-      out.push({ x: t.x, y: t.y, toZone: t.toZone });
+      const spawn = t.spawn !== undefined && Number.isInteger(t.spawn.x) && Number.isInteger(t.spawn.y)
+        ? { x: t.spawn.x, y: t.spawn.y }
+        : undefined;
+      out.push({ x: t.x, y: t.y, toZone: t.toZone, ...(spawn === undefined ? {} : { spawn }) });
     }
   }
   return out;

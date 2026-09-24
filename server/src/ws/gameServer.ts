@@ -34,6 +34,8 @@ const DEFAULT_TILES_PER_SEC = 180 / 48;
 const DEFAULT_PERSIST_INTERVAL_MS = 10_000;
 /** Respawn invulnerability window after defeat (design/combat.md §3). */
 const DEFEAT_INVULN_MS = 3000;
+/** Chebyshev tiles a courier may be from a transition when switching zones; absorbs move-intent lag. */
+const TRANSITION_REACH_TILES = 3;
 /** Safe zone players are sent to on defeat (design/combat.md §3). */
 const DEFAULT_SAFE_ZONE = "zone-clover-village";
 
@@ -74,7 +76,10 @@ export interface GameServerDeps {
   /** Best-effort XP grant on monster kill (DB); defaults to no-op. */
   grantXp?: (characterId: number, amount: number) => Promise<number | null>;
   /** Best-effort inventory grant on monster loot (DB); defaults to no-op. */
-  grantInventory?: (characterId: number, items: { itemKey: string; quantity: number }[]) => Promise<void>;
+  grantInventory?: (
+    characterId: number,
+    items: { itemKey: string; quantity: number }[],
+  ) => Promise<{ itemKey: string; quantity: number }[] | void>;
   /** Monster templates for a zone (DB); defaults to [] so safe zones stay empty. */
   getMonsterDefinitions?: (zoneKey: string) => Promise<MonsterDefinitionRow[]>;
   /** AI game engine: optional world-brain that overrides monster decisions. */
@@ -109,6 +114,8 @@ interface Session {
   accountId: number | null;
   characterId: number | null;
   zoneId: string | null;
+  /** Zone + tile at the last leave_zone, so the next join is still transition-validated. */
+  lastZone: { zoneId: string; pos: { x: number; y: number } } | null;
   authenticated: boolean;
   /** True sliding-window budget: timestamps of frames still inside the window. */
   msgTimes: number[];
@@ -261,6 +268,7 @@ export class GameServer {
       accountId: null,
       characterId: null,
       zoneId: null,
+      lastZone: null,
       authenticated: false,
       msgTimes: [],
       authFailures: 0,
@@ -291,6 +299,9 @@ export class GameServer {
     this.tickRunning = true;
     try {
       this.runTickInternal();
+    } catch (err) {
+      // Runs inside setInterval: an uncaught throw here would crash the process.
+      logger.error("Game tick failed", { error: String(err) });
     } finally {
       this.tickRunning = false;
     }
@@ -464,6 +475,10 @@ export class GameServer {
     session: Session,
     msg: Record<string, unknown>,
   ): Promise<void> {
+    if (session.authenticated) {
+      this.sendError(session, "ALREADY_AUTHENTICATED", "This connection is already authenticated", "authenticate");
+      return;
+    }
     const token = typeof msg.token === "string" ? msg.token : "";
     if (token === "") {
       this.sendError(session, "INVALID_TOKEN", "authenticate requires a token");
@@ -481,6 +496,11 @@ export class GameServer {
       session.authFailures += 1;
       this.sendError(session, "INVALID_TOKEN", "Character no longer exists for this account");
       if (session.authFailures >= MAX_AUTH_FAILURES) session.socket.close();
+      return;
+    }
+    if (session.authenticated) {
+      // A concurrent authenticate won the race while this one awaited the DB.
+      this.sendError(session, "ALREADY_AUTHENTICATED", "This connection is already authenticated", "authenticate");
       return;
     }
     session.authFailures = 0;
@@ -520,47 +540,72 @@ export class GameServer {
       return;
     }
 
-    // Zone transitions are server-validated: a courier may only join a zone
-    // their current zone is actually connected to (the map JSON's transition
-    // list). The initial join (requested === the authenticated zone) always
-    // passes; an unknown current zone (stale saved position) is treated as
-    // lenient so a deleted zone can never strand a player.
-    if (session.zoneId !== null && session.zoneId !== zoneId) {
-      const current = this.deps.getZoneData(session.zoneId);
-      const connected =
-        current === null ||
-        current.transitions.some((t) => t.toZone === zoneId) ||
-        zone.transitions.some((t) => t.toZone === session.zoneId as string);
-      if (!connected) {
-        this.sendError(
-          session,
-          "ZONE_UNREACHABLE",
-          `Zone "${zoneId}" is not connected to "${session.zoneId}"`,
-          "join_zone",
-        );
-        return;
-      }
-    }
-
-    // Reconnect within the grace window: the character may still be tracked
-    // in another zone — drop them there first (broadcasts player_left).
-    this.dropFromAllZones(characterId, zoneId);
-
     const character = await this.deps.loadCharacter(characterId);
     if (character === null) {
       this.sendError(session, "INVALID_TOKEN", "Character no longer exists");
       return;
     }
-    // A world resize can leave stale saved positions on colliding tiles —
-    // snap to the zone spawn instead of trusting the DB blindly.
-    const savedPos = { x: character.pos.x, y: character.pos.y };
-    const pos = zone.isWalkable(savedPos.x, savedPos.y)
-      ? savedPos
-      : { ...zone.spawn };
+
+    // Where the courier is joining from: the live tracked player (zone switch,
+    // grace reconnect, defeat respawn), else the last leave_zone, else the DB.
+    const tracked = this.findTracked(characterId);
+    const origin = (tracked === null ? null : { zoneId: tracked.zoneId, pos: tracked.player.pos })
+      ?? session.lastZone
+      ?? { zoneId: character.zoneId, pos: character.pos };
+
+    // Zone transitions are server-validated: switching zones requires standing
+    // near a map transition in the origin zone leading to the requested zone.
+    // An unknown origin zone (stale saved position) is treated as lenient so a
+    // deleted zone can never strand a player.
+    let pos: { x: number; y: number };
+    if (origin.zoneId !== zoneId) {
+      const current = this.deps.getZoneData(origin.zoneId);
+      const via = current?.transitions.find(
+        (t) => t.toZone === zoneId && tileDistance(origin.pos, t) <= TRANSITION_REACH_TILES,
+      );
+      if (current !== null && via === undefined) {
+        this.sendError(
+          session,
+          "ZONE_UNREACHABLE",
+          `Zone "${zoneId}" is not reachable from your position in "${origin.zoneId}"`,
+          "join_zone",
+        );
+        return;
+      }
+      const arrival = via?.spawn;
+      pos = arrival !== undefined && zone.isWalkable(arrival.x, arrival.y)
+        ? { ...arrival }
+        : { ...zone.spawn };
+    } else {
+      // A world resize can leave stale saved positions on colliding tiles —
+      // snap to the zone spawn instead of trusting the DB blindly.
+      pos = zone.isWalkable(origin.pos.x, origin.pos.y)
+        ? { x: origin.pos.x, y: origin.pos.y }
+        : { ...zone.spawn };
+    }
+
+    const existing = this.zones.get(zoneId, characterId);
+    // Zone capacity: the synced max_players is now enforced. Grace restores
+    // are always allowed — a reconnecting player owns their slot. Checked
+    // before leaving the current zone so a full zone never strands the player.
+    if (existing === null) {
+      const connected = this.zones
+        .players(zoneId)
+        .filter((p) => p.connected).length;
+      if (connected >= zone.maxPlayers) {
+        this.sendError(session, "ZONE_FULL", `Zone "${zoneId}" is at capacity`, "join_zone");
+        return;
+      }
+    }
+
+    // Reconnect within the grace window / zone switch: the character may still
+    // be tracked in another zone — drop them there (broadcasts player_left).
+    this.dropFromAllZones(characterId, zoneId);
+    session.lastZone = null;
+
     await this.seedZoneMonsters(zoneId);
     // Warm the model so the first monster/NPC AI call isn't cold.
     this.deps.monsterBrain?.prewarm();
-    const existing = this.zones.get(zoneId, characterId);
     if (existing !== null) {
       // Grace restore: reuse the server-authoritative position. The position
       // was already persisted during the disconnect window, so restart the
@@ -571,16 +616,6 @@ export class GameServer {
       existing.dirty = false;
       existing.lastPersistAt = Date.now();
     } else {
-      // Zone capacity: the synced max_players is now enforced. Grace restores
-      // above are always allowed — a reconnecting player owns their slot.
-      const capacity = zone.maxPlayers;
-      const connected = this.zones
-        .players(zoneId)
-        .filter((p) => p.connected).length;
-      if (connected >= capacity) {
-        this.sendError(session, "ZONE_FULL", `Zone "${zoneId}" is at capacity`, "join_zone");
-        return;
-      }
       const now = Date.now();
       const player: ZonePlayer = {
         characterId,
@@ -592,7 +627,8 @@ export class GameServer {
         lastMoveAt: 0,
         dirty: false,
         lastPersistAt: now,
-        hp: character.hp,
+        // A zone switch carries live HP over; the DB copy may lag the drop above.
+        hp: tracked === null ? character.hp : tracked.player.hp,
         maxHp: character.maxHp,
         attack: character.attack,
         defense: character.defense,
@@ -907,6 +943,8 @@ export class GameServer {
     const zoneId = session.zoneId;
     session.zoneId = null;
     if (zoneId === null) return;
+    const player = this.zones.get(zoneId, characterId);
+    if (player !== null) session.lastZone = { zoneId, pos: { ...player.pos } };
     this.removeFromZone(zoneId, characterId);
   }
 
@@ -971,7 +1009,9 @@ export class GameServer {
     });
 
     if (lethal) {
-      void this.onMonsterDefeated(zoneId, characterId, targetId, monster.defKey);
+      void this.onMonsterDefeated(zoneId, characterId, targetId, monster.defKey).catch((err: unknown) => {
+        logger.error("Monster reward handling failed", { characterId, error: String(err) });
+      });
     }
   }
 
@@ -989,18 +1029,23 @@ export class GameServer {
     const { expRate, dropRate } = getGameplayRates();
     const loot = rollLoot(monster.lootTable, dropRate);
     if (loot.length > 0) {
+      // Deps that report nothing (void) are treated as having stored everything.
+      let granted: { itemKey: string; quantity: number }[] = loot;
       if (this.deps.grantInventory !== undefined) {
         try {
-          await this.deps.grantInventory(killerId, loot);
+          granted = (await this.deps.grantInventory(killerId, loot)) ?? loot;
         } catch (err) {
+          granted = [];
           logger.warn("grantInventory failed (best-effort)", { killerId, error: String(err) });
         }
       }
-      this.broadcast(zoneId, {
-        type: "loot_received",
-        sourceId: monsterId,
-        items: loot,
-      });
+      const session = this.findSession(killerId);
+      if (session !== null && granted.length > 0) {
+        session.socket.send({ type: "loot_received", sourceId: monsterId, items: granted });
+        if (this.deps.getInventoryState !== undefined) {
+          this.sendInventoryState(session, this.deps.getInventoryState(killerId));
+        }
+      }
     }
     const xp = Math.round(monster.experienceReward * expRate);
     if (xp > 0 && this.deps.grantXp !== undefined) {
@@ -1174,6 +1219,7 @@ export class GameServer {
         this.zones.leave(zoneId, characterId);
         this.broadcast(zoneId, { type: "player_left", characterId });
         void this.persist(characterId, zoneId, still.pos);
+        this.persistHp(characterId, still.hp, still.maxHp);
       }
     }, this.graceMs);
     timer.unref?.();
@@ -1203,7 +1249,17 @@ export class GameServer {
     if (removed !== null) {
       this.broadcast(zoneId, { type: "player_left", characterId });
       void this.persist(characterId, zoneId, removed.pos);
+      this.persistHp(characterId, removed.hp, removed.maxHp);
     }
+  }
+
+  /** The zone (and live player) currently tracking this character, if any. */
+  private findTracked(characterId: number): { zoneId: string; player: ZonePlayer } | null {
+    for (const zoneId of this.zones.zoneIds()) {
+      const player = this.zones.get(zoneId, characterId);
+      if (player !== null) return { zoneId, player };
+    }
+    return null;
   }
 
   /** Best-effort position write; resolves false when the DB write failed. */

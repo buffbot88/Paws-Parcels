@@ -45,6 +45,30 @@ describe("loadZoneData — real map files", () => {
   it("returns null for an unknown zone", () => {
     expect(loadZoneData("zone-nowhere")).toBeNull();
   });
+
+  it("rejects zone ids that are not zones.json keys, even when they resolve to a map file", () => {
+    expect(loadZoneData("clover-village")).toBeNull();
+    expect(loadZoneData("zone-../maps/clover-village")).toBeNull();
+    expect(loadZoneData("zone-clover-village.composition")).toBeNull();
+  });
+
+  it("caches parsed zone data per zone id", () => {
+    expect(loadZoneData("zone-happy-valley")).toBe(loadZoneData("zone-happy-valley"));
+  });
+
+  it("keeps authored transition spawns, and every transition is reachable and lands on a walkable tile", () => {
+    for (const map of Object.values(MAPS)) {
+      const zone = loadZoneData(map.id)!;
+      expect(zone.transitions.length, map.id).toBeGreaterThan(0);
+      for (const t of zone.transitions) {
+        const target = loadZoneData(t.toZone)!;
+        expect(t.spawn, `${map.id} → ${t.toZone}`).toBeDefined();
+        expect(target.isWalkable(t.spawn!.x, t.spawn!.y), `${map.id} → ${t.toZone} spawn`).toBe(true);
+        const nearWalkable = [-1, 0, 1].some((dx) => [-1, 0, 1].some((dy) => zone.isWalkable(t.x + dx, t.y + dy)));
+        expect(nearWalkable, `${map.id} transition (${t.x},${t.y})`).toBe(true);
+      }
+    }
+  });
 });
 
 describe("JSON zone catalog vs client map registry", () => {

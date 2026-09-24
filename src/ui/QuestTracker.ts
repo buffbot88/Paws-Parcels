@@ -3,6 +3,8 @@ import { createIcon } from "./hud/icons.ts";
 import { createPanel, createPill, createKeyHint, createDivider } from "./hud/primitives.ts";
 import { hudColumn } from "./hud/layer.ts";
 
+const NOTICE_MS = 2600;
+
 /**
  * HUD v4 quest tracker: tab pill on the card edge, dominant title, objective
  * row. Bottom-left, stacked above the village chat.
@@ -25,6 +27,9 @@ export class QuestTracker {
   private offeredQuestId: string | null = null;
   private readonly onAccept: (questId: string) => void;
   private readonly countdownTimer: number;
+  /** render() leaves a notice on screen until this time (ms epoch). */
+  private noticeUntil = 0;
+  private noticeTimer: number | null = null;
   private collapsed = false;
 
   constructor(onAccept: (questId: string) => void) {
@@ -110,11 +115,19 @@ export class QuestTracker {
   showMessage(message: string): void {
     this.status.textContent = message;
     this.status.classList.add("quest-tracker__status--notice");
-    window.setTimeout(() => this.render(), 2600);
+    this.noticeUntil = Date.now() + NOTICE_MS;
+    if (this.noticeTimer !== null) window.clearTimeout(this.noticeTimer);
+    this.noticeTimer = window.setTimeout(() => {
+      this.noticeTimer = null;
+      this.noticeUntil = 0;
+      this.render();
+    }, NOTICE_MS);
   }
 
   destroy(): void {
     window.clearInterval(this.countdownTimer);
+    if (this.noticeTimer !== null) window.clearTimeout(this.noticeTimer);
+    this.noticeTimer = null;
     this.root.remove();
   }
 
@@ -144,25 +157,29 @@ export class QuestTracker {
     this.objective.textContent = next === undefined
       ? "Meet village friends to unlock errands, stories, and keepsakes."
       : `${next.description}${next.state === "active" && next.type === "delivery" ? ` · Parcel: ${parcelConditionLabel(next.parcelCondition)}` : ""}`;
-    this.status.classList.remove("quest-tracker__status--notice");
+    let status: string;
     if (active !== undefined) {
       const deadline = active.deadlineAt === null ? "" : ` · ${formatDeadline(active.deadlineAt)}`;
       const objective = active.searchObjectId !== null && active.progress === 0 ? ` · Search: ${active.findAt ?? "the marked location"}` : "";
-      this.status.textContent = `${active.type === "delivery" ? "Delivery" : "Objective"} ${active.progress}/${active.requiredQuantity} · Circuit ${tutorialCompleted}/${circuitSize} · Side quests ${sideCompleted}${deadline}${objective}`;
+      status = `${active.type === "delivery" ? "Delivery" : "Objective"} ${active.progress}/${active.requiredQuantity} · Circuit ${tutorialCompleted}/${circuitSize} · Side quests ${sideCompleted}${deadline}${objective}`;
       this.action.hidden = true;
     } else if (available !== undefined) {
-      this.status.textContent = this.offeredQuestId === available.questId
+      status = this.offeredQuestId === available.questId
         ? `New ${available.sideQuest ? "side quest" : "route"} ready · Circuit ${tutorialCompleted}/${circuitSize}`
         : `Speak with ${available.giverId.replace("npc-", "")} to accept · Circuit ${tutorialCompleted}/${circuitSize}`;
       this.action.textContent = available.sideQuest ? "Accept side quest" : "Accept route";
       this.action.hidden = this.offeredQuestId !== available.questId;
     } else if (circuitDone) {
-      this.status.textContent = `Circuit complete · ${sideCompleted} side quest${sideCompleted === 1 ? "" : "s"} completed`;
+      status = `Circuit complete · ${sideCompleted} side quest${sideCompleted === 1 ? "" : "s"} completed`;
       this.action.hidden = true;
     } else {
-      this.status.textContent = `${tutorialCompleted}/${circuitSize} routes completed · speak with a village friend`;
+      status = `${tutorialCompleted}/${circuitSize} routes completed · speak with a village friend`;
       this.action.hidden = true;
     }
+    // A live notice outlasts the 1s deadline re-render and quest-state updates.
+    if (Date.now() < this.noticeUntil) return;
+    this.status.classList.remove("quest-tracker__status--notice");
+    this.status.textContent = status;
   }
 }
 

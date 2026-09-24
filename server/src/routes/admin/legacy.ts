@@ -541,6 +541,10 @@ export async function adminPlayerStatusHandler(
     errorResponse(res, 404, "PLAYER_NOT_FOUND", "No account with that id");
     return;
   }
+  if (accountId === actor.accountId || tierSatisfies(adminTierForRole(String(account.role ?? "")), actor.tier)) {
+    errorResponse(res, 403, "TARGET_PROTECTED", "You cannot change the status of yourself or an equal/higher admin tier");
+    return;
+  }
   if (status === "banned" && confirm !== `BAN ${account.username}`) {
     errorResponse(res, 400, "CONFIRMATION_REQUIRED", `Type "BAN ${account.username}" to confirm`);
     return;

@@ -11,6 +11,7 @@
 //   CORS_ORIGINS      optional comma-separated list overriding corsAllowedOrigins
 //   OIDC_REDIRECT_URI optional; defaults to PUBLIC_URL/oidc-callback.html
 //   DB_FILE           optional; defaults to the committed SQLite file
+//   PAWS_NODE_ENV     optional; defaults to "production"
 import { readFileSync, writeFileSync } from "node:fs";
 import { resolve } from "node:path";
 
@@ -49,6 +50,7 @@ const oidcRaw = example.oidc ?? {};
 const config = {
   server: {
     ...serverRaw,
+    nodeEnv: process.env.PAWS_NODE_ENV ?? "production",
     corsAllowedOrigins: process.env.CORS_ORIGINS
       ? process.env.CORS_ORIGINS.split(",")
           .map((s) => s.trim())

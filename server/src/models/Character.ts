@@ -133,7 +133,7 @@ export async function createCharacter(params: {
       (character_id, attack, defense, speed, crit_chance, crit_multiplier, ${res.maxCol}, ${res.regenCol})
       VALUES (?, ?, ?, ?, ?, ?, ?, ?)`).run(
       characterId, base.attack ?? 10, base.defense ?? 5, base.speed ?? 180,
-      base.crit_chance ?? 5, base.crit_multiplier ?? 1.5,
+      base.critChance ?? base.crit_chance ?? 5, base.critMultiplier ?? base.crit_multiplier ?? 1.5,
       resourceMax, params.cls.resource_regen_per_sec,
     );
     db.prepare("INSERT INTO inventories (character_id, slot_count) VALUES (?, 12)").run(characterId);
@@ -219,11 +219,12 @@ export async function getCharacterProfile(characterId: number): Promise<Characte
   };
 }
 
-/** Store loot in SQLite, merging stacks and allocating the first free slot. */
-export async function grantInventoryItems(characterId: number, items: { itemKey: string; quantity: number }[]): Promise<void> {
+/** Store loot in SQLite, merging stacks and allocating the first free slot; returns what was actually stored. */
+export async function grantInventoryItems(characterId: number, items: { itemKey: string; quantity: number }[]): Promise<{ itemKey: string; quantity: number }[]> {
+  const granted: { itemKey: string; quantity: number }[] = [];
   const db = getDb();
   const inventory = db.prepare("SELECT slot_count FROM inventories WHERE character_id = ?").get(characterId) as SqlRow | undefined;
-  if (inventory === undefined) return;
+  if (inventory === undefined) return granted;
   const effectiveSlotCount = getEffectiveSlotCount(characterId);
   // Archived items (admin panel, spec §25–26) are no longer granted.
   const findDef = db.prepare("SELECT id, max_stack FROM item_definitions WHERE key = ? AND is_deleted = 0 LIMIT 1");
@@ -231,7 +232,8 @@ export async function grantInventoryItems(characterId: number, items: { itemKey:
   const findSlot = db.prepare("SELECT slot FROM inventory_items WHERE character_id = ? AND slot IS NOT NULL");
   const insert = db.prepare("INSERT INTO inventory_items (character_id, item_definition_id, slot, quantity) VALUES (?, ?, ?, ?)");
   for (const item of items) {
-    let remaining = Math.max(1, Math.floor(item.quantity));
+    const requested = Math.max(1, Math.floor(item.quantity));
+    let remaining = requested;
     const def = findDef.get(item.itemKey) as SqlRow | undefined;
     if (def === undefined) continue;
     const maxStack = Math.max(1, Number(def.max_stack ?? 1));
@@ -248,13 +250,16 @@ export async function grantInventoryItems(characterId: number, items: { itemKey:
       const used = new Set(findSlot.all(characterId).map((r) => Number((r as SqlRow).slot)));
       let slot: number | null = null;
       for (let candidate = 0; candidate < effectiveSlotCount; candidate++) if (!used.has(candidate)) { slot = candidate; break; }
-      if (slot === null) return;
+      if (slot === null) break;
       const add = Math.min(remaining, maxStack);
       const inserted = insert.run(characterId, Number(def.id), slot, add);
       auditInventoryEvent(characterId, "item_grant", Number(inserted.lastInsertRowid), add, "monster_loot");
       remaining -= add;
     }
+    if (remaining < requested) granted.push({ itemKey: item.itemKey, quantity: requested - remaining });
+    if (remaining > 0) return granted;
   }
+  return granted;
 }
 
 export async function unlockSkill(characterId: number, skillKey: string): Promise<UnlockSkillResult> {

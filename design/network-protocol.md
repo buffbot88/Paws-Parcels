@@ -38,7 +38,9 @@ processes each message independently.
 ```
 - **Validation:** Token must be valid (issued by server, not expired, not used).
 - **Expected response:** `authenticated` on success; `error` on failure.
-- **Failure cases:** invalid token, expired token, account banned, character deleted.
+- **Failure cases:** invalid token, expired token, account banned, character deleted;
+  a second `authenticate` on an already-authenticated socket (`ALREADY_AUTHENTICATED` —
+  open a new socket to switch characters).
 
 ### join_zone
 ```json
@@ -51,8 +53,12 @@ processes each message independently.
   village hub).
 - **Expected response:** `zone_state` (full zone snapshot for the character's new zone).
 - **Failure cases:** unknown zone (`ZONE_NOT_FOUND`), zone at capacity (`ZONE_FULL`),
-  zone not reachable from the current zone (`ZONE_UNREACHABLE` — the server only
-  allows joins through the map's authored transitions, plus the initial join).
+  zone not reachable from the current zone (`ZONE_UNREACHABLE` — switching zones
+  requires the server-side position to be within 1 tile of an authored transition
+  to the requested zone; `leave_zone` does not reset this). Re-joining the current
+  zone is always allowed. A cross-zone join places the courier on the transition's
+  authored `spawn` tile (map spawn if unwalkable). Rejections leave the courier in
+  their current zone.
 
 ### move_intent
 ```json
@@ -410,7 +416,8 @@ processes each message independently.
   ]
 }
 ```
-- **Payload:** a monster or loot-source produced items for the character.
+- **Payload:** a monster or loot-source produced items for the character. Sent only to
+  the killer, listing only items actually stored (nothing when the inventory is full).
 - **Client action:** play loot animation and UI notification. The server commits the
   item grant and emits a full `inventory_updated` snapshot.
 
@@ -428,7 +435,7 @@ processes each message independently.
 - **Client action:** trust the server; revert any predicted state; optionally surface a
   brief error toast. `requestType` set = gameplay rejection; absent = connection-level
   failure (the client reserves its "connection failed" panel for those).
-- **Error codes:** auth `INVALID_TOKEN` · session `NOT_AUTHENTICATED`, `NOT_IN_ZONE`,
+- **Error codes:** auth `INVALID_TOKEN`, `ALREADY_AUTHENTICATED` · session `NOT_AUTHENTICATED`, `NOT_IN_ZONE`,
   `RATE_LIMITED` · zone `ZONE_NOT_FOUND`, `ZONE_FULL`, `ZONE_UNREACHABLE` · movement `MOVE_COLLISION`,
   `MOVE_TELEPORT_DETECTED`, `INVALID_DIRECTION`, `COOLDOWN_ACTIVE` · combat
   `INVALID_TARGET`, `OUT_OF_RANGE`, `TARGET_DEAD` · quests `QUEST_NOT_AVAILABLE`,

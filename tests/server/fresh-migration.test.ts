@@ -44,7 +44,7 @@ describe("fresh SQLite migration", () => {
       ]) {
         expect(tables.has(table)).toBe(true);
       }
-      expect((db.prepare("SELECT COUNT(*) AS count FROM schema_version").get() as { count: number }).count).toBe(17);
+      expect((db.prepare("SELECT COUNT(*) AS count FROM schema_version").get() as { count: number }).count).toBe(18);
       const checksums = db.prepare("SELECT checksum FROM schema_version").all() as Array<{ checksum: string }>;
       expect(checksums.every((row) => /^[a-f0-9]{64}$/.test(row.checksum))).toBe(true);
       expect((db.prepare("SELECT COUNT(*) AS count FROM character_classes").get() as { count: number }).count).toBe(3);

@@ -182,6 +182,21 @@ describe("DialoguePanel menu", () => {
     expect(text.textContent).toBe("Also, mind the rabbits on the north road.");
   });
 
+  it("swaps the AI intro line without mutating the caller's (shared JSON) lines", async () => {
+    const panel = await makePanel();
+    const shared = ["Canned intro.", "Second line."];
+    panel.open({ speaker: "Pip", lines: shared }, () => undefined);
+    panel.setIntroLine("AI greeting.");
+    expect(shared).toEqual(["Canned intro.", "Second line."]);
+
+    panel.close();
+    const presentedLines = ["Beat."];
+    panel.open({ speaker: "Pip", lines: ["Hi."] }, () => undefined);
+    panel.present({ speaker: "Pip", lines: presentedLines });
+    panel.setIntroLine("Another AI line.");
+    expect(presentedLines).toEqual(["Beat."]);
+  });
+
   it("presents follow-up beats in the open conversation", async () => {
     const panel = await makePanel();
     const onSelect = vi.fn();

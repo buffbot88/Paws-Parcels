@@ -174,7 +174,11 @@ function openCreateDesk(
   desk.show(
     { account: detail.account, characters, token },
     (nextCharacters, selectedId) => playWith(detail, nextCharacters, selectedId),
-    { forceCreate: true },
+    {
+      forceCreate: true,
+      // Hand the keyboard back to the running world.
+      onCancel: () => document.querySelector<HTMLElement>("#game-container > canvas")?.focus(),
+    },
   );
 }
 

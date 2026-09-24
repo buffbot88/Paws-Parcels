@@ -100,7 +100,8 @@ export class DialoguePanel {
   open(request: DialogueRequest, onClose: () => void): boolean {
     if (this.isOpenState) return false;
     this.speakerEl.textContent = request.speaker;
-    this.lines = request.lines;
+    // Own copy: setIntroLine() edits lines in place, and callers pass shared JSON.
+    this.lines = [...request.lines];
     this.index = 0;
     this.onClose = onClose;
     this.isOpenState = true;
@@ -121,7 +122,7 @@ export class DialoguePanel {
   present(request: DialogueRequest): boolean {
     if (!this.isOpenState) return false;
     this.speakerEl.textContent = request.speaker;
-    this.lines = request.lines;
+    this.lines = [...request.lines];
     this.index = 0;
     this.menuOptions = request.menu ?? [];
     this.onSelect = request.onSelect ?? null;

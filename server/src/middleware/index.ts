@@ -78,6 +78,7 @@ export function middleware(
       }).catch(() => {
         // hardening module failure must not silently pass mutations
         errorResponse(res, 500, "INTERNAL_ERROR", "Security middleware failure");
+        resolve();
       });
       return;
     }

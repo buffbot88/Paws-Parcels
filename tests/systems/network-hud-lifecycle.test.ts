@@ -103,9 +103,34 @@ vi.mock("../../src/game/GameConfig.ts", () => ({
   GAME_HEIGHT: 540,
 }));
 
-vi.mock("../../src/entities/RemotePlayer.ts", () => ({ RemotePlayer: class RemotePlayer {} }));
+/** Scene each remote entity was constructed on, and monster movement calls. */
+let entityScenes: unknown[] = [];
+let monsterMoves: string[] = [];
 
-vi.mock("../../src/entities/Monster.ts", () => ({ Monster: class Monster {} }));
+vi.mock("../../src/entities/RemotePlayer.ts", () => ({
+  RemotePlayer: class RemotePlayer {
+    constructor(scene: unknown) { entityScenes.push(scene); }
+    snapTo(): void { /* no-op */ }
+    setTarget(): void { /* no-op */ }
+    destroy(): void { /* no-op */ }
+  },
+}));
+
+vi.mock("../../src/entities/Monster.ts", () => ({
+  Monster: class Monster {
+    visible = true;
+    readonly id: string;
+    constructor(scene: unknown, info: { id: string }) {
+      entityScenes.push(scene);
+      this.id = info.id;
+    }
+    snapTo(pos: { x: number; y: number }): void { monsterMoves.push(`snap ${pos.x},${pos.y}`); }
+    setTarget(pos: { x: number; y: number }): void { monsterMoves.push(`glide ${pos.x},${pos.y}`); }
+    setVisible(visible: boolean): void { this.visible = visible; }
+    setHp(): void { /* no-op */ }
+    destroy(): void { /* no-op */ }
+  },
+}));
 
 vi.mock("../../src/net/bootTarget.ts", () => ({
   pickCharacter: () => ({ id: 42, name: "Pip", class_id: 1, level: 1, zone_id: "zone-clover-village", pos_x: 0, pos_y: 0 }),
@@ -139,6 +164,8 @@ let statusCardFlashes: { level: number; rank?: string | null }[] = [];
 let statusCardStampFlashes = 0;
 /** How many times the card was revealed over the live world. */
 let statusCardReveals = 0;
+/** Last HP the card was told to show. */
+let statusCardHp: [number, number] | null = null;
 
 vi.mock("../../src/ui/PlayerStatusCard.ts", () => {
   return {
@@ -148,7 +175,7 @@ vi.mock("../../src/ui/PlayerStatusCard.ts", () => {
       private revealed = false;
       constructor() { statusCardCreateCount++; }
       setStatus(_d: unknown): void { /* no-op */ }
-      setHp(_hp: number, _max: number): void { /* no-op */ }
+      setHp(hp: number, max: number): void { statusCardHp = [hp, max]; }
       // Part of the card's surface: the HUD adopts the courier's class resource
       // on mount, so a mock missing it would only fail at runtime.
       setResourceKind(resource: { label: string }): void {
@@ -223,6 +250,9 @@ beforeEach(() => {
   statusCardFlashes = [];
   statusCardStampFlashes = 0;
   statusCardReveals = 0;
+  statusCardHp = null;
+  entityScenes = [];
+  monsterMoves = [];
   progressionSfx = [];
   lastSocket = null;
   fakeDoc = new FakeDocument();
@@ -442,6 +472,108 @@ describe("NetworkSystem HUD lifecycle", () => {
 
     sys.shutdown();
     expect(statusCardDestroyCount).toBe(1);
+
+    NetworkSystem.resetForTests();
+  });
+});
+
+describe("NetworkSystem session lifecycle", () => {
+  const ZONE = "zone-clover-village";
+  const remote = { characterId: 7, name: "Birch", classKey: "fox-archer", pos: { x: 3, y: 4 } };
+  const critter = { id: "m1", key: "monster-slime", displayName: "Slime", pos: { x: 5, y: 5 }, hp: 10, maxHp: 10, alive: true };
+  const fakeScene = () => ({ add: {}, tweens: {}, cameras: { main: {} } }) as unknown as import("phaser").Scene;
+
+  it("shutdown() detaches the scene and resets HP so a new session never builds on the old scene", async () => {
+    const { NetworkSystem } = await import("../../src/systems/NetworkSystem.ts");
+    NetworkSystem.resetForTests();
+    const sys = NetworkSystem.get();
+    sys.start(ZONE, 42);
+    sys.mountHUD();
+    sys.attach(fakeScene(), ZONE);
+    sys.setPlayerHp(30, 100);
+    const onSelfPosition = vi.fn();
+    sys.onSelfPosition = onSelfPosition;
+
+    sys.shutdown();
+    sys.start(ZONE, 42);
+    sys.mountHUD();
+    expect(statusCardHp).toEqual([0, 0]);
+
+    // The new socket answers before the new game's scene attaches.
+    lastSocket!.callbacks.onZoneState!(ZONE as never, [remote, { ...remote, characterId: 42 }] as never, [critter] as never);
+    expect(entityScenes).toEqual([]);
+    expect(onSelfPosition).not.toHaveBeenCalled();
+
+    NetworkSystem.resetForTests();
+  });
+
+  it("a replaced scene's late detach leaves the new scene attached", async () => {
+    const { NetworkSystem } = await import("../../src/systems/NetworkSystem.ts");
+    NetworkSystem.resetForTests();
+    const sys = NetworkSystem.get();
+    const oldScene = fakeScene();
+    const newScene = fakeScene();
+    sys.start(ZONE, 42);
+    sys.attach(oldScene, ZONE);
+    sys.shutdown();
+    sys.start(ZONE, 42);
+    sys.attach(newScene, ZONE);
+
+    sys.detach(oldScene);
+    lastSocket!.callbacks.onZoneState!(ZONE as never, [remote] as never, [] as never);
+    expect(entityScenes).toEqual([newScene]);
+
+    NetworkSystem.resetForTests();
+  });
+
+  it("keeps the server's authenticated zone until a scene attaches", async () => {
+    const { NetworkSystem } = await import("../../src/systems/NetworkSystem.ts");
+    NetworkSystem.resetForTests();
+    const sys = NetworkSystem.get();
+    sys.start(ZONE, 42);
+    lastSocket!.callbacks.onAuthenticated!({ accountId: 1, characterId: 42, zoneId: "zone-happy-valley" } as never);
+    // zone_state lands while the preloader is still running.
+    lastSocket!.callbacks.onZoneState!("zone-happy-valley" as never, [] as never, [] as never);
+    expect(sys.getAuthoritativeZone()).toBe("zone-happy-valley");
+
+    sys.attach(fakeScene(), "zone-happy-valley");
+    expect(sys.getAuthoritativeZone()).toBeNull();
+
+    NetworkSystem.resetForTests();
+  });
+
+  it("routes a refused zone switch back to the last confirmed zone", async () => {
+    const { NetworkSystem } = await import("../../src/systems/NetworkSystem.ts");
+    NetworkSystem.resetForTests();
+    const sys = NetworkSystem.get();
+    sys.start(ZONE, 42);
+    lastSocket!.callbacks.onZoneState!(ZONE as never, [] as never, [] as never);
+    sys.joinZone("zone-happy-valley");
+    const onRejected = vi.fn();
+    const onNotice = vi.fn();
+    sys.onZoneJoinRejected = onRejected;
+    sys.onGameplayNotice = onNotice;
+
+    lastSocket!.callbacks.onError!("ZONE_FULL" as never, "The valley is full" as never, "join_zone" as never);
+    expect(onRejected).toHaveBeenCalledWith(ZONE, "The valley is full");
+    expect(onNotice).not.toHaveBeenCalled();
+
+    NetworkSystem.resetForTests();
+  });
+
+  it("snaps a respawned monster to its spawn instead of gliding from the death spot", async () => {
+    const { NetworkSystem } = await import("../../src/systems/NetworkSystem.ts");
+    NetworkSystem.resetForTests();
+    const sys = NetworkSystem.get();
+    sys.start(ZONE, 42);
+    sys.attach(fakeScene(), ZONE);
+    lastSocket!.callbacks.onZoneState!(ZONE as never, [] as never, [critter] as never);
+    monsterMoves = [];
+
+    lastSocket!.callbacks.onMonsterSnapshot!([{ ...critter, pos: { x: 6, y: 5 } }] as never);
+    lastSocket!.callbacks.onMonsterSnapshot!([{ ...critter, alive: false }] as never);
+    lastSocket!.callbacks.onMonsterSnapshot!([{ ...critter, pos: { x: 1, y: 1 } }] as never);
+    expect(monsterMoves).toEqual(["glide 6,5", "snap 1,1"]);
 
     NetworkSystem.resetForTests();
   });

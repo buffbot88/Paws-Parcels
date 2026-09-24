@@ -514,6 +514,25 @@ describe("adminPlayerStatusHandler", () => {
     );
     expect(res._status).toBe(400);
   });
+
+  it("refuses a moderator suspending a higher-tier admin or themselves", async () => {
+    await seeded();
+    const gmId = Number(getDb().prepare(
+      "INSERT INTO accounts (username, email, display_name, role, ashat_user_id, status) VALUES ('gm', 'gm@x.test', 'GM', 'Game Master', 'ashat-gm-1', 'active')",
+    ).run().lastInsertRowid);
+    const gmToken = await generateAccessToken({ accountId: gmId, ashatUserId: "ashat-gm-1", username: "gm", role: "Game Master" });
+    for (const [target, confirm] of [["1", "SUSPEND devmichael"], [String(gmId), "SUSPEND gm"]]) {
+      const res = makeRes();
+      await adminPlayerStatusHandler(
+        makeReq({ method: "POST", token: gmToken, headers: stepUpHeader(gmId), body: { status: "suspended", reason: "abuse", confirm } }),
+        asRes(res),
+        { accountId: target },
+      );
+      expect(res._status).toBe(403);
+      expect(res._body).toMatchObject({ error: "TARGET_PROTECTED" });
+    }
+    expect(String((getDb().prepare("SELECT status FROM accounts WHERE id = 1").get() as SqlRow).status)).toBe("active");
+  });
 });
 
 describe("adminGrantItemHandler", () => {

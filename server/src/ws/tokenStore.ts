@@ -35,7 +35,7 @@ export function issueWsToken(
   for (const [key, entry] of store) {
     if (entry.accountId === accountId) mine.push(key);
   }
-  for (const key of mine.slice(0, mine.length - (MAX_TOKENS_PER_ACCOUNT - 1))) {
+  for (const key of mine.slice(0, Math.max(0, mine.length - (MAX_TOKENS_PER_ACCOUNT - 1)))) {
     store.delete(key);
   }
   const token = randomBytes(24).toString("base64url");

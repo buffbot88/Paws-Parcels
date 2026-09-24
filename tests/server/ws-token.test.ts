@@ -194,6 +194,11 @@ describe("ws handshake token store", () => {
     expect(consumeWsToken(sixth)).toEqual({ accountId: 7, characterId: 10 });
   });
 
+  it("keeps every token while an account is under the cap", () => {
+    const tokens = [issueWsToken(7, 10), issueWsToken(7, 10), issueWsToken(7, 10), issueWsToken(7, 10)];
+    for (const token of tokens) expect(consumeWsToken(token)).toEqual({ accountId: 7, characterId: 10 });
+  });
+
   it("evicting one account never touches another account's tokens", () => {
     const other = issueWsToken(8, 11);
     for (let i = 0; i < 5; i++) issueWsToken(7, 10);

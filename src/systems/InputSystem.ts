@@ -1,5 +1,9 @@
 import Phaser from "phaser";
 
+function isTextField(target: EventTarget | null): boolean {
+  return target instanceof HTMLInputElement || target instanceof HTMLTextAreaElement || target instanceof HTMLSelectElement || (target instanceof HTMLElement && target.isContentEditable);
+}
+
 export interface MoveVector {
   x: number;
   y: number;
@@ -69,11 +73,18 @@ export class InputSystem {
   constructor(scene: Phaser.Scene, options: { devAccess?: boolean } = {}) {
     this.devAccess = options.devAccess === true;
     this.scene = scene;
-    this.keys = scene.input.keyboard!.addKeys(
-      "W,A,S,D,UP,DOWN,LEFT,RIGHT,E,SPACE,ONE,I,V",
-    ) as unknown as KeyMap;
-
     const kb = scene.input.keyboard!;
+    // Capture (preventDefault) only the page-scrolling keys; letters and
+    // digits must still reach DOM text fields like the courier-name input.
+    this.keys = kb.addKeys(
+      "W,A,S,D,UP,DOWN,LEFT,RIGHT,E,SPACE,ONE,I,V",
+      false,
+    ) as unknown as KeyMap;
+    kb.addCapture("SPACE,UP,DOWN,LEFT,RIGHT");
+    this.syncKeyboardCapture(document.activeElement);
+    document.addEventListener("focusin", this.handleFocusChange);
+    document.addEventListener("focusout", this.handleFocusChange);
+
     kb.on("keydown-E", this.queueInteract, this);
     kb.on("keydown-SPACE", this.queueInteract, this);
     kb.on("keydown-ONE", this.queueAttack, this);
@@ -91,6 +102,8 @@ export class InputSystem {
 
   /** Removes input listeners (call from the scene's shutdown to avoid leaks on restart). */
   destroy(): void {
+    document.removeEventListener("focusin", this.handleFocusChange);
+    document.removeEventListener("focusout", this.handleFocusChange);
     const kb = this.scene.input.keyboard;
     if (kb) {
       kb.off("keydown-E", this.queueInteract, this);
@@ -167,6 +180,15 @@ export class InputSystem {
     return t;
   }
 
+  /** Drop every queued one-shot input so nothing fires after a freeze ends. */
+  discardQueued(): void {
+    this.interactQueued = false;
+    this.attackQueued = false;
+    this.inventoryQueued = false;
+    this.captureQueued = false;
+    this.tapQueue = null;
+  }
+
   private queueInteract(): void {
     if (this.isDomTextInputFocused()) return;
     this.interactQueued = true;
@@ -190,11 +212,26 @@ export class InputSystem {
   }
 
   private isDomTextInputFocused(): boolean {
-    const active = document.activeElement;
-    if (active instanceof HTMLInputElement || active instanceof HTMLTextAreaElement || active instanceof HTMLSelectElement || (active instanceof HTMLElement && active.isContentEditable)) return true;
+    if (isTextField(document.activeElement)) return true;
     // Modal DOM panels pause gameplay shortcuts even when focus is on the
     // canvas/body or on a tab/button rather than a text field.
-    return document.querySelector<HTMLElement>(".profile-panel:not([hidden]), .local-map-panel:not([hidden])") !== null;
+    return document.querySelector<HTMLElement>(".profile-panel:not([hidden]), .local-map-panel:not([hidden]), .character-desk:not([hidden])") !== null;
+  }
+
+  /**
+   * Text fields get native keys (Space, arrows) while focused, and held keys
+   * are released on the way in and out — the field swallows their keyup.
+   */
+  private readonly handleFocusChange = (event: FocusEvent): void => {
+    this.syncKeyboardCapture(event.type === "focusin" ? event.target : event.relatedTarget);
+    if (isTextField(event.target)) this.scene.input.keyboard?.resetKeys();
+  };
+
+  private syncKeyboardCapture(focused: EventTarget | null): void {
+    const kb = this.scene.input.keyboard;
+    if (!kb) return;
+    if (isTextField(focused)) kb.disableGlobalCapture();
+    else kb.enableGlobalCapture();
   }
 
   private handlePointerDown(pointer: Phaser.Input.Pointer): void {

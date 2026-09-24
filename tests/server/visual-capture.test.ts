@@ -40,6 +40,7 @@ vi.mock("../../server/src/config/index.ts", () => ({
     maxTokensNpc: 160,
     npcTalkMinIntervalMs: 6000,
   },
+  admin: { roleTiers: {} },
 }));
 
 vi.mock("../../server/src/models/Account.ts", () => ({
@@ -141,6 +142,17 @@ describe("POST /api/admin/visual-capture", () => {
     expect(response.status).toBe(403);
     expect(response.body).toMatchObject({ error: "ADMIN_REQUIRED" });
     expect(await readdir(directory)).toEqual([]);
+  });
+
+  it("accepts a Developer session (tier above admin)", async () => {
+    const developer = { ...ADMIN, username: "dev", role: "Developer", ashat_user_id: "u-dev" };
+    mockGetAccount.mockResolvedValue(developer);
+    const response = makeRes();
+    await createVisualCaptureHandler({ captureDir: directory })(
+      makeReq(await authHeader(developer), { image: pngDataUrl(), metadata }),
+      response,
+    );
+    expect(response.status).toBe(201);
   });
 
   it("returns a conflict without overwriting an existing capture id", async () => {

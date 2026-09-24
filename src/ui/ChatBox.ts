@@ -87,8 +87,8 @@ export class ChatBox {
     input.maxLength = 240;
     input.placeholder = "Send a message…";
     input.setAttribute("aria-label", "Chat message");
+    // keyup still propagates so Phaser sees a movement key released mid-chat.
     input.addEventListener("keydown", (event) => event.stopPropagation());
-    input.addEventListener("keyup", (event) => event.stopPropagation());
     inputWrap.append(inputIcon, input);
     const send = document.createElement("button");
     send.className = "chat-box__send";

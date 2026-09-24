@@ -500,7 +500,7 @@ function parseProgress(raw: unknown): number {
   if (typeof raw !== "string") return 0;
   try {
     const parsed = JSON.parse(raw) as { delivered?: unknown; found?: unknown };
-    return Number(parsed.delivered ?? parsed.found ?? 0);
+    return Math.max(Number(parsed.delivered ?? 0) || 0, Number(parsed.found ?? 0) || 0);
   } catch { return 0; }
 }
 

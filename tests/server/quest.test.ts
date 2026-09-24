@@ -141,6 +141,8 @@ describe("Clover Village tutorial quests", () => {
     expect((await acceptQuest(created.character.id, "quest-lost-pebble-moss")).ok).toBe(true);
     const found = await searchQuest(created.character.id, "object-rabbit-burrows");
     expect(found.ok).toBe(true);
+    // Progress stores { delivered: 0, found: 1 } — the find must still show.
+    expect(found.ok && found.quest.progress).toBe(1);
     expect(getQuestInventory(created.character.id)).toEqual(expect.arrayContaining([
       expect.objectContaining({ itemKey: "item-polished-pebble", locked: false }),
     ]));

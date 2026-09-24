@@ -237,6 +237,8 @@ export class WorldRenderer3D {
     this.badgeTextures.clear();
     this.cache.dispose();
     this.renderer.dispose();
+    // dispose() keeps the GL context alive; browsers cap live contexts per page.
+    this.renderer.forceContextLoss();
     this.canvas.remove();
   }
 

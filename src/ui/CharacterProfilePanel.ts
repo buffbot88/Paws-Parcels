@@ -177,6 +177,11 @@ export class CharacterProfilePanel {
     if (this.root !== null && !this.root.hidden) void this.load();
   }
 
+  /** Replace a pending "Equipping gear…"-style status with the server's rejection. */
+  showNotice(message: string): void {
+    if (this.root !== null && !this.root.hidden) this.setStatus(message);
+  }
+
   destroy(): void {
     if (CharacterProfilePanel.instance === this) CharacterProfilePanel.instance = null;
     document.removeEventListener("keydown", this.handleKeyDown);

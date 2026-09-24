@@ -80,6 +80,8 @@ import { readRendererMode, type RendererMode } from "../render3d/rendererMode.ts
 export interface OverworldSceneData {
   zoneId?: string;
   spawn?: MapPoint;
+  /** Shown in the quest tracker once the restarted scene is up. */
+  notice?: string;
 }
 
 const NPCS = npcsJson.npcs as NPCDefinition[];
@@ -420,7 +422,11 @@ export class OverworldScene extends Phaser.Scene {
     this.network.onQuestNotice = (message) => this.questTracker.showMessage(message);
     // Gameplay rejections (quest/inventory/chat/zone) arrive as tagged errors —
     // show them in the same transient notice slot so they're never silent.
-    this.network.onGameplayNotice = (message) => this.questTracker.showMessage(message);
+    this.network.onGameplayNotice = (message) => {
+      this.questTracker.showMessage(message);
+      CharacterProfilePanel.instance?.showNotice(message);
+    };
+    if (data?.notice !== undefined) this.questTracker.showMessage(data.notice);
     this.network.onStatus = (status, detail) => {
       this.minimap.setServerStatus(status, detail);
       this.chatBox.setEnabled(status === "joined");
@@ -480,6 +486,12 @@ export class OverworldScene extends Phaser.Scene {
         zoneId,
       } satisfies OverworldSceneData);
     };
+    // The server refused this zone switch and kept the courier where it was —
+    // go back there; zone_state then snaps the courier to its real tile.
+    this.network.onZoneJoinRejected = (zoneId, message) => {
+      this.network.joinZone(zoneId);
+      this.scene.restart({ zoneId, notice: message } satisfies OverworldSceneData);
+    };
 
     this.inputSystem = new InputSystem(this, { devAccess: hasAdminDevAccess() });
 
@@ -488,6 +500,7 @@ export class OverworldScene extends Phaser.Scene {
     // Defeat = respawn at the safe hub (server says where).
     this.network.onPlayerDefeated = () => {
       this.isDefeated = true;
+      dialoguePanel.close();
       this.player.playDeath();
     };
     this.network.onDefeat = (info) => {
@@ -507,7 +520,15 @@ export class OverworldScene extends Phaser.Scene {
         } satisfies OverworldSceneData);
       }
     };
-    this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
+    // Restarts emit SHUTDOWN; game.destroy() (courier switch) emits only
+    // DESTROY. Both must release the DOM HUD, listeners and WebGL context once.
+    let tornDown = false;
+    const teardown = (): void => {
+      if (tornDown) return;
+      tornDown = true;
+      this.events.off(Phaser.Scenes.Events.SHUTDOWN, teardown);
+      this.events.off(Phaser.Scenes.Events.DESTROY, teardown);
+      dialoguePanel.close();
       this.world3d?.destroy();
       this.world3d = null;
       for (const object of this.visualGround) object.destroy();
@@ -521,8 +542,10 @@ export class OverworldScene extends Phaser.Scene {
       this.questCompass.destroy();
       this.inventoryButton.destroy();
       this.localMap.destroy();
-      this.network.detach();
-    });
+      this.network.detach(this);
+    };
+    this.events.once(Phaser.Scenes.Events.SHUTDOWN, teardown);
+    this.events.once(Phaser.Scenes.Events.DESTROY, teardown);
   }
 
   update(): void {
@@ -541,6 +564,7 @@ export class OverworldScene extends Phaser.Scene {
       this.shadow.setPosition(this.player.x, this.player.y + this.player.feetOffsetPx);
       this.shadow.setDepth(worldDepth(this.player.y, DEPTH_OFFSET.contactShadow));
       this.skillBar.setVisible(false);
+      this.inputSystem.discardQueued();
       this.updatePrompt(null);
       this.updateWorld3D({ x: 0, y: 0 });
       this.network.update();
@@ -558,6 +582,7 @@ export class OverworldScene extends Phaser.Scene {
       this.shadow.setDepth(worldDepth(this.player.y, DEPTH_OFFSET.contactShadow));
       this.skillBar.setVisible(false);
       if (this.inputSystem.consumeInteract()) dialoguePanel.advance();
+      this.inputSystem.discardQueued();
       this.updatePrompt(null);
       this.updateWorld3D({ x: 0, y: 0 });
       return;
