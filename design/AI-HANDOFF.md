@@ -30,6 +30,9 @@ The current codebase includes:
 - Bear Warrior, Cat Mage, and Fox Archer class data and server-side stats;
 - server-authoritative combat, monster aggro/chase behavior, HP, damage, loot, XP, defeat, respawn, and cooldown validation;
 - the Clover Village Courier Circuit tutorial and optional village side quests, including gated deliveries, fragile/urgent parcel rules, friendship state, rewards, and persisted progression;
+- kill-count (`defeat`) and multi-stop (`additionalStops`) quest objectives, the Happy Valley "Safe Roads" and "Lumi's Moonlight Survey" chains, Moss's burrow-defence quests, and the previously unshipped legacy errands (32 shipped quests);
+- quest guidance UI: quest log (J), NPC quest markers in both renderers, compass routing to stops/side-quest givers/hunt zones, toasts (including the `xp_gained` frame), keybind help (?), and a localStorage settings panel (sound, volume, damage numbers, graphics quality, reduced motion);
+- 3D combat feedback (damage numbers, attack effects, hit flash, defeat puff, hurt vignette), per-zone fog, and ambient particles;
 - server-authoritative inventory and six-slot equipment, item ownership/locking/class/level validation, drag-and-drop presentation, derived courier/combat effects, and audit events;
 - JSON-authoritative items, quests, classes, monsters, loot tables, zones, skills, upgrades, and dialogue;
 - the admin panel foundation: tier and permission checks, player operations, settings, audit history, roles, assignments, CSRF protection, step-up tokens, and item catalog editing;
@@ -44,7 +47,7 @@ These are not claims that the game is finished:
 
 - Dungeons and crafting are planned Phase 6 systems, not an implemented playable loop.
 - Weather integration and deeper navigation/parcel-condition rules remain after the current inventory/equipment foundation.
-- Broader Happy Valley progression and additional quest content remain future work.
+- Daily/repeatable quests are not implemented (`daily` is ignored), only one quest can be active at a time, and all quest givers live in Clover Village.
 - The local map panel is intentionally conservative: waypoint selection and interactive pan/zoom are not complete. Its unfinished controls are marked as coming soon rather than presented as working.
 - The visual presentation still needs browser/gameplay review for layout, camera, depth sorting, sprite alignment, animation, mobile behavior, HUD overlap, and overall feel.
 - The 3D world renderer is new and unjudged by eye: whether billboard cutouts read well at

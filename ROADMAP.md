@@ -134,6 +134,12 @@ Goal: add optional local errands and friendship-gated stories before opening bro
 - Friendship-gated personal stories with cosmetic and keepsake rewards
 - JSON-authored content with persisted per-character quest/friendship state
 
+### Phase 4C — Happy Valley Progression + Quest Guidance ✅ (2026-09-24)
+- Kill-count (`defeat`) and multi-stop (`additionalStops`) objectives, server-validated
+- Safe Roads Through Happy Valley, Lumi's Moonlight Survey, Moss burrow-defence quests; legacy errands shipped with dialogue and item sources (32 shipped quests)
+- Quest log, NPC quest markers, compass routing, toasts + `xp_gained`, keybind help, settings panel
+- 3D damage numbers/attack effects, hit flash, defeat puff, fog, ambient particles (REQUIRES SEELLE/BROWSER VERIFICATION)
+
 ### Phase 5 — Inventory and Equipment 🔄
 Goal: server-authoritative inventory + equipment with gear stats.
 
