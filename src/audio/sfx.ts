@@ -16,6 +16,8 @@
  *     context can never break a delivery.
  */
 
+import { getSettings } from "../ui/settings.ts";
+
 export type ProgressionSfx = "level" | "rank" | "both";
 
 type AudioContextLike = {
@@ -81,6 +83,7 @@ function note(
   startOffset: number,
   duration: number,
   type: OscillatorType,
+  peak: number,
 ): void {
   const at = ctx.currentTime + startOffset;
   const osc = ctx.createOscillator();
@@ -89,7 +92,7 @@ function note(
   osc.frequency.setValueAtTime(frequency, at);
   // Fast attack, gentle decay: a bell rather than a beep.
   gain.gain.setValueAtTime(0.0001, at);
-  gain.gain.exponentialRampToValueAtTime(PEAK_GAIN, at + 0.02);
+  gain.gain.exponentialRampToValueAtTime(peak, at + 0.02);
   gain.gain.exponentialRampToValueAtTime(0.0001, at + duration);
   osc.connect(gain);
   gain.connect(ctx.destination);
@@ -129,7 +132,9 @@ export const sfx = {
 
   /** Play the level-up / promotion figure. Silent when muted or unsupported. */
   playProgression(tone: ProgressionSfx): void {
-    if (muted) return;
+    // Exponential ramps cannot reach 0, so a zero volume is treated as muted.
+    const peak = PEAK_GAIN * getSettings().sfxVolume;
+    if (muted || peak <= 0) return;
     const ctx = audioContext();
     if (ctx === null) return;
     // A context that is still suspended (first gesture of the session) is
@@ -138,8 +143,8 @@ export const sfx = {
     if (ctx.state === "suspended") void ctx.resume?.().catch(() => undefined);
     const notes = FIGURES[tone];
     notes.forEach((frequency, index) => {
-      note(ctx, frequency, index * 0.11, 0.5, "triangle");
+      note(ctx, frequency, index * 0.11, 0.5, "triangle", peak);
     });
-    if (tone !== "level") note(ctx, 1567.98, 0.44, 0.7, "sine"); // G6 sparkle
+    if (tone !== "level") note(ctx, 1567.98, 0.44, 0.7, "sine", peak); // G6 sparkle
   },
 };

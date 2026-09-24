@@ -145,6 +145,44 @@ describe("questDestination", () => {
   it("never points at a villager standing in another zone", () => {
     expect(resolve({ active: quest({ targetId: "npc-moss" }) })).toBeNull();
   });
+
+  it("once the chain is done, guides to the nearest giver of an available side quest", () => {
+    const quests = [
+      ordered({ state: "completed", chainPosition: 1 }),
+      ordered({ giverId: "npc-pip", sideQuest: true, chainPosition: 0 }),
+      ordered({ giverId: "npc-biscuit", sideQuest: true, chainPosition: 0 }),
+      ordered({ giverId: "npc-moss", sideQuest: true, chainPosition: 0 }),
+    ];
+    const nearBiscuit = questDestination({ active: null, quests, zoneId: ZONE, npcs: NPCS, objects: OBJECTS, from: { x: 38, y: 42 } });
+    expect(nearBiscuit).toMatchObject({ reason: "giver", destination: { id: "npc-biscuit" } });
+    const nearPip = questDestination({ active: null, quests, zoneId: ZONE, npcs: NPCS, objects: OBJECTS, from: { x: 45, y: 30 } });
+    expect(nearPip?.destination.id).toBe("npc-pip");
+    // While the chain is unfinished, side quests still never jump the queue.
+    expect(resolve({ quests: [ordered({ state: "active", chainPosition: 2 }), ordered({ sideQuest: true, chainPosition: 0 })] })).toBeNull();
+  });
+
+  it("points at the next unvisited stop of a multi-stop delivery before the final target", () => {
+    const route = quest({ targetId: "npc-pip", additionalStops: ["npc-biscuit"], visitedStops: [] });
+    expect(resolve({ active: route })?.destination.id).toBe("npc-biscuit");
+    expect(resolve({ active: { ...route, visitedStops: ["npc-biscuit"] } })?.destination.id).toBe("npc-pip");
+  });
+
+  it("routes an unfinished hunt to the exit toward the monster's zone, then goes quiet there", () => {
+    const maps = [
+      { id: ZONE, transitions: [{ id: "trans-clover-valley", label: "Happy Valley", x: 37, y: 74, toZone: "zone-happy-valley" }] },
+      { id: "zone-happy-valley", transitions: [], monsterSpawns: [{ key: "monster-wild-boar" }] },
+    ];
+    const hunt = quest({ targetId: "npc-pip", defeat: { monsterKey: "monster-wild-boar", count: 4 }, progress: 1 });
+    const inVillage = questDestination({ active: hunt, zoneId: ZONE, npcs: NPCS, objects: OBJECTS, maps });
+    expect(inVillage).toEqual({
+      destination: { id: "trans-clover-valley", label: "Happy Valley", kind: "exit", tile: { x: 37, y: 74 } },
+      reason: "objective",
+    });
+    expect(questDestination({ active: hunt, zoneId: "zone-happy-valley", npcs: NPCS, objects: OBJECTS, maps })).toBeNull();
+    // Complete: back to the villager who asked.
+    const done = questDestination({ active: { ...hunt, progress: 4 }, zoneId: ZONE, npcs: NPCS, objects: OBJECTS, maps });
+    expect(done?.destination.id).toBe("npc-pip");
+  });
 });
 
 describe("compass distance and label", () => {

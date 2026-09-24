@@ -14,6 +14,7 @@ import {
 import { classCooldownMs } from "../game/classStats.ts";
 import { hasAdminDevAccess, readAuthToken } from "../ui/LoginOverlay.ts";
 import { ChatBox } from "../ui/ChatBox.ts";
+import { toasts } from "../ui/ToastStack.ts";
 import { apiPath } from "../config.ts";
 import { Player } from "../entities/Player.ts";
 import { NPC } from "../entities/NPC.ts";
@@ -35,6 +36,7 @@ import {
   tileCentre,
   type CompassDestination,
 } from "../ui/hud/questCompass.ts";
+import { npcQuestMarker } from "../ui/hud/questMarkers.ts";
 import { InventoryButton } from "../ui/InventoryButton.ts";
 import { LocalMapPanel } from "../ui/LocalMapPanel.ts";
 import { addCloverVillageSetPieces } from "../game/cloverVillageAssets.ts";
@@ -420,13 +422,12 @@ export class OverworldScene extends Phaser.Scene {
       CharacterProfilePanel.instance?.refresh();
     };
     this.network.onQuestNotice = (message) => this.questTracker.showMessage(message);
-    // Gameplay rejections (quest/inventory/chat/zone) arrive as tagged errors —
-    // show them in the same transient notice slot so they're never silent.
+    // Gameplay rejections (quest/inventory/chat/zone) are toasted by NetworkSystem;
+    // the open ledger also replaces its pending status with the reason.
     this.network.onGameplayNotice = (message) => {
-      this.questTracker.showMessage(message);
       CharacterProfilePanel.instance?.showNotice(message);
     };
-    if (data?.notice !== undefined) this.questTracker.showMessage(data.notice);
+    if (data?.notice !== undefined) toasts.show(data.notice, "warning");
     this.network.onStatus = (status, detail) => {
       this.minimap.setServerStatus(status, detail);
       this.chatBox.setEnabled(status === "joined");
@@ -451,8 +452,11 @@ export class OverworldScene extends Phaser.Scene {
       // The server has already committed loot to SQLite; refresh the open
       // sheet so inventory reflects the authoritative grant immediately.
       CharacterProfilePanel.instance?.refresh();
+      // Loot sends no inventory snapshot; ask for one so hand-in counts and markers follow.
+      this.network.requestInventory();
     };
-    this.network.onInventoryUpdated = (_items, _stamps, state) => {
+    this.network.onInventoryUpdated = (items, _stamps, state) => {
+      this.questTracker.setInventory(items);
       // Equip, unequip, move, and quest/loot grants all arrive as authoritative
       // snapshots. Keep the open courier ledger in sync with the server, and
       // let gear speed affect the rendered courier (the server already allows
@@ -724,41 +728,28 @@ export class OverworldScene extends Phaser.Scene {
   }
 
   /**
-   * Aim the quest guidance: the arrow ahead of the courier, and the minimap's
-   * destination marker.
+   * Aim the quest guidance: villager quest markers, the arrow ahead of the
+   * courier, and the minimap's destination marker.
    *
    * Both read the same resolved destination, so the arrow and the map can never
    * disagree about where the quest wants the courier to go. Rendering only:
    * nothing here is sent to the server, and nothing moves but HUD elements.
    */
   private updateQuestGuide(): void {
-    const active = this.questTracker.getActiveQuest() ?? null;
+    const quests = this.questTracker.getQuests();
+    const inventory = this.questTracker.getInventory();
+    for (const npc of this.visualNpcs) npc.setQuestMarker(npcQuestMarker(npc.definition.id, quests, inventory));
     const guide = questDestination({
-      active:
-        active === null
-          ? null
-          : {
-              state: active.state,
-              giverId: active.giverId,
-              targetId: active.targetId,
-              searchObjectId: active.searchObjectId,
-              progress: active.progress,
-            },
+      active: this.questTracker.getActiveQuest() ?? null,
       // With nothing in progress the compass still guides — to whoever hands
       // out the next leg of the chain, which is the whole point for a courier
       // who has just arrived and has no quest yet.
-      quests: this.questTracker.getQuests().map((entry) => ({
-        state: entry.state,
-        giverId: entry.giverId,
-        targetId: entry.targetId,
-        searchObjectId: entry.searchObjectId,
-        progress: entry.progress,
-        chainPosition: entry.chainPosition,
-        sideQuest: entry.sideQuest,
-      })),
+      quests,
       zoneId: this.mapData.id,
       npcs: NPCS,
       objects: this.mapData.interactables,
+      from: { x: this.player.x / TILE_SIZE, y: this.player.y / TILE_SIZE },
+      maps: Object.values(PLAYABLE_MAPS),
     });
     this.questDestination = guide === null ? null : guide.destination;
 

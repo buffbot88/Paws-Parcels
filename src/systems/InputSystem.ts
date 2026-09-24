@@ -1,8 +1,5 @@
 import Phaser from "phaser";
-
-function isTextField(target: EventTarget | null): boolean {
-  return target instanceof HTMLInputElement || target instanceof HTMLTextAreaElement || target instanceof HTMLSelectElement || (target instanceof HTMLElement && target.isContentEditable);
-}
+import { binding, isTextField, phaserKeyList } from "./keybindings.ts";
 
 export interface MoveVector {
   x: number;
@@ -24,18 +21,6 @@ interface KeyMap {
   DOWN: Phaser.Input.Keyboard.Key;
   LEFT: Phaser.Input.Keyboard.Key;
   RIGHT: Phaser.Input.Keyboard.Key;
-  E: Phaser.Input.Keyboard.Key;
-  SPACE: Phaser.Input.Keyboard.Key;
-  /**
-   * Phase 3 — basic attack (1). Slots are keyed 1–4 in the HUD's skill boxes,
-   * so the attack sits on the same row as the abilities still to come.
-   * Phaser names the digit keys ONE…FOUR (KeyCodes.ONE = 49).
-   */
-  ONE: Phaser.Input.Keyboard.Key;
-  /** Open the courier inventory/profile panel (I). */
-  I: Phaser.Input.Keyboard.Key;
-  /** Developer-only visual review capture (Ctrl+Shift+V). */
-  V: Phaser.Input.Keyboard.Key;
 }
 
 /**
@@ -69,6 +54,13 @@ export class InputSystem {
   private inventoryQueued = false;
   private captureQueued = false;
   private readonly devAccess: boolean;
+  /** Edge-triggered bindings (see keybindings.ts) and the queue each one fills. */
+  private readonly edgeBindings: readonly [string, (event: KeyboardEvent) => void][] = [
+    ["interact", this.queueInteract],
+    ["attack", this.queueAttack],
+    ["inventory", this.queueInventory],
+    ["capture", this.queueCapture],
+  ];
 
   constructor(scene: Phaser.Scene, options: { devAccess?: boolean } = {}) {
     this.devAccess = options.devAccess === true;
@@ -76,20 +68,15 @@ export class InputSystem {
     const kb = scene.input.keyboard!;
     // Capture (preventDefault) only the page-scrolling keys; letters and
     // digits must still reach DOM text fields like the courier-name input.
-    this.keys = kb.addKeys(
-      "W,A,S,D,UP,DOWN,LEFT,RIGHT,E,SPACE,ONE,I,V",
-      false,
-    ) as unknown as KeyMap;
+    this.keys = kb.addKeys(phaserKeyList(this.devAccess), false) as unknown as KeyMap;
     kb.addCapture("SPACE,UP,DOWN,LEFT,RIGHT");
     this.syncKeyboardCapture(document.activeElement);
     document.addEventListener("focusin", this.handleFocusChange);
     document.addEventListener("focusout", this.handleFocusChange);
 
-    kb.on("keydown-E", this.queueInteract, this);
-    kb.on("keydown-SPACE", this.queueInteract, this);
-    kb.on("keydown-ONE", this.queueAttack, this);
-    kb.on("keydown-I", this.queueInventory, this);
-    kb.on("keydown-V", this.queueCapture, this);
+    for (const [id, handler] of this.edgeBindings) {
+      for (const key of binding(id).phaserKeys ?? []) kb.on(`keydown-${key}`, handler, this);
+    }
 
     scene.input.on("pointerdown", this.handlePointerDown, this);
     scene.input.on("pointermove", this.handlePointerMove, this);
@@ -106,11 +93,9 @@ export class InputSystem {
     document.removeEventListener("focusout", this.handleFocusChange);
     const kb = this.scene.input.keyboard;
     if (kb) {
-      kb.off("keydown-E", this.queueInteract, this);
-      kb.off("keydown-SPACE", this.queueInteract, this);
-      kb.off("keydown-ONE", this.queueAttack, this);
-      kb.off("keydown-I", this.queueInventory, this);
-      kb.off("keydown-V", this.queueCapture, this);
+      for (const [id, handler] of this.edgeBindings) {
+        for (const key of binding(id).phaserKeys ?? []) kb.off(`keydown-${key}`, handler, this);
+      }
     }
     this.scene.input.off("pointerdown", this.handlePointerDown, this);
     this.scene.input.off("pointermove", this.handlePointerMove, this);
@@ -215,7 +200,7 @@ export class InputSystem {
     if (isTextField(document.activeElement)) return true;
     // Modal DOM panels pause gameplay shortcuts even when focus is on the
     // canvas/body or on a tab/button rather than a text field.
-    return document.querySelector<HTMLElement>(".profile-panel:not([hidden]), .local-map-panel:not([hidden]), .character-desk:not([hidden])") !== null;
+    return document.querySelector<HTMLElement>(".profile-panel:not([hidden]), .local-map-panel:not([hidden]), .character-desk:not([hidden]), .hud-modal:not([hidden])") !== null;
   }
 
   /**

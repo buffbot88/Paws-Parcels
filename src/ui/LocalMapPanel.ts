@@ -6,7 +6,7 @@ const mapAssets = import.meta.glob(
 ) as Record<string, string>;
 const CLOVER_VILLAGE_IMAGE = Object.values(mapAssets)[0] ?? "";
 /** Open modals that M must not stack the map over. */
-const MAP_BLOCKING_PANELS = ".profile-panel:not([hidden]), .dialogue-panel:not(.hidden), .character-desk:not([hidden])";
+const MAP_BLOCKING_PANELS = ".profile-panel:not([hidden]), .dialogue-panel:not(.hidden), .character-desk:not([hidden]), .hud-modal:not([hidden])";
 
 /** Full-screen local map: solid parchment content over a softly revealed world. */
 export class LocalMapPanel {

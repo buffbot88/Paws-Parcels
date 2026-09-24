@@ -712,7 +712,7 @@ describe("GameServer — Phase 3 combat", () => {
           : null,
       getMonsterDefinitions: async () => [BOAR_DEF],
       persistPosition: async () => {},
-      grantXp: overrides.grantXp ?? (async () => 20),
+      grantXp: overrides.grantXp ?? (async () => null),
       grantInventory: overrides.grantInventory ?? (async () => {}),
       persistHp: overrides.persistHp ?? (async () => {}),
       tickMs: 1000,
@@ -795,7 +795,7 @@ describe("GameServer — Phase 3 combat", () => {
   it("a lethal hit marks the monster defeated, rolls loot, and grants XP", async () => {
     vi.useFakeTimers();
     try {
-      const grantXp = vi.fn(async () => 20);
+      const grantXp = vi.fn(async () => null);
       const grantInventory = vi.fn(async () => {});
       const server = makeCombatServer({ grantXp, grantInventory });
       const socket = fakeSocket();
@@ -846,6 +846,40 @@ describe("GameServer — Phase 3 combat", () => {
       const types = messages(killer).map((m) => m.type);
       expect(types.lastIndexOf("inventory_updated")).toBeGreaterThan(types.lastIndexOf("loot_received"));
       expect(lastOfType(bystander, "loot_received")).toBeUndefined();
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it("sends xp_gained with the grant's progression only to the killer", async () => {
+    vi.useFakeTimers();
+    try {
+      const progression = {
+        level: 2, previousLevel: 1, levelsGained: 1, experience: 120,
+        skillPoints: 2, courierRank: "Trainee", rankPromotion: null,
+      };
+      const server = makeCombatServer({ grantXp: async () => progression });
+      const killer = fakeSocket();
+      const bystander = fakeSocket();
+      await joinCombat(server, killer, 11);
+      await joinCombat(server, bystander, 10);
+      await killBoar(server, killer);
+      expect(lastOfType(killer, "xp_gained")).toEqual({ type: "xp_gained", xp: 20, progression });
+      expect(lastOfType(bystander, "xp_gained")).toBeUndefined();
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it("sends no xp_gained when the XP grant finds no character", async () => {
+    vi.useFakeTimers();
+    try {
+      const server = makeCombatServer({ grantXp: async () => null });
+      const killer = fakeSocket();
+      await joinCombat(server, killer, 11);
+      await killBoar(server, killer);
+      expect(lastOfType(killer, "combat_event")).toMatchObject({ outcome: "defeated" });
+      expect(lastOfType(killer, "xp_gained")).toBeUndefined();
     } finally {
       vi.useRealTimers();
     }

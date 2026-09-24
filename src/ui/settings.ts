@@ -1,5 +1,6 @@
 /**
- * Local display preferences — graphics quality, damage numbers, reduced motion.
+ * Local display preferences — graphics quality, damage numbers, reduced motion,
+ * sound volume, and HUD collapse state.
  *
  * Like the mute toggle in `sfx.ts`, these are non-authoritative and live in
  * `localStorage`. Only fields the player actually changed are stored, so an
@@ -10,6 +11,10 @@ export interface Settings {
   readonly graphicsQuality: "high" | "low";
   readonly damageNumbers: boolean;
   readonly reducedMotion: boolean;
+  /** Sound-effect volume multiplier, 0..1. */
+  readonly sfxVolume: number;
+  readonly chatCollapsed: boolean;
+  readonly minimapCollapsed: boolean;
 }
 
 /** Persisted, local-only preference key (JSON of the changed fields). */
@@ -28,7 +33,14 @@ function defaults(): Settings {
   } catch {
     /* no media queries outside a browser */
   }
-  return { graphicsQuality: "high", damageNumbers: true, reducedMotion };
+  return {
+    graphicsQuality: "high",
+    damageNumbers: true,
+    reducedMotion,
+    sfxVolume: 1,
+    chatCollapsed: false,
+    minimapCollapsed: false,
+  };
 }
 
 /** Keep only well-typed fields, so a corrupt or stale entry can never break a frame. */
@@ -41,6 +53,11 @@ function sanitise(value: unknown): Partial<Settings> {
   }
   if (typeof raw.damageNumbers === "boolean") clean.damageNumbers = raw.damageNumbers;
   if (typeof raw.reducedMotion === "boolean") clean.reducedMotion = raw.reducedMotion;
+  if (typeof raw.sfxVolume === "number" && Number.isFinite(raw.sfxVolume)) {
+    clean.sfxVolume = Math.min(1, Math.max(0, raw.sfxVolume));
+  }
+  if (typeof raw.chatCollapsed === "boolean") clean.chatCollapsed = raw.chatCollapsed;
+  if (typeof raw.minimapCollapsed === "boolean") clean.minimapCollapsed = raw.minimapCollapsed;
   return clean;
 }
 

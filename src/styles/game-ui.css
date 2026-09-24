@@ -1181,3 +1181,117 @@ body.map-open #game-container { filter: blur(2px) saturate(.75); }
   }
 }
 
+/* ============================================================== */
+/* HUD dialogs: quest log (J), keyboard help (?), settings        */
+/* ============================================================== */
+.hud-modal {
+  position: absolute;
+  inset: 0;
+  z-index: 80;
+  display: grid;
+  place-items: center;
+  padding: 18px;
+  font-family: Georgia, "Iowan Old Style", serif;
+}
+.hud-modal[hidden] { display: none; }
+.hud-modal__backdrop { position: absolute; inset: 0; border: 0; background: rgba(22, 35, 28, 0.42); cursor: pointer; }
+.hud-modal__card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  width: min(560px, 100%);
+  max-height: min(680px, calc(100vh - 36px));
+  color: var(--login-ink);
+  background: rgba(255, 249, 237, 0.98);
+  border: 2px solid var(--login-leaf-deep);
+  border-radius: 18px;
+  box-shadow: 0 18px 50px rgba(22, 35, 28, 0.32), inset 0 1px rgba(255,255,255,.8);
+}
+.hud-modal__header { display: flex; align-items: center; justify-content: space-between; padding: 18px 20px 12px; border-bottom: 1px solid rgba(109,165,107,.3); }
+.hud-modal__eyebrow { display: block; color: var(--login-ink-soft); font-size: 10px; letter-spacing: 1.5px; }
+.hud-modal__title { margin: 3px 0 0; font-size: 1.45rem; }
+.hud-modal__close { border: 0; background: transparent; color: var(--login-ink-soft); font-size: 26px; cursor: pointer; }
+.hud-modal__body { overflow-y: auto; padding: 14px 20px 20px; }
+.hud-modal button:focus-visible,
+.hud-modal input:focus-visible,
+.hud-modal select:focus-visible,
+.hud-modal summary:focus-visible { outline: 3px solid var(--gold-400); outline-offset: 2px; }
+
+.quest-log__empty { color: var(--login-ink-soft); font-size: 13px; }
+.quest-log__section { margin: 0 0 14px; }
+.quest-log__heading { margin: 0 0 8px; color: var(--login-ink-soft); font-size: 12px; letter-spacing: 1px; text-transform: uppercase; }
+summary.quest-log__heading { cursor: pointer; }
+.quest-log__quest { margin: 0 0 8px; padding: 11px 13px; border: 1px solid rgba(176,138,95,.42); border-radius: 12px; background: rgba(234,217,188,.25); }
+.quest-log__quest--active { border-color: rgba(109,165,107,.7); background: rgba(143,201,138,.16); }
+.quest-log__quest--locked, .quest-log__quest--completed { opacity: .78; }
+.quest-log__title { margin: 0 0 4px; font-size: 14px; }
+.quest-log__quest p { margin: 3px 0 0; font-size: 12px; }
+.quest-log__meta, .quest-log__rewards { color: var(--login-ink-soft); }
+.quest-log__progress { color: var(--login-leaf-deep); font-weight: bold; }
+
+.keybind-help__list { display: grid; grid-template-columns: auto 1fr; gap: 8px 14px; align-items: center; margin: 0; }
+.keybind-help__keys { display: flex; flex-wrap: wrap; gap: 4px; margin: 0; }
+.keybind-help__list dd { margin: 0; font-size: 13px; }
+.keybind-help__heading { margin: 16px 0 6px; color: var(--login-ink-soft); font-size: 12px; letter-spacing: 1px; text-transform: uppercase; }
+.keybind-help__touch { margin: 0; padding-left: 18px; font-size: 13px; }
+
+.settings-panel__row { display: flex; align-items: center; justify-content: space-between; gap: 14px; padding: 10px 0; border-bottom: 1px solid rgba(176,138,95,.25); font-size: 13px; cursor: pointer; }
+.settings-panel__row:last-child { border-bottom: 0; }
+.settings-panel__row input[type="checkbox"] { width: 18px; height: 18px; accent-color: var(--login-leaf-deep); }
+.settings-panel__row input[type="range"] { width: min(200px, 50%); accent-color: var(--login-leaf-deep); }
+.settings-panel__row select { padding: 4px 8px; border: 1px solid rgba(176,138,95,.6); border-radius: 8px; background: #fffdf6; font: inherit; }
+
+/* ============================================================== */
+/* Toast stack (HUD layer) and chat unread badge                   */
+/* ============================================================== */
+#hud-layer > .toast-stack {
+  position: absolute;
+  top: calc(var(--hud-edge, 12px) * 2.5 + var(--hud-scale, 1) * 72px);
+  left: 50%;
+  z-index: 30;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: calc(var(--hud-scale, 1) * 6px);
+  width: min(360px, calc(100% - 28px));
+  transform: translateX(-50%);
+  pointer-events: none;
+}
+.toast {
+  max-width: 100%;
+  padding: calc(var(--hud-scale, 1) * 7px) calc(var(--hud-scale, 1) * 12px);
+  color: var(--login-ink, #3a5a3a);
+  background: rgba(255, 248, 236, 0.97);
+  border: 1px solid rgba(109, 165, 107, 0.75);
+  border-radius: 12px;
+  box-shadow: 0 5px 16px rgba(40, 30, 15, 0.24);
+  font: 600 calc(var(--hud-scale, 1) * 12px) / 1.3 Georgia, "Times New Roman", serif;
+  text-align: center;
+  animation: toast-in 180ms ease-out;
+}
+.toast--success { border-color: var(--gold-500, #c99a32); }
+.toast--warning { border-color: var(--hp, #e85f57); }
+.toast--still { animation: none; }
+@keyframes toast-in {
+  from { opacity: 0; transform: translateY(-6px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .toast { animation: none; }
+}
+
+.chat-box__unread {
+  display: inline-grid;
+  place-items: center;
+  min-width: calc(var(--hud-scale, 1) * 18px);
+  height: calc(var(--hud-scale, 1) * 18px);
+  margin-left: auto;
+  padding: 0 calc(var(--hud-scale, 1) * 5px);
+  color: var(--forest-950, #18351f);
+  background: var(--gold-400, #e7bc55);
+  border-radius: 999px;
+  font-size: calc(var(--hud-scale, 1) * 10px);
+  font-weight: 700;
+}
+.chat-box__unread[hidden] { display: none; }
+

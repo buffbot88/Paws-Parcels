@@ -4,6 +4,7 @@ import { getZoneByKey } from "./Zone.ts";
 import { logger } from "../middleware/logger.ts";
 import { auditInventoryEvent, getDerivedEquipmentStats, getEffectiveSlotCount, getInventoryState, type EquipmentStats } from "./Equipment.ts";
 import { applyExperience } from "./leveling.ts";
+import type { QuestProgression } from "./Quest.ts";
 
 type SqlRow = Record<string, unknown>;
 
@@ -290,19 +291,29 @@ export async function updateCharacterHp(characterId: number, hp: number, maxHp: 
   getDb().prepare("UPDATE characters SET hp = ?, max_hp = ?, updated_at = ? WHERE id = ?").run(hp, maxHp, new Date().toISOString(), characterId);
 }
 
-export async function grantExperience(characterId: number, amount: number): Promise<number | null> {
+/** Add XP and return the post-grant progression (same shape deliveries send), or null for an unknown character. */
+export async function grantExperience(characterId: number, amount: number): Promise<QuestProgression | null> {
   const db = getDb();
-  const row = db.prepare("SELECT experience, level, skill_points FROM characters WHERE id = ?").get(characterId) as SqlRow | undefined;
+  const row = db.prepare("SELECT experience, level, skill_points, courier_rank FROM characters WHERE id = ?").get(characterId) as SqlRow | undefined;
   if (row === undefined) return null;
+  const previousLevel = Number(row.level ?? 1);
   const next = Math.max(0, Number(row.experience ?? 0) + Math.max(0, amount));
   const { level, skillPoints } = applyExperience(
-    Number(row.level ?? 1),
+    previousLevel,
     Number(row.skill_points ?? 0),
     next,
   );
   db.prepare("UPDATE characters SET experience = ?, level = ?, skill_points = ?, updated_at = ? WHERE id = ?")
     .run(next, level, skillPoints, new Date().toISOString(), characterId);
-  return next;
+  return {
+    level,
+    previousLevel,
+    levelsGained: Math.max(0, level - previousLevel),
+    experience: next,
+    skillPoints,
+    courierRank: String(row.courier_rank ?? "Trainee"),
+    rankPromotion: null,
+  };
 }
 
 export async function updateCharacterPosition(characterId: number, zoneId: string, posX: number, posY: number): Promise<void> {

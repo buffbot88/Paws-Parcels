@@ -2,8 +2,21 @@ import type { NetQuestSnapshot } from "../net/GameSocket.ts";
 import { createIcon } from "./hud/icons.ts";
 import { createPanel, createPill, createKeyHint, createDivider } from "./hud/primitives.ts";
 import { hudColumn } from "./hud/layer.ts";
+import { heldForHandIn, type HeldItem } from "./hud/questMarkers.ts";
 
 const NOTICE_MS = 2600;
+/** Local-only UI preference: whether the tracker card starts collapsed. */
+export const TRACKER_COLLAPSED_KEY = "paws.ui.trackerCollapsed";
+
+/** The saved collapse preference; false when storage is blocked or empty. */
+export function readTrackerCollapsed(): boolean {
+  try { return globalThis.localStorage?.getItem(TRACKER_COLLAPSED_KEY) === "1"; } catch { return false; }
+}
+
+/** Best-effort save of the collapse preference. */
+export function writeTrackerCollapsed(collapsed: boolean): void {
+  try { globalThis.localStorage?.setItem(TRACKER_COLLAPSED_KEY, collapsed ? "1" : "0"); } catch { /* best-effort */ }
+}
 
 /**
  * HUD v4 quest tracker: tab pill on the card edge, dominant title, objective
@@ -24,6 +37,7 @@ export class QuestTracker {
   private readonly toggle: HTMLButtonElement;
   private readonly tab: HTMLButtonElement;
   private quests: NetQuestSnapshot[] = [];
+  private inventory: readonly HeldItem[] = [];
   private offeredQuestId: string | null = null;
   private readonly onAccept: (questId: string) => void;
   private readonly countdownTimer: number;
@@ -46,7 +60,7 @@ export class QuestTracker {
     tab.className = `${tabContent.className} quest-tracker__tab`;
     tab.replaceChildren(...tabContent.childNodes);
     tab.setAttribute("aria-controls", "quest-tracker-body");
-    tab.addEventListener("click", () => this.setCollapsed(!this.collapsed));
+    tab.addEventListener("click", () => this.toggleCollapsed());
     this.tab = tab;
 
     // Header row: title + collapse chevron.
@@ -60,7 +74,7 @@ export class QuestTracker {
     this.toggle.setAttribute("aria-label", "Collapse quest tracker");
     this.toggle.setAttribute("aria-expanded", "true");
     this.toggle.appendChild(createIcon("chevron-up", { size: 14 }));
-    this.toggle.addEventListener("click", () => this.setCollapsed(!this.collapsed));
+    this.toggle.addEventListener("click", () => this.toggleCollapsed());
     header.append(this.title, this.toggle);
     this.panelBody.id = "quest-tracker-body";
 
@@ -82,7 +96,7 @@ export class QuestTracker {
     this.panelBody.append(header, this.objective, createDivider(), objectiveRow, this.action);
     this.root.prepend(tab);
     hudColumn("bottom-left")?.appendChild(this.root);
-    this.setCollapsed(false);
+    this.setCollapsed(readTrackerCollapsed());
     this.countdownTimer = window.setInterval(() => {
       if (this.quests.some((quest) => quest.state === "active" && quest.deadlineAt !== null)) this.render();
     }, 1000);
@@ -95,6 +109,16 @@ export class QuestTracker {
       this.offeredQuestId = null;
     }
     this.render();
+  }
+
+  /** Server inventory snapshot, used only to display hand-in counts and markers. */
+  setInventory(items: readonly HeldItem[]): void {
+    this.inventory = items;
+    this.render();
+  }
+
+  getInventory(): readonly HeldItem[] {
+    return this.inventory;
   }
 
   /** Only an NPC interaction can create an acceptance offer. */
@@ -131,6 +155,11 @@ export class QuestTracker {
     this.root.remove();
   }
 
+  private toggleCollapsed(): void {
+    this.setCollapsed(!this.collapsed);
+    writeTrackerCollapsed(this.collapsed);
+  }
+
   private setCollapsed(collapsed: boolean): void {
     this.collapsed = collapsed;
     this.root.classList.toggle("quest-tracker--collapsed", collapsed);
@@ -161,7 +190,7 @@ export class QuestTracker {
     if (active !== undefined) {
       const deadline = active.deadlineAt === null ? "" : ` · ${formatDeadline(active.deadlineAt)}`;
       const objective = active.searchObjectId !== null && active.progress === 0 ? ` · Search: ${active.findAt ?? "the marked location"}` : "";
-      status = `${questProgressLabel(active)} · Circuit ${tutorialCompleted}/${circuitSize} · Side quests ${sideCompleted}${deadline}${objective}`;
+      status = `${questProgressLabel(active, this.inventory)} · Circuit ${tutorialCompleted}/${circuitSize} · Side quests ${sideCompleted}${deadline}${objective}`;
       this.action.hidden = true;
     } else if (available !== undefined) {
       status = this.offeredQuestId === available.questId
@@ -183,9 +212,20 @@ export class QuestTracker {
   }
 }
 
-/** The active quest's tally: "Wild Boar 2/4", "Delivery 0/1 · Stops 1/2", or "Objective 1/3". */
-export function questProgressLabel(quest: Pick<NetQuestSnapshot, "type" | "progress" | "requiredQuantity" | "defeat" | "additionalStops" | "visitedStops">): string {
+/**
+ * The active quest's tally: "Wild Boar 2/4", "Delivery 0/1 · Stops 1/2", "Objective 1/3", or
+ * "Held 2/5" for a loot hand-in, whose server progress never counts loot.
+ */
+export function questProgressLabel(
+  quest: Pick<NetQuestSnapshot, "type" | "progress" | "requiredQuantity" | "defeat" | "additionalStops" | "visitedStops">
+    & Partial<Pick<NetQuestSnapshot, "requiredItemId" | "searchObjectId">>,
+  inventory: readonly HeldItem[] = [],
+): string {
   if (quest.defeat !== null) return `${quest.defeat.monsterName} ${Math.min(quest.progress, quest.defeat.count)}/${quest.defeat.count}`;
+  const itemKey = quest.requiredItemId;
+  if (quest.type !== "delivery" && itemKey != null && quest.searchObjectId == null) {
+    return `Held ${Math.min(heldForHandIn(itemKey, inventory), quest.requiredQuantity)}/${quest.requiredQuantity}`;
+  }
   const base = `${quest.type === "delivery" ? "Delivery" : "Objective"} ${quest.progress}/${quest.requiredQuantity}`;
   if (quest.additionalStops.length === 0) return base;
   const visited = quest.additionalStops.filter((stop) => quest.visitedStops.includes(stop)).length;

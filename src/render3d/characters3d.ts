@@ -61,6 +61,10 @@ export interface EntityBillboard {
   readonly tag: EntityTag | null;
   /** How high the tag floats above the entity's feet, in tiles (positive up). */
   readonly tagAboveFeetTiles: number;
+  /** An NPC's quest marker ("!", "✓"), drawn like the tag but above it; null when none. */
+  readonly marker: EntityTag | null;
+  /** How high the marker's centre floats above the feet, bob included, in tiles. */
+  readonly markerAboveFeetTiles: number;
   /** A monster's health share (0-1), or null for anything without a bar. */
   readonly hpRatio: number | null;
   /** The health bar's tint, from the sprite renderer's own rectangle. */
@@ -85,8 +89,9 @@ interface Billboard {
   readonly shadowMaterial: THREE.MeshBasicMaterial;
   uvKey: string;
   tint: number;
-  /** Built the first time the entity has a tag or a bar, then kept. */
+  /** Built the first time the entity has a tag, marker or bar, then kept. */
   tag: TagMeshes | null;
+  marker: TagMeshes | null;
   hp: HpMeshes | null;
 }
 
@@ -186,19 +191,19 @@ export class CharacterBillboards {
       uvKey: "",
       tint: entity.tint,
       tag: null,
+      marker: null,
       hp: null,
     };
   }
 
   /**
-   * The tag mesh for a billboard, built on first use.
+   * A tag (or marker) mesh, built on first use.
    *
    * A unit quad with the tag's canvas as its texture, drawn without writing
    * depth (a tag must never occlude the world) but with depth *testing* on, so a
    * canopy in front of a villager still hides their name.
    */
-  private ensureTag(billboard: Billboard, entity: EntityBillboard, tag: EntityTag): TagMeshes {
-    if (billboard.tag !== null) return billboard.tag;
+  private buildTag(tag: EntityTag): TagMeshes {
     const texture = new THREE.CanvasTexture(tag.canvas);
     texture.colorSpace = THREE.SRGBColorSpace;
     const material = new THREE.MeshBasicMaterial({
@@ -212,9 +217,7 @@ export class CharacterBillboards {
     mesh.rotation.y = BILLBOARD_YAW;
     mesh.renderOrder = 5;
     this.root.add(mesh);
-    const built: TagMeshes = { mesh, material, texture, source: tag.canvas, key: tag.key };
-    billboard.tag = built;
-    return built;
+    return { mesh, material, texture, source: tag.canvas, key: tag.key };
   }
 
   /** The health bar's two quads, built on first use, tinted once per change. */
@@ -256,13 +259,20 @@ export class CharacterBillboards {
       // A hidden entity's tag and bar go with it: a defeated monster with a
       // floating name over empty ground is worse than no label at all.
       if (billboard.tag !== null) billboard.tag.mesh.visible = false;
+      if (billboard.marker !== null) billboard.marker.mesh.visible = false;
       if (billboard.hp !== null) {
         billboard.hp.track.visible = false;
         billboard.hp.fill.visible = false;
       }
       return;
     }
-    this.updateTag(billboard, entity);
+    billboard.tag = this.updateTag(billboard.tag, entity.tag, anchorOf(entity), entity.alpha);
+    billboard.marker = this.updateTag(
+      billboard.marker,
+      entity.marker,
+      { ...anchorOf(entity), tagAboveFeetTiles: entity.markerAboveFeetTiles },
+      entity.alpha,
+    );
     this.updateHp(billboard, entity);
 
     mesh.scale.set(entity.widthTiles, entity.heightTiles, 1);
@@ -317,14 +327,13 @@ export class CharacterBillboards {
     shadowMaterial.opacity = tint[3] * entity.alpha;
   }
 
-  /** Draw the entity's name tag, uploading its canvas only when it changes. */
-  private updateTag(billboard: Billboard, entity: EntityBillboard): void {
-    const tag = entity.tag;
+  /** Draw a name tag or marker, uploading its canvas only when it changes; returns the (kept) meshes. */
+  private updateTag(current: TagMeshes | null, tag: EntityTag | null, anchor: TagAnchor, entityAlpha: number): TagMeshes | null {
     if (tag === null) {
-      if (billboard.tag !== null) billboard.tag.mesh.visible = false;
-      return;
+      if (current !== null) current.mesh.visible = false;
+      return current;
     }
-    const meshes = this.ensureTag(billboard, entity, tag);
+    const meshes = current ?? this.buildTag(tag);
     if (meshes.source !== tag.canvas || meshes.key !== tag.key) {
       meshes.texture.dispose();
       const texture = new THREE.CanvasTexture(tag.canvas);
@@ -335,11 +344,12 @@ export class CharacterBillboards {
       meshes.source = tag.canvas;
       meshes.key = tag.key;
     }
-    const rect = labelRect(anchorOf(entity), tag.widthPx, tag.heightPx);
+    const rect = labelRect(anchor, tag.widthPx, tag.heightPx);
     meshes.mesh.visible = true;
-    meshes.material.opacity = tag.alpha * entity.alpha;
+    meshes.material.opacity = tag.alpha * entityAlpha;
     meshes.mesh.scale.set(rect.width, rect.height, 1);
     meshes.mesh.position.set(rect.x, rect.y, rect.z);
+    return meshes;
   }
 
   /** Draw a monster's health bar from the share the client already mirrors. */
@@ -373,13 +383,15 @@ export class CharacterBillboards {
     billboard.material.dispose();
     billboard.shadow.geometry.dispose();
     billboard.shadowMaterial.dispose();
-    if (billboard.tag !== null) {
-      this.root.remove(billboard.tag.mesh);
-      billboard.tag.mesh.geometry.dispose();
-      billboard.tag.material.dispose();
-      billboard.tag.texture.dispose();
-      billboard.tag = null;
+    for (const label of [billboard.tag, billboard.marker]) {
+      if (label === null) continue;
+      this.root.remove(label.mesh);
+      label.mesh.geometry.dispose();
+      label.material.dispose();
+      label.texture.dispose();
     }
+    billboard.tag = null;
+    billboard.marker = null;
     if (billboard.hp !== null) {
       for (const bar of [billboard.hp.track, billboard.hp.fill]) {
         this.root.remove(bar);

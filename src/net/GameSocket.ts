@@ -107,7 +107,7 @@ export interface NetQuestSnapshot {
 }
 
 /**
- * Post-grant courier progression attached to a delivery.
+ * Post-grant courier progression attached to a delivery or to kill XP (`xp_gained`).
  *
  * Mirrors `QuestProgression` in `server/src/models/Quest.ts`: level and rank are
  * server-computed, so the HUD never derives a level-up itself.
@@ -193,6 +193,8 @@ export interface GameSocketCallbacks {
     message: string;
   }) => void;
   onQuestNotice?: (message: string) => void;
+  /** Kill XP granted to this courier; `xp` is the amount gained, not the total. */
+  onXpGained?: (xp: number, progression?: NetQuestProgression) => void;
   onInventoryUpdated?: (items: NetQuestInventoryItem[], stamps: number, state?: NetInventoryState) => void;
   /** requestType is set for intent rejections (gameplay), absent for connection errors. */
   onError?: (code: string, message: string, requestType?: string) => void;
@@ -581,6 +583,11 @@ export class GameSocket {
       case "quest_notice":
         if (typeof msg.message === "string" && msg.message !== "") this.callbacks.onQuestNotice?.(msg.message);
         break;
+      case "xp_gained": {
+        const xp = Number(msg.xp);
+        if (Number.isFinite(xp) && xp > 0) this.callbacks.onXpGained?.(xp, normalizeQuestProgression(msg.progression));
+        break;
+      }
       case "inventory_updated": {
         const state = normalizeInventoryState(msg);
         this.callbacks.onInventoryUpdated?.(state.items, Number(msg.stamps ?? 0), state);

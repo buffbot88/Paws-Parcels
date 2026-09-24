@@ -5,6 +5,7 @@ import { questMarkerPulse } from "./hud/questCompass.ts";
 import { createIcon } from "./hud/icons.ts";
 import { createIconButton, createPanel } from "./hud/primitives.ts";
 import { hudLayer } from "./hud/layer.ts";
+import { getSettings, updateSettings } from "./settings.ts";
 
 /** Terrain fill colors per tile code (`#rrggbb` for canvas), derived from the tile catalog. */
 const TERRAIN_COLORS: Readonly<Record<string, string>> = Object.fromEntries(
@@ -52,9 +53,6 @@ export interface MinimapFrame {
  * footer status dot with a tooltip (spec §8: no server text in the polished HUD).
  */
 export class Minimap {
-  /** Collapsed preference shared across scene restarts / zone changes. */
-  private static collapsed = false;
-
   private readonly root: HTMLElement;
   private readonly caret: HTMLElement;
   private readonly zoneLabel: HTMLElement;
@@ -143,8 +141,8 @@ export class Minimap {
     }
     this.root.style.setProperty("--minimap-width", String(Math.round(width)));
     this.root.style.setProperty("--minimap-aspect", String(aspect));
-    this.expanded = !Minimap.collapsed;
-    this.root.classList.toggle("minimap--collapsed", Minimap.collapsed);
+    this.expanded = !getSettings().minimapCollapsed;
+    this.root.classList.toggle("minimap--collapsed", !this.expanded);
     this.setCaret();
     this.zoneLabel.textContent = map.name;
     this.coordsLabel.textContent = "–, –";
@@ -281,7 +279,7 @@ export class Minimap {
 
   private toggle(): void {
     this.expanded = !this.expanded;
-    Minimap.collapsed = !this.expanded;
+    updateSettings({ minimapCollapsed: !this.expanded });
     this.root.classList.toggle("minimap--collapsed", !this.expanded);
     this.setCaret();
   }

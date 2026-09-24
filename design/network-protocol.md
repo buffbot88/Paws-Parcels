@@ -425,6 +425,24 @@ processes each message independently.
 - **Client action:** play loot animation and UI notification. The server commits the
   item grant and emits a full `inventory_updated` snapshot.
 
+### xp_gained
+```json
+{
+  "type": "xp_gained",
+  "xp": 20,
+  "progression": {
+    "level": 2, "previousLevel": 1, "levelsGained": 1, "experience": 120,
+    "skillPoints": 2, "courierRank": "Trainee", "rankPromotion": null
+  }
+}
+```
+- **Payload:** monster-kill XP the server just committed, sent only to the killer (never
+  broadcast). `xp` is the amount granted (after `exp_rate`), not the new total;
+  `progression` has the same shape as `quest_updated.progression` (`rankPromotion` is
+  always `null` for kills). Not sent when the grant fails. Additive: older clients ignore it.
+- **Client action:** show an XP toast; when `levelsGained > 0`, update the status card's
+  level and show the level-up banner exactly as for a delivery.
+
 ### error
 ```json
 {

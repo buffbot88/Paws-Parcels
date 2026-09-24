@@ -9,7 +9,7 @@ import type { MonsterDefinitionRow } from "../models/Monster.ts";
 import type { ZoneData } from "./zoneData.ts";
 import type { MonsterBrain } from "../ai/MonsterBrain.ts";
 import type { ZoneScene } from "../ai/prompts.ts";
-import type { QuestMutationResult, QuestSnapshot, QuestInventoryItem } from "../models/Quest.ts";
+import type { QuestMutationResult, QuestProgression, QuestSnapshot, QuestInventoryItem } from "../models/Quest.ts";
 import type { EquipmentMutationResult, InventoryState } from "../models/Equipment.ts";
 import { logger } from "../middleware/logger.ts";
 import { server as serverConfig } from "../config/index.ts";
@@ -73,8 +73,8 @@ export interface GameServerDeps {
   ) => Promise<void>;
   /** Best-effort HP persistence (DB); defaults to no-op. */
   persistHp?: (characterId: number, hp: number, maxHp: number) => Promise<void>;
-  /** Best-effort XP grant on monster kill (DB); defaults to no-op. */
-  grantXp?: (characterId: number, amount: number) => Promise<number | null>;
+  /** Best-effort XP grant on monster kill (DB); resolves the post-grant progression. */
+  grantXp?: (characterId: number, amount: number) => Promise<QuestProgression | null>;
   /** Best-effort inventory grant on monster loot (DB); defaults to no-op. */
   grantInventory?: (
     characterId: number,
@@ -1062,7 +1062,9 @@ export class GameServer {
     const xp = Math.round(monster.experienceReward * expRate);
     if (xp > 0 && this.deps.grantXp !== undefined) {
       try {
-        await this.deps.grantXp(killerId, xp);
+        const progression = await this.deps.grantXp(killerId, xp);
+        // Private to the killer: XP and level are never broadcast to the zone.
+        if (progression !== null) this.findSession(killerId)?.socket.send({ type: "xp_gained", xp, progression });
       } catch (err) {
         logger.warn("grantXp failed (best-effort)", {
           killerId,

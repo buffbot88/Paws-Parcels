@@ -124,7 +124,7 @@ function makeCombatServer(overrides: {
     getZoneData: (zoneId: string) => (zoneId === COMBAT_ZONE.zoneId ? COMBAT_ZONE : null),
     getMonsterDefinitions: async () => [BOAR_DEF],
     persistPosition: async () => {},
-    grantXp: overrides.grantXp ?? (async () => 20),
+    grantXp: overrides.grantXp ?? (async () => null),
     grantInventory: overrides.grantInventory ?? (async () => {}),
     persistHp: async () => {},
     tickMs: 1000,
@@ -153,7 +153,7 @@ async function killBoar(server: GameServer, socket: FakeSocket): Promise<void> {
 describe("server rates apply to monster kill rewards", () => {
   it("grants base XP and loot when rates are at their 1.0 defaults", async () => {
     vi.useFakeTimers();
-    const grantXp = vi.fn(async () => 20);
+    const grantXp = vi.fn(async () => null);
     const grantInventory = vi.fn(async () => {});
     const server = makeCombatServer({ grantXp, grantInventory });
     const socket = fakeSocket();
@@ -172,7 +172,7 @@ describe("server rates apply to monster kill rewards", () => {
     setServerSetting("drop_rate", "1", "test-admin");
     // setServerSetting refreshes the cache — no manual reset needed.
 
-    const grantXp = vi.fn(async () => 60);
+    const grantXp = vi.fn(async () => null);
     const grantInventory = vi.fn(async () => {});
     const server = makeCombatServer({ grantXp, grantInventory });
     const socket = fakeSocket();
@@ -199,7 +199,7 @@ describe("server rates apply to monster kill rewards", () => {
         { key: "item-b", chance: 0.5, quantity: 1 },
       ],
     }];
-    const grantXp = vi.fn(async () => 20);
+    const grantXp = vi.fn(async () => null);
     const grantInventory = vi.fn(async () => {});
     const deps = {
       loadCharacter: async (id: number) => {

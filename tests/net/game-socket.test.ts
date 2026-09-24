@@ -563,3 +563,32 @@ describe("GameSocket reconnect", () => {
     expect(ws2.sentOfType("authenticate")).toHaveLength(1);
   });
 });
+
+describe("GameSocket xp_gained", () => {
+  it("passes the granted XP and normalized progression to onXpGained", async () => {
+    const socket = makeSocket();
+    const onXpGained = vi.fn();
+    socket.callbacks.onXpGained = onXpGained;
+    const ws = await connectedSocket(socket);
+    ws.receive({
+      type: "xp_gained",
+      xp: 20,
+      progression: { level: 3, previousLevel: 2, levelsGained: 1, experience: 260, skillPoints: 3, courierRank: "Trainee", rankPromotion: null },
+    });
+    expect(onXpGained).toHaveBeenCalledWith(20, {
+      level: 3, previousLevel: 2, levelsGained: 1, experience: 260, skillPoints: 3, courierRank: "Trainee", rankPromotion: null,
+    });
+  });
+
+  it("ignores frames without positive XP and tolerates missing progression", async () => {
+    const socket = makeSocket();
+    const onXpGained = vi.fn();
+    socket.callbacks.onXpGained = onXpGained;
+    const ws = await connectedSocket(socket);
+    ws.receive({ type: "xp_gained", xp: 0 });
+    ws.receive({ type: "xp_gained", xp: "lots" });
+    expect(onXpGained).not.toHaveBeenCalled();
+    ws.receive({ type: "xp_gained", xp: 5 });
+    expect(onXpGained).toHaveBeenCalledWith(5, undefined);
+  });
+});

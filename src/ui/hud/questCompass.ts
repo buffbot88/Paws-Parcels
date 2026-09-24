@@ -31,7 +31,7 @@ export interface CanvasFraction {
 export interface CompassDestination {
   id: string;
   label: string;
-  kind: "npc" | "object";
+  kind: "npc" | "object" | "exit";
   tile: TilePoint;
 }
 
@@ -55,6 +55,16 @@ export interface ActiveQuest {
   targetId: string | null;
   searchObjectId: string | null;
   progress: number;
+  defeat?: { monsterKey: string; count: number } | null;
+  additionalStops?: readonly string[];
+  visitedStops?: readonly string[];
+}
+
+/** A zone's exits and monster spawns, as `src/data/maps/*.json` authors them. */
+export interface ZoneMap {
+  id: string;
+  transitions: readonly { id: string; label: string; x: number; y: number; toZone: string }[];
+  monsterSpawns?: readonly { key: string }[];
 }
 
 /** A quest with the ordering fields, so the next one to take can be picked. */
@@ -87,12 +97,15 @@ export interface ObjectPlacement {
  *
  * Two cases, in priority order:
  *
- * 1. **A quest in progress.** Point at its next step: the authored search
- *    object while the objective is still missing, otherwise the target villager.
+ * 1. **A quest in progress.** Point at its next step: an unfinished hunt's
+ *    zone exit (nothing, once in that zone), the authored search object while
+ *    the objective is still missing, the next unvisited delivery stop, otherwise
+ *    the target villager.
  * 2. **Nothing in progress.** A brand-new courier has no active quest — the
  *    first thing they need is the villager who hands one out, so point at the
  *    giver of the earliest available chain quest. Without this the arrow would
- *    be dark for exactly the player it was added for.
+ *    be dark for exactly the player it was added for. Once the chain is done,
+ *    the nearest giver of an available side quest.
  *
  * A destination that resolves in another zone yields null rather than a
  * direction that means nothing here.
@@ -104,10 +117,28 @@ export function questDestination(input: {
   zoneId: string;
   npcs: readonly NpcPlacement[];
   objects: readonly ObjectPlacement[];
+  /** The courier's position, to pick the nearest side-quest giver. */
+  from?: TilePoint;
+  /** Every playable zone, to route a hunt toward where its monster lives. */
+  maps?: readonly ZoneMap[];
 }): { destination: CompassDestination; reason: GuidanceReason } | null {
   const { active, zoneId, npcs, objects } = input;
 
   if (active !== null && active !== undefined && active.state === "active") {
+    const defeat = active.defeat ?? null;
+    const maps = input.maps ?? [];
+    const here = maps.find((zone) => zone.id === zoneId);
+    if (defeat !== null && active.progress < defeat.count && here !== undefined) {
+      const hosts = (zone: ZoneMap): boolean => (zone.monsterSpawns ?? []).some((spawn) => spawn.key === defeat.monsterKey);
+      if (hosts(here)) return null;
+      const exit = here.transitions.find((transition) => maps.some((zone) => zone.id === transition.toZone && hosts(zone)));
+      return exit === undefined
+        ? null
+        : {
+            destination: { id: exit.id, label: exit.label, kind: "exit", tile: { x: exit.x, y: exit.y } },
+            reason: "objective",
+          };
+    }
     // A search objective the courier has not found yet is the next step, even
     // though the quest's targetId already names the villager it returns to.
     if (active.searchObjectId !== null && active.progress === 0) {
@@ -119,8 +150,10 @@ export function questDestination(input: {
         };
       }
     }
-    if (active.targetId === null) return null;
-    const target = npcs.find((npc) => npc.id === active.targetId && npc.homeZone === zoneId);
+    const nextStop = (active.additionalStops ?? []).find((stop) => !(active.visitedStops ?? []).includes(stop));
+    const targetId = nextStop ?? active.targetId;
+    if (targetId === null) return null;
+    const target = npcs.find((npc) => npc.id === targetId && npc.homeZone === zoneId);
     return target === undefined
       ? null
       : {
@@ -131,11 +164,20 @@ export function questDestination(input: {
 
   // The earliest chain quest still to be taken; optional errands never jump the
   // queue ahead of the tutorial the village is built around.
-  const next = (input.quests ?? [])
+  const quests = input.quests ?? [];
+  const next = quests
     .filter((quest) => quest.state === "available" && !quest.sideQuest)
     .sort((a, b) => a.chainPosition - b.chainPosition)[0];
-  if (next === undefined) return null;
-  const giver = npcs.find((npc) => npc.id === next.giverId && npc.homeZone === zoneId);
+  const chainDone = quests.some((quest) => !quest.sideQuest) && quests.every((quest) => quest.sideQuest || quest.state === "completed");
+  const giverIds = next !== undefined
+    ? [next.giverId]
+    : chainDone
+      ? quests.filter((quest) => quest.state === "available").map((quest) => quest.giverId)
+      : [];
+  const from = input.from;
+  const giver = npcs
+    .filter((npc) => giverIds.includes(npc.id) && npc.homeZone === zoneId)
+    .sort((a, b) => (from === undefined ? 0 : compassDistanceTiles(from, tileCentre(a.homeTile)) - compassDistanceTiles(from, tileCentre(b.homeTile))))[0];
   return giver === undefined
     ? null
     : {

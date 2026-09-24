@@ -103,7 +103,7 @@ describe("kill-count credit over WS", () => {
       getZoneData: (zoneId: string) => (zoneId === COMBAT_ZONE.zoneId ? COMBAT_ZONE : null),
       getMonsterDefinitions: async () => [BOAR_DEF],
       persistPosition: async () => {},
-      grantXp: async () => 20,
+      grantXp: async () => null,
       grantInventory: async () => {},
       persistHp: async () => {},
       recordMonsterDefeat,

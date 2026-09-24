@@ -17,6 +17,16 @@ import {
   villagerSizing,
 } from "../game/entitySizing.ts";
 import { getSettings } from "../ui/settings.ts";
+import type { NpcQuestMarker } from "../ui/hud/questMarkers.ts";
+
+/** Glyph and colours per quest marker; "stop" is deliberately quieter. */
+const MARKER_STYLE: Record<NpcQuestMarker, { text: string; color: string; stroke: string; fontSize: string; alpha: number }> = {
+  available: { text: "!", color: "#ffd34d", stroke: "#5a3b00", fontSize: "22px", alpha: 1 },
+  ready: { text: "✓", color: "#9be27f", stroke: "#1f4a17", fontSize: "20px", alpha: 1 },
+  stop: { text: "•", color: "#fff1c4", stroke: "#4a3a1a", fontSize: "18px", alpha: 0.75 },
+};
+/** Gap between the name tag's top edge and the marker, in pixels. */
+const MARKER_GAP_PX = 2;
 
 /**
  * A static NPC with supplied Clover Village artwork where mapped; unmapped
@@ -27,6 +37,11 @@ export class NPC extends Phaser.Physics.Arcade.Sprite {
   /** Stable authored-art identifier for visual review metadata. */
   readonly npcArtKey: string;
   private readonly nameTag: Phaser.GameObjects.Text;
+  /** Quest marker above the name tag; hidden when there is none. Read by the 3D view too. */
+  private readonly questMarker: Phaser.GameObjects.Text;
+  private markerKind: NpcQuestMarker | null = null;
+  /** Extra marker bob in pixels (positive up); zero under reduced motion. */
+  markerBobY = 0;
   private readonly npcArt: CloverNpcArt | null;
   /**
    * The NPC's cast shadow.
@@ -108,6 +123,11 @@ export class NPC extends Phaser.Physics.Arcade.Sprite {
       .setShadow(0, 2, "#172219", 3, true, true)
       .setDepth(worldDepth(y, DEPTH_OFFSET.overlay));
 
+    this.questMarker = scene.add
+      .text(x, this.nameTag.y, "!", { fontFamily: "Georgia, serif", fontStyle: "bold", padding: { x: 2, y: 2 } })
+      .setOrigin(0.5)
+      .setVisible(false);
+
     this.groundY = y;
     this.nameTagY = this.nameTag.y;
     scene.tweens.add({
@@ -125,6 +145,24 @@ export class NPC extends Phaser.Physics.Arcade.Sprite {
     return getSettings().reducedMotion ? 0 : this.bob;
   }
 
+  /** Show or clear the quest marker; a no-op when unchanged, so it is safe per frame. */
+  setQuestMarker(kind: NpcQuestMarker | null): void {
+    if (kind === this.markerKind) return;
+    this.markerKind = kind;
+    if (kind === null) {
+      this.questMarker.setVisible(false);
+      return;
+    }
+    const style = MARKER_STYLE[kind];
+    this.questMarker
+      .setText(style.text)
+      .setFontSize(style.fontSize)
+      .setColor(style.color)
+      .setStroke(style.stroke, 4)
+      .setAlpha(style.alpha)
+      .setVisible(true);
+  }
+
   /** Apply the idle bob and keep the draw order aligned with it. */
   preUpdate(time: number, delta: number): void {
     super.preUpdate(time, delta);
@@ -134,5 +172,10 @@ export class NPC extends Phaser.Physics.Arcade.Sprite {
     this.setDepth(worldDepth(this.y));
     this.nameTag.setDepth(worldDepth(this.y, DEPTH_OFFSET.overlay));
     this.shadow.setDepth(worldDepth(this.y, DEPTH_OFFSET.contactShadow));
+    if (this.markerKind !== null) {
+      this.markerBobY = getSettings().reducedMotion ? 0 : 2 * Math.sin(time / 320);
+      this.questMarker.y = this.nameTag.y - (this.nameTag.height + this.questMarker.height) / 2 - MARKER_GAP_PX - this.markerBobY;
+      this.questMarker.setDepth(worldDepth(this.y, DEPTH_OFFSET.overlay));
+    }
   }
 }

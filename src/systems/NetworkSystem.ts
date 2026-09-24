@@ -42,6 +42,17 @@ import {
   isNewerSnapshotSequence,
   isSnapshotForZone,
 } from "../net/snapshotOrdering.ts";
+import { toasts } from "../ui/ToastStack.ts";
+import { QuestLogPanel } from "../ui/QuestLogPanel.ts";
+import itemsJson from "../data/items.json" with { type: "json" };
+
+const ITEM_NAMES = new Map(itemsJson.items.map((item) => [item.id, item.name]));
+
+/** "Boar Hide ×2, Boar Tusk" from a loot_received payload, using items.json display names. */
+export function lootToastText(items: { itemKey: string; quantity: number }[]): string {
+  const names = items.map((item) => `${ITEM_NAMES.get(item.itemKey) ?? item.itemKey}${item.quantity > 1 ? ` ×${item.quantity}` : ""}`);
+  return names.length === 0 ? "" : `Received ${names.join(", ")}`;
+}
 
 /** Read the persistent server-issued JWT (lifetime per server config; legacy tab-session fallback). */
 function readToken(): string | null {
@@ -444,6 +455,10 @@ export class NetworkSystem {
     this.statusCard = null;
     this.levelUpBanner?.destroy();
     this.levelUpBanner = null;
+    QuestLogPanel.instance?.setQuests([]);
+    QuestLogPanel.instance?.setInventory([]);
+    QuestLogPanel.instance?.close();
+    toasts.clear();
   }
 
   /**
@@ -520,27 +535,43 @@ export class NetworkSystem {
     socket.callbacks.onMonsterSnapshot = (monsters) =>
       this.handleMonsterSnapshot(monsters);
     socket.callbacks.onChatMessage = (message) => this.onChatMessage?.(message);
-    socket.callbacks.onNpcInteraction = (npcId, quests) => this.onNpcInteraction?.(npcId, quests);
-    socket.callbacks.onQuestState = (quests) => this.onQuestState?.(quests);
+    socket.callbacks.onNpcInteraction = (npcId, quests) => {
+      QuestLogPanel.instance?.setQuests(quests);
+      this.onNpcInteraction?.(npcId, quests);
+    };
+    socket.callbacks.onQuestState = (quests) => {
+      QuestLogPanel.instance?.setQuests(quests);
+      this.onQuestState?.(quests);
+    };
     socket.callbacks.onQuestUpdated = (payload) => {
       // Quest rewards carry the post-grant Stamps + level (XP may level up).
       this.statusCard?.setStatus({ stamps: payload.stamps });
       this.statusCard?.flashStamps();
+      if (payload.action === "accepted") toasts.show(`Quest accepted: ${payload.quest.title}`);
+      if (payload.action === "delivery") toasts.show(`Quest complete: ${payload.quest.title}`, "success");
       this.celebrateProgression(payload.progression);
       this.onQuestUpdated?.(payload);
     };
     socket.callbacks.onQuestNotice = (message) => this.onQuestNotice?.(message);
+    socket.callbacks.onXpGained = (xp, progression) => {
+      toasts.show(`+${xp} XP`, "success");
+      this.celebrateProgression(progression);
+    };
     socket.callbacks.onInventoryUpdated = (items, stamps, state) => {
       // Speed gear changes the server's accepted move cadence — keep the
       // client's intent throttle in sync so the bonus isn't dead weight.
       this.applyInventorySpeed(state);
       // The HUD status card always mirrors the authoritative economy state.
       this.statusCard?.setStatus({ stamps });
+      QuestLogPanel.instance?.setInventory(items);
       this.onInventoryUpdated?.(items, stamps, state);
     };
     socket.callbacks.onCombatEvent = (event) => this.handleCombatEvent(event);
     socket.callbacks.onRespawn = (info) => this.handleRespawn(info);
-    socket.callbacks.onLoot = (sourceId, items) => this.onLoot?.(sourceId, items);
+    socket.callbacks.onLoot = (sourceId, items) => {
+      toasts.show(lootToastText(items), "success");
+      this.onLoot?.(sourceId, items);
+    };
     socket.callbacks.onError = (code, message, requestType) => {
       if (
         requestType === "join_zone" &&
@@ -564,6 +595,7 @@ export class NetworkSystem {
         // Gameplay rejection (quest/inventory/chat/zone) — surface a friendly
         // notice instead of the scary connection panel (main.ts reserves that
         // for requestType-less failures).
+        toasts.show(message, "warning");
         this.onGameplayNotice?.(message);
         return;
       }
@@ -841,6 +873,7 @@ export class NetworkSystem {
     this.statusCard?.flashProgression({ level: moment.level, rank: moment.rankPromotion });
     sfx.playProgression(moment.tone);
     this.levelUpBanner?.show(moment);
+    toasts.show(`${moment.title} ${moment.headline}`, "success");
   }
 
   private ensureStatusCard(): void {

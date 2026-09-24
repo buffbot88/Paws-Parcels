@@ -12,6 +12,7 @@ import { initErrorLogging } from "./game/ErrorLog.ts";
 import {
   LoginOverlay,
   clearAuthStorage,
+  hasAdminDevAccess,
   readAuthToken,
   type AuthFinishDetail,
   type CharacterListItem,
@@ -19,6 +20,9 @@ import {
 import { CharacterDesk } from "./ui/CharacterDesk.ts";
 import { CharacterProfilePanel } from "./ui/CharacterProfilePanel.ts";
 import { TopBar } from "./ui/TopBar.ts";
+import { QuestLogPanel } from "./ui/QuestLogPanel.ts";
+import { SettingsPanel } from "./ui/SettingsPanel.ts";
+import { KeybindHelp } from "./ui/KeybindHelp.ts";
 import { deskStepFor } from "./ui/characterFlow.ts";
 import {
   pickCharacter,
@@ -49,6 +53,9 @@ const win = window as GameWindow;
 /** One desk + one HUD menu, reused across boot and in-game switch flows. */
 const desk = new CharacterDesk();
 const profilePanel = new CharacterProfilePanel();
+const questLog = new QuestLogPanel();
+const settingsPanel = new SettingsPanel();
+const keybindHelp = new KeybindHelp(hasAdminDevAccess);
 // The top bar is the single account surface: one dropdown holding the courier
 // roster and every account action. See src/ui/TopBar.ts.
 const topBar = new TopBar({
@@ -57,6 +64,9 @@ const topBar = new TopBar({
     clearAuthStorage();
     window.location.reload();
   },
+  onOpenQuestLog: () => questLog.open(),
+  onOpenSettings: () => settingsPanel.open(),
+  onOpenHelp: () => keybindHelp.open(),
 });
 // Register the panel singleton before the game boots: the in-world `I`
 // shortcut and the HUD InventoryButton open it through

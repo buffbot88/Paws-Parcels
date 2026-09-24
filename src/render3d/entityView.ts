@@ -40,7 +40,11 @@ type Placed = Phaser.GameObjects.Sprite | Phaser.GameObjects.Container;
 interface TagCarrier {
   readonly nameTag?: Phaser.GameObjects.Text;
   readonly hpBar?: Phaser.GameObjects.Rectangle;
+  readonly questMarker?: Phaser.GameObjects.Text;
 }
+
+/** Gap between a name tag's top edge and a quest marker, matching NPC.ts. */
+const MARKER_GAP_PX = 2;
 
 /** Clearance a name tag keeps above the figure's head, as the entities author it. */
 const NAME_TAG_MARGIN_PX = 6;
@@ -108,7 +112,11 @@ function viewOf(object: Phaser.GameObjects.GameObject): View | null {
 
 /** An entity's name tag as the 3D layer needs it (null when it has none). */
 function tagOf(object: Phaser.GameObjects.GameObject): EntityTag | null {
-  const tag = (object as unknown as TagCarrier).nameTag;
+  return textTag((object as unknown as TagCarrier).nameTag);
+}
+
+/** A text object's canvas as an uploadable tag. */
+function textTag(tag: Phaser.GameObjects.Text | undefined): EntityTag | null {
   if (tag === undefined || tag.canvas === undefined) return null;
   const style = tag.style;
   return {
@@ -121,6 +129,20 @@ function tagOf(object: Phaser.GameObjects.GameObject): EntityTag | null {
     heightPx: tag.height,
     alpha: tag.alpha,
   };
+}
+
+/** An NPC's visible quest marker and its height above the feet, stacked on the name tag. */
+function markerOf(
+  object: Phaser.GameObjects.GameObject,
+  tag: EntityTag | null,
+  tagAboveFeetTiles: number,
+  tilePx: number,
+): { marker: EntityTag | null; markerAboveFeetTiles: number } {
+  const text = (object as unknown as TagCarrier).questMarker;
+  const marker = text?.visible === true ? textTag(text) : null;
+  if (marker === null || !(object instanceof NPC)) return { marker: null, markerAboveFeetTiles: tagAboveFeetTiles };
+  const abovePx = ((tag?.heightPx ?? 0) + marker.heightPx) / 2 + MARKER_GAP_PX + object.markerBobY;
+  return { marker, markerAboveFeetTiles: tagAboveFeetTiles + abovePx / tilePx };
 }
 
 /**
@@ -157,6 +179,8 @@ export function entityBillboards(
     // art in 2D, so they have to reach the billboard too.
     const containerScale = object === art ? { x: 1, y: 1 } : { x: object.scaleX, y: object.scaleY };
     const alpha = object === art ? art.alpha : object.alpha * art.alpha;
+    const tag = tagOf(object);
+    const tagAboveFeetTiles = sizing.tiles + NAME_TAG_MARGIN_PX / tilePx;
     billboards.push({
       id: object,
       x: object.x / tilePx,
@@ -180,12 +204,13 @@ export function entityBillboards(
       alpha,
       liftTiles: view.bobPx / tilePx,
       visible,
-      tag: tagOf(object),
+      tag,
       // Measured from the shared sizing rule, so a tag rides the figure's own
       // height instead of a number guessed here — and, because it is the
       // *intended* height rather than the current animation frame, it does not
       // bob up and down as the courier walks.
-      tagAboveFeetTiles: sizing.tiles + NAME_TAG_MARGIN_PX / tilePx,
+      tagAboveFeetTiles,
+      ...markerOf(object, tag, tagAboveFeetTiles, tilePx),
       hpRatio: hp === null ? null : hp.ratio,
       hpColour: hp === null ? 0x66bb66 : hp.colour,
     });

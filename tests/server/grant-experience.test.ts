@@ -38,15 +38,19 @@ describe("grantExperience", () => {
   it("adds XP without leveling below the first threshold", async () => {
     const id = await makeCharacter();
     const granted = await grantExperience(id, 40);
-    expect(granted).toBe(40);
+    expect(granted).toMatchObject({ experience: 40, level: 1, previousLevel: 1, levelsGained: 0, rankPromotion: null });
     expect(row(id)).toEqual({ experience: 40, level: 1, skill_points: 1 });
   });
 
   it("levels up at the threshold and grants a skill point", async () => {
     const id = await makeCharacter();
-    await grantExperience(id, 100);
+    const granted = await grantExperience(id, 100);
     // Characters are created at level 1 with one starting skill point.
     expect(row(id)).toEqual({ experience: 100, level: 2, skill_points: 2 });
+    expect(granted).toEqual({
+      level: 2, previousLevel: 1, levelsGained: 1, experience: 100,
+      skillPoints: 2, courierRank: expect.any(String), rankPromotion: null,
+    });
   });
 
   it("handles multi-level jumps and ignores negative amounts", async () => {

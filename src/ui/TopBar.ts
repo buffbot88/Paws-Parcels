@@ -13,6 +13,13 @@ export interface CourierMenuOptions {
   onOpenProfile: () => void;
 }
 
+/** HUD dialogs the account menu can open. */
+export interface TopBarPanels {
+  onOpenQuestLog: () => void;
+  onOpenSettings: () => void;
+  onOpenHelp: () => void;
+}
+
 /**
  * HUD navigation strip.
  *
@@ -32,6 +39,7 @@ export class TopBar {
   private couriers: CourierMenuOptions | null = null;
   private accountMenuOpen = false;
   private readonly onSignOut: () => void;
+  private readonly panels: TopBarPanels;
   /** Unsubscribe handles for the sound toggle's mute subscription. */
   private readonly soundListeners: (() => void)[] = [];
   private readonly onAccountClick = (): void => this.toggleAccountMenu();
@@ -44,8 +52,9 @@ export class TopBar {
     if (event.key === "Escape") this.closeMenu();
   };
 
-  constructor(options: { onSignOut: () => void }) {
+  constructor(options: { onSignOut: () => void } & TopBarPanels) {
     this.onSignOut = options.onSignOut;
+    this.panels = options;
     const existing = document.getElementById("top-navbar");
     if (existing !== null) existing.remove();
 
@@ -253,7 +262,11 @@ export class TopBar {
           this.couriers?.onCreate();
         }),
       );
+      this.accountMenu.appendChild(this.divider());
+      this.accountMenu.appendChild(this.panelAction("☰ Quest log (J)", this.panels.onOpenQuestLog));
     }
+    this.accountMenu.appendChild(this.panelAction("⚙ Settings", this.panels.onOpenSettings));
+    this.accountMenu.appendChild(this.panelAction("⌨ Keyboard help (?)", this.panels.onOpenHelp));
 
     const reportBug = document.createElement("a");
     reportBug.className = "navbar-account-menu__action navbar-account-menu__action--link";
@@ -321,6 +334,15 @@ export class TopBar {
     button.textContent = label;
     button.addEventListener("click", onClick);
     return button;
+  }
+
+  /** A menu row that opens a HUD dialog; focus parks on the account button so the dialog returns it there. */
+  private panelAction(label: string, open: () => void): HTMLButtonElement {
+    return this.menuAction(label, () => {
+      this.closeMenu();
+      this.accountButton.focus();
+      open();
+    });
   }
 
   private divider(): HTMLDivElement {

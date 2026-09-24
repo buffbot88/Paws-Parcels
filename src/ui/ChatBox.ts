@@ -1,6 +1,8 @@
 import { createIcon } from "./hud/icons.ts";
 import { createIconButton, createPanel } from "./hud/primitives.ts";
 import { hudColumn } from "./hud/layer.ts";
+import { getSettings, updateSettings } from "./settings.ts";
+import { BLOCKING_SURFACES, matchesKey } from "../systems/keybindings.ts";
 
 export interface ChatMessage {
   sender: string;
@@ -32,9 +34,11 @@ export class ChatBox {
   private readonly input: HTMLInputElement;
   private readonly sendButton: HTMLButtonElement;
   private readonly toggle: HTMLButtonElement;
+  private readonly unreadBadge: HTMLElement;
   private readonly onSend: (text: string) => void;
   private messages: ChatMessage[] = [];
   private collapsed = false;
+  private unread = 0;
 
   constructor(onSend: (text: string) => void) {
     this.onSend = onSend;
@@ -59,8 +63,14 @@ export class ChatBox {
     });
     this.toggle.classList.add("chat-box__toggle");
     this.toggle.setAttribute("aria-controls", "chat-box-body");
-    this.toggle.addEventListener("click", () => this.setCollapsed(!this.collapsed));
-    header.append(titleGroup, hint, this.toggle);
+    this.toggle.addEventListener("click", () => {
+      this.setCollapsed(!this.collapsed);
+      updateSettings({ chatCollapsed: this.collapsed });
+    });
+    this.unreadBadge = document.createElement("span");
+    this.unreadBadge.className = "chat-box__unread";
+    this.unreadBadge.hidden = true;
+    header.append(titleGroup, hint, this.unreadBadge, this.toggle);
 
     this.log = document.createElement("div");
     this.log.className = "chat-box__log";
@@ -88,7 +98,10 @@ export class ChatBox {
     input.placeholder = "Send a message…";
     input.setAttribute("aria-label", "Chat message");
     // keyup still propagates so Phaser sees a movement key released mid-chat.
-    input.addEventListener("keydown", (event) => event.stopPropagation());
+    input.addEventListener("keydown", (event) => {
+      event.stopPropagation();
+      if (matchesKey(event, "close")) this.returnToGame();
+    });
     inputWrap.append(inputIcon, input);
     const send = document.createElement("button");
     send.className = "chat-box__send";
@@ -116,12 +129,14 @@ export class ChatBox {
     hudColumn("bottom-left")?.appendChild(this.root);
     this.input = input;
     this.sendButton = send;
-    this.setCollapsed(false);
+    this.setCollapsed(getSettings().chatCollapsed);
+    document.addEventListener("keydown", this.handleDocumentKeyDown);
   }
 
   addMessage(message: ChatMessage): void {
     this.messages.push({ ...message, text: message.text.slice(0, 240) });
     if (this.messages.length > MAX_MESSAGES) this.messages.shift();
+    if (this.collapsed && message.self !== true) this.setUnread(this.unread + 1);
     this.render();
   }
 
@@ -134,6 +149,7 @@ export class ChatBox {
   setCollapsed(collapsed: boolean): void {
     this.collapsed = collapsed;
     if (collapsed) this.input.blur();
+    else this.setUnread(0);
     this.root.classList.toggle("chat-box--collapsed", collapsed);
     this.body.hidden = collapsed;
     this.toggle.setAttribute("aria-expanded", String(!collapsed));
@@ -146,7 +162,35 @@ export class ChatBox {
   }
 
   destroy(): void {
+    document.removeEventListener("keydown", this.handleDocumentKeyDown);
     this.root.remove();
+  }
+
+  /** Enter jumps into chat when nothing else has the keyboard (no field, button or modal). */
+  private readonly handleDocumentKeyDown = (event: KeyboardEvent): void => {
+    if (!matchesKey(event, "chat") || event.repeat || this.input.disabled) return;
+    const active = document.activeElement;
+    if (active !== null && active !== document.body && !(active instanceof HTMLCanvasElement)) return;
+    if (document.querySelector(BLOCKING_SURFACES) !== null) return;
+    event.preventDefault();
+    if (this.collapsed) {
+      this.setCollapsed(false);
+      updateSettings({ chatCollapsed: false });
+    }
+    this.input.focus();
+  };
+
+  /** Leave the chat field and hand the keyboard back to the world. */
+  private returnToGame(): void {
+    this.input.blur();
+    document.querySelector<HTMLElement>("#game-container > canvas")?.focus();
+  }
+
+  private setUnread(count: number): void {
+    this.unread = count;
+    this.unreadBadge.hidden = count === 0;
+    this.unreadBadge.textContent = count > 9 ? "9+" : String(count);
+    this.unreadBadge.setAttribute("aria-label", `${count} unread message${count === 1 ? "" : "s"}`);
   }
 
   private render(): void {

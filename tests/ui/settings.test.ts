@@ -39,7 +39,14 @@ describe("settings store", () => {
 
   it("defaults to high quality, damage numbers on, and the OS motion preference", async () => {
     const { getSettings } = await load();
-    expect(getSettings()).toEqual({ graphicsQuality: "high", damageNumbers: true, reducedMotion: false });
+    expect(getSettings()).toEqual({
+      graphicsQuality: "high",
+      damageNumbers: true,
+      reducedMotion: false,
+      sfxVolume: 1,
+      chatCollapsed: false,
+      minimapCollapsed: false,
+    });
 
     globals.matchMedia = (query: string) => ({ matches: query.includes("reduce") });
     const reloaded = await load();
@@ -72,7 +79,25 @@ describe("settings store", () => {
     expect((await load()).getSettings().graphicsQuality).toBe("high");
 
     storage.setItem("paws.settings", JSON.stringify({ graphicsQuality: "ultra", damageNumbers: "no", reducedMotion: true }));
-    expect((await load()).getSettings()).toEqual({ graphicsQuality: "high", damageNumbers: true, reducedMotion: true });
+    expect((await load()).getSettings()).toMatchObject({ graphicsQuality: "high", damageNumbers: true, reducedMotion: true });
+  });
+
+  it("clamps sfxVolume to 0..1 and rejects non-numeric volume or collapse values", async () => {
+    storage.setItem("paws.settings", JSON.stringify({ sfxVolume: "loud", chatCollapsed: 1, minimapCollapsed: "yes" }));
+    expect((await load()).getSettings()).toMatchObject({ sfxVolume: 1, chatCollapsed: false, minimapCollapsed: false });
+
+    const { updateSettings, getSettings } = await load();
+    expect(updateSettings({ sfxVolume: 2.5 }).sfxVolume).toBe(1);
+    expect(updateSettings({ sfxVolume: -1 }).sfxVolume).toBe(0);
+    expect(updateSettings({ sfxVolume: Number.NaN }).sfxVolume).toBe(0);
+    expect(updateSettings({ sfxVolume: 0.35 }).sfxVolume).toBe(0.35);
+    expect(getSettings().sfxVolume).toBe(0.35);
+  });
+
+  it("persists chat and minimap collapse across reloads", async () => {
+    const { updateSettings } = await load();
+    updateSettings({ chatCollapsed: true, minimapCollapsed: true });
+    expect((await load()).getSettings()).toMatchObject({ chatCollapsed: true, minimapCollapsed: true });
   });
 
   it("works when storage throws or is missing", async () => {
