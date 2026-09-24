@@ -14,6 +14,8 @@ import type { EquipmentMutationResult, InventoryState } from "../models/Equipmen
 import { logger } from "../middleware/logger.ts";
 import { server as serverConfig } from "../config/index.ts";
 import { getGameplayRates } from "../models/GameplayRates.ts";
+import { normalizeAppearance, type Appearance } from "../../../src/game/appearance.ts";
+import { toClassKey } from "../../../src/game/classStats.ts";
 
 /** Cap WS frames — game intents are small JSON; the ws default is 100MiB. */
 const WS_MAX_PAYLOAD = 64 * 1024;
@@ -38,6 +40,8 @@ const DEFEAT_INVULN_MS = 3000;
 const TRANSITION_REACH_TILES = 3;
 /** Safe zone players are sent to on defeat (design/combat.md §3). */
 const DEFAULT_SAFE_ZONE = "zone-clover-village";
+/** Min ms between accepted set_appearance intents per character. */
+const APPEARANCE_MIN_INTERVAL_MS = 1000;
 
 /** A character as loaded for a WS session (name/class/position + Phase 3 stats). */
 export interface CharacterSession {
@@ -54,6 +58,8 @@ export interface CharacterSession {
   speed: number;
   critChance: number;
   critMultiplier: number;
+  /** Saved look as stored; normalized against the class when the courier joins a zone. */
+  appearance?: unknown;
 }
 
 /** Minimal socket abstraction so the server is testable without `ws`. */
@@ -73,6 +79,8 @@ export interface GameServerDeps {
   ) => Promise<void>;
   /** Best-effort HP persistence (DB); defaults to no-op. */
   persistHp?: (characterId: number, hp: number, maxHp: number) => Promise<void>;
+  /** Appearance persistence (DB); defaults to no-op. */
+  persistAppearance?: (characterId: number, appearance: Appearance) => Promise<void>;
   /** Best-effort XP grant on monster kill (DB); resolves the post-grant progression. */
   grantXp?: (characterId: number, amount: number) => Promise<QuestProgression | null>;
   /** Best-effort inventory grant on monster loot (DB); defaults to no-op. */
@@ -463,6 +471,9 @@ export class GameServer {
       case "zone_chat":
         this.handleZoneChat(session, msg);
         return;
+      case "set_appearance":
+        await this.handleSetAppearance(session, msg);
+        return;
       case "leave_zone":
         this.handleLeaveZone(session);
         return;
@@ -626,6 +637,9 @@ export class GameServer {
         accountId: session.accountId as number,
         name: character.name,
         classKey: character.classKey,
+        // A zone switch carries the live look over, like HP below.
+        appearance: tracked?.player.appearance
+          ?? normalizeAppearance(character.appearance, toClassKey(character.classKey)),
         pos,
         connected: true,
         lastMoveAt: 0,
@@ -648,6 +662,7 @@ export class GameServer {
         characterId: player.characterId,
         name: player.name,
         classKey: player.classKey,
+        appearance: player.appearance,
         pos: { ...player.pos },
       }, characterId);
     }
@@ -946,6 +961,31 @@ export class GameServer {
       characterId: player.characterId,
       name: player.name,
       text,
+    });
+  }
+
+  private async handleSetAppearance(session: Session, msg: Record<string, unknown>): Promise<void> {
+    if (!this.requireAuth(session)) return;
+    const zoneId = session.zoneId;
+    const player = zoneId === null ? null : this.zones.get(zoneId, session.characterId as number);
+    if (zoneId === null || player === null || !player.connected) {
+      this.sendError(session, "NOT_IN_ZONE", "join_zone before set_appearance", "set_appearance");
+      return;
+    }
+    const now = Date.now();
+    if (now - (player.lastAppearanceAt ?? 0) < APPEARANCE_MIN_INTERVAL_MS) {
+      this.sendError(session, "RATE_LIMITED", "Please wait before changing your look again", "set_appearance");
+      return;
+    }
+    player.lastAppearanceAt = now;
+    const appearance = normalizeAppearance(msg.appearance, toClassKey(player.classKey));
+    await this.deps.persistAppearance?.(player.characterId, appearance);
+    player.appearance = appearance;
+    // The sender is included: its copy is the ack. The zone may have changed during the write.
+    this.broadcast(session.zoneId ?? zoneId, {
+      type: "player_appearance",
+      characterId: player.characterId,
+      appearance,
     });
   }
 

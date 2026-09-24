@@ -21,6 +21,12 @@ import { NPC } from "../entities/NPC.ts";
 import { RemotePlayer } from "../entities/RemotePlayer.ts";
 import { Monster } from "../entities/Monster.ts";
 import { AmbientMotes2D } from "./ambient2d.ts";
+import { showLoadProgress } from "./loadProgress.ts";
+import { queueCloverVillageAssets } from "../game/cloverVillageAssets.ts";
+import { queueHappyValleyAssets } from "../game/happyValleyAssets.ts";
+import { ViewCuller, type Cullable } from "./viewCulling.ts";
+import { propBlockedTiles } from "../game/propCollision.ts";
+import { openSalon } from "../ui/SalonPanel.ts";
 import { InteractionSystem, type InteractionTarget } from "../systems/InteractionSystem.ts";
 import { sanitizeSpawn } from "../systems/MapValidator.ts";
 import { selectDialogueSet } from "../systems/DialogueService.ts";
@@ -68,7 +74,6 @@ import {
   entityShadow,
   villagerSizing,
 } from "../game/entitySizing.ts";
-import { npcArtForDefinition } from "../game/cloverVillageNpcAssets.ts";
 import {
   CLOVER_VILLAGE_PROP_SIZING,
   HAPPY_VALLEY_PROP_SIZING,
@@ -211,6 +216,10 @@ export class OverworldScene extends Phaser.Scene {
   private lastTileY = -1;
   /** The 3D world renderer, when this session runs one. */
   private world3d: WorldRenderer3D | null = null;
+  /** The courier's saved look (species + colours); the Salon edits it. */
+  private appearance: unknown = {};
+  /** Skips drawing static map pieces outside the camera view. */
+  private culler: ViewCuller | null = null;
   /** Fireflies / pollen over the 2D world (the 3D renderer draws its own). */
   private ambient2d: AmbientMotes2D | null = null;
   /** Bumped on teardown so a 3D build still loading never attaches to a later zone. */
@@ -238,6 +247,18 @@ export class OverworldScene extends Phaser.Scene {
 
   constructor() {
     super(SceneKeys.Overworld);
+  }
+
+  /**
+   * Download this zone's own art before building it. Already-loaded textures
+   * are skipped, so only the first visit to a zone waits on the network.
+   */
+  preload(data?: OverworldSceneData): void {
+    const zoneId =
+      data?.zoneId ?? this.network.getAuthoritativeZone() ?? resolveBootTarget(readBootCharacters()).zoneId;
+    if (zoneId === ZoneKeys.HappyValley) queueHappyValleyAssets(this);
+    else queueCloverVillageAssets(this);
+    if (this.load.list.size > 0) showLoadProgress(this, "Travelling\u2026");
   }
 
   create(data?: OverworldSceneData): void {
@@ -335,11 +356,13 @@ export class OverworldScene extends Phaser.Scene {
       resolved,
       data?.spawn ?? (data ? resolved.spawn : boot.pos),
     );
+    this.appearance = character?.appearance ?? {};
     this.player = new Player(
       this,
       spawn.x * TILE_SIZE + TILE_SIZE / 2,
       spawn.y * TILE_SIZE + TILE_SIZE / 2,
       character?.class_id ?? 1,
+      this.appearance,
     );
     // The courier's shadow comes from the same recipe as every prop's (Pass 6),
     // sized from its own ground contact, and sits at the figure's feet as the
@@ -408,6 +431,16 @@ export class OverworldScene extends Phaser.Scene {
     // Opt-in `?renderer=3d`: Phaser keeps owning input, entities, collision and
     // the HUD, while the frame comes from a WebGL canvas under the HUD layers.
     void this.buildWorld3D(resolved, terrain);
+    // Everything static is built by now: ground, fringes, props and their shadows.
+    // Moving pieces (couriers, monsters, names, the courier's shadow) are not culled.
+    this.culler = new ViewCuller(
+      this.children.list.filter(
+        (object): object is Cullable =>
+          (object instanceof Phaser.GameObjects.Image || object instanceof Phaser.GameObjects.Ellipse) &&
+          object !== this.shadow &&
+          object.visible,
+      ),
+    );
     if (this.renderMode === "2d") this.ambient2d = new AmbientMotes2D(this, resolved.id);
 
     // Phase 4 — world minimap: pre-renders this zone's terrain once and
@@ -435,6 +468,11 @@ export class OverworldScene extends Phaser.Scene {
       CharacterProfilePanel.instance?.refresh();
     };
     this.network.onQuestNotice = (message) => this.questTracker.showMessage(message);
+    this.network.onMyAppearance = (appearance) => {
+      this.appearance = appearance;
+      this.player.setAppearance(appearance);
+      toasts.show("Fern: \u201cLooking wonderful, darling!\u201d New look saved.", "success");
+    };
     // Gameplay rejections (quest/inventory/chat/zone) are toasted by NetworkSystem;
     // the open ledger also replaces its pending status with the reason.
     this.network.onGameplayNotice = (message) => {
@@ -549,6 +587,7 @@ export class OverworldScene extends Phaser.Scene {
       this.world3dBuild++;
       this.ambient2d?.destroy();
       this.ambient2d = null;
+      this.culler = null;
       this.world3d?.destroy();
       this.world3d = null;
       for (const object of this.visualGround) object.destroy();
@@ -679,6 +718,7 @@ export class OverworldScene extends Phaser.Scene {
     this.checkTransition();
     this.updateNameTags();
     this.ambient2d?.update(this.time.now / 1000, { x: this.player.x / TILE_SIZE, y: this.player.y / TILE_SIZE });
+    this.culler?.update(this.cameras.main.worldView);
     this.updateWorld3D(vector);
   }
 
@@ -944,6 +984,11 @@ export class OverworldScene extends Phaser.Scene {
       const suppressed = covered.has(code);
       tile.visible = !suppressed || !this.terrainPlan?.coveredBlockingTiles.has(`${tile.x},${tile.y}`);
     });
+    // Solid props block the tiles under their base; the prop art is what shows there.
+    for (const key of propBlockedTiles(map.id)) {
+      const [x, y] = key.split(",").map(Number);
+      layer.getTileAt(x ?? -1, y ?? -1)?.setCollision(true, true, true, true);
+    }
     // Above the terrain surface (see TERRAIN_DEPTH) but below every entity, so
     // a surviving obstacle square never draws over the courier.
     layer.setDepth(-10);
@@ -1095,9 +1140,9 @@ export class OverworldScene extends Phaser.Scene {
       npcId: n.id,
       // Beside the villager at chest height: above the head is the name tag
       // and quest marker, and over the figure it would hide the face.
-      promptOffsetPx: entityHeadOffsetPx(villagerSizing(npcArtForDefinition(n))) / 2,
+      promptOffsetPx: entityHeadOffsetPx(villagerSizing(n.look?.body ?? null)) / 2,
       promptOffsetXPx:
-        entityRenderedWidthPx(villagerSizing(npcArtForDefinition(n))) / 2 +
+        entityRenderedWidthPx(villagerSizing(n.look?.body ?? null)) / 2 +
         PROMPT_BADGE_GAP_PX +
         PROMPT_BADGE_HALF_WIDTH_PX,
     }));
@@ -1226,6 +1271,17 @@ export class OverworldScene extends Phaser.Scene {
     { id: "exit", label: "Exit" },
   ];
 
+  /** Fern runs the Salon: her menu restyles the courier instead of offering errands. */
+  private static readonly SALON_NPC_ID = "npc-fern";
+  private static readonly SALON_MENU: { id: string; label: string }[] = [
+    { id: "salon", label: "Restyle" },
+    { id: "exit", label: "Exit" },
+  ];
+
+  private npcMenu(npcId: string): { id: string; label: string }[] {
+    return npcId === OverworldScene.SALON_NPC_ID ? OverworldScene.SALON_MENU : OverworldScene.NPC_MENU;
+  }
+
   private startInteraction(target: InteractionTarget): void {
     if (target.kind === "npc") {
       const npcId = target.npcId ?? "";
@@ -1235,7 +1291,7 @@ export class OverworldScene extends Phaser.Scene {
         {
           speaker: target.label,
           lines: introLines,
-          menu: OverworldScene.NPC_MENU,
+          menu: this.npcMenu(npcId),
           onSelect: (id) => this.handleNpcMenuChoice(npcId, id),
         },
         () => undefined,
@@ -1255,6 +1311,15 @@ export class OverworldScene extends Phaser.Scene {
   /** The villager menu's three choices. Quest reuses the accept flow; the
    * rest stay conversational — the panel stays open so the menu survives. */
   private handleNpcMenuChoice(npcId: string, id: string): void {
+    if (id === "salon") {
+      dialoguePanel.close();
+      openSalon({
+        classKey: this.player.classKey,
+        appearance: this.appearance,
+        onSave: (appearance) => this.network.setAppearance(appearance),
+      });
+      return;
+    }
     if (id === "quest") {
       // The panel stays open: the offer is presented in the conversation, and
       // the tracker's Accept button (revealed by setOffer) completes it.

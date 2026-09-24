@@ -15,6 +15,8 @@ import {
   toPublicClass,
 } from "../models/CharacterClass.ts";
 import { logger } from "../middleware/logger.ts";
+import { normalizeAppearance } from "../../../src/game/appearance.ts";
+import { toClassKey } from "../../../src/game/classStats.ts";
 
 /** Name rules for new characters (cozy, kebab-safe, ≤ 50 chars like the DB). */
 const NAME_RE = /^[a-zA-Z0-9 _'.-]+$/;
@@ -149,7 +151,7 @@ export async function createCharacterHandler(
     return;
   }
 
-  const appearance = normalizeAppearance(appearanceRaw);
+  const appearance = normalizeAppearance(appearanceRaw, toClassKey(cls.key));
   const result = await createCharacter({
     accountId: account.id,
     name,
@@ -175,16 +177,4 @@ export async function createCharacterHandler(
     classId,
   });
   jsonResponse(res, 201, { character: toPublicCharacter(result.character) });
-}
-
-/**
- * The appearance JSON is client-supplied flavor only (the server never
- * depends on it). Store whatever shape the client sent — normalized to an
- * object so the NOT NULL JSON column is always satisfied.
- */
-function normalizeAppearance(raw: unknown): Record<string, unknown> {
-  if (typeof raw === "object" && raw !== null && !Array.isArray(raw)) {
-    return raw as Record<string, unknown>;
-  }
-  return {};
 }

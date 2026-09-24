@@ -16,7 +16,6 @@ import {
   villagerSizing,
   type EntitySizing,
 } from "../game/entitySizing.ts";
-import { npcArtForDefinition } from "../game/cloverVillageNpcAssets.ts";
 import { Monster } from "../entities/Monster.ts";
 import { NPC } from "../entities/NPC.ts";
 import { Player } from "../entities/Player.ts";
@@ -78,7 +77,7 @@ function viewOf(object: Phaser.GameObjects.GameObject): View | null {
     return {
       object,
       art: object,
-      sizing: villagerSizing(npcArtForDefinition(object.definition)),
+      sizing: villagerSizing(object.definition.look?.body ?? null),
       tint: 0xffffff,
       bobPx: object.bobY,
     };
@@ -102,7 +101,7 @@ function viewOf(object: Phaser.GameObjects.GameObject): View | null {
       : {
           object,
           art,
-          sizing: courierSizing(object.classKey, art.texture.key !== TextureKeys.NpcBlob),
+          sizing: courierSizing(object.artClass, art.texture.key !== TextureKeys.NpcBlob),
           tint: 0xffffff,
           bobPx: object.bobY,
         };

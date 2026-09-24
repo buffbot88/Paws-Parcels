@@ -85,6 +85,7 @@ const CHARACTER = {
   pos_x: 15,
   pos_y: 13,
   level: 1,
+  appearance: {},
 };
 
 function makeReq(opts: { url?: string; authHeader?: string }): IncomingMessage {

@@ -86,14 +86,6 @@ function courierFrames(classDir: string): string[] {
   return [...rotations, ...animations];
 }
 
-/** The frames of one NPC pack's idle animation. */
-function npcIdleFrames(artDir: string): string[] {
-  return fs
-    .readdirSync(`${artDir}/PNG/Front/PNG Sequences/Idle`)
-    .filter((name) => /\.png$/i.test(name))
-    .map((name) => `${artDir}/PNG/Front/PNG Sequences/Idle/${name}`);
-}
-
 const CLASS_DIRS: Readonly<Record<string, string>> = {
   "bear-warrior": "reference/assets/Classes/Warrior/Idle",
   "cat-mage": "reference/assets/Classes/Mage/Idle",
@@ -102,12 +94,6 @@ const CLASS_DIRS: Readonly<Record<string, string>> = {
 
 /** Half a pixel of slack for the alpha threshold on an odd-sized canvas. */
 const FEET_SLACK_PX = 0.5;
-
-const NPC_DIRS: Readonly<Record<string, string>> = {
-  artist: "reference/assets/maps/CloverVillage/NPC/Artist",
-  astrologer: "reference/assets/maps/CloverVillage/NPC/Astrologer",
-  citizen: "reference/assets/maps/CloverVillage/NPC/Citizen",
-};
 
 describe("entity sizing — the cast obeys one convention", () => {
   it("audits clean", () => {
@@ -119,23 +105,23 @@ describe("entity sizing — the cast obeys one convention", () => {
     const bad: EntitySizeRow[] = [
       {
         id: "test:too-tall",
-        spec: { ...VILLAGER_SIZING.citizen, tiles: 4 },
+        spec: { ...VILLAGER_SIZING.cat, tiles: 4 },
       },
       {
         id: "test:clipped",
-        spec: { ...VILLAGER_SIZING.citizen, visible: 900 },
+        spec: { ...VILLAGER_SIZING.cat, visible: 900 },
       },
       {
         id: "test:feet-below-canvas",
-        spec: { ...VILLAGER_SIZING.citizen, feet: 400 },
+        spec: { ...VILLAGER_SIZING.cat, feet: 400 },
       },
       {
         id: "test:unrenderable",
-        spec: { ...VILLAGER_SIZING.citizen, visible: 0 },
+        spec: { ...VILLAGER_SIZING.cat, visible: 0 },
       },
       {
         id: "test:not-archived",
-        spec: { ...VILLAGER_SIZING.citizen, path: "somewhere/else" },
+        spec: { ...VILLAGER_SIZING.cat, path: "somewhere/else" },
       },
     ];
     const violations = auditEntitySizing(bad);
@@ -149,7 +135,7 @@ describe("entity sizing — the cast obeys one convention", () => {
 
   it("catches a cast that ranks wrongly", () => {
     const villageTooShort = allEntitySizes().map((row) =>
-      row.id === "villager:citizen" ? { ...row, spec: { ...row.spec, tiles: 0.7 } } : row,
+      row.id === "villager:cat" ? { ...row, spec: { ...row.spec, tiles: 0.7 } } : row,
     );
     expect(auditEntitySizing(villageTooShort).join("\n")).toContain(
       "villagers must out-top the courier",
@@ -209,11 +195,11 @@ describe("entity sizing — the cast obeys one convention", () => {
       2,
     );
     expect(VILLAGER_FALLBACK_SIZING.band).toBe("villager");
-    expect(VILLAGER_FALLBACK_SIZING.tiles).toBe(VILLAGER_SIZING.citizen.tiles);
+    expect(VILLAGER_FALLBACK_SIZING.tiles).toBe(VILLAGER_SIZING.cat.tiles);
     expect(courierSizing("fox-archer", true)).toBe(COURIER_SIZING["fox-archer"]);
     expect(courierSizing("fox-archer", false)).toBe(COURIER_FALLBACK_SIZING);
     expect(villagerSizing(null)).toBe(VILLAGER_FALLBACK_SIZING);
-    expect(villagerSizing("artist")).toBe(VILLAGER_SIZING.artist);
+    expect(villagerSizing("fox")).toBe(VILLAGER_SIZING.fox);
   });
 
   it("sizes every shadow from the entity's own contact, on one light direction", () => {
@@ -237,8 +223,8 @@ describe("entity sizing — the cast obeys one convention", () => {
     expect(entityShadow(COURIER_SIZING["fox-archer"]).widthPx).toBeGreaterThan(
       entityShadow(COURIER_SIZING["bear-warrior"]).widthPx,
     );
-    expect(entityShadow(VILLAGER_SIZING.artist).widthPx).toBeGreaterThan(
-      entityShadow(VILLAGER_SIZING.citizen).widthPx,
+    expect(entityShadow(VILLAGER_SIZING.fox).widthPx).toBeGreaterThan(
+      entityShadow(VILLAGER_SIZING.cat).widthPx,
     );
   });
 
@@ -288,20 +274,14 @@ describe("entity sizing — checked against the art on disk", { timeout: 60_000 
     }
   });
 
-  it("declares the figure box the NPC packs actually have", () => {
-    for (const [art, spec] of Object.entries(VILLAGER_SIZING)) {
-      const frames = npcIdleFrames(NPC_DIRS[art]!);
-      expect(frames.length, art).toBeGreaterThan(0);
-      const boxes = frames.map(figureBox);
-      expect(boxes[0]!.w, art).toBe(spec.canvas.w);
-      expect(boxes[0]!.h, art).toBe(spec.canvas.h);
-      expect(Math.max(...boxes.map((box) => box.vh)), art).toBe(spec.visible);
-      expect(Math.max(...boxes.map((box) => box.vw)), art).toBe(spec.visibleWidth);
-      expect(Math.max(...boxes.map((box) => box.feet)), art).toBe(spec.feet);
-      // The pack's canvas is mostly padding — the reason the rule had to be
-      // written in figure terms, not canvas terms.
-      expect(spec.visible / spec.canvas.h, art).toBeLessThan(0.95);
-      expect(spec.visible / spec.canvas.h, art).toBeGreaterThan(0.7);
+  it("draws villagers from the courier bodies' measured art, one head taller", () => {
+    for (const [body, classKey] of [["bear", "bear-warrior"], ["cat", "cat-mage"], ["fox", "fox-archer"]] as const) {
+      const villager = VILLAGER_SIZING[body];
+      const courier = COURIER_SIZING[classKey];
+      expect(villager.path, body).toBe(courier.path);
+      expect(villager.visible, body).toBe(courier.visible);
+      expect(villager.feet, body).toBe(courier.feet);
+      expect(villager.tiles, body).toBeGreaterThan(courier.tiles);
     }
   });
 

@@ -48,7 +48,7 @@
  * re-measures the art on disk and audits every row.
  */
 import type { ClassKey } from "./classStats.ts";
-import type { CloverNpcArt } from "./cloverVillageNpcAssets.ts";
+import type { AvatarBody } from "./appearance.ts";
 import type { FootprintBox } from "./propSizing.ts";
 import type { ShadowRecipe } from "./lighting.ts";
 import {
@@ -126,7 +126,6 @@ export interface EntitySizing {
 }
 
 const CLASS_ROOT = "reference/assets/Classes";
-const NPC_ROOT = "reference/assets/maps/CloverVillage/NPC";
 
 /**
  * The player couriers, per class.
@@ -208,48 +207,21 @@ export const COURIER_FALLBACK_SIZING: EntitySizing = {
 };
 
 /**
- * Villagers, per authored NPC pack.
+ * Villagers, per courier body.
  *
- * Measured on `NPC/<Art>/PNG/Front/PNG Sequences/Idle/*`: the tallest frame is
- * 575-627px inside a 700px canvas — 11-18% of that canvas is padding, which is
- * the whole reason a canvas-based rule could not compare an NPC with a courier.
- * All three packs put the feet on the same row (301px below centre), so the
- * pack is grounded consistently even though the figures differ in height.
+ * Villagers are animals drawn from the same pixel-art bodies as the couriers,
+ * each in its own colours (`look` in npcs.json), so the cast shares one style.
+ * The figure measurements are the body's own; villagers stand one head taller
+ * than a courier, so adults read as adults.
  */
-export const VILLAGER_SIZING: Readonly<Record<CloverNpcArt, EntitySizing>> = {
-  artist: {
-    source: "authored",
-    path: `${NPC_ROOT}/Artist/PNG/Front/PNG Sequences/Idle`,
-    texture: "clover-npc-artist-idle-front",
-    canvas: { w: 700, h: 700 },
-    visible: 596,
-    visibleWidth: 440,
-    feet: 301,
-    band: "villager",
-    tiles: 1.4,
-  },
-  astrologer: {
-    source: "authored",
-    path: `${NPC_ROOT}/Astrologer/PNG/Front/PNG Sequences/Idle`,
-    texture: "clover-npc-astrologer-idle-front",
-    canvas: { w: 700, h: 700 },
-    visible: 627,
-    visibleWidth: 434,
-    feet: 301,
-    band: "villager",
-    tiles: 1.4,
-  },
-  citizen: {
-    source: "authored",
-    path: `${NPC_ROOT}/Citizen/PNG/Front/PNG Sequences/Idle`,
-    texture: "clover-npc-citizen-idle-front",
-    canvas: { w: 700, h: 700 },
-    visible: 575,
-    visibleWidth: 394,
-    feet: 301,
-    band: "villager",
-    tiles: 1.4,
-  },
+function villagerRow(classKey: ClassKey): EntitySizing {
+  return { ...COURIER_SIZING[classKey], band: "villager", tiles: 1.4 };
+}
+
+export const VILLAGER_SIZING: Readonly<Record<AvatarBody, EntitySizing>> = {
+  bear: villagerRow("bear-warrior"),
+  cat: villagerRow("cat-mage"),
+  fox: villagerRow("fox-archer"),
 };
 
 /** Fallback villager art (`TextureKeys.NpcBlob`). */
@@ -348,8 +320,8 @@ export function courierSizing(classKey: ClassKey, authoredArtAvailable: boolean)
 }
 
 /** A villager's row, authored art or the placeholder. */
-export function villagerSizing(art: CloverNpcArt | null): EntitySizing {
-  return art === null ? VILLAGER_FALLBACK_SIZING : VILLAGER_SIZING[art];
+export function villagerSizing(body: AvatarBody | null): EntitySizing {
+  return body === null ? VILLAGER_FALLBACK_SIZING : VILLAGER_SIZING[body];
 }
 
 /** One named row of the cast, for the audit and its messages. */
@@ -435,14 +407,14 @@ export function auditEntitySizing(rows: readonly EntitySizeRow[] = allEntitySize
         violations.push(`${id}: renders at ${tiles.toFixed(2)} tiles, intent ${spec.tiles}`);
       }
     }
-    if (spec.source === "authored" && !spec.path.startsWith("reference/assets/")) {
+    if (spec.source === "authored" && !/^reference\/assets(-web)?\//.test(spec.path)) {
       violations.push(`${id}: authored row must point at the art archive, not "${spec.path}"`);
     }
   }
 
   const byId = new Map(rows.map((row) => [row.id, row.spec]));
   const courier = byId.get("courier:bear-warrior");
-  const villager = byId.get("villager:citizen");
+  const villager = byId.get("villager:cat");
   const creature = byId.get("creature:placeholder");
   if (courier !== undefined && villager !== undefined && villager.tiles <= courier.tiles) {
     violations.push(

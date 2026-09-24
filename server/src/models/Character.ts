@@ -5,6 +5,8 @@ import { logger } from "../middleware/logger.ts";
 import { auditInventoryEvent, getDerivedEquipmentStats, getEffectiveSlotCount, getInventoryState, type EquipmentStats } from "./Equipment.ts";
 import { applyExperience } from "./leveling.ts";
 import type { QuestProgression } from "./Quest.ts";
+import { normalizeAppearance, type Appearance } from "../../../src/game/appearance.ts";
+import { toClassKey } from "../../../src/game/classStats.ts";
 
 type SqlRow = Record<string, unknown>;
 
@@ -17,6 +19,7 @@ export interface CharacterRow {
   pos_x: number;
   pos_y: number;
   level: number;
+  appearance: Record<string, unknown>;
 }
 
 export interface CharacterSessionRow {
@@ -28,6 +31,7 @@ export interface CharacterSessionRow {
   pos_x: number;
   pos_y: number;
   level: number;
+  appearance: Appearance;
 }
 
 export interface CharacterCombatStats {
@@ -103,7 +107,7 @@ export async function createCharacter(params: {
   accountId: number;
   name: string;
   classId: number;
-  appearance: Record<string, unknown>;
+  appearance: Appearance | Record<string, unknown>;
   cls: CharacterClassRow;
 }): Promise<CreateCharacterResult> {
   const base = params.cls.base_stats;
@@ -115,13 +119,14 @@ export async function createCharacter(params: {
   const startX = startZoneRow?.default_spawn_x ?? 62;
   const startY = startZoneRow?.default_spawn_y ?? 65;
 
+  const appearanceJson = JSON.stringify(params.appearance);
   const db = getDb();
   try {
     db.exec("BEGIN");
     const info = db.prepare(`INSERT INTO characters
       (account_id, class_id, name, appearance, zone_id, pos_x, pos_y, level, experience, stamps, hp, max_hp, resource_current)
       VALUES (?, ?, ?, ?, ?, ?, ?, 1, 0, 0, ?, ?, ?)`).run(
-      params.accountId, params.classId, params.name, JSON.stringify(params.appearance),
+      params.accountId, params.classId, params.name, appearanceJson,
       startZone, startX, startY, maxHp, maxHp, resourceMax,
     );
     const characterId = Number(info.lastInsertRowid);
@@ -139,7 +144,7 @@ export async function createCharacter(params: {
     );
     db.prepare("INSERT INTO inventories (character_id, slot_count) VALUES (?, 12)").run(characterId);
     db.exec("COMMIT");
-    return { ok: true, character: { id: characterId, account_id: params.accountId, class_id: params.classId, name: params.name, zone_id: startZone, pos_x: startX, pos_y: startY, level: 1 } };
+    return { ok: true, character: { id: characterId, account_id: params.accountId, class_id: params.classId, name: params.name, zone_id: startZone, pos_x: startX, pos_y: startY, level: 1, appearance: parseJsonObject(appearanceJson) } };
   } catch (err) {
     try { db.exec("ROLLBACK"); } catch (rollbackErr) { logger.error("createCharacter: rollback failed", { error: String(rollbackErr) }); }
     if (isUniqueConstraintError(err)) return { ok: false, reason: "NAME_TAKEN" };
@@ -148,7 +153,7 @@ export async function createCharacter(params: {
 }
 
 export function toPublicCharacter(c: CharacterRow): Record<string, unknown> {
-  return { id: c.id, name: c.name, class_id: c.class_id, zone_id: c.zone_id, pos_x: c.pos_x, pos_y: c.pos_y, level: c.level };
+  return { id: c.id, name: c.name, class_id: c.class_id, zone_id: c.zone_id, pos_x: c.pos_x, pos_y: c.pos_y, level: c.level, appearance: c.appearance };
 }
 
 function isUniqueConstraintError(err: unknown): boolean {
@@ -156,18 +161,18 @@ function isUniqueConstraintError(err: unknown): boolean {
 }
 
 export async function getCharactersByAccountId(accountId: number): Promise<CharacterRow[]> {
-  const rows = getDb().prepare(`SELECT id, account_id, class_id, name, zone_id, pos_x, pos_y, level FROM characters WHERE account_id = ? ORDER BY id ASC`).all(accountId) as SqlRow[];
+  const rows = getDb().prepare(`SELECT id, account_id, class_id, name, zone_id, pos_x, pos_y, level, appearance FROM characters WHERE account_id = ? ORDER BY id ASC`).all(accountId) as SqlRow[];
   return rows.map(rowToCharacter);
 }
 
 export async function getCharacterById(characterId: number): Promise<CharacterRow | null> {
-  const row = getDb().prepare(`SELECT id, account_id, class_id, name, zone_id, pos_x, pos_y, level FROM characters WHERE id = ? LIMIT 1`).get(characterId) as SqlRow | undefined;
+  const row = getDb().prepare(`SELECT id, account_id, class_id, name, zone_id, pos_x, pos_y, level, appearance FROM characters WHERE id = ? LIMIT 1`).get(characterId) as SqlRow | undefined;
   return row === undefined ? null : rowToCharacter(row);
 }
 
 export async function getCharacterWithClass(characterId: number): Promise<CharacterSessionRow & CharacterCombatStats | null> {
   const row = getDb().prepare(`SELECT c.id, c.account_id, c.name, cc.\`key\` AS class_key,
-      c.zone_id, c.pos_x, c.pos_y, c.level, c.hp, c.max_hp, cs.attack, cs.defense, cs.speed,
+      c.zone_id, c.pos_x, c.pos_y, c.level, c.appearance, c.hp, c.max_hp, cs.attack, cs.defense, cs.speed,
       cs.crit_chance, cs.crit_multiplier FROM characters c JOIN character_classes cc ON cc.id = c.class_id
       LEFT JOIN character_stats cs ON cs.character_id = c.id WHERE c.id = ? LIMIT 1`).get(characterId) as SqlRow | undefined;
   if (row === undefined) return null;
@@ -178,8 +183,10 @@ export async function getCharacterWithClass(characterId: number): Promise<Charac
     critChance: Number(row.crit_chance ?? 5),
     critMultiplier: Number(row.crit_multiplier ?? 1.5),
   });
+  const classKey = String(row.class_key ?? "");
   return {
-    id: Number(row.id), account_id: Number(row.account_id), name: String(row.name ?? ""), class_key: String(row.class_key ?? ""),
+    id: Number(row.id), account_id: Number(row.account_id), name: String(row.name ?? ""), class_key: classKey,
+    appearance: normalizeAppearance(parseJsonObject(row.appearance), toClassKey(classKey)),
     zone_id: String(row.zone_id ?? "zone-clover-village"), pos_x: Number(row.pos_x ?? 0), pos_y: Number(row.pos_y ?? 0),
     level: Number(row.level ?? 1), hp: Number(row.hp ?? row.max_hp ?? 100), max_hp: Number(row.max_hp ?? 100),
     attack: derived.attack, defense: derived.defense, speed: derived.speed, crit_chance: derived.critChance,
@@ -287,6 +294,10 @@ export async function unlockSkill(characterId: number, skillKey: string): Promis
   return profile === null ? { ok: false, reason: "CHARACTER_NOT_FOUND" } : { ok: true, profile };
 }
 
+export async function updateCharacterAppearance(characterId: number, appearance: Appearance): Promise<void> {
+  getDb().prepare("UPDATE characters SET appearance = ?, updated_at = ? WHERE id = ?").run(JSON.stringify(appearance), new Date().toISOString(), characterId);
+}
+
 export async function updateCharacterHp(characterId: number, hp: number, maxHp: number): Promise<void> {
   getDb().prepare("UPDATE characters SET hp = ?, max_hp = ?, updated_at = ? WHERE id = ?").run(hp, maxHp, new Date().toISOString(), characterId);
 }
@@ -321,7 +332,7 @@ export async function updateCharacterPosition(characterId: number, zoneId: strin
 }
 
 function rowToCharacter(row: SqlRow): CharacterRow {
-  return { id: Number(row.id), account_id: Number(row.account_id), class_id: Number(row.class_id), name: String(row.name ?? ""), zone_id: String(row.zone_id ?? ""), pos_x: Number(row.pos_x ?? 0), pos_y: Number(row.pos_y ?? 0), level: Number(row.level ?? 1) };
+  return { id: Number(row.id), account_id: Number(row.account_id), class_id: Number(row.class_id), name: String(row.name ?? ""), zone_id: String(row.zone_id ?? ""), pos_x: Number(row.pos_x ?? 0), pos_y: Number(row.pos_y ?? 0), level: Number(row.level ?? 1), appearance: parseJsonObject(row.appearance) };
 }
 
 function parseJsonObject(raw: unknown): Record<string, unknown> {

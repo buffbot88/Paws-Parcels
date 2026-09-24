@@ -19,6 +19,8 @@ import {
   entityShadow,
 } from "../game/entitySizing.ts";
 import { PositionSampleBuffer } from "../net/positionInterpolation.ts";
+import { BODY_ART_CLASS, resolveLook } from "../game/appearance.ts";
+import { ensureLookArt } from "../game/avatarTextures.ts";
 
 const INTERPOLATION_DELAY_MS = 100;
 
@@ -37,9 +39,14 @@ export class RemotePlayer extends Phaser.GameObjects.Container {
   private readonly samples = new PositionSampleBuffer();
   private nameTag: Phaser.GameObjects.Text;
   private sprite: Phaser.GameObjects.Sprite;
+  private readonly shadow: Phaser.GameObjects.Ellipse;
   private facing: Facing = "south";
+  /** Which art this courier animates: its class art, or a recoloured look. */
+  private artId: string;
+  /** The class art the look's body is drawn from; sizes the figure. */
+  artClass: ClassKey;
   /** Tag height, derived from the courier's figure rather than hand-placed. */
-  private readonly nameTagY: number;
+  private nameTagY: number;
   /** Walk hop height in pixels, drawn by the 3D renderer only. */
   bobY = 0;
 
@@ -52,23 +59,26 @@ export class RemotePlayer extends Phaser.GameObjects.Container {
     this.classKey = classKeyFromId(info.classKey === "cat-mage" ? 2 : info.classKey === "fox-archer" ? 3 : 1);
     this.samples.add({ at: Date.now(), x: px, y: py });
 
-    const idleKey = animationKey(this.classKey, "idle", "south");
+    const look = resolveLook(info.appearance, this.classKey);
+    this.artId = ensureLookArt(scene, look);
+    this.artClass = BODY_ART_CLASS[look.body];
+    const idleKey = animationKey(this.artId, "idle", "south");
     const authoredArt = scene.textures.exists(idleKey);
     // The same convention row the local courier uses, so a remote courier and
     // the one you are driving cannot disagree about how big a courier is.
-    const sizing = courierSizing(this.classKey, authoredArt);
+    const sizing = courierSizing(this.artClass, authoredArt);
     this.sprite = scene.add
       .sprite(0, 0, authoredArt ? idleKey : TextureKeys.NpcBlob)
       .setScale(entityScale(sizing));
     const recipe = entityShadow(sizing);
-    const shadow = scene.add.ellipse(
+    const shadow = (this.shadow = scene.add.ellipse(
       0,
       entityShadowOffsetPx(sizing),
       recipe.widthPx,
       recipe.heightPx,
       recipe.color,
       recipe.alpha,
-    );
+    ));
     this.nameTagY = entityNameTagOffsetPx(sizing);
     // The local courier's plate style (Player.NAME_TAG_STYLE): a courier is
     // identified the same way whether you drive it or meet it, and both tags
@@ -80,6 +90,19 @@ export class RemotePlayer extends Phaser.GameObjects.Container {
     this.add([shadow, this.sprite, this.nameTag]);
     this.setDepth(worldDepth(py));
     scene.add.existing(this);
+    this.playAnimation("idle", this.facing);
+  }
+
+  /** Wear a new look (they visited the Salon): new art, and the new body's size. */
+  setAppearance(appearance: unknown): void {
+    const look = resolveLook(appearance, this.classKey);
+    this.artId = ensureLookArt(this.scene, look);
+    this.artClass = BODY_ART_CLASS[look.body];
+    const sizing = courierSizing(this.artClass, true);
+    this.sprite.setScale(entityScale(sizing));
+    this.shadow.setY(entityShadowOffsetPx(sizing));
+    this.nameTagY = entityNameTagOffsetPx(sizing);
+    this.sprite.anims.stop();
     this.playAnimation("idle", this.facing);
   }
 
@@ -127,7 +150,7 @@ export class RemotePlayer extends Phaser.GameObjects.Container {
   }
 
   private playAnimation(animation: "idle" | "walk", direction: Facing): void {
-    const key = animationKey(this.classKey, animation, direction as SpriteDirection);
+    const key = animationKey(this.artId, animation, direction as SpriteDirection);
     if (!this.scene.anims.exists(key)) return;
     if (this.sprite.anims.currentAnim?.key === key && this.sprite.anims.isPlaying) return;
     this.sprite.play(key);

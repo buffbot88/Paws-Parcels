@@ -1,0 +1,13 @@
+{
+  "species": [
+    { "id": "bear", "name": "Bear", "body": "bear", "colors": {} },
+    { "id": "panda", "name": "Panda", "body": "bear", "colors": { "fur": "#f2f0ea", "outfit": "#2a2a2e", "accent": "#3a3a3a", "eyes": "#202020" } },
+    { "id": "capybara", "name": "Capybara", "body": "bear", "colors": { "fur": "#a8744a", "outfit": "#5b7a3a", "accent": "#e6c07a" } },
+    { "id": "cat", "name": "Cat", "body": "cat", "colors": {} },
+    { "id": "mouse", "name": "Mouse", "body": "cat", "colors": { "fur": "#a9a4a0", "fur2": "#f4c8cc", "eyes": "#2a2a40" } },
+    { "id": "fox", "name": "Fox", "body": "fox", "colors": {} },
+    { "id": "wolf", "name": "Wolf", "body": "fox", "colors": { "fur": "#8f96a3", "fur2": "#e8eaee", "eyes": "#f0c040", "outfit": "#2a3450", "accent": "#7a2a2a" } },
+    { "id": "red-panda", "name": "Red Panda", "body": "fox", "colors": { "fur": "#c8502a", "fur2": "#f6efe6", "outfit": "#3a2a20", "accent": "#e0b050" } },
+    { "id": "raccoon", "name": "Raccoon", "body": "fox", "colors": { "fur": "#7d7a78", "fur2": "#e6e2dc", "outfit": "#3a4a3a", "accent": "#b08040" } }
+  ]
+}

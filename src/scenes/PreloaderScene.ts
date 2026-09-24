@@ -4,12 +4,7 @@ import { OBJECT_MARKER_SIZE_PX, SceneKeys, TextureKeys } from "../game/GameConst
 import { TILES, TILESET_COLUMNS } from "../game/Tiles.ts";
 import { renderTilesetCanvas } from "../game/TileTextures.ts";
 import { queueClassAssets, registerClassAnimations } from "../game/classAssets.ts";
-import { queueCloverVillageAssets } from "../game/cloverVillageAssets.ts";
-import { queueHappyValleyAssets } from "../game/happyValleyAssets.ts";
-import {
-  queueCloverVillageNpcAssets,
-  registerCloverVillageNpcAnimations,
-} from "../game/cloverVillageNpcAssets.ts";
+import { showLoadProgress } from "./loadProgress.ts";
 
 /**
  * Preloader loads the selected class art and generates the remaining
@@ -21,17 +16,14 @@ export class PreloaderScene extends Phaser.Scene {
     super(SceneKeys.Preloader);
   }
 
+  /** Art every zone needs; each zone's own props load when it is entered (OverworldScene.preload). */
   preload(): void {
-    this.showLoadingBar();
+    showLoadProgress(this, "Preparing the forest\u2026");
     queueClassAssets(this);
-    queueCloverVillageAssets(this);
-    queueHappyValleyAssets(this);
-    queueCloverVillageNpcAssets(this);
   }
 
   create(): void {
     registerClassAnimations(this);
-    registerCloverVillageNpcAnimations(this);
     this.generatePlaceholderTextures();
     this.time.delayedCall(400, () => this.scene.start(SceneKeys.Overworld));
   }
@@ -74,28 +66,5 @@ export class PreloaderScene extends Phaser.Scene {
     o.fillRoundedRect(markerInset, markerInset, markerSize, markerSize, 6);
     o.generateTexture(TextureKeys.ObjectMarker, OBJECT_MARKER_SIZE_PX, OBJECT_MARKER_SIZE_PX);
     o.destroy();
-  }
-
-  /** Shown while the art downloads (tens of MB), so a slow link never looks frozen. */
-  private showLoadingBar(): void {
-    const { width, height } = this.scale;
-    const barWidth = 240;
-    this.add
-      .rectangle(width / 2, height / 2, barWidth, 10, 0xffffff, 0.35)
-      .setOrigin(0.5);
-    const fill = this.add
-      .rectangle(width / 2 - barWidth / 2, height / 2, 0, 10, 0x4f7a3f, 1)
-      .setOrigin(0, 0.5);
-    const label = this.add
-      .text(width / 2, height / 2 - 24, "Preparing the forest… 0%", {
-        fontFamily: "Georgia, serif",
-        fontSize: "18px",
-        color: "#3a5a3a",
-      })
-      .setOrigin(0.5);
-    this.load.on(Phaser.Loader.Events.PROGRESS, (value: number) => {
-      fill.width = barWidth * value;
-      label.setText(`Preparing the forest… ${Math.round(value * 100)}%`);
-    });
   }
 }

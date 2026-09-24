@@ -317,10 +317,16 @@ describe("npc placement", () => {
     expect(validateNpcPlacement(npcs)).toEqual([]);
   });
 
-  it("places Pip outside the post office on its south entrance path", () => {
+  it("places Pip on the open plaza, clear of the flower bed that hid him", () => {
     const pip = (npcsJson.npcs as NPC[]).find((npc) => npc.id === "npc-pip");
-    expect(pip?.homeTile).toEqual({ x: 37, y: 24 });
-    expect(MAPS[ZoneKeys.CloverVillage].rows[24]?.[37]).toBe("P");
+    expect(pip?.homeTile).toEqual({ x: 35, y: 30 });
+    expect(MAPS[ZoneKeys.CloverVillage].rows[30]?.[35]).toBe("P");
+  });
+
+  it("places Fern the stylist on the open plaza beside spawn", () => {
+    const fern = (npcsJson.npcs as NPC[]).find((npc) => npc.id === "npc-fern");
+    expect(fern?.homeTile).toEqual({ x: 40, y: 30 });
+    expect(MAPS[ZoneKeys.CloverVillage].rows[30]?.[40]).toBe("P");
   });
 
   it("places Lumi on the research shop's front path", () => {

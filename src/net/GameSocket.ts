@@ -23,6 +23,8 @@ export interface NetPlayerPos {
   /** Snapshot metadata lets the client recover if a player_joined frame is missed. */
   name?: string;
   classKey?: string;
+  /** Saved look as sent by the server (`{ species, colors }`); resolve with `resolveLook`. */
+  appearance?: unknown;
 }
 
 export interface NetPlayerInfo extends NetPlayerPos {
@@ -172,6 +174,8 @@ export interface GameSocketCallbacks {
   onZoneState?: (zoneId: string, players: NetPlayerInfo[], monsters: NetMonsterInfo[]) => void;
   onPlayerJoined?: (player: NetPlayerInfo) => void;
   onPlayerLeft?: (characterId: number) => void;
+  /** A courier in the zone changed their look; also the ack for this client's own set_appearance. */
+  onPlayerAppearance?: (characterId: number, appearance: unknown) => void;
   onSnapshot?: (players: NetPlayerPos[], zoneId?: string, meta?: NetSnapshotMeta) => void;
   onMonsterSnapshot?: (monsters: NetMonsterInfo[]) => void;
   onChatMessage?: (message: NetChatMessage) => void;
@@ -482,6 +486,13 @@ export class GameSocket {
     this.ws.send(encodeMessage({ type: "zone_chat", text }));
   }
 
+  /** Change this courier's look; the server normalizes it and echoes player_appearance to the zone. */
+  sendSetAppearance(appearance: unknown): void {
+    if (this.ws === null || !this.authenticated || this.joinedZoneId === null) return;
+    if (this.ws.readyState !== WS_READY_OPEN) return;
+    this.ws.send(encodeMessage({ type: "set_appearance", appearance }));
+  }
+
   /** Send an attack intent against a monster entity (server validates all). */
   attack(targetEntityId: string): void {
     if (this.ws === null || !this.authenticated || this.joinedZoneId === null) return;
@@ -599,6 +610,13 @@ export class GameSocket {
       case "player_left":
         this.callbacks.onPlayerLeft?.(Number(msg.characterId));
         break;
+      case "player_appearance": {
+        const characterId = Number(msg.characterId);
+        if (Number.isInteger(characterId) && isRecord(msg.appearance)) {
+          this.callbacks.onPlayerAppearance?.(characterId, msg.appearance);
+        }
+        break;
+      }
       case "player_snapshot": {
         const sequence = Number(msg.sequence);
         const serverTime = Number(msg.serverTime);
@@ -737,7 +755,12 @@ function normalizePlayer(msg: Record<string, unknown>): NetPlayerInfo {
       x: Number(pos?.x ?? 0),
       y: Number(pos?.y ?? 0),
     },
+    ...(isRecord(msg.appearance) ? { appearance: msg.appearance } : {}),
   };
+}
+
+function isRecord(raw: unknown): raw is Record<string, unknown> {
+  return typeof raw === "object" && raw !== null && !Array.isArray(raw);
 }
 
 function normalizePlayers(raw: unknown): NetPlayerInfo[] {
@@ -762,6 +785,7 @@ function normalizePositions(raw: unknown): NetPlayerPos[] {
       },
       ...(typeof entry.name === "string" ? { name: entry.name } : {}),
       ...(typeof entry.classKey === "string" ? { classKey: entry.classKey } : {}),
+      ...(isRecord(entry.appearance) ? { appearance: entry.appearance } : {}),
     };
   });
 }

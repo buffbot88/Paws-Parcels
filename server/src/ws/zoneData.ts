@@ -2,6 +2,7 @@ import { readFileSync } from "node:fs";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { TILES } from "../../../src/game/Tiles.ts";
+import { propBlockedTiles } from "../../../src/game/propCollision.ts";
 import zonesJson from "../../../src/data/zones.json" with { type: "json" };
 
 /** zones.json is the single authored source for zone capacity. */
@@ -95,7 +96,7 @@ function readZoneData(zoneId: string): ZoneData | null {
     width: map.width,
     height: map.height,
     spawn: map.spawn ?? { x: 0, y: 0 },
-    isWalkable: (x, y) => isWalkableTile(map, x, y),
+    isWalkable: (x, y) => isWalkableTile(map, x, y) && !propBlockedTiles(zoneId).has(`${x},${y}`),
     monsterSpawns: normalizeSpawns(map.monsterSpawns),
     maxPlayers: ZONE_CAPACITY.get(zoneId) ?? 32,
     transitions: normalizeTransitions(map.transitions),

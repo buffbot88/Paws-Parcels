@@ -251,6 +251,7 @@ describe("listCharactersHandler", () => {
         pos_x: 15,
         pos_y: 14,
         level: 1,
+        appearance: {},
       },
     ]);
     const res = makeRes();
@@ -404,6 +405,7 @@ describe("createCharacterHandler", () => {
         pos_x: 15,
         pos_y: 14,
         level: 1,
+        appearance: {},
       },
     });
     const res = makeRes();
@@ -411,7 +413,7 @@ describe("createCharacterHandler", () => {
       makeReq({
         method: "POST",
         authHeader,
-        body: { name: "Maple", class_id: 1, appearance: { fur: "brown" } },
+        body: { name: "Maple", class_id: 1, appearance: { species: "panda", colors: { fur: "#ABCDEF", fur2: "#000000" }, extra: 1 } },
       }),
       res,
     );
@@ -431,7 +433,8 @@ describe("createCharacterHandler", () => {
       accountId: 7,
       name: "Maple",
       classId: 1,
-      appearance: { fur: "brown" },
+      // Normalized: fur2 is not a bear-body part, hex is lower-cased, unknown keys dropped.
+      appearance: { species: "panda", colors: { fur: "#abcdef" } },
       cls: CLASS_BEAR,
     });
   });
@@ -451,6 +454,7 @@ describe("createCharacterHandler", () => {
         pos_x: 15,
         pos_y: 14,
         level: 1,
+        appearance: {},
       },
     });
     const res = makeRes();
@@ -464,7 +468,8 @@ describe("createCharacterHandler", () => {
     );
     expect(res._status).toBe(201);
     expect(mockCreateCharacter).toHaveBeenCalledWith(
-      expect.objectContaining({ name: "Maple" }),
+      // No look sent: the courier keeps their class animal.
+      expect.objectContaining({ name: "Maple", appearance: { species: "bear", colors: {} } }),
     );
   });
 });

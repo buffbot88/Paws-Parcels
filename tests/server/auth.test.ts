@@ -669,6 +669,7 @@ describe("meHandler", () => {
         pos_x: 5,
         pos_y: 4,
         level: 1,
+        appearance: {},
       },
     ]);
 

@@ -110,6 +110,8 @@ export class NetworkSystem {
   private myMaxHp = 0;
   /** Callback when the server confirms this courier has been defeated. */
   onPlayerDefeated: (() => void) | null = null;
+  /** Callback when the server confirms this courier's new look (the Salon's save). */
+  onMyAppearance: ((appearance: unknown) => void) | null = null;
   /** Callback for player defeat — the scene restarts at the safe hub. */
   onDefeat: ((info: NetRespawnInfo) => void) | null = null;
   /** Callback for loot toasts (client may render them). */
@@ -298,6 +300,11 @@ export class NetworkSystem {
     this.socket?.chat(text);
   }
 
+  /** Ask the server to save and broadcast a new look; it echoes it back as the ack. */
+  setAppearance(appearance: unknown): void {
+    this.socket?.sendSetAppearance(appearance);
+  }
+
   getCharacterId(): number | null {
     return this.myCharacterId;
   }
@@ -420,6 +427,7 @@ export class NetworkSystem {
     // Keep latestPlayers across a scene restart: the socket can receive a
     // snapshot while Phaser is between scenes, and attach() will replay it.
     this.onPlayerDefeated = null;
+    this.onMyAppearance = null;
     this.onDefeat = null;
     this.onStatus = null;
     // Keep the app-level diagnostic handler alive across scene restarts. The
@@ -530,6 +538,16 @@ export class NetworkSystem {
       this.handleZoneState(zoneId, players, monsters);
     socket.callbacks.onPlayerJoined = (player) => this.spawnPlayer(player, false);
     socket.callbacks.onPlayerLeft = (characterId) => this.removePlayer(characterId);
+    socket.callbacks.onPlayerAppearance = (characterId, appearance) => {
+      if (characterId !== this.myCharacterId) {
+        this.players.get(characterId)?.setAppearance(appearance);
+        return;
+      }
+      // Keep the boot record current so a zone change or restart rebuilds the new look.
+      const me = pickPlayCharacter();
+      if (me !== null) me.appearance = appearance;
+      this.onMyAppearance?.(appearance);
+    };
     socket.callbacks.onSnapshot = (players, zoneId, meta) =>
       this.handleSnapshot(players, zoneId, meta);
     socket.callbacks.onMonsterSnapshot = (monsters) =>

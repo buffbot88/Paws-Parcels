@@ -62,6 +62,11 @@ export function classKeyFromId(classId: number): ClassKey {
   return "bear-warrior";
 }
 
+/** Narrow a stored/wire class key to a ClassKey (unknown keys fall back to the bear). */
+export function toClassKey(key: string): ClassKey {
+  return Object.hasOwn(CLASS_SPEED, key) ? (key as ClassKey) : "bear-warrior";
+}
+
 /** Movement speed in px/s for a class key. */
 export function classSpeed(classKey: ClassKey): number {
   return CLASS_SPEED[classKey];

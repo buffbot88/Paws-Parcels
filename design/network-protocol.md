@@ -113,6 +113,21 @@ processes each message independently.
   error frame carries `requestType: "zone_chat"` so the client treats it as
   gameplay feedback rather than a broken connection.
 
+### set_appearance
+```json
+{
+  "type": "set_appearance",
+  "appearance": { "species": "wolf", "colors": { "fur": "#8f96a3", "eyes": "#f0c040" } }
+}
+```
+- **Validation:** authenticated + in a zone; at most one per second per character.
+  The look is normalized server-side (`normalizeAppearance` in `src/game/appearance.ts`):
+  an unknown species falls back to the class animal, and only `#rrggbb` colours for parts
+  the species' body has are kept. The result is persisted to `characters.appearance`.
+- **Expected response:** `player_appearance` broadcast to every connected player in the
+  zone, including the sender (its copy is the ack and carries the normalized look).
+- **Failure cases:** `NOT_IN_ZONE`, `RATE_LIMITED` — with `requestType: "set_appearance"`.
+
 ### search_quest
 ```json
 {
@@ -262,9 +277,11 @@ processes each message independently.
   "characterId": 12,
   "name": "Rue",
   "classKey": "cat-mage",
+  "appearance": { "species": "cat", "colors": {} },
   "pos": { "x": 15, "y": 8 }
 }
 ```
+Every player entry in `zone_state` and `player_snapshot` also carries `appearance`.
 - **Payload:** a new player entered the zone while the receiver was already in it.
 - **Client action:** spawn the player entity without rebuilding the whole zone.
 
@@ -277,6 +294,18 @@ processes each message independently.
 ```
 - **Payload:** a player left the zone or disconnected.
 - **Client action:** remove the player entity.
+
+### player_appearance
+```json
+{
+  "type": "player_appearance",
+  "characterId": 12,
+  "appearance": { "species": "mouse", "colors": { "fur2": "#f4c8cc" } }
+}
+```
+- **Payload:** a player in the zone changed their look (normalized by the server).
+- **Client action:** re-skin that player's avatar; for the local courier it confirms a
+  `set_appearance`.
 
 ### player_snapshot
 ```json

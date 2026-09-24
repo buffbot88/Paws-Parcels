@@ -7,7 +7,19 @@
       "personality": "energetic",
       "role": "Post office assistant",
       "homeZone": "zone-clover-village",
-      "homeTile": { "x": 37, "y": 24 }
+      "homeTile": {
+        "x": 35,
+        "y": 30
+      },
+      "look": {
+        "body": "bear",
+        "colors": {
+          "fur": "#7a5236",
+          "outfit": "#2f4f7a",
+          "accent": "#d9b44a",
+          "eyes": "#1a1a1a"
+        }
+      }
     },
     {
       "id": "npc-maple",
@@ -16,7 +28,20 @@
       "personality": "shy",
       "role": "Florist",
       "homeZone": "zone-clover-village",
-      "homeTile": { "x": 56, "y": 40 }
+      "homeTile": {
+        "x": 56,
+        "y": 40
+      },
+      "look": {
+        "body": "fox",
+        "colors": {
+          "fur": "#c08a52",
+          "fur2": "#f4e8d6",
+          "outfit": "#4f7a3f",
+          "accent": "#e07aa0",
+          "eyes": "#5a3a20"
+        }
+      }
     },
     {
       "id": "npc-biscuit",
@@ -25,7 +50,19 @@
       "personality": "cheerful",
       "role": "Café owner",
       "homeZone": "zone-clover-village",
-      "homeTile": { "x": 19, "y": 30 }
+      "homeTile": {
+        "x": 19,
+        "y": 30
+      },
+      "look": {
+        "body": "bear",
+        "colors": {
+          "fur": "#d9a441",
+          "outfit": "#6b3f2a",
+          "accent": "#f2e6c8",
+          "eyes": "#3a2a1a"
+        }
+      }
     },
     {
       "id": "npc-lumi",
@@ -34,7 +71,18 @@
       "personality": "mysterious",
       "role": "Forest researcher",
       "homeZone": "zone-clover-village",
-      "homeTile": { "x": 52, "y": 28 }
+      "homeTile": {
+        "x": 52,
+        "y": 28
+      },
+      "look": {
+        "body": "cat",
+        "colors": {
+          "fur": "#cdbfe6",
+          "fur2": "#f6f0ff",
+          "eyes": "#6be0ff"
+        }
+      }
     },
     {
       "id": "npc-moss",
@@ -43,7 +91,40 @@
       "personality": "sleepy",
       "role": "Gardener",
       "homeZone": "zone-clover-village",
-      "homeTile": { "x": 46, "y": 43 }
+      "homeTile": {
+        "x": 46,
+        "y": 45
+      },
+      "look": {
+        "body": "cat",
+        "colors": {
+          "fur": "#6aa84f",
+          "fur2": "#e8f0c0",
+          "eyes": "#e0c030"
+        }
+      }
+    },
+    {
+      "id": "npc-fern",
+      "name": "Fern",
+      "species": "Poodle",
+      "personality": "cheerful",
+      "role": "Salon stylist",
+      "homeZone": "zone-clover-village",
+      "homeTile": {
+        "x": 40,
+        "y": 30
+      },
+      "look": {
+        "body": "fox",
+        "colors": {
+          "fur": "#f2b8cf",
+          "fur2": "#fff4f8",
+          "outfit": "#6a4a8a",
+          "accent": "#e8c060",
+          "eyes": "#7a3a6a"
+        }
+      }
     }
   ]
 }

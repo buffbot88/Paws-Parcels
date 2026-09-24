@@ -104,6 +104,15 @@ function findEffectUrls(classKey: ClassKey): AssetUrl[] {
     .map(([, url]) => url);
 }
 
+/** A class animation's frame image URLs in play order, for canvas previews outside Phaser. */
+export function courierFrameUrls(
+  classKey: ClassKey,
+  animation: SpriteAnimation,
+  direction: SpriteDirection,
+): string[] {
+  return findAnimationUrls(classKey, animation, direction);
+}
+
 /** Queue all playable class PNGs before the preloader scene creates textures. */
 export function queueClassAssets(scene: Phaser.Scene): void {
   const loaded = new Set<string>();
@@ -159,12 +168,13 @@ export function registerClassAnimations(scene: Phaser.Scene): void {
   }
 }
 
+/** A courier animation key; `artId` is a class key or a recoloured look id (avatarTextures.ts). */
 export function animationKey(
-  classKey: ClassKey,
+  artId: string,
   animation: SpriteAnimation,
   direction: SpriteDirection,
 ): string {
-  return classAssetKey(classKey, animation, direction, 0);
+  return `courier-${artId}-${animation}-${direction}-0`;
 }
 
 function effectScale(classKey: ClassKey): number {

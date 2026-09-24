@@ -3,6 +3,7 @@ import zonesJson from "../../src/data/zones.json" with { type: "json" };
 import { loadZoneData } from "../../server/src/ws/zoneData.ts";
 import { MAPS } from "../../src/game/Maps.ts";
 import { TILES } from "../../src/game/Tiles.ts";
+import { propBlockedTiles } from "../../src/game/propCollision.ts";
 
 describe("loadZoneData — real map files", () => {
   it("loads every shipped zone with the map's dimensions", () => {
@@ -16,8 +17,8 @@ describe("loadZoneData — real map files", () => {
 
   it("server walkability matches client collision for every tile of every map", () => {
     // The whole point of deriving server collision from the shared TILES
-    // catalog: a city map with a new colliding tile can never desync the
-    // server's movement validation from what the client renders.
+    // catalog and prop footprints: a new colliding tile or solid prop can never
+    // desync the server's movement validation from what the client renders.
     for (const map of Object.values(MAPS)) {
       const zone = loadZoneData(map.id);
       expect(zone, map.id).not.toBeNull();
@@ -27,7 +28,7 @@ describe("loadZoneData — real map files", () => {
           const tile = TILES.find((t) => t.code === code);
           expect(tile, `${map.id} (${x},${y}) code "${code}"`).toBeDefined();
           expect(zone!.isWalkable(x, y), `${map.id} (${x},${y}) "${code}"`).toBe(
-            tile!.collides === false,
+            tile!.collides === false && !propBlockedTiles(map.id).has(`${x},${y}`),
           );
         }
       });

@@ -7,6 +7,7 @@ function player(overrides: Partial<ZonePlayer> = {}): ZonePlayer {
     accountId: 7,
     name: "Maple",
     classKey: "bear-warrior",
+    appearance: { species: "bear", colors: {} },
     pos: { x: 5, y: 5 },
     connected: true,
     lastMoveAt: 0,

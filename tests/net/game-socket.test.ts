@@ -592,3 +592,58 @@ describe("GameSocket xp_gained", () => {
     expect(onXpGained).toHaveBeenCalledWith(5, undefined);
   });
 });
+
+describe("GameSocket appearance", () => {
+  it("passes appearance through on player_joined, zone_state and player_snapshot", async () => {
+    const socket = makeSocket();
+    const onJoined = vi.fn();
+    const onZoneState = vi.fn();
+    const onSnapshot = vi.fn();
+    socket.callbacks.onPlayerJoined = onJoined;
+    socket.callbacks.onZoneState = onZoneState;
+    socket.callbacks.onSnapshot = onSnapshot;
+    const ws = await connectedSocket(socket);
+    const look = { species: "wolf", colors: { fur: "#8f96a3" } };
+
+    ws.receive({ type: "player_joined", characterId: 9, name: "Birch", classKey: "fox-archer", pos: { x: 2, y: 2 }, appearance: look });
+    expect(onJoined).toHaveBeenCalledWith(expect.objectContaining({ characterId: 9, appearance: look }));
+
+    ws.receive({
+      type: "zone_state",
+      zoneId: "zone-clover-village",
+      players: [{ characterId: 9, name: "Birch", classKey: "fox-archer", pos: { x: 2, y: 2 }, appearance: look }],
+      monsters: [],
+    });
+    expect(onZoneState).toHaveBeenLastCalledWith("zone-clover-village", [expect.objectContaining({ appearance: look })], []);
+
+    ws.receive({ type: "player_snapshot", players: [{ characterId: 9, pos: { x: 3, y: 2 }, appearance: look }, { characterId: 5, pos: { x: 1, y: 1 }, appearance: "junk" }] });
+    expect(onSnapshot).toHaveBeenLastCalledWith(
+      [{ characterId: 9, pos: { x: 3, y: 2 }, appearance: look }, { characterId: 5, pos: { x: 1, y: 1 } }],
+      undefined,
+    );
+  });
+
+  it("dispatches player_appearance to onPlayerAppearance and ignores malformed frames", async () => {
+    const socket = makeSocket();
+    const onAppearance = vi.fn();
+    socket.callbacks.onPlayerAppearance = onAppearance;
+    const ws = await connectedSocket(socket);
+
+    ws.receive({ type: "player_appearance", characterId: 9, appearance: { species: "mouse", colors: {} } });
+    expect(onAppearance).toHaveBeenCalledWith(9, { species: "mouse", colors: {} });
+
+    ws.receive({ type: "player_appearance", characterId: 9, appearance: null });
+    ws.receive({ type: "player_appearance", characterId: "x", appearance: {} });
+    expect(onAppearance).toHaveBeenCalledTimes(1);
+  });
+
+  it("sendSetAppearance sends set_appearance only once joined", async () => {
+    const socket = makeSocket();
+    socket.sendSetAppearance({ species: "panda" }); // not connected: dropped
+    const ws = await connectedSocket(socket);
+    socket.sendSetAppearance({ species: "panda", colors: { eyes: "#202020" } });
+    expect(ws.sentOfType("set_appearance")).toEqual([
+      { type: "set_appearance", appearance: { species: "panda", colors: { eyes: "#202020" } } },
+    ]);
+  });
+});

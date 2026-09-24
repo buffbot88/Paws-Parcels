@@ -75,11 +75,11 @@ describe("shipped content", () => {
 
   it("has the expected MVP content counts", () => {
     const data = realContent();
-    expect(data.npcs).toHaveLength(5);
+    expect(data.npcs).toHaveLength(6);
     expect(data.items).toHaveLength(37);
     expect(data.quests).toHaveLength(32);
     expect(data.upgrades).toHaveLength(3);
-    expect(data.dialogue).toHaveLength(6);
+    expect(data.dialogue).toHaveLength(7);
   });
 });
 

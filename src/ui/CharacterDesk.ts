@@ -9,6 +9,8 @@ import {
   type CharacterListItem,
 } from "./LoginOverlay.ts";
 import { deskStepFor, validateCharacterName } from "./characterFlow.ts";
+import { AvatarEditor } from "./AvatarEditor.ts";
+import { classKeyFromId } from "../game/classStats.ts";
 import { apiPath } from "../config.ts";
 
 /** Shape of GET /api/classes entries (server/src/models/CharacterClass.ts). */
@@ -39,13 +41,11 @@ export interface CharacterDeskShowOptions {
   onCancel?: () => void;
 }
 
-/** Placeholder animal faces until the Phase 7 art lands. */
-const ANIMAL_EMOJI: Readonly<Record<string, string>> = {
-  bear: "🐻",
-  cat: "🐱",
-  fox: "🦊",
-  bunny: "🐰",
-  mouse: "🐭",
+/** Class badges; the animal is the courier's own pick in the look editor. */
+const CLASS_EMOJI: Readonly<Record<string, string>> = {
+  "bear-warrior": "🛡️",
+  "cat-mage": "🔮",
+  "fox-archer": "🏹",
 };
 
 const CLASS_EMOJI_FALLBACK = "🐾";
@@ -67,6 +67,7 @@ export class CharacterDesk {
   private onPlay: DeskPlayHandler | null = null;
   private forceCreate = false;
   private onCancel: (() => void) | null = null;
+  private editor: AvatarEditor | null = null;
 
   /** Show the desk for an authenticated account. */
   show(
@@ -92,6 +93,7 @@ export class CharacterDesk {
 
   /** Remove the desk (the game is booting). */
   hide(): void {
+    this.dropEditor();
     if (this.root === null) return;
     this.root.setAttribute("hidden", "");
     this.root.classList.remove("character-desk--visible");
@@ -116,6 +118,7 @@ export class CharacterDesk {
     const root = this.root;
     if (root === null) return;
     const step = deskStepFor(this.characters.length).step;
+    this.dropEditor();
     root.textContent = "";
     if (step === "create" || this.forceCreate) {
       this.renderCreate(root);
@@ -137,6 +140,7 @@ export class CharacterDesk {
     this.forceCreate = true;
     const root = this.root;
     if (root === null) return;
+    this.dropEditor();
     root.textContent = "";
     this.renderCreate(root);
   }
@@ -212,7 +216,7 @@ export class CharacterDesk {
     const meta = document.createElement("span");
     meta.className = "char-option__meta";
     const cls = this.classById(character.class_id);
-    const classLabel = cls ? cls.display_name : "Courier";
+    const classLabel = cls ? this.classLabel(cls) : "Courier";
     const zoneLabel = this.zoneLabel(character.zone_id);
     meta.textContent = `${classLabel} · Level ${character.level} · ${zoneLabel}`;
 
@@ -230,7 +234,7 @@ export class CharacterDesk {
     backdrop.className = "character-desk__backdrop";
 
     const card = document.createElement("article");
-    card.className = "desk-card";
+    card.className = "desk-card desk-card--wide";
     card.insertAdjacentHTML("afterbegin", LEAF_SVG);
 
     const title = document.createElement("h1");
@@ -241,7 +245,7 @@ export class CharacterDesk {
     const subtitle = document.createElement("p");
     subtitle.className = "desk-card__tagline";
     subtitle.textContent =
-      "Give your first courier a name and pick the role they'll deliver as.";
+      "Name your courier, pick the role they'll deliver as, and choose their look.";
 
     const form = document.createElement("form");
     form.className = "desk-form";
@@ -281,6 +285,20 @@ export class CharacterDesk {
 
     classesFieldset.append(classesLegend, classesGrid);
 
+    // --- look: animal, colours and the mirror ---
+    const look = document.createElement("div");
+    look.className = "desk-look";
+    this.editor = new AvatarEditor(look, {
+      classKey: classKeyFromId(this.selectedClassId ?? 1),
+    });
+
+    const main = document.createElement("div");
+    main.className = "desk-form__main";
+    main.append(nameField, classesFieldset);
+    const columns = document.createElement("div");
+    columns.className = "desk-form__columns";
+    columns.append(main, look);
+
     // --- status / error / actions ---
     const status = document.createElement("p");
     status.className = "desk-card__status";
@@ -319,7 +337,7 @@ export class CharacterDesk {
     });
 
     actions.append(submit, backBtn);
-    form.append(nameField, classesFieldset, status, error, actions);
+    form.append(columns, status, error, actions);
 
     const footnote = document.createElement("p");
     footnote.className = "desk-card__footnote";
@@ -352,19 +370,20 @@ export class CharacterDesk {
     radio.checked = this.selectedClassId === cls.id;
     radio.addEventListener("change", () => {
       this.selectedClassId = cls.id;
+      this.editor?.setClassKey(classKeyFromId(cls.id));
     });
 
     const emoji = document.createElement("span");
     emoji.className = "class-option__emoji";
     emoji.setAttribute("aria-hidden", "true");
-    emoji.textContent = ANIMAL_EMOJI[cls.animal] ?? CLASS_EMOJI_FALLBACK;
+    emoji.textContent = CLASS_EMOJI[cls.key] ?? CLASS_EMOJI_FALLBACK;
 
     const body = document.createElement("span");
     body.className = "class-option__body";
 
     const name = document.createElement("span");
     name.className = "class-option__name";
-    name.textContent = cls.display_name;
+    name.textContent = this.classLabel(cls);
 
     const desc = document.createElement("span");
     desc.className = "class-option__desc";
@@ -412,7 +431,7 @@ export class CharacterDesk {
         body: JSON.stringify({
           name,
           class_id: this.selectedClassId,
-          appearance: {},
+          appearance: this.editor?.getAppearance() ?? {},
         }),
       });
       const body = (await res.json().catch(() => null)) as {
@@ -526,7 +545,20 @@ export class CharacterDesk {
     const cls = this.classById(classId);
     return cls === undefined
       ? CLASS_EMOJI_FALLBACK
-      : (ANIMAL_EMOJI[cls.animal] ?? CLASS_EMOJI_FALLBACK);
+      : (CLASS_EMOJI[cls.key] ?? CLASS_EMOJI_FALLBACK);
+  }
+
+  /** "Bear Warrior" reads as just "Warrior": any animal can take any class. */
+  private classLabel(cls: ClassOption): string {
+    const prefix = `${cls.animal} `.toLowerCase();
+    return cls.display_name.toLowerCase().startsWith(prefix)
+      ? cls.display_name.slice(prefix.length)
+      : cls.display_name;
+  }
+
+  private dropEditor(): void {
+    this.editor?.destroy();
+    this.editor = null;
   }
 
   private zoneLabel(zoneId: string): string {

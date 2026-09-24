@@ -4,12 +4,14 @@
  * window, and produces snapshot payloads. Sockets are injected so the store
  * is pure and unit-testable without a real WebSocket.
  */
+import type { Appearance } from "../../../src/game/appearance.ts";
 
 export interface ZonePlayer {
   characterId: number;
   accountId: number;
   name: string;
   classKey: string;
+  appearance: Appearance;
   /** Current server-authoritative tile position. */
   pos: { x: number; y: number };
   connected: boolean;
@@ -34,12 +36,15 @@ export interface ZonePlayer {
   invulnUntil: number;
   /** Time of the last zone-chat message for server-side rate limiting. */
   lastChatAt?: number;
+  /** Time of the last accepted set_appearance, for server-side rate limiting. */
+  lastAppearanceAt?: number;
 }
 
 export interface ZoneSnapshotPlayer {
   characterId: number;
   name: string;
   classKey: string;
+  appearance: Appearance;
   pos: { x: number; y: number };
 }
 
@@ -103,6 +108,7 @@ function toSnapshotPlayer(p: ZonePlayer): ZoneSnapshotPlayer {
     characterId: p.characterId,
     name: p.name,
     classKey: p.classKey,
+    appearance: p.appearance,
     pos: { ...p.pos },
   };
 }

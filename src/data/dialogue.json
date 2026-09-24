@@ -60,6 +60,16 @@
         "There's my favorite courier! The parcels miss you when you're gone.",
         "We make a great team, you and me."
       ]
+    },
+    {
+      "id": "dialogue-npc-fern-greet",
+      "npcId": "npc-fern",
+      "minFriendship": 0,
+      "lines": [
+        "Oh, darling, look at that fur! Welcome to Fern's Salon!",
+        "A new colour, a whole new animal - whatever you fancy, it's on the house.",
+        "Have a seat by the mirror and we'll find your look."
+      ]
     }
   ]
 }

@@ -8,14 +8,15 @@ import {
   type SpriteDirection,
 } from "../game/classAssets.ts";
 import type { MoveVector } from "../systems/InputSystem.ts";
-import { DEPTH_OFFSET, worldDepth } from "../game/WorldDepth.ts";
+import { worldDepth } from "../game/WorldDepth.ts";
 import {
   courierSizing,
   entityShadowOffsetPx,
-  entityNameTagOffsetPx,
   entityScale,
   type EntitySizing,
 } from "../game/entitySizing.ts";
+import { BODY_ART_CLASS, resolveLook } from "../game/appearance.ts";
+import { ensureLookArt } from "../game/avatarTextures.ts";
 import { getSettings } from "../ui/settings.ts";
 
 export type Facing = "down" | "up" | "left" | "right";
@@ -54,12 +55,15 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
   } as const;
 
   readonly classKey: ClassKey;
+  /** Which art this courier animates: its class art, or a recoloured look (avatarTextures.ts). */
+  private artId: string;
   /**
    * The courier's size row from the shared entity convention. Everything the
    * sprite's rendering needs — scale, feet offset, shadow — is derived from it,
-   * so this class holds no scale or shadow numbers of its own.
+   * so this class holds no scale or shadow numbers of its own. It follows the
+   * species' body, which a Salon visit can change.
    */
-  readonly sizing: EntitySizing;
+  sizing!: EntitySizing;
   /** Movement speed (px/s) matching the server's class speed — see classAssets.ts.
    * Raised to the gear-adjusted speed when the server's inventory snapshot
    * arrives, so speed gear renders (and the intent throttle matches). */
@@ -70,18 +74,36 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
   /** Walk hop height in pixels, drawn by the 3D renderer only. */
   bobY = 0;
 
-  constructor(scene: Phaser.Scene, x: number, y: number, classId = 1) {
+  constructor(scene: Phaser.Scene, x: number, y: number, classId = 1, appearance: unknown = {}) {
     const classKey = classKeyFromId(classId);
-    const idleKey = animationKey(classKey, "idle", "south");
+    const look = resolveLook(appearance, classKey);
+    const artId = ensureLookArt(scene, look);
+    const idleKey = animationKey(artId, "idle", "south");
     super(scene, x, y, scene.textures.exists(idleKey) ? idleKey : TextureKeys.PlayerIdleDown);
     this.classKey = classKey;
+    this.artId = artId;
     this.speed = classSpeed(classKey);
     scene.add.existing(this);
     scene.physics.add.existing(this);
+    this.applySizing(look.body);
+    this.setDepth(worldDepth(this.y));
+    this.playIfAvailable("idle", "south");
+  }
+
+  /** Wear a new look (a Salon visit): new art, and the new body's size. */
+  setAppearance(appearance: unknown): void {
+    const look = resolveLook(appearance, this.classKey);
+    this.artId = ensureLookArt(this.scene, look);
+    this.applySizing(look.body);
+    this.anims.stop();
+    this.playIfAvailable(this.moving ? "walk" : "idle", directionForFacing(this.facing));
+  }
+
+  private applySizing(body: keyof typeof BODY_ART_CLASS): void {
     // Sized by the shared entity convention rather than a literal: the courier
     // renders at the same figure height whether its class art is present or the
     // placeholder blob is standing in for it (see entitySizing.ts).
-    this.sizing = courierSizing(classKey, this.texture.key !== TextureKeys.PlayerIdleDown);
+    this.sizing = courierSizing(BODY_ART_CLASS[body], this.texture.key !== TextureKeys.PlayerIdleDown);
     const scale = entityScale(this.sizing);
     this.setScale(scale);
     // Arcade scales the body with the sprite, so undo that to keep collision fixed.
@@ -89,8 +111,6 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
       Player.BODY_WIDTH / scale,
       Player.BODY_HEIGHT / scale,
     );
-    this.setDepth(worldDepth(this.y));
-    this.playIfAvailable("idle", "south");
   }
 
   /** Pixels below the courier's centre where its cast shadow sits. */
@@ -132,7 +152,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     this.moving = false;
     this.setVelocity(0, 0);
     const direction = directionForFacing(this.facing);
-    const key = animationKey(this.classKey, "attack", direction);
+    const key = animationKey(this.artId, "attack", direction);
     if (!this.scene.anims.exists(key)) return;
     this.off(Phaser.Animations.Events.ANIMATION_COMPLETE, this.attackCompleteHandler);
     this.once(Phaser.Animations.Events.ANIMATION_COMPLETE, this.attackCompleteHandler);
@@ -154,7 +174,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     animation: "idle" | "walk" | "attack" | "death",
     direction: SpriteDirection,
   ): void {
-    const key = animationKey(this.classKey, animation, direction);
+    const key = animationKey(this.artId, animation, direction);
     if (!this.scene.anims.exists(key)) return;
     if (this.anims.currentAnim?.key === key && this.anims.isPlaying) return;
     this.play(key);

@@ -8,6 +8,8 @@ export interface HudModalOptions {
   toggleKey?: string;
   /** Called just before the dialog is shown, to render fresh content. */
   onOpen?: () => void;
+  /** Called after the dialog closes, however it was closed. */
+  onClose?: () => void;
 }
 
 /** Shared dialog shell for the quest log, keyboard help and settings: backdrop, card, Escape, focus return. */
@@ -81,6 +83,7 @@ export class HudModal {
     this.root.hidden = true;
     if (this.returnFocus?.isConnected === true) this.returnFocus.focus();
     this.returnFocus = null;
+    this.options.onClose?.();
   }
 
   toggle(): void {

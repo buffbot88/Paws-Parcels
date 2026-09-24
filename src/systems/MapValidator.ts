@@ -2,6 +2,7 @@ import { TILES, TILE_INDEX } from "../game/Tiles.ts";
 import { ARCHIVED_MAPS, ARCHIVED_MAP_DIMENSIONS } from "../game/ArchivedMaps.ts";
 import { PLAYABLE_MAPS, type InteractableKind, type MapData, type MapPoint } from "../game/Maps.ts";
 import type { NPC } from "../types/NPCtypes.ts";
+import { propBlockedTiles } from "../game/propCollision.ts";
 
 /** Allowed interactable kinds (world-map.md `object-*` entries). */
 const INTERACTABLE_KINDS: readonly string[] = [
@@ -122,7 +123,7 @@ function tileCollides(map: MapData, x: number, y: number): boolean {
   const row = map.rows[y];
   if (row === undefined || x < 0 || x >= row.length) return true; // out of bounds = blocked
   const tile = TILES.find((t) => t.code === row[x]);
-  return tile?.collides ?? true;
+  return (tile?.collides ?? true) || propBlockedTiles(map.id).has(`${x},${y}`);
 }
 
 /** True when the tile at (x, y) is in bounds and walkable. */
@@ -174,6 +175,8 @@ function checkPoint(map: MapData, point: MapPoint, label: string, errors: string
   const tile = TILES.find((t) => t.code === code);
   if (tile?.collides) {
     errors.push(`${map.id}: ${label} (${point.x},${point.y}) sits on a colliding tile ("${code}")`);
+  } else if (propBlockedTiles(map.id).has(`${point.x},${point.y}`)) {
+    errors.push(`${map.id}: ${label} (${point.x},${point.y}) is blocked by a solid prop`);
   }
 }
 

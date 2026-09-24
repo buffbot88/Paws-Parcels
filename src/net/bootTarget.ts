@@ -10,6 +10,8 @@ export interface BootCharacter {
   pos_x: number;
   pos_y: number;
   level: number;
+  /** Saved look (`{ species, colors }`); resolve with `resolveLook` from game/appearance. */
+  appearance?: unknown;
 }
 
 /** Where the client should boot: a zone registered in MAPS + a tile position. */

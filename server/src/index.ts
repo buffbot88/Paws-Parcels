@@ -29,6 +29,7 @@ import {
   getCharacterWithClass,
   updateCharacterPosition,
   updateCharacterHp,
+  updateCharacterAppearance,
   grantExperience,
   grantInventoryItems,
 } from "./models/Character.ts";
@@ -159,6 +160,7 @@ async function main(): Promise<void> {
         speed: row.speed,
         critChance: row.crit_chance,
         critMultiplier: row.crit_multiplier,
+        appearance: row.appearance,
       };
     },
     getZoneData: loadZoneData,
@@ -167,6 +169,7 @@ async function main(): Promise<void> {
       updateCharacterPosition(characterId, zoneId, pos.x, pos.y),
     persistHp: (characterId, hp, maxHp) =>
       updateCharacterHp(characterId, hp, maxHp),
+    persistAppearance: updateCharacterAppearance,
     grantXp: (characterId, amount) => grantExperience(characterId, amount),
     grantInventory: (characterId, items) => grantInventoryItems(characterId, items),
     getNpcPosition: (npcId, zoneId) => {

@@ -3,12 +3,8 @@ import { TILE_SIZE } from "../game/GameConfig.ts";
 import { TextureKeys } from "../game/GameConstants.ts";
 import type { NPC as NPCDefinition } from "../types/NPCtypes.ts";
 import { DEPTH_OFFSET, worldDepth } from "../game/WorldDepth.ts";
-import {
-  npcAnimationKey,
-  npcArtForDefinition,
-  npcFrameKey,
-  type CloverNpcArt,
-} from "../game/cloverVillageNpcAssets.ts";
+import { animationKey } from "../game/classAssets.ts";
+import { ensureLookArt } from "../game/avatarTextures.ts";
 import {
   entityShadowOffsetPx,
   entityNameTagOffsetPx,
@@ -29,12 +25,12 @@ const MARKER_STYLE: Record<NpcQuestMarker, { text: string; color: string; stroke
 const MARKER_GAP_PX = 2;
 
 /**
- * A static NPC with supplied Clover Village artwork where mapped; unmapped
- * species retain the readable placeholder until matching art is available.
+ * A static villager, drawn from a courier body in its own colours (`look` in
+ * npcs.json); one without a look keeps the readable placeholder blob.
  */
 export class NPC extends Phaser.Physics.Arcade.Sprite {
   readonly definition: NPCDefinition;
-  /** Stable authored-art identifier for visual review metadata. */
+  /** Stable art identifier for visual review metadata: the look's art id. */
   readonly npcArtKey: string;
   private readonly nameTag: Phaser.GameObjects.Text;
   /** Quest marker above the name tag; hidden when there is none. Read by the 3D view too. */
@@ -42,7 +38,6 @@ export class NPC extends Phaser.Physics.Arcade.Sprite {
   private markerKind: NpcQuestMarker | null = null;
   /** Extra marker bob in pixels (positive up); zero under reduced motion. */
   markerBobY = 0;
-  private readonly npcArt: CloverNpcArt | null;
   /**
    * The NPC's cast shadow.
    *
@@ -63,36 +58,27 @@ export class NPC extends Phaser.Physics.Arcade.Sprite {
   constructor(scene: Phaser.Scene, definition: NPCDefinition) {
     const x = definition.homeTile.x * TILE_SIZE + TILE_SIZE / 2;
     const y = definition.homeTile.y * TILE_SIZE + TILE_SIZE / 2;
-    const npcArt = npcArtForDefinition(definition);
-    const frameKey = npcArt !== null ? npcFrameKey(npcArt) : null;
-    const texture =
-      npcArt !== null &&
-      frameKey !== null &&
-      scene.anims.exists(npcAnimationKey(npcArt)) &&
-      scene.textures.exists(frameKey)
-        ? frameKey
-        : TextureKeys.NpcBlob;
+    const look = definition.look ?? null;
+    const artId = look === null ? null : ensureLookArt(scene, look);
+    const idleKey = artId === null ? null : animationKey(artId, "idle", "south");
+    const texture = idleKey !== null && scene.textures.exists(idleKey) ? idleKey : TextureKeys.NpcBlob;
     super(scene, x, y, texture);
     this.definition = definition;
-    this.npcArt = npcArt;
-    this.npcArtKey = npcArt ?? TextureKeys.NpcBlob;
+    this.npcArtKey = artId ?? TextureKeys.NpcBlob;
 
     scene.add.existing(this);
-    scene.physics.add.existing(this, true); // static body
-    (this.body as Phaser.Physics.Arcade.StaticBody).setSize(30, 24);
-    (this.body as Phaser.Physics.Arcade.StaticBody).setOffset(
-      (TILE_SIZE - 30) / 2,
-      TILE_SIZE - 24 - 4,
-    );
-
-    // Sized by the shared entity convention. Authored frames are 700px square
-    // with the figure in 82-89% of that, so the canvas height is not the
-    // villager's height — the figure is (see entitySizing.ts). The collision
-    // body is unaffected either way.
-    const sizing = villagerSizing(npcArt);
+    // Sized by the shared entity convention: the figure, not the canvas (see entitySizing.ts).
+    const sizing = villagerSizing(look?.body ?? null);
     this.setScale(entityScale(sizing));
     this.setDepth(worldDepth(y));
-    if (this.npcArt !== null) this.play(npcAnimationKey(this.npcArt));
+    if (idleKey !== null && scene.anims.exists(idleKey)) this.play(idleKey);
+    // A 30x24 static body around the feet, whatever size the art renders at.
+    scene.physics.add.existing(this, true);
+    (this.body as Phaser.Physics.Arcade.StaticBody).setSize(30, 24);
+    (this.body as Phaser.Physics.Arcade.StaticBody).setOffset(
+      this.displayWidth / 2 - 15,
+      this.displayHeight / 2 + entityShadowOffsetPx(sizing) - 24,
+    );
 
     // One lighting recipe for the whole world (Pass 6), sized from this
     // villager's own ground contact instead of a fixed ellipse.
@@ -111,7 +97,7 @@ export class NPC extends Phaser.Physics.Arcade.Sprite {
     this.nameTag = scene.add
       .text(x, y + entityNameTagOffsetPx(sizing), definition.name, {
         fontFamily: "Georgia, serif",
-        fontSize: npcArt === null ? "12px" : "11px",
+        fontSize: "12px",
         color: "#fff8e8",
         padding: { x: 3, y: 2 },
         stroke: "#1d2c20",
