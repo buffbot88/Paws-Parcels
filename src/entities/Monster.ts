@@ -83,9 +83,10 @@ export class Monster extends Phaser.GameObjects.Container {
       .text(0, this.nameTagY, info.displayName, {
         fontFamily: "Georgia, serif",
         fontSize: "13px",
-        color: "#4a2f2f",
-        backgroundColor: "#ffffffcc",
-        padding: { x: 4, y: 2 },
+        color: "#ffd9cf",
+        padding: { x: 3, y: 2 },
+        stroke: "#3a1f1f",
+        strokeThickness: 4,
       })
       .setOrigin(0.5);
 

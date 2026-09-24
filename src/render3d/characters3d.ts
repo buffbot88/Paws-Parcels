@@ -278,7 +278,7 @@ export class CharacterBillboards {
     mesh.scale.set(entity.widthTiles, entity.heightTiles, 1);
     mesh.position.set(
       entity.x,
-      entity.centreAboveFeetTiles + entity.heightTiles / 2 + entity.liftTiles,
+      entity.centreAboveFeetTiles + entity.liftTiles,
       entity.z,
     );
     // Tints change after creation (a monster's hit flash), so follow them.

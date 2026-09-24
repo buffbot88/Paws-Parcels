@@ -125,6 +125,16 @@ describe("createStaticClientServer", () => {
     );
   });
 
+  it("serves asset names containing URL-encoded spaces, but still refuses encoded traversal", async () => {
+    writeFileSync(join(clientDir, "assets", "Fire Ball_Frame_01.png"), "FIRE");
+    const serve = createStaticClientServer(clientDir);
+    const res = makeRes();
+    expect(serve(makeReq({ url: "/assets/Fire%20Ball_Frame_01.png" }), res)).toBe(true);
+    expect(res._body).toBe("FIRE");
+    expect(serve(makeReq({ url: "/assets/%2e%2e%2f%2e%2e%2fetc%2fpasswd" }), makeRes())).toBe(false);
+    expect(serve(makeReq({ url: "/assets/%00.png" }), makeRes())).toBe(false);
+  });
+
   it("serves the OIDC callback page (copied from public/)", async () => {
     const serve = createStaticClientServer(clientDir);
     const res = makeRes();

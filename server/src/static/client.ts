@@ -57,7 +57,8 @@ export function createStaticClientServer(
     let pathname: string;
     try {
       // URL normalizes dot-segments and strips the query string.
-      pathname = new URL(req.url ?? "/", "http://localhost").pathname;
+      // Decoded so asset names with spaces resolve; traversal checks below still apply.
+      pathname = decodeURIComponent(new URL(req.url ?? "/", "http://localhost").pathname);
     } catch {
       return false;
     }

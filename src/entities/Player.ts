@@ -38,18 +38,18 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
 
   /**
    * Shared nameplate style. The tag is the way every other player identifies
-   * this courier, so it must be readable over any tile art: heavy dark type on
-   * an opaque cream chip with a dark stroke, not the translucent wash a villager
-   * can afford. RemotePlayer mirrors it so the whole cast reads as one rule.
+   * this courier, so it must be readable over any tile art: cream type with a
+   * heavy dark outline and no chip, so it never hides the art behind it.
+   * RemotePlayer mirrors it so the whole cast reads as one rule.
    */
   static readonly NAME_TAG_STYLE = {
     fontFamily: "Georgia, serif",
     fontSize: "15px",
-    color: "#2b1d0f",
-    backgroundColor: "#fff8ec",
-    padding: { x: 7, y: 3 },
+    fontStyle: "bold",
+    color: "#fff8ec",
+    padding: { x: 3, y: 2 },
     stroke: "#2b1d0f",
-    strokeThickness: 3,
+    strokeThickness: 4,
   } as const;
 
   readonly classKey: ClassKey;

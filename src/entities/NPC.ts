@@ -113,10 +113,9 @@ export class NPC extends Phaser.Physics.Arcade.Sprite {
         fontFamily: "Georgia, serif",
         fontSize: npcArt === null ? "12px" : "11px",
         color: "#fff8e8",
-        backgroundColor: "#30452fcc",
-        padding: { x: 6, y: 3 },
+        padding: { x: 3, y: 2 },
         stroke: "#1d2c20",
-        strokeThickness: 2,
+        strokeThickness: 4,
       })
       .setOrigin(0.5)
       .setAlpha(0.88)

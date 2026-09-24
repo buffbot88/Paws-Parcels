@@ -41,6 +41,8 @@ export interface TextureSize {
   readonly height: number;
 }
 
+const PIXEL_ART_MAX_PX = 64;
+
 function sourceImageOf(texture: Phaser.Textures.Texture): CanvasImageSource | null {
   const sources = texture.source as unknown as { image?: CanvasImageSource }[];
   const image = sources[0]?.image;
@@ -66,9 +68,12 @@ export class Texture3DCache {
     }
     const three = new THREE.Texture(image as unknown as HTMLImageElement);
     three.colorSpace = THREE.SRGBColorSpace;
-    three.magFilter = THREE.LinearFilter;
-    three.minFilter = THREE.LinearMipmapLinearFilter;
-    three.generateMipmaps = true;
+    // Tiny pixel-art frames (the 36px couriers) are magnified several times; linear filtering smears them.
+    const source = (texture?.source as unknown as TextureSize[] | undefined)?.[0];
+    const pixelArt = source !== undefined && Math.max(source.width, source.height) <= PIXEL_ART_MAX_PX;
+    three.magFilter = pixelArt ? THREE.NearestFilter : THREE.LinearFilter;
+    three.minFilter = pixelArt ? THREE.NearestFilter : THREE.LinearMipmapLinearFilter;
+    three.generateMipmaps = !pixelArt;
     three.wrapS = THREE.ClampToEdgeWrapping;
     three.wrapT = THREE.ClampToEdgeWrapping;
     three.needsUpdate = true;
