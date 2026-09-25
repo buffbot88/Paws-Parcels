@@ -9,7 +9,7 @@
   "description": "Paws & Parcels — cozy browser-based 2.5D online RPG (server-authoritative, SQLite-backed, multiplayer).",
   "scripts": {
     "dev": "node node_modules/vite/bin/vite.js",
-    "build": "node node_modules/vite/bin/vite.js build && node scripts/write-client-version.mjs && node -e \"require('node:fs').copyFileSync('deploy/alpha/.htaccess','dist/.htaccess')\"",
+    "build": "node node_modules/vite/bin/vite.js build && node scripts/write-client-version.mjs && node -e \"const fs=require('node:fs'); fs.copyFileSync('deploy/alpha/.htaccess','dist/.htaccess'); for (const dir of ['asset-catalog','BrowseAssets']) fs.cpSync('deploy/'+dir,'dist/'+dir,{recursive:true});\"",
     "preview": "node node_modules/vite/bin/vite.js preview",
     "dev:server": "node --import tsx server/src/index.ts",
     "start:server": "node --import tsx server/src/index.ts",
