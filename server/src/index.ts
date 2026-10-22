@@ -111,8 +111,6 @@ async function main(): Promise<void> {
     });
   }
 
-  const router = createRouter({ npcBrain: gameBrain });
-
   // Phase 3.5 — single-process hosting: serve the built client (dist/) from
   // this same server so one host runs the whole game. When the dir is missing
   // (dev), the API/WS-only server still boots and requests fall through to 404.
@@ -195,6 +193,8 @@ async function main(): Promise<void> {
     unequipItem,
     monsterBrain,
   });
+
+  const router = createRouter({ npcBrain: gameBrain, onlineCount: () => gameServer.onlineCount() });
 
   const adminRuntime = createAdminRuntime(gameServer, {
     aiEnabled: modelInstance !== null,

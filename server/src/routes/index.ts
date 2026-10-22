@@ -128,6 +128,7 @@ export class Router {
 /** Dependencies the API router can optionally receive. */
 export interface RouterDeps {
   npcBrain?: GameBrain | null;
+  onlineCount?: () => number;
 }
 
 /** Create the API router with all routes. */
@@ -136,6 +137,9 @@ export function createRouter(deps?: RouterDeps): Router {
 
   // Liveness probe (no DB ping — start of server boot).
   router.get("/api/health", healthHandler);
+  router.get("/api/online-count", (_req, res) => {
+    jsonResponse(res, 200, { online_count: deps?.onlineCount?.() ?? 0 });
+  });
 
   // Phase 3 — ASHAT Hub OIDC (authorization code + PKCE)
   router.get("/api/auth/login-url", loginUrlHandler);
